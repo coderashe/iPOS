@@ -1,0 +1,29 @@
+<resources>
+    <string name="app_name">LearnCompose303</string>
+    <string name="myusername">Simbarashe Start</string>
+    <string name="videoTitle1">The BestSeller</string>
+    <string name="videoChannel1">Netflix</string>
+    <string name="videoTitle2">Armagedon</string>
+    <string name="videoChannel2">3uTools</string>
+    <string name="videoTitle3">Solomon</string>
+    <string name="videoChannel3">Biblos</string>
+    <string name="profile">Profile</string>
+    <string name="search">Search</string>
+    <string name="menu">Menu</string>
+    <string name="notifications">Notifications</string>
+    <string name="home">Home</string>
+    <string name="post">Post</string>
+    <string name="game_name">TIC TAC TOE</string>
+    <string name="rides">Searching Requests...</string>
+    <string name="income">My Income</string>
+    <string name="priority">Priority</string>
+    <string name="wallet">Wallet</string>
+    <string name="posts">Posts</string>
+    <string name="item_detail">Item Detail Screen</string>
+    <string name="nav_drawer">Navigation Drawer</string>
+    <string name="followers">Followers</string>
+    <string name="following">Following</string>
+    <string name="username">Google</string>
+    <string name="profile_description">I like travelling\nLearning Android\nSleeping</string>
+    <string name="profile_button">Edit Profile</string>
+</resources>
