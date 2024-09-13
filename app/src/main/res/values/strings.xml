@@ -1,6 +1,9 @@
 <resources>
     <string name="app_name">LearnCompose303</string>
     <string name="myusername">Simbarashe Start</string>
+    <string name="passenger">Passenger</string>
+    <string name="couriers">Couriers</string>
+    <string name="showinrequest">Show in the requests list</string>
     <string name="videoTitle1">The BestSeller</string>
     <string name="videoChannel1">Netflix</string>
     <string name="videoTitle2">Armagedon</string>
@@ -14,11 +17,24 @@
     <string name="home">Home</string>
     <string name="post">Post</string>
     <string name="game_name">TIC TAC TOE</string>
-    <string name="rides">Searching Requests...</string>
+    <string name="rides">Searching for requests…</string>
     <string name="income">My Income</string>
+    <string name="low">Low</string>
+    <string name="frequency">Frequency of operations: Very low</string>
+    <string name="reputation">Reputation: Normal</string>
+    <string name="reviewsmedium">Reviews: Medium</string>
+    <string name="experiencemedium">Experience: Novice</string>
+    <string name="date">13.09.2024</string>
+    <string name="ride">rides</string>
+    <string name="revw">review</string>
+    <string name="review">reviews</string>
+    <string name="number">61</string>
+    <string name="number2">32</string>
     <string name="priority">Priority</string>
     <string name="wallet">Wallet</string>
     <string name="posts">Posts</string>
+    <string name="balance">Balance</string>
+    <string name="cash">$ 52.65</string>
     <string name="item_detail">Item Detail Screen</string>
     <string name="nav_drawer">Navigation Drawer</string>
     <string name="followers">Followers</string>

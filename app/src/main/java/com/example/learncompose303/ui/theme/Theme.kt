@@ -23,7 +23,7 @@ private val DarkColorScheme = darkColorScheme(
 
 private val LightColorScheme = lightColorScheme(
     primary = GreenColor,
-    secondary = PurpleGrey40,
+    secondary = TheGrey,
     tertiary = Pink40
 
     /* Other default colors to override

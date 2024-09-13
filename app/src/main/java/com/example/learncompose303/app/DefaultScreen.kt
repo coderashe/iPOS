@@ -84,6 +84,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 import com.example.learncompose303.screens.MyIncomeScreen
 import com.example.learncompose303.screens.PriorityScreen
 import com.example.learncompose303.screens.RideRequestsScreen
@@ -284,17 +285,29 @@ fun TestBottomNavigation(navController: NavHostController) {
 fun InDriveTopBottomNavigation(navController: NavHostController) {
     val scaffoldState = rememberScaffoldState()
     val coroutineScope = rememberCoroutineScope()
+    var isChecked by remember { mutableStateOf(false) }
 
     Scaffold(
         scaffoldState = scaffoldState,
         topBar = {
             TopAppBar(
                 title = {
-                    Text(
-                        text = "ISTART",
-                        color = Color.Black,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(), // Fill entire top bar width
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center // Center content horizontally
+                    ) {
+                        Text(
+                            text = if (isChecked) "Online" else "Offline",
+                            modifier = Modifier.padding(end = 8.dp),
+                            color = if (isChecked) Color.Green else Color.Red // Green for "Online" and Red for "Offline"
+                        )
+                        Switch(
+                            checked = isChecked,
+                            onCheckedChange = { isChecked = it }
+                        )
+                    }
+
                 },
                 backgroundColor = Color.White,
                 navigationIcon = {
@@ -561,7 +574,6 @@ fun IndriveDrawerBottom(modifier: Modifier) {
             modifier = Modifier.fillMaxWidth()
         )
 
-// Gradient green button for Passenger mode
 // Lime Green button for Passenger mode
         Button(
             onClick = { /* Handle button click */ },
@@ -644,3 +656,9 @@ fun IndriveBottomNavigation(navController: NavHostController) {
         )
     }
 }
+
+////                    Text(
+////                        text = "ISTART",
+////                        color = Color.Black,
+////                        fontWeight = FontWeight.Bold
+////                    )
