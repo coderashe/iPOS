@@ -518,7 +518,7 @@ fun IndriveDrawerBody(navController: NavController, scaffoldState: ScaffoldState
                 .fillMaxWidth()
                 .padding(16.dp)
                 .clickable {
-                    navController.navigate(Destinations.Rides.route)
+                    navController.navigate(Destinations.Priority.route)
                     coroutineScope.launch { scaffoldState.drawerState.close() }
                 }
         ) {
@@ -533,7 +533,7 @@ fun IndriveDrawerBody(navController: NavController, scaffoldState: ScaffoldState
                 .fillMaxWidth()
                 .padding(16.dp)
                 .clickable {
-                    navController.navigate(Destinations.Rides.route)
+                    navController.navigate(Destinations.Income.route)
                     coroutineScope.launch { scaffoldState.drawerState.close() }
                 }
         ) {

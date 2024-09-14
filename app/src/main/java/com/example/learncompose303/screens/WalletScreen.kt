@@ -119,7 +119,6 @@ fun WalletScreen() {
                         text = stringResource(id = R.string.cash),
                         color = Color.Black,
                         fontSize = 30.sp,
-                        fontFamily = FontFamily.Serif,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier
                             .weight(1f)

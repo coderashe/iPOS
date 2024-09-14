@@ -39,6 +39,7 @@ import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Menu
@@ -91,6 +92,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
@@ -120,6 +122,9 @@ import com.example.learncompose303.screens.YouTubeUI
 import com.example.learncompose303.ui.theme.GreenColor
 import com.example.learncompose303.ui.theme.MyGray
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @Composable
 fun ButtonComponents() {
@@ -1133,6 +1138,88 @@ fun AddTopBar(onSort: () -> Unit) {
             }
         }
     )
+
+}
+
+fun getCurrentTimestamp(): String {
+    val sdf = SimpleDateFormat("dd.MM.yyyy", Locale.getDefault())
+    return sdf.format(Date())
+}
+
+@Composable
+fun DisplayCurrentDate() {
+    Text(text = getCurrentTimestamp())
+}
+
+@Composable
+fun DisplayTotalBalance(modifier: Modifier) {
+    Text(
+        text = stringResource(id = R.string.cash),
+        color = Color.Black,
+        fontSize = 36.sp,
+        fontWeight = FontWeight.Bold,
+    )
+}
+
+@Composable
+fun DisplayArrowRight(modifier: Modifier) {
+    Icon(
+        imageVector = Icons.Default.KeyboardArrowRight,
+        contentDescription = "",
+        modifier.size(22.dp),
+        tint = Color.Black
+    )
+}
+
+@Composable
+fun DisplayArrowLeft(modifier: Modifier) {
+    Icon(
+        imageVector = Icons.Default.KeyboardArrowLeft,
+        contentDescription = "",
+        modifier.size(22.dp),
+        tint = Color.Black
+    )
+}
+
+@Composable
+fun ThreeItemRow(
+    modifier: Modifier = Modifier,
+    startContent: @Composable () -> Unit,
+    centerContent: @Composable () -> Unit,
+    endContent: @Composable () -> Unit
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween // Aligns the three components at start, center, and end
+    ) {
+        // Start content (e.g. left arrow, icon, etc.)
+        startContent()
+
+        // Center content (e.g. text, image, etc.)
+        centerContent()
+
+        // End content (e.g. right arrow, button, etc.)
+        endContent()
+    }
+}
+
+@Composable
+fun TwoItemColumn(
+    modifier: Modifier = Modifier,
+    topContent: @Composable () -> Unit,
+    bottomContent: @Composable () -> Unit,
+) {
+
+    Column(
+        modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        topContent()
+        bottomContent()
+    }
 
 }
 
