@@ -59,7 +59,7 @@ fun FacebookScaffold(navController: NavHostController) {
             navController = navController,
             startDestination = Destinations.Home.route,
         ) {
-            composable(Destinations.Home.route) { HomeScreen(navController) }
+            composable(Destinations.Home.route) { HomeScreen() }
             composable(Destinations.Notifications.route) { NotificationsScreen() }
             composable(Destinations.TTTScreen.route) { TTTScreen(navController) }
             composable(

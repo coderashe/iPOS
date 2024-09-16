@@ -121,12 +121,12 @@ fun DefaultScreen() {
 //            }
 //        )
 
-        val navController = rememberNavController()
-        NavigationAppHost(navController = navController)
 //        InDriveTopBottomNavigation(navController)
 
 
-        TheBottomNavigation(navController)
+//        val navController = rememberNavController()
+//        NavigationAppHost(navController = navController)
+//        TheBottomNavigation(navController)
 
     }
 }
@@ -134,7 +134,7 @@ fun DefaultScreen() {
 @Composable
 fun NavigationAppHost(navController: NavHostController) {
     NavHost(navController = navController, startDestination = "home") {
-        composable(Destinations.Home.route) { HomeScreen(navController) }
+        composable(Destinations.Home.route) { HomeScreen() }
         composable(Destinations.Post.route) { PostScreen() }
         composable(Destinations.Search.route) { SearchScreen() }
         composable(Destinations.TTTScreen.route) { TTTScreen(navController) }
@@ -171,7 +171,7 @@ fun TheBottomNavigation(navController: NavHostController) {
             startDestination = Destinations.Home.route,
             modifier = Modifier.padding(paddingValues)
         ) {
-            composable(Destinations.Home.route) { HomeScreen(navController) }
+            composable(Destinations.Home.route) { HomeScreen() }
             composable(Destinations.Post.route) { PostScreen() }
             composable(Destinations.Search.route) { SearchScreen() }
             composable(Destinations.TTTScreen.route) { TTTScreen(navController) }
@@ -276,10 +276,6 @@ fun TestBottomNavigation(navController: NavHostController) {
         )
     }
 }
-
-
-//
-
 
 @Composable
 fun InDriveTopBottomNavigation(navController: NavHostController) {
@@ -433,7 +429,6 @@ fun IndriveDrawerHeader() {
         }
     }
 }
-
 
 @Composable
 fun IndriveDrawerBody(navController: NavController, scaffoldState: ScaffoldState) {
@@ -656,9 +651,3 @@ fun IndriveBottomNavigation(navController: NavHostController) {
         )
     }
 }
-
-////                    Text(
-////                        text = "ISTART",
-////                        color = Color.Black,
-////                        fontWeight = FontWeight.Bold
-////                    )

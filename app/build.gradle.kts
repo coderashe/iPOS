@@ -110,4 +110,14 @@ dependencies {
 //    biometrics
     implementation("androidx.biometric:biometric:1.2.0-alpha05")
 
+//    icons
+    implementation ("androidx.compose.material:material-icons-extended:1.7.1")
+
+//    carousel
+    val paging_version = "3.3.2"
+
+    implementation("androidx.paging:paging-runtime:$paging_version")
+
+
+
 }

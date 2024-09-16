@@ -66,6 +66,7 @@ import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
@@ -73,6 +74,7 @@ import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDrawerState
@@ -94,7 +96,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -474,7 +478,7 @@ fun LearnBottomNav() {
             startDestination = Destinations.Home.route,
             modifier = Modifier.padding(paddingValues)
         ) {
-            composable(Destinations.Home.route) { HomeScreen(navigationController) }
+            composable(Destinations.Home.route) { HomeScreen() }
             composable(Destinations.Search.route) { SearchScreen() }
             composable(Destinations.Notifications.route) { NotificationsScreen() }
             composable(Destinations.Profile.route) { ProfileScreen() }
@@ -660,7 +664,7 @@ fun LearnnavDrawer() {
                 navController = navController,
                 startDestination = Destinations.Home.route
             ) {
-                composable(Destinations.Home.route) { HomeScreen(navController) }
+                composable(Destinations.Home.route) { HomeScreen() }
                 composable(Destinations.Notifications.route) { NotificationsScreen() }
                 composable(Destinations.Profile.route) { ProfileScreen() }
             }
@@ -1182,6 +1186,16 @@ fun DisplayArrowLeft(modifier: Modifier) {
 }
 
 @Composable
+fun CustomHeadingMedium(modifier: Modifier = Modifier, heading: String) {
+    Text(
+        text = heading,
+        style = MaterialTheme.typography.headlineMedium,
+        modifier = Modifier.padding(vertical = 16.dp),
+        fontWeight = FontWeight.Bold
+    )
+}
+
+@Composable
 fun ThreeItemRow(
     modifier: Modifier = Modifier,
     startContent: @Composable () -> Unit,
@@ -1223,6 +1237,113 @@ fun TwoItemColumn(
 
 }
 
+@Composable
+fun CustomTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    modifier: Modifier = Modifier,
+    isPassword: Boolean = false
+) {
+    TextField(
+        value = value,
+        onValueChange = onValueChange,
+        label = { Text(label) },
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        singleLine = true,
+        visualTransformation = if (isPassword) PasswordVisualTransformation() else VisualTransformation.None,
+        shape = RoundedCornerShape(12.dp),
+        colors = TextFieldDefaults.colors(
+            Color(0xFFF0F0F0),
+            focusedIndicatorColor = Color.Transparent,
+            unfocusedIndicatorColor = Color.Transparent
+        )
+    )
+}
+
+@Composable
+fun CustomButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    isEnabled: Boolean = true
+) {
+    Button(
+        onClick = onClick,
+        enabled = isEnabled,
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp)
+            .height(56.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = ButtonDefaults.buttonColors(
+            Color.White,
+            contentColor = Color.White
+        )
+    ) {
+        Text(text = text, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+    }
+}
+
+@Composable
+fun SocialSignInButton(
+    text: String,
+    icon: ImageVector,
+    backgroundColor: Color,
+    onClick: () -> Unit
+) {
+    Icon(
+        imageVector = icon,
+        contentDescription = null,
+        modifier = Modifier
+            .size(24.dp),
+        tint = backgroundColor,
+    )
+    Spacer(modifier = Modifier.width(8.dp))
+//    Text(text = text, fontSize = 16.sp)
+
+}
 
 
+//@OptIn(ExperimentalFoundationApi::class)
+//@Composable
+//fun Carousel(
+//    modifier: Modifier = Modifier
+//        .padding(12.dp)
+//) {
+//    val pagerState = rememberPagerState(pageCount = { 3 })
+//
+//    HorizontalPager(
+//        state = pagerState,
+//        modifier = Modifier.fillMaxWidth()
+//    ) { page ->
+//        when (page) {
+//            0 -> CarouselCard(
+//                headingText = "First Card",
+//                taglineText = "This is the first tagline.",
+//                buttonText = "Explore",
+//                imageResource = painterResource(id = R.drawable.meat3),
+//                onButtonClick = { /* TODO: Handle click */ }
+//            )
+//
+//            1 -> CarouselCard(
+//                headingText = "Second Card",
+//                taglineText = "This is the second tagline.",
+//                buttonText = "Discover",
+//                imageResource = painterResource(id = R.drawable.chicken1),
+//                onButtonClick = { /* TODO: Handle click */ }
+//            )
+//
+//            2 -> CarouselCard(
+//                headingText = "Third Card",
+//                taglineText = "This is the third tagline.",
+//                buttonText = "Learn More",
+//                imageResource = painterResource(id = R.drawable.meat7),
+//                onButtonClick = { /* TODO: Handle click */ }
+//            )
+//        }
+//    }
+//}
 

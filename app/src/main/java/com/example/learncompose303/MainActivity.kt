@@ -39,10 +39,13 @@ import com.example.learncompose303.app.DefaultScreen
 import com.example.learncompose303.app.InDriveTopBottomNavigation
 import com.example.learncompose303.app.NavigationAppHost
 import com.example.learncompose303.screens.FacebookScaffold
+import com.example.learncompose303.screens.HomeScreen
 import com.example.learncompose303.screens.ItemListScreen
+import com.example.learncompose303.screens.LoginScreen
 import com.example.learncompose303.screens.RideRequestsScreen
 import com.example.learncompose303.screens.SelectImage
 import com.example.learncompose303.ui.theme.LearnCompose303Theme
+import com.example.learncompose303.viewmodels.HomeViewModel
 import com.example.learncompose303.viewmodels.ItemViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -55,78 +58,15 @@ class MainActivity : ComponentActivity() {
         setContent {
             LearnCompose303Theme {
                 val navController = rememberNavController()
+                val viewModel: HomeViewModel = viewModel()
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                 ) {
                     InDriveTopBottomNavigation(navController)
-
+//                    HomeScreen()
+//                    LoginScreen(viewModel = viewModel)
                 }
             }
-        }
-    }
-}
-
-//                    DefaultScreen()
-//                    FacebookScaffold(navController)
-//                    SelectImage()
-//                    val itemViewModel: ItemViewModel = viewModel()
-//                    ItemListScreen(viewModel = itemViewModel)
-
-//                    FingerprintAuthenticationScreen()
-
-
-fun isBiometricAuthenticationSupported(context: Context): Boolean {
-    val biometricManager = BiometricManager.from(context)
-    return biometricManager.canAuthenticate() == BiometricManager.BIOMETRIC_SUCCESS
-}
-
-class BiometricAuthentication(activity: FragmentActivity) {
-    private val biometricPrompt: BiometricPrompt by lazy {
-        val executor = ContextCompat.getMainExecutor(activity)
-        BiometricPrompt(activity, executor, object : BiometricPrompt.AuthenticationCallback() {
-            override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
-                super.onAuthenticationError(errorCode, errString)
-                // Handle error
-            }
-
-            override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
-                super.onAuthenticationSucceeded(result)
-                // Authentication succeeded
-            }
-
-            override fun onAuthenticationFailed() {
-                super.onAuthenticationFailed()
-                // Authentication failed
-            }
-        })
-    }
-
-    fun authenticate(cryptoObject: BiometricPrompt.CryptoObject? = null) {
-        val promptInfo = BiometricPrompt.PromptInfo.Builder()
-            .setTitle("Authentication")
-            .setSubtitle("Scan your fingerprint to proceed")
-            .setNegativeButtonText("Cancel")
-            .build()
-        if (cryptoObject != null) {
-            biometricPrompt.authenticate(promptInfo, cryptoObject)
-        }
-    }
-}
-
-@Composable
-fun FingerprintAuthenticationScreen() {
-    val context = LocalContext.current
-    val activity = context as FragmentActivity
-    val biometricAuthentication = remember { BiometricAuthentication(activity) }
-
-    Column {
-        Text("Fingerprint Authentication")
-        if (isBiometricAuthenticationSupported(context)) {
-            Button(onClick = { biometricAuthentication.authenticate() }) {
-                Text("Authenticate with Fingerprint")
-            }
-        } else {
-            Text("Biometric authentication is not supported or configured on this device.")
         }
     }
 }
