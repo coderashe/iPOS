@@ -1,6 +1,7 @@
 package com.example.learncompose303.screens
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,79 +35,28 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.example.learncompose303.R
 import com.example.learncompose303.app.AutoSlidingCarousel
+import com.example.learncompose303.data.Destinations
 
 @Composable
-fun RideRequestsScreen() {
+fun RideRequestsScreen(navController: NavHostController) {
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(Color.Transparent)
+            .padding(top = 4.dp)
             .verticalScroll(rememberScrollState())
     ) {
+        // Use the same navController here for navigation
+        QuickAccessButtons(navController)
         SearchBarExample()
         AutoSlidingCarousel()
-
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun PreviewCustomWidthToggleSwitch() {
-    RideRequestsScreen()
-}
-
-//for indrive
-
-//    val searchImage = painterResource(id = R.drawable.searching)
-
-//        Column(
-//            modifier = Modifier
-//                .fillMaxSize(),
-//            verticalArrangement = Arrangement.Center,
-//            horizontalAlignment = Alignment.CenterHorizontally
-//        ) {
-//            Text(
-//                text = stringResource(id = R.string.rides),
-//                color = Color.Black,
-//                fontSize = 16.sp,
-//                modifier = Modifier
-//                    .padding(8.dp)
-//            )
-//            Image(
-//                painter = searchImage, contentDescription = null,
-//                modifier = Modifier
-//                    .fillMaxSize()
-//                    .padding(4.dp),
-//                contentScale = ContentScale.Fit // Crop and scale the image to the center
-//            )
-//        }
-
-//@OptIn(ExperimentalMaterial3Api::class)
-//@Composable
-//fun CustomWidthToggleSwitch() {
-//    var isChecked by remember { mutableStateOf(false) }
-//
-//    Box(
-//        modifier = Modifier
-//            .width(120.dp), // Set the width to 120.dp
-//        contentAlignment = Alignment.Center
-//    ) {
-//        // Switch component with custom width
-//        Switch(
-//            checked = isChecked,
-//            onCheckedChange = { isChecked = it },
-//            modifier = Modifier
-//                .fillMaxWidth() // Ensure switch takes full width
-//                .width(200.dp)
-//        )
-//
-//        // Text overlay
-//        Text(
-//            text = if (isChecked) "ON" else "OFF",
-//            color = Color.White,
-//            fontWeight = FontWeight.Bold,
-//            fontSize = 16.sp
-//        )
-//    }
-//}

@@ -85,6 +85,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import com.example.learncompose303.screens.InvoicingScreen
 import com.example.learncompose303.screens.MyIncomeScreen
 import com.example.learncompose303.screens.PriorityScreen
 import com.example.learncompose303.screens.RideRequestsScreen
@@ -94,193 +95,73 @@ import com.example.learncompose303.screens.WalletScreen
 @Composable
 fun DefaultScreen() {
     Surface {
-//        ButtonComponents()
-//        DisplayYoutubeData()
-//        LearnCheckBoxes()
-//        LearnFAB()
-//        LearnExtendedFAB()
-//        LearnState()
-//        LearnTopAppBar()
-//        LearnnavDrawer()
-//        InstagramProfile()
-//        TestLazyLists()
-//        YotubeVideoList()
-//        TTTScreen()
+// TODO:    Test ui here
+    }
+}
 
-//        val cities = remember { mutableListOf<City>() }
-//        val sort = remember { mutableStateOf(false) }
-//        val sortedCities = if (sort.value) cities.sortedBy { it.name[0] } else cities
 //
-//        CitiesList(
-//            sortedCities,
-//            onAddCity = { name, country ->
-//                cities.add(City(name, country))
-//            },
-//            onSort = {
-//                sort.value = !sort.value
-//            }
-//        )
-
-//        InDriveTopBottomNavigation(navController)
-
-
-//        val navController = rememberNavController()
-//        NavigationAppHost(navController = navController)
-//        TheBottomNavigation(navController)
-
-    }
-}
+//@Composable
+//fun InDriveTopBottomNavigation(navController: NavHostController) {
+//    val scaffoldState = rememberScaffoldState()
+//    val coroutineScope = rememberCoroutineScope()
+//    var isChecked by remember { mutableStateOf(false) }
+//
+//    Scaffold(
+//        scaffoldState = scaffoldState,
+//        topBar = {
+//            TopAppBar(
+//                title = {
+//                    Row(
+//                        modifier = Modifier.fillMaxWidth(), // Fill entire top bar width
+//                        verticalAlignment = Alignment.CenterVertically,
+//                        horizontalArrangement = Arrangement.Center // Center content horizontally
+//                    ) {
+//                        Text(
+//                            text = if (isChecked) "Online" else "Offline",
+//                            modifier = Modifier.padding(end = 8.dp),
+//                            color = if (isChecked) Color.Green else Color.Red // Green for "Online" and Red for "Offline"
+//                        )
+//                        Switch(
+//                            checked = isChecked,
+//                            onCheckedChange = { isChecked = it }
+//                        )
+//                    }
+//
+//                },
+//                backgroundColor = Color.White,
+//                navigationIcon = {
+//                    IconButton(onClick = { coroutineScope.launch { scaffoldState.drawerState.open() } }) {
+//                        Icon(Icons.Default.Menu, contentDescription = null)
+//                    }
+//                }
+//            )
+//        },
+//        drawerContent = {
+//            IndriveDrawerNav(navController = navController, scaffoldState)
+//        },
+//        bottomBar = {
+//            IndriveBottomNavigation(navController)
+//        },
+//    ) { paddingValues ->
+//        NavHost(
+//            navController = navController,
+//            startDestination = Destinations.Rides.route,
+//            modifier = Modifier.padding(paddingValues)
+//        ) {
+//            composable(Destinations.Rides.route) { RideRequestsScreen(navController) }
+//            composable(Destinations.Income.route) { MyIncomeScreen() }
+//            composable(Destinations.Priority.route) { PriorityScreen() }
+//            composable(Destinations.Wallet.route) { WalletScreen() }
+//            composable(Destinations.Invoice.route) { InvoicingScreen() }
+//        }
+//    }
+//}
 
 @Composable
-fun NavigationAppHost(navController: NavHostController) {
-    NavHost(navController = navController, startDestination = "home") {
-        composable(Destinations.Home.route) { HomeScreen() }
-        composable(Destinations.Post.route) { PostScreen() }
-        composable(Destinations.Search.route) { SearchScreen() }
-        composable(Destinations.TTTScreen.route) { TTTScreen(navController) }
-    }
-}
-
-@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
-@Composable
-fun TheBottomNavigation(navController: NavHostController) {
+fun InDriveTopBottomNavigation() {
     val scaffoldState = rememberScaffoldState()
     val coroutineScope = rememberCoroutineScope()
-
-    Scaffold(
-        scaffoldState = scaffoldState,
-        topBar = {
-            TopAppBar(
-                title = { Text(text = "ISTART STORE") },
-                navigationIcon = {
-                    IconButton(onClick = { coroutineScope.launch { scaffoldState.drawerState.open() } }) {
-                        Icon(Icons.Default.Menu, contentDescription = null)
-                    }
-                }
-            )
-        },
-        drawerContent = {
-            TestDrawerNav(navController = navController, scaffoldState)
-        },
-        bottomBar = {
-            TestBottomNavigation(navController)
-        },
-    ) { paddingValues ->
-        NavHost(
-            navController = navController,
-            startDestination = Destinations.Home.route,
-            modifier = Modifier.padding(paddingValues)
-        ) {
-            composable(Destinations.Home.route) { HomeScreen() }
-            composable(Destinations.Post.route) { PostScreen() }
-            composable(Destinations.Search.route) { SearchScreen() }
-            composable(Destinations.TTTScreen.route) { TTTScreen(navController) }
-        }
-    }
-}
-
-@Composable
-fun TestDrawerNav(navController: NavController, scaffoldState: ScaffoldState) {
-    DrawerHeader()
-    DrawerBoady(navController = navController, scaffoldState)
-}
-
-@Composable
-fun DrawerHeader() {
-    val headerImage = painterResource(id = R.drawable.loc1)
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(MyGray)
-            .padding(64.dp)
-    ) {
-        Image(
-            painter = headerImage,
-            contentDescription = null
-        )
-    }
-}
-
-@Composable
-fun DrawerBoady(navController: NavController, scaffoldState: ScaffoldState) {
-    val coroutineScope = rememberCoroutineScope()
-
-    Column {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-                .clickable {
-                    navController.navigate(Destinations.Home.route)
-                    coroutineScope.launch { scaffoldState.drawerState.close() }
-                }
-        ) {
-            Icon(Icons.Default.Home, contentDescription = null)
-            Spacer(modifier = Modifier.width(20.dp))
-            Text(text = "HOME")
-        }
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-                .clickable {
-                    navController.navigate(Destinations.TTTScreen.route)
-                    coroutineScope.launch { scaffoldState.drawerState.close() }
-                }
-        ) {
-            Icon(Icons.Default.Favorite, contentDescription = null)
-            Spacer(modifier = Modifier.width(20.dp))
-            Text(text = "TTTScreen")
-        }
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-                .clickable {
-                    navController.navigate(Destinations.Post.route)
-                    coroutineScope.launch { scaffoldState.drawerState.close() }
-                }
-        ) {
-            Icon(Icons.Default.PlayArrow, contentDescription = null)
-            Spacer(modifier = Modifier.width(20.dp))
-            Text(text = "Post")
-        }
-    }
-}
-
-@Composable
-fun TestBottomNavigation(navController: NavHostController) {
-    BottomNavigation {
-        val navBackStackEntry by navController.currentBackStackEntryAsState()
-        val currentDestination = navBackStackEntry?.destination
-
-        BottomNavigationItem(
-            selected = currentDestination?.route == Destinations.Home.route,
-            onClick = { navController.navigate(Destinations.Home.route) },
-            icon = { Icon(Icons.Default.Home, contentDescription = null) },
-            label = { Text(text = Destinations.Home.route) }
-        )
-
-        BottomNavigationItem(
-            selected = currentDestination?.route == Destinations.TTTScreen.route,
-            onClick = { navController.navigate(Destinations.TTTScreen.route) },
-            icon = { Icon(Icons.Default.Favorite, contentDescription = null) },
-            label = { Text(text = Destinations.TTTScreen.route) }
-        )
-
-        BottomNavigationItem(
-            selected = currentDestination?.route == Destinations.Post.route,
-            onClick = { navController.navigate(Destinations.Post.route) },
-            icon = { Icon(Icons.Default.PlayArrow, contentDescription = null) },
-            label = { Text(text = Destinations.Post.route) }
-        )
-    }
-}
-
-@Composable
-fun InDriveTopBottomNavigation(navController: NavHostController) {
-    val scaffoldState = rememberScaffoldState()
-    val coroutineScope = rememberCoroutineScope()
+    val navController = rememberNavController() // Create NavController here
     var isChecked by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -289,21 +170,20 @@ fun InDriveTopBottomNavigation(navController: NavHostController) {
             TopAppBar(
                 title = {
                     Row(
-                        modifier = Modifier.fillMaxWidth(), // Fill entire top bar width
+                        modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center // Center content horizontally
+                        horizontalArrangement = Arrangement.Center
                     ) {
                         Text(
                             text = if (isChecked) "Online" else "Offline",
                             modifier = Modifier.padding(end = 8.dp),
-                            color = if (isChecked) Color.Green else Color.Red // Green for "Online" and Red for "Offline"
+                            color = if (isChecked) Color.Green else Color.Red
                         )
                         Switch(
                             checked = isChecked,
                             onCheckedChange = { isChecked = it }
                         )
                     }
-
                 },
                 backgroundColor = Color.White,
                 navigationIcon = {
@@ -325,10 +205,11 @@ fun InDriveTopBottomNavigation(navController: NavHostController) {
             startDestination = Destinations.Rides.route,
             modifier = Modifier.padding(paddingValues)
         ) {
-            composable(Destinations.Rides.route) { RideRequestsScreen() }
+            composable(Destinations.Rides.route) { RideRequestsScreen(navController) }
             composable(Destinations.Income.route) { MyIncomeScreen() }
             composable(Destinations.Priority.route) { PriorityScreen() }
             composable(Destinations.Wallet.route) { WalletScreen() }
+            composable(Destinations.Invoice.route) { InvoicingScreen() }
         }
     }
 }

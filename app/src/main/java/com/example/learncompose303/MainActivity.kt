@@ -37,13 +37,13 @@ import androidx.navigation.compose.rememberNavController
 import com.example.learncompose303.app.ButtonComponents
 import com.example.learncompose303.app.DefaultScreen
 import com.example.learncompose303.app.InDriveTopBottomNavigation
-import com.example.learncompose303.app.NavigationAppHost
 import com.example.learncompose303.screens.FacebookScaffold
 import com.example.learncompose303.screens.HomeScreen
 import com.example.learncompose303.screens.ItemListScreen
 import com.example.learncompose303.screens.LoginScreen
 import com.example.learncompose303.screens.RideRequestsScreen
 import com.example.learncompose303.screens.SelectImage
+import com.example.learncompose303.screens.ShopLandingScreen
 import com.example.learncompose303.ui.theme.LearnCompose303Theme
 import com.example.learncompose303.viewmodels.HomeViewModel
 import com.example.learncompose303.viewmodels.ItemViewModel
@@ -57,12 +57,12 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             LearnCompose303Theme {
-                val navController = rememberNavController()
-                val viewModel: HomeViewModel = viewModel()
+//                val navController = rememberNavController()
+//                val viewModel: HomeViewModel = viewModel()
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                 ) {
-                    InDriveTopBottomNavigation(navController)
+                    ShopLandingScreen()
 //                    HomeScreen()
 //                    LoginScreen(viewModel = viewModel)
                 }

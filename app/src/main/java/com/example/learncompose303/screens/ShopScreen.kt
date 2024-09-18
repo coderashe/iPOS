@@ -34,16 +34,19 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.learncompose303.app.InDriveTopBottomNavigation
+import com.example.learncompose303.data.Destinations
 import com.example.learncompose303.ui.theme.Green1
 import com.example.learncompose303.ui.theme.Green2
 import com.example.learncompose303.ui.theme.MyGray
 
 @Composable
 fun ShopLandingScreen() {
-    val navController = rememberNavController()
-    InDriveTopBottomNavigation(navController)
+//    val navController = rememberNavController()
+    InDriveTopBottomNavigation()
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
