@@ -153,7 +153,7 @@ fun ProductItem(product: Product, onAddToCart: () -> Unit) {
                         .padding(8.dp)
                 ) {
                     Icon(
-                        painter = painterResource(id = android.R.drawable.ic_input_add),
+                        painter = painterResource(id = R.drawable.ic_input_add),
                         contentDescription = "Add to Cart",
                     )
                 }

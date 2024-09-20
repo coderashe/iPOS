@@ -4,6 +4,7 @@ sealed class Destinations(val route: String) {
     //    data object Rides : Destinations("Ride requests")
     data object Rides : Destinations("rides")
     data object Invoice : Destinations("invoicing")
+    data object LoadStocks : Destinations("loadStocks")
     data object Cart : Destinations("cartScreen")
     data object CustomerSelection : Destinations("customerSelection")
     data object ProductSelection : Destinations("productSelection")

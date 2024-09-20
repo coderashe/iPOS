@@ -460,3 +460,56 @@ package com.example.learncompose303.data.domain.util
 //                val viewModel: HomeViewModel = viewModel()
 //                    HomeScreen()
 //                    LoginScreen(viewModel = viewModel)
+
+//@Composable
+//fun CartScreen(
+//    customer: Customer,
+//    navController: NavController,
+//    viewModel: InvoiceViewModel = viewModel()
+//) {
+//    // Get the selected products
+//    val selectedProducts by viewModel.selectedProducts.collectAsState()
+//
+//    Column(
+//        modifier = Modifier
+//            .fillMaxSize()
+//            .padding(16.dp)
+//    ) {
+//        Text("Customer: ${customer.name}", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+//        Spacer(modifier = Modifier.height(16.dp))
+//
+//        // Display the list of selected products
+//        LazyColumn {
+//            items(selectedProducts) { product ->
+//                var quantity by remember { mutableStateOf(1) } // State to store quantity
+//
+//                Row(
+//                    modifier = Modifier
+//                        .fillMaxWidth()
+//                        .padding(vertical = 8.dp)
+//                ) {
+//                    Text(product.name, modifier = Modifier.weight(1f))
+//                    Text("Price: \$${product.price}", modifier = Modifier.weight(1f))
+//                    Spacer(modifier = Modifier.width(16.dp))
+//
+//                    // Input for quantity
+//                    TextField(
+//                        value = quantity.toString(),
+//                        onValueChange = { newValue -> quantity = newValue.toIntOrNull() ?: 1 }
+//                    )
+//                }
+//            }
+//        }
+//
+//        Spacer(modifier = Modifier.height(16.dp))
+//        Button(
+//            onClick = {
+//                navController.navigate(Destinations.Rides.route) // Navigate to InvoiceScreen
+//            },
+//            modifier = Modifier.align(Alignment.CenterHorizontally)
+//        ) {
+//            Text("Finalize Invoice")
+//        }
+//    }
+//}
+

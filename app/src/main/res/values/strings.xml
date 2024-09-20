@@ -47,5 +47,9 @@
     <string name="achievements">Achievements</string>
     <string name="popular_products">POPULAR PRODUCTS</string>
     <string name="more">GET MORE</string>
+    <string name="load_stocks">LOAD STOCKS</string>
+    <string name="invoicing">INVOICING</string>
+    <string name="reports">REPORTS</string>
+    <string name="orders">ORDERS</string>
 </resources>
 

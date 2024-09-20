@@ -1189,7 +1189,7 @@ fun DisplayArrowLeft(modifier: Modifier) {
 fun CustomHeadingMedium(heading: String) {
     Text(
         text = heading,
-        style = MaterialTheme.typography.headlineMedium,
+        style = MaterialTheme.typography.headlineSmall,
         modifier = Modifier.padding(start = 8.dp),
         fontWeight = FontWeight.Bold
     )

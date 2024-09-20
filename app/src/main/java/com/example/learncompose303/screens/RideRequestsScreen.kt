@@ -64,7 +64,9 @@ fun RideRequestsScreen(navController: NavHostController) {
         )
         SpacerHeight()
         SearchBarExample()
-        // Use the same navController here for navigation
+        CustomHeadingMedium(
+            heading = stringResource(R.string.popular_products)
+        )
         AutoSlidingCarousel()
         CustomHeadingMedium(
             heading = stringResource(R.string.more)

@@ -1,11 +1,8 @@
 package com.example.learncompose303.viewmodels
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.learncompose303.data.StudentEntity
+import com.example.learncompose303.R
 import com.example.learncompose303.data.entities.CartItem
 import com.example.learncompose303.data.entities.Customer
 import com.example.learncompose303.data.entities.Invoice
@@ -17,8 +14,6 @@ import com.example.learncompose303.data.repositories.InvoiceItemRepository
 import com.example.learncompose303.data.repositories.InvoiceRepository
 import com.example.learncompose303.data.repositories.ProductRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers.IO
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -43,23 +38,25 @@ class InvoiceViewModel @Inject constructor(
     private val _productList = MutableStateFlow(emptyList<Product>())
     val productList = _productList.asStateFlow()
 
-    // Invoice items (InvoiceItem)
-    private val _invoiceItems = MutableStateFlow(mutableListOf<InvoiceItem>())
-    val invoiceItems = _invoiceItems.asStateFlow()
-
-    // Cart items (CartItem)
-    private val _cartItems = MutableStateFlow(emptyList<CartItem>())
-    val cartItems = _cartItems.asStateFlow()
-
     // List to store selected products for the cart
     private val _selectedProducts = MutableStateFlow<List<Product>>(emptyList())
     val selectedProducts: StateFlow<List<Product>> = _selectedProducts
 
+    // Invoice items (InvoiceItem)
+    private val _invoiceItems = MutableStateFlow(mutableListOf<InvoiceItem>())
+
+    val invoiceItems = _invoiceItems.asStateFlow()
+
+    // Cart items (CartItem)
+    private val _cartItems = MutableStateFlow(emptyList<CartItem>())
+
+    val cartItems = _cartItems.asStateFlow()
+
     init {
-        insertInitialCustomers()
-        fetchCustomers()
         insertInitialProducts()
         fetchProducts()
+        insertInitialCustomers()
+        fetchCustomers()
     }
 
     // Fetch customers from repository
@@ -99,16 +96,16 @@ class InvoiceViewModel @Inject constructor(
             productRepository.getAllProductsOnce() // Assuming you have this method implemented in the repository
         if (existingProducts.isEmpty()) {
             val initialProducts = listOf(
-                Product(name = "Product 1", price = 10.0, imageResId = null),
-                Product(name = "Product 2", price = 20.0, imageResId = null),
-                Product(name = "Product 3", price = 30.0, imageResId = null),
-                Product(name = "Product 4", price = 40.0, imageResId = null),
-                Product(name = "Product 5", price = 50.0, imageResId = null),
-                Product(name = "Product 6", price = 60.0, imageResId = null),
-                Product(name = "Product 7", price = 70.0, imageResId = null),
-                Product(name = "Product 8", price = 80.0, imageResId = null),
-                Product(name = "Product 9", price = 90.0, imageResId = null),
-                Product(name = "Product 10", price = 100.0, imageResId = null)
+                Product(name = "Product 1", price = 10.0, imageResId = R.drawable.meat1),
+                Product(name = "Product 2", price = 20.0, imageResId = R.drawable.chicken2),
+                Product(name = "Product 3", price = 30.0, imageResId = R.drawable.meat3),
+                Product(name = "Product 4", price = 40.0, imageResId = R.drawable.meat4),
+                Product(name = "Product 5", price = 50.0, imageResId = R.drawable.chicken1),
+                Product(name = "Product 6", price = 60.0, imageResId = R.drawable.meat2),
+                Product(name = "Product 7", price = 70.0, imageResId = R.drawable.meat6),
+                Product(name = "Product 8", price = 80.0, imageResId = R.drawable.meat7),
+                Product(name = "Product 9", price = 90.0, imageResId = R.drawable.chicken1),
+                Product(name = "Product 10", price = 100.0, imageResId = R.drawable.meat4)
             )
             productRepository.insertProducts(initialProducts)
         }
@@ -120,6 +117,11 @@ class InvoiceViewModel @Inject constructor(
             _productList.value = productList
         }
     }
+
+    fun insertProduct(product: Product) = viewModelScope.launch {
+        productRepository.insertProduct(product)
+    }
+
 
     // Fetch products from repository
     private fun findProducts() = viewModelScope.launch {

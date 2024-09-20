@@ -32,16 +32,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.learncompose303.R
 import com.example.learncompose303.data.Destinations
-import com.example.learncompose303.ui.theme.Green1
 
 @Composable
 fun MainDashboardScreen(navController: NavController) {
@@ -155,19 +153,21 @@ fun QuickAccessButtons(navController: NavController) {
         horizontalArrangement = Arrangement.spacedBy(16.dp) // Spacing between items
     ) {
         QuickAccessCard(
-            label = "ORDERS",
+            label = stringResource(R.string.orders),
             subTitle = "--",
             icon = Icons.Default.More,
             onClick = { /* Navigate to Stock Loading Screen */ }
         )
         QuickAccessCard(
-            label = "STOCKS",
+            label = stringResource(R.string.load_stocks),
             subTitle = "--",
             icon = Icons.Default.AddShoppingCart,
-            onClick = { /* Navigate to Stock Loading Screen */ }
+            onClick = {
+                navController.navigate(Destinations.LoadStocks.route) // Navigate to Stock Loading Screen
+            }
         )
         QuickAccessCard(
-            label = "INVOICING",
+            label = stringResource(R.string.invoicing),
             subTitle = "--",
             icon = Icons.Default.Receipt,
             onClick = {
@@ -175,7 +175,7 @@ fun QuickAccessButtons(navController: NavController) {
             }
         )
         QuickAccessCard(
-            label = "REPORTS",
+            label = stringResource(R.string.reports),
             subTitle = "--",
             icon = Icons.Default.BarChart,
             onClick = { /* Navigate to Reports Screen */ }

@@ -1,5 +1,8 @@
 package com.example.learncompose303.screens
 
+import android.R
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -9,14 +12,19 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -27,7 +35,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.tooling.preview.Preview
@@ -40,6 +51,7 @@ import com.example.learncompose303.data.entities.Customer
 import com.example.learncompose303.data.entities.InvoiceItem
 import com.example.learncompose303.data.entities.Product
 import com.example.learncompose303.ui.theme.Blue1
+import com.example.learncompose303.ui.theme.MyGray
 import com.example.learncompose303.viewmodels.InvoiceViewModel
 
 @Composable
@@ -78,11 +90,21 @@ fun ProductSelectionScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         LazyColumn {
-            items(products) { product ->
-                ProductCard(product = product, onAddProduct = {
-                    // Add the selected product to cart
-                    viewModel.addProductToCart(product)
-                })
+            items(products.chunked(3)) { rowItems ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    for (product in rowItems) {
+                        ProductCard(product = product, onAddProduct = {
+                            // Add the selected product to cart
+                            viewModel.addProductToCart(product)
+                        })
+                    }
+                    if (rowItems.size == 1) {
+                        Spacer(modifier = Modifier.weight(1f)) // Fill the space for uneven row
+                    }
+                }
             }
         }
 
@@ -92,7 +114,7 @@ fun ProductSelectionScreen(
 }
 
 @Composable
-fun ProductCard(product: Product, onAddProduct: (Product) -> Unit) {
+fun ProductCard1(product: Product, onAddProduct: (Product) -> Unit) {
     var isChecked by remember { mutableStateOf(false) }
     Card(
         modifier = Modifier
@@ -119,6 +141,88 @@ fun ProductCard(product: Product, onAddProduct: (Product) -> Unit) {
                     color = if (isChecked) Color.White else Color.Black
                 )
             }
+        }
+    }
+}
+
+@Composable
+fun ProductCard(product: Product, onAddProduct: (Product) -> Unit) {
+    var isChecked by remember { mutableStateOf(false) }
+    Card(
+        shape = RoundedCornerShape(8.dp),
+        modifier = Modifier
+            .width(165.dp)
+            .height(250.dp)
+            .padding(8.dp)
+            .clickable { onAddProduct(product) },
+        elevation = CardDefaults.cardElevation(4.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(2.dp)
+                .background(Color.Transparent, shape = RoundedCornerShape(8.dp)),
+        ) {
+            // Product Image
+            product.imageResId?.let { painterResource(id = it) }?.let {
+                Image(
+                    painter = it,
+                    contentDescription = product.name,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(120.dp)
+                        .clip(CircleShape),
+                    contentScale = ContentScale.Crop
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(product.name, fontWeight = FontWeight.Bold)
+            Text("Price: \$${product.price}")
+            Spacer(modifier = Modifier.height(8.dp))
+            Button(
+                onClick = {
+                    onAddProduct(product)
+                    isChecked = true
+                },
+                colors = ButtonDefaults.buttonColors(
+                    if (isChecked) Color.Red else Blue1
+                )
+            ) {
+                Text(
+                    text = if (isChecked) "Added" else "Add to Cart",
+                    color = if (isChecked) Color.White else Color.Black
+                )
+            }
+//            Row(
+//                modifier = Modifier
+//                    .fillMaxWidth()
+//                    .padding(6.dp),
+//                verticalAlignment = Alignment.CenterVertically,
+//                horizontalArrangement = Arrangement.SpaceBetween
+//            ) {
+//                Text(
+//                    text = product.price,
+//                    fontWeight = FontWeight.SemiBold,
+//                    fontSize = 16.sp,
+//                    color = Color.Gray
+//                )
+//
+//                // Add to Cart Button
+//                IconButton(
+//                    onClick = onAddToCart,
+//                    modifier = Modifier
+//                        .size(40.dp)
+//                        .background(MyGray, shape = CircleShape)
+//                        .padding(8.dp)
+//                ) {
+//                    Icon(
+//                        painter = painterResource(id = R.drawable.ic_input_add),
+//                        contentDescription = "Add to Cart",
+//                    )
+//                }
+//            }
         }
     }
 }
