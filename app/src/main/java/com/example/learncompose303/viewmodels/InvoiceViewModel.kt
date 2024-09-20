@@ -20,6 +20,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -49,6 +50,10 @@ class InvoiceViewModel @Inject constructor(
     // Cart items (CartItem)
     private val _cartItems = MutableStateFlow(emptyList<CartItem>())
     val cartItems = _cartItems.asStateFlow()
+
+    // List to store selected products for the cart
+    private val _selectedProducts = MutableStateFlow<List<Product>>(emptyList())
+    val selectedProducts: StateFlow<List<Product>> = _selectedProducts
 
     init {
         insertInitialCustomers()
@@ -81,6 +86,11 @@ class InvoiceViewModel @Inject constructor(
         customerRepository.getAllCustomers().collectLatest { customerList ->
             _customerList.value = customerList
         }
+    }
+
+    // Get customer by ID
+    fun getCustomerById(customerId: Long?): Customer? {
+        return customerList.value.firstOrNull { it.customerId == customerId }
     }
 
     // Insert initial products into the database
@@ -116,22 +126,25 @@ class InvoiceViewModel @Inject constructor(
         productRepository.getAllProducts().collectLatest { _productList.value = it }
     }
 
-    // Get customer by ID
-    fun getCustomerById(customerId: Long?): Customer? {
-        return customerList.value.firstOrNull { it.customerId == customerId }
+    // Add a product to the cart (selected products list)
+    fun addProductToCart(product: Product) {
+        val updatedList = _selectedProducts.value.toMutableList()
+        updatedList.add(product)
+        _selectedProducts.value = updatedList
     }
 
-    // Add item to cart
-    fun addProductToCart(customerId: Long, product: Product, quantity: Int) =
-        viewModelScope.launch {
-            val cartItem = CartItem(
-                customerId = customerId,
-                productId = product.productId,
-                quantity = quantity
-            )
-            cartItemRepository.insertCartItem(cartItem)
-            refreshCartItems(customerId)
-        }
+
+//    // Add item to cart
+//    fun addProductToCart(customerId: Long, product: Product, quantity: Int) =
+//        viewModelScope.launch {
+//            val cartItem = CartItem(
+//                customerId = customerId,
+//                productId = product.productId,
+//                quantity = quantity
+//            )
+//            cartItemRepository.insertCartItem(cartItem)
+//            refreshCartItems(customerId)
+//        }
 
     // Fetch cart items for a customer
 // Fetch cart items for a customer

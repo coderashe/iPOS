@@ -171,7 +171,7 @@ fun QuickAccessButtons(navController: NavController) {
             subTitle = "--",
             icon = Icons.Default.Receipt,
             onClick = {
-                navController.navigate(Destinations.Invoice.route) // Navigate to InvoiceScreen
+                navController.navigate(Destinations.CustomerSelection.route) // Navigate to InvoiceScreen
             }
         )
         QuickAccessCard(

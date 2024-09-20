@@ -158,9 +158,10 @@ fun InDriveTopBottomNavigation() {
             IndriveBottomNavigation(navController)
         },
     ) { paddingValues ->
+//        set your starting destination of the app
         NavHost(
             navController = navController,
-            startDestination = Destinations.CustomerSelection.route,
+            startDestination = Destinations.Rides.route,
             modifier = Modifier.padding(paddingValues)
         ) {
             composable(Destinations.Rides.route) { RideRequestsScreen(navController) }
@@ -199,14 +200,26 @@ fun InDriveTopBottomNavigation() {
                     ProductSelectionScreen(
                         customer = customer,
                         onAddProduct = { product ->
-                            // Add product to cart logic
+                            viewModel.addProductToCart(product)
                         },
                         onProceedToCart = {
-                            navController.navigate("cartScreen/${customer.customerId}")
+                            navController.navigate(Destinations.Cart.route + "/${customer.customerId}")
                         },
                         navController = navController,
                         viewModel = viewModel
                     )
+
+//                    ProductSelectionScreen(
+//                        customer = customer,
+//                        onAddProduct = { product ->
+//                            // Add product to cart logic
+//                        },
+//                        onProceedToCart = {
+//                            navController.navigate("cartScreen/${customer.customerId}")
+//                        },
+//                        navController = navController,
+//                        viewModel = viewModel
+//                    )
                 }
             }
 
@@ -215,8 +228,6 @@ fun InDriveTopBottomNavigation() {
                 val customerId =
                     backStackEntry.arguments?.getString("customerId")?.toLong() ?: return@composable
                 val customer = viewModel.getCustomerById(customerId) // Fetch customer logic
-                val cartItems by viewModel.cartItems.collectAsState()
-                val productList by viewModel.productList.collectAsState()
 
                 // Ensure we fetch cart items if they are not already available
                 LaunchedEffect(customerId) {
@@ -226,16 +237,10 @@ fun InDriveTopBottomNavigation() {
                 if (customer != null) {
                     CartScreen(
                         customer = customer,
-                        cartItems = cartItems,
-                        products = productList,
-                        onQuantityChange = { cartItem, newQuantity ->
-                            viewModel.updateCartItem(cartItem, newQuantity)
-                        },
-                        onCompleteInvoice = {
-                            viewModel.submitInvoice(customerId)
-                            navController.navigate(Destinations.Rides.route) // Go back to the dashboard
-                        }
+                        navController,
+                        viewModel
                     )
+
                 }
             }
 
