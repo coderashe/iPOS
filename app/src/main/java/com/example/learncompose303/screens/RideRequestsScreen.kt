@@ -42,6 +42,9 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.learncompose303.R
 import com.example.learncompose303.app.AutoSlidingCarousel
+import com.example.learncompose303.app.CustomHeadingMedium
+import com.example.learncompose303.app.SalesmanInfoCard
+import com.example.learncompose303.app.SpacerHeight
 import com.example.learncompose303.data.Destinations
 
 @Composable
@@ -53,10 +56,21 @@ fun RideRequestsScreen(navController: NavHostController) {
             .padding(top = 4.dp)
             .verticalScroll(rememberScrollState())
     ) {
-        // Use the same navController here for navigation
-        QuickAccessButtons(navController)
+        SalesmanInfoCard(
+            salesmanName = "Simba Start",
+            shopName = "ISTART CAPITAL MRT",
+            currentSalesTotal = 12456.78,
+            numberOfTransactions = 52
+        )
+        SpacerHeight()
         SearchBarExample()
+        // Use the same navController here for navigation
         AutoSlidingCarousel()
+        CustomHeadingMedium(
+            heading = stringResource(R.string.more)
+        )
+        QuickAccessButtons(navController)
     }
+
 }
 

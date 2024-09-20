@@ -394,3 +394,69 @@ package com.example.learncompose303.data.domain.util
 //
 //    }
 //}
+
+//
+//@Composable
+//fun InDriveTopBottomNavigation(navController: NavHostController) {
+//    val scaffoldState = rememberScaffoldState()
+//    val coroutineScope = rememberCoroutineScope()
+//    var isChecked by remember { mutableStateOf(false) }
+//
+//    Scaffold(
+//        scaffoldState = scaffoldState,
+//        topBar = {
+//            TopAppBar(
+//                title = {
+//                    Row(
+//                        modifier = Modifier.fillMaxWidth(), // Fill entire top bar width
+//                        verticalAlignment = Alignment.CenterVertically,
+//                        horizontalArrangement = Arrangement.Center // Center content horizontally
+//                    ) {
+//                        Text(
+//                            text = if (isChecked) "Online" else "Offline",
+//                            modifier = Modifier.padding(end = 8.dp),
+//                            color = if (isChecked) Color.Green else Color.Red // Green for "Online" and Red for "Offline"
+//                        )
+//                        Switch(
+//                            checked = isChecked,
+//                            onCheckedChange = { isChecked = it }
+//                        )
+//                    }
+//
+//                },
+//                backgroundColor = Color.White,
+//                navigationIcon = {
+//                    IconButton(onClick = { coroutineScope.launch { scaffoldState.drawerState.open() } }) {
+//                        Icon(Icons.Default.Menu, contentDescription = null)
+//                    }
+//                }
+//            )
+//        },
+//        drawerContent = {
+//            IndriveDrawerNav(navController = navController, scaffoldState)
+//        },
+//        bottomBar = {
+//            IndriveBottomNavigation(navController)
+//        },
+//    ) { paddingValues ->
+//        NavHost(
+//            navController = navController,
+//            startDestination = Destinations.Rides.route,
+//            modifier = Modifier.padding(paddingValues)
+//        ) {
+//            composable(Destinations.Rides.route) { RideRequestsScreen(navController) }
+//            composable(Destinations.Income.route) { MyIncomeScreen() }
+//            composable(Destinations.Priority.route) { PriorityScreen() }
+//            composable(Destinations.Wallet.route) { WalletScreen() }
+//            composable(Destinations.Invoice.route) { InvoicingScreen() }
+//        }
+//    }
+//}
+
+//mainActivity
+
+//                val viewModel: InvoiceViewModel = viewModel()
+//                val navController = rememberNavController()
+//                val viewModel: HomeViewModel = viewModel()
+//                    HomeScreen()
+//                    LoginScreen(viewModel = viewModel)

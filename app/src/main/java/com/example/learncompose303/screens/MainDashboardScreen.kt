@@ -19,6 +19,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddShoppingCart
 import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.More
 import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -151,8 +152,14 @@ fun QuickAccessButtons(navController: NavController) {
             .fillMaxWidth()
             .padding(top = 8.dp)
             .horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.SpaceEvenly
+        horizontalArrangement = Arrangement.spacedBy(16.dp) // Spacing between items
     ) {
+        QuickAccessCard(
+            label = "ORDERS",
+            subTitle = "--",
+            icon = Icons.Default.More,
+            onClick = { /* Navigate to Stock Loading Screen */ }
+        )
         QuickAccessCard(
             label = "STOCKS",
             subTitle = "--",
@@ -203,7 +210,8 @@ fun QuickAccessCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(6.dp),
-                verticalArrangement = Arrangement.Center
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.Start // Aligning contents to the start
             ) {
                 Icon(
                     imageVector = icon,
@@ -213,7 +221,7 @@ fun QuickAccessCard(
                         .align(Alignment.Start),
                 )
                 Spacer(modifier = Modifier.height(6.dp))
-                Text(text = label, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                Text(text = label, fontSize = 15.sp)
                 Text(text = subTitle)
             }
 

@@ -4,15 +4,33 @@ import android.content.Context
 import androidx.room.Room
 import com.example.learncompose303.daos.ItemDao
 import com.example.learncompose303.data.AppDatabase
+import com.example.learncompose303.data.data_source.CartItemDao
+import com.example.learncompose303.data.data_source.CustomerDao
+import com.example.learncompose303.data.data_source.InvoiceDao
+import com.example.learncompose303.data.data_source.InvoiceItemDao
 import com.example.learncompose303.data.data_source.NoteDao
+import com.example.learncompose303.data.data_source.PaymentDao
+import com.example.learncompose303.data.data_source.ProductDao
 import com.example.learncompose303.data.data_source.StudentDao
 import com.example.learncompose303.data.domain.repository.NoteRepository
 import com.example.learncompose303.data.domain.use_case.AddNoteuseCase
 import com.example.learncompose303.data.domain.use_case.DeleteNoteUseCase
 import com.example.learncompose303.data.domain.use_case.GetNotesUseCase
 import com.example.learncompose303.data.domain.use_case.NoteUseCase
+import com.example.learncompose303.data.repositories.CartItemRepository
+import com.example.learncompose303.data.repositories.CartItemRepositoryImpl
+import com.example.learncompose303.data.repositories.CustomerRepository
+import com.example.learncompose303.data.repositories.CustomerRepositoryImpl
+import com.example.learncompose303.data.repositories.InvoiceItemRepository
+import com.example.learncompose303.data.repositories.InvoiceItemRepositoryImpl
+import com.example.learncompose303.data.repositories.InvoiceRepository
+import com.example.learncompose303.data.repositories.InvoiceRepositoryImpl
 import com.example.learncompose303.data.repositories.ItemRepository
 import com.example.learncompose303.data.repositories.NoteRepositoryImpl
+import com.example.learncompose303.data.repositories.PaymentRepository
+import com.example.learncompose303.data.repositories.PaymentRepositoryImpl
+import com.example.learncompose303.data.repositories.ProductRepository
+import com.example.learncompose303.data.repositories.ProductRepositoryImpl
 import com.example.learncompose303.data.repositories.RepositoryImpl
 import com.example.learncompose303.data.repositories.StudentRepository
 import dagger.Module
@@ -40,6 +58,27 @@ object AppModule {
             .fallbackToDestructiveMigration() // Handle destructive migrations
             .build()
 
+//    Provide daoS here
+
+    @Provides
+    fun provideCustomerDao(database: AppDatabase): CustomerDao = database.customerDao()
+
+    @Provides
+    fun provideInvoiceItemDao(database: AppDatabase): InvoiceItemDao = database.invoiceItemDao()
+
+    @Provides
+    fun provideProductDao(database: AppDatabase): ProductDao = database.productDao()
+
+    @Provides
+    fun providePaymentDao(database: AppDatabase): PaymentDao = database.paymentDao()
+
+    @Provides
+    fun provideCartItemDao(database: AppDatabase): CartItemDao = database.cartItemDao()
+
+    @Provides
+    fun provideInvoiceDao(database: AppDatabase): InvoiceDao = database.invoiceDao()
+
+
     // Provide ItemDao from AppDatabase
     @Provides
     fun provideItemDao(appDatabase: AppDatabase): ItemDao = appDatabase.itemDao()
@@ -51,6 +90,43 @@ object AppModule {
     // Provide StudentDao from AppDatabase
     @Provides
     fun provideStudentDao(appDatabase: AppDatabase): StudentDao = appDatabase.studentDao()
+
+    //    Provide repositories here
+    @Provides
+    @Singleton
+    fun providePaymentRepository(appDatabase: AppDatabase): PaymentRepository {
+        return PaymentRepositoryImpl(appDatabase.paymentDao())
+    }
+
+    @Provides
+    @Singleton
+    fun provideInvoiceRepository(appDatabase: AppDatabase): InvoiceRepository {
+        return InvoiceRepositoryImpl(appDatabase.invoiceDao())
+    }
+
+    @Provides
+    @Singleton
+    fun provideCustomerRepository(appDatabase: AppDatabase): CustomerRepository {
+        return CustomerRepositoryImpl(appDatabase.customerDao())
+    }
+
+    @Provides
+    @Singleton
+    fun provideCartItenRepository(appDatabase: AppDatabase): CartItemRepository {
+        return CartItemRepositoryImpl(appDatabase.cartItemDao())
+    }
+
+    @Provides
+    @Singleton
+    fun provideInvoiceItemRepository(appDatabase: AppDatabase): InvoiceItemRepository {
+        return InvoiceItemRepositoryImpl(appDatabase.invoiceItemDao())
+    }
+
+    @Provides
+    @Singleton
+    fun provideProductRepository(appDatabase: AppDatabase): ProductRepository {
+        return ProductRepositoryImpl(appDatabase.productDao())
+    }
 
     // Provide ItemRepository, assuming ItemRepository takes an ItemDao
     @Provides
@@ -82,56 +158,4 @@ object AppModule {
         )
     }
 }
-
-
-//@Module
-//@InstallIn(SingletonComponent::class)
-//object AppModule {
-//
-//    @Provides
-//    @Singleton
-//    fun provideAppDatabase(@ApplicationContext context: Context): AppDatabase =
-//        Room.databaseBuilder(
-//            context,
-//            AppDatabase::class.java,
-//            AppDatabase.DATABASE_NAME
-//        )
-//            .fallbackToDestructiveMigration()
-//            .build()
-//
-//    @Provides
-//    fun provideItemDao(appDatabase: AppDatabase): ItemDao = appDatabase.itemDao()
-//
-//    @Provides
-//    fun provideItemRepository(itemDao: ItemDao): ItemRepository = ItemRepository(itemDao)
-//
-//    @Provides
-//    @Singleton
-//    fun provideStudentRepository(appDatabase: AppDatabase): StudentRepository {
-//        return RepositoryImpl(appDatabase.studentDao())
-//    }
-//
-//    @Provides
-//    @Singleton
-//    fun provideNoteRepository(db: AppDatabase): NoteRepository {
-//        return NoteRepositoryImpl(db.noteDao())
-//    }
-//
-//    @Provides
-//    @Singleton
-//    fun provideNoteUseCase(repository: NoteRepository): NoteUseCase {
-//        return NoteUseCase(
-//            getNotesUseCase = GetNotesUseCase(repository),
-//            deleteNoteUseCase = DeleteNoteUseCase(repository),
-//            addNoteUseCase = AddNoteuseCase(repository)
-//        )
-//    }
-//}
-
-
-
-
-
-
-
 

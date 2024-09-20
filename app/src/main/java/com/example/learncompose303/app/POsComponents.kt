@@ -25,11 +25,15 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardColors
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
@@ -43,7 +47,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.learncompose303.R
+import com.example.learncompose303.ui.theme.Gray1
 import com.example.learncompose303.ui.theme.Green1
+import com.example.learncompose303.ui.theme.LightGray
+import com.example.learncompose303.ui.theme.LightGreen
 import com.example.learncompose303.ui.theme.MyGray
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -207,3 +214,93 @@ fun AutoSlidingCarousel(
         }
     }
 }
+
+@Composable
+fun SalesmanInfoCard(
+    salesmanName: String,
+    shopName: String,
+    currentSalesTotal: Double,
+    numberOfTransactions: Int
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        shape = RoundedCornerShape(12.dp),
+        elevation = CardDefaults.cardElevation(8.dp),
+//        colors = CardColors(containerColor = (MyGray)) // Light background color
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            // Name of Salesman
+            Text(
+                text = "Hi, $salesmanName",
+                style = MaterialTheme.typography.headlineSmall,
+                color = Gray1
+            )
+
+            // The Shop
+            Text(
+                text = "@$shopName",
+                style = MaterialTheme.typography.bodyMedium,
+                color = LightGray
+            )
+
+            Divider(modifier = Modifier.padding(vertical = 8.dp), color = Color.White)
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                // Current sales total
+                Column {
+                    Text(
+                        text = "Sales Total",
+                        style = MaterialTheme.typography.headlineMedium,
+                        color = Color(0xFF777777)
+                    )
+                    Text(
+                        text = "$${String.format("%.2f", currentSalesTotal)}",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = LightGreen
+                    )
+                }
+
+                // Number of transactions
+                Column {
+                    Text(
+                        text = "TRANSACTIONS",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color(0xFF777777)
+                    )
+                    Text(
+                        text = "$numberOfTransactions",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = LightGreen
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun SpacerHeight() {
+    Spacer(modifier = Modifier.height(8.dp))
+}
+
+@Preview(showBackground = true)
+@Composable
+fun PreviewSalesmanInfoCard() {
+    SalesmanInfoCard(
+        salesmanName = "John Doe",
+        shopName = "Tech World",
+        currentSalesTotal = 12456.78,
+        numberOfTransactions = 52
+    )
+}
+

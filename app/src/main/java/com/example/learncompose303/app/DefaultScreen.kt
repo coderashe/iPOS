@@ -85,11 +85,19 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
+import com.example.learncompose303.screens.CartScreen
+import com.example.learncompose303.screens.CustomerSelectionScreen
+import com.example.learncompose303.screens.InvoiceReviewScreen
 import com.example.learncompose303.screens.InvoicingScreen
 import com.example.learncompose303.screens.MyIncomeScreen
 import com.example.learncompose303.screens.PriorityScreen
+import com.example.learncompose303.screens.ProductSelectionScreen
 import com.example.learncompose303.screens.RideRequestsScreen
 import com.example.learncompose303.screens.WalletScreen
+import com.example.learncompose303.viewmodels.InvoiceViewModel
 
 
 @Composable
@@ -99,70 +107,20 @@ fun DefaultScreen() {
     }
 }
 
-//
-//@Composable
-//fun InDriveTopBottomNavigation(navController: NavHostController) {
-//    val scaffoldState = rememberScaffoldState()
-//    val coroutineScope = rememberCoroutineScope()
-//    var isChecked by remember { mutableStateOf(false) }
-//
-//    Scaffold(
-//        scaffoldState = scaffoldState,
-//        topBar = {
-//            TopAppBar(
-//                title = {
-//                    Row(
-//                        modifier = Modifier.fillMaxWidth(), // Fill entire top bar width
-//                        verticalAlignment = Alignment.CenterVertically,
-//                        horizontalArrangement = Arrangement.Center // Center content horizontally
-//                    ) {
-//                        Text(
-//                            text = if (isChecked) "Online" else "Offline",
-//                            modifier = Modifier.padding(end = 8.dp),
-//                            color = if (isChecked) Color.Green else Color.Red // Green for "Online" and Red for "Offline"
-//                        )
-//                        Switch(
-//                            checked = isChecked,
-//                            onCheckedChange = { isChecked = it }
-//                        )
-//                    }
-//
-//                },
-//                backgroundColor = Color.White,
-//                navigationIcon = {
-//                    IconButton(onClick = { coroutineScope.launch { scaffoldState.drawerState.open() } }) {
-//                        Icon(Icons.Default.Menu, contentDescription = null)
-//                    }
-//                }
-//            )
-//        },
-//        drawerContent = {
-//            IndriveDrawerNav(navController = navController, scaffoldState)
-//        },
-//        bottomBar = {
-//            IndriveBottomNavigation(navController)
-//        },
-//    ) { paddingValues ->
-//        NavHost(
-//            navController = navController,
-//            startDestination = Destinations.Rides.route,
-//            modifier = Modifier.padding(paddingValues)
-//        ) {
-//            composable(Destinations.Rides.route) { RideRequestsScreen(navController) }
-//            composable(Destinations.Income.route) { MyIncomeScreen() }
-//            composable(Destinations.Priority.route) { PriorityScreen() }
-//            composable(Destinations.Wallet.route) { WalletScreen() }
-//            composable(Destinations.Invoice.route) { InvoicingScreen() }
-//        }
-//    }
-//}
-
 @Composable
 fun InDriveTopBottomNavigation() {
+    val viewModel: InvoiceViewModel = viewModel()
     val scaffoldState = rememberScaffoldState()
     val coroutineScope = rememberCoroutineScope()
     val navController = rememberNavController() // Create NavController here
     var isChecked by remember { mutableStateOf(false) }
+
+    LaunchedEffect(key1 = true, block = {
+        viewModel.invoiceItems
+        viewModel.invoiceItems
+        viewModel.customerList
+        viewModel.productList
+    })
 
     Scaffold(
         scaffoldState = scaffoldState,
@@ -202,7 +160,7 @@ fun InDriveTopBottomNavigation() {
     ) { paddingValues ->
         NavHost(
             navController = navController,
-            startDestination = Destinations.Rides.route,
+            startDestination = Destinations.CustomerSelection.route,
             modifier = Modifier.padding(paddingValues)
         ) {
             composable(Destinations.Rides.route) { RideRequestsScreen(navController) }
@@ -210,7 +168,79 @@ fun InDriveTopBottomNavigation() {
             composable(Destinations.Priority.route) { PriorityScreen() }
             composable(Destinations.Wallet.route) { WalletScreen() }
             composable(Destinations.Invoice.route) { InvoicingScreen() }
+
+            // Customer Selection Screen
+            composable(Destinations.CustomerSelection.route) {
+                CustomerSelectionScreen(
+                    onCustomerSelected = { customer ->
+                        navController.navigate(Destinations.ProductSelection.route + "/${customer.customerId}")
+                    },
+                    onNewCustomerClicked = {
+                        // Handle new customer logic
+                    },
+                    navController = navController,
+                    viewModel = viewModel
+                )
+            }
+
+// Product Selection Screen
+            // Product Selection Screen
+            composable(Destinations.ProductSelection.route + "/{customerId}") { backStackEntry ->
+                val customerId =
+                    backStackEntry.arguments?.getString("customerId")?.toLong() ?: return@composable
+                val customer = viewModel.getCustomerById(customerId)
+
+                if (customer == null) {
+                    // Handle the case where the customer is not found
+                    Text("Customer not found")
+                } else {
+                    val productList by viewModel.productList.collectAsState()
+
+                    ProductSelectionScreen(
+                        customer = customer,
+                        onAddProduct = { product ->
+                            // Add product to cart logic
+                        },
+                        onProceedToCart = {
+                            navController.navigate("cartScreen/${customer.customerId}")
+                        },
+                        navController = navController,
+                        viewModel = viewModel
+                    )
+                }
+            }
+
+// Cart Screen Selection
+            composable(Destinations.Cart.route + "/{customerId}") { backStackEntry ->
+                val customerId =
+                    backStackEntry.arguments?.getString("customerId")?.toLong() ?: return@composable
+                val customer = viewModel.getCustomerById(customerId) // Fetch customer logic
+                val cartItems by viewModel.cartItems.collectAsState()
+                val productList by viewModel.productList.collectAsState()
+
+                // Ensure we fetch cart items if they are not already available
+                LaunchedEffect(customerId) {
+                    viewModel.refreshCartItems(customerId)
+                }
+
+                if (customer != null) {
+                    CartScreen(
+                        customer = customer,
+                        cartItems = cartItems,
+                        products = productList,
+                        onQuantityChange = { cartItem, newQuantity ->
+                            viewModel.updateCartItem(cartItem, newQuantity)
+                        },
+                        onCompleteInvoice = {
+                            viewModel.submitInvoice(customerId)
+                            navController.navigate(Destinations.Rides.route) // Go back to the dashboard
+                        }
+                    )
+                }
+            }
+
         }
+
     }
 }
 

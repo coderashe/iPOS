@@ -1186,11 +1186,11 @@ fun DisplayArrowLeft(modifier: Modifier) {
 }
 
 @Composable
-fun CustomHeadingMedium(modifier: Modifier = Modifier, heading: String) {
+fun CustomHeadingMedium(heading: String) {
     Text(
         text = heading,
         style = MaterialTheme.typography.headlineMedium,
-        modifier = Modifier.padding(vertical = 16.dp),
+        modifier = Modifier.padding(start = 8.dp),
         fontWeight = FontWeight.Bold
     )
 }

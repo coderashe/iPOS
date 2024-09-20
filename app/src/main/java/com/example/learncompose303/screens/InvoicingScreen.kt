@@ -53,63 +53,41 @@ import com.example.learncompose303.ui.theme.MyGray
 fun InvoicingScreen() {
     var cartItemCount by remember { mutableStateOf(0) }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Invoicing") },
-                actions = {
-                    IconButton(onClick = { /* Open cart screen */ }) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                painter = painterResource(id = android.R.drawable.ic_menu_add), // Replace with cart icon
-                                contentDescription = "Cart",
-                                tint = Color.White
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = "$cartItemCount",
-                                color = Color.White,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
-                }
-            )
-        },
+    Box(modifier = Modifier.padding(8.dp)) { // Apply padding to avoid overlap
+        ProductList(
+            products = listOf(
+                Product("Product 1", "$10.99", R.drawable.ic_menu_gallery),
+                Product("Product 2", "$14.99", android.R.drawable.ic_menu_gallery),
+                Product("Product 3", "$7.99", android.R.drawable.ic_menu_compass),
+                Product("Product 4", "$7.99", android.R.drawable.ic_menu_compass),
+                Product("Product 5", "$7.99", android.R.drawable.ic_menu_gallery),
+                Product("Product 6", "$7.99", android.R.drawable.ic_menu_gallery),
 
-        content = { paddingValues -> // Use paddingValues provided by Scaffold
-            Box(modifier = Modifier.padding(paddingValues)) { // Apply padding to avoid overlap
-                ProductList(
-                    products = listOf(
-                        Product("Product 1", "$10.99", R.drawable.ic_menu_gallery),
-                        Product("Product 2", "$14.99", android.R.drawable.ic_menu_gallery),
-                        Product("Product 3", "$7.99", android.R.drawable.ic_menu_compass)
-                    ),
-                    onAddToCart = { cartItemCount++ }
-                )
-            }
-        }
-    )
+                ),
+            onAddToCart = { cartItemCount++ }
+        )
+    }
 }
 
 @Composable
 fun ProductList(products: List<Product>, onAddToCart: () -> Unit) {
     LazyColumn(
         contentPadding = PaddingValues(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        items(products.chunked(3)) { rowItems ->
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                for (product in rowItems) {
-                    ProductItem(product = product, onAddToCart = onAddToCart)
-                }
-                if (rowItems.size == 1) {
-                    Spacer(modifier = Modifier.weight(1f)) // Fill the space for uneven row
+        repeat(4) {
+            items(products.chunked(3)) { rowItems ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    for (product in rowItems) {
+                        ProductItem(product = product, onAddToCart = onAddToCart)
+                    }
+                    if (rowItems.size == 1) {
+                        Spacer(modifier = Modifier.weight(1f)) // Fill the space for uneven row
+                    }
                 }
             }
         }
@@ -149,11 +127,13 @@ fun ProductItem(product: Product, onAddToCart: () -> Unit) {
                 text = product.name,
                 fontWeight = FontWeight.Bold,
                 fontSize = 18.sp,
-                modifier = Modifier.padding(bottom = 4.dp)
+                modifier = Modifier.padding(start = 6.dp, bottom = 4.dp)
             )
 
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(6.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
@@ -169,7 +149,7 @@ fun ProductItem(product: Product, onAddToCart: () -> Unit) {
                     onClick = onAddToCart,
                     modifier = Modifier
                         .size(40.dp)
-                        .background(Color.Transparent, shape = CircleShape)
+                        .background(MyGray, shape = CircleShape)
                         .padding(8.dp)
                 ) {
                     Icon(

@@ -45,5 +45,7 @@
     <string name="no_complete_orders">No complete orders</string>
     <string name="goto_request_history">Go to request history</string>
     <string name="achievements">Achievements</string>
+    <string name="popular_products">POPULAR PRODUCTS</string>
+    <string name="more">GET MORE</string>
 </resources>
 

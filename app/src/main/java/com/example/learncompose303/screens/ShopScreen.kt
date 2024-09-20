@@ -45,7 +45,6 @@ import com.example.learncompose303.ui.theme.MyGray
 
 @Composable
 fun ShopLandingScreen() {
-//    val navController = rememberNavController()
     InDriveTopBottomNavigation()
 }
 
