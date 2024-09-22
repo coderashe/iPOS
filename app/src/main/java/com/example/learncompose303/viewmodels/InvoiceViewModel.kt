@@ -67,12 +67,29 @@ class InvoiceViewModel @Inject constructor(
     private val _invoiceDetailItems = MutableStateFlow<List<InvoiceItem>>(emptyList())
     val invoiceDetailItems: StateFlow<List<InvoiceItem>> = _invoiceDetailItems.asStateFlow()
 
+    private val _invoiceLines = MutableStateFlow<List<InvoiceLine>>(emptyList())
+    val invoiceLines: StateFlow<List<InvoiceLine>> get() = _invoiceLines
+
     init {
+//      Essential db operations to load data
+        fetchInvoices()
         insertInitialProducts()
         fetchProducts()
         fetchInvoiceLines()
         insertInitialCustomers()
         fetchCustomers()
+    }
+
+    private fun fetchInvoices() = viewModelScope.launch {
+        invoiceRepository.getAllInvoices().collectLatest { invoiceList ->
+            _invoiceList.value = invoiceList
+        }
+    }
+
+    // Fetch invoiceLines by invoiceId from repository
+    fun fetchInvoiceLinesByInvoiceId(invoiceId: Long) = viewModelScope.launch {
+        val invoiceLineList = invoiceLineRepository.getInvoiceLinesByInvoiceId(invoiceId)
+        _invoiceLines.value = invoiceLineList
     }
 
     // Fetch customers from repository

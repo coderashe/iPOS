@@ -108,9 +108,9 @@ fun CarouselCard(
                 Button(
                     onClick = onButtonClick,
                     modifier = Modifier.align(Alignment.Start),
-                    colors = ButtonDefaults.buttonColors(Green1)
+//                    colors = ButtonDefaults.buttonColors(Green1)
                 ) {
-                    Text(text = buttonText, color = Color.White)
+                    Text(text = buttonText)
                 }
             }
 
@@ -238,19 +238,21 @@ fun SalesmanInfoCard(
         ) {
             // Name of Salesman
             Text(
-                text = "Hi, $salesmanName",
-                style = MaterialTheme.typography.headlineSmall,
-                color = Gray1
+                text = salesmanName,
+                style = MaterialTheme.typography.titleMedium,
             )
 
             // The Shop
             Text(
                 text = "@$shopName",
-                style = MaterialTheme.typography.bodyMedium,
-                color = LightGray
+                style = MaterialTheme.typography.bodySmall,
+                color = Gray1
             )
 
-            Divider(modifier = Modifier.padding(vertical = 8.dp), color = Color.White)
+            Divider(
+                modifier = Modifier.padding(vertical = 8.dp),
+                color = MaterialTheme.colorScheme.primary
+            )
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -259,9 +261,8 @@ fun SalesmanInfoCard(
                 // Current sales total
                 Column {
                     Text(
-                        text = "Sales Total",
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = Color(0xFF777777)
+                        text = "SALES TOTAL",
+                        style = MaterialTheme.typography.titleSmall,
                     )
                     Text(
                         text = "$${String.format("%.2f", currentSalesTotal)}",
@@ -273,9 +274,9 @@ fun SalesmanInfoCard(
                 // Number of transactions
                 Column {
                     Text(
-                        text = "TRANSACTIONS",
+                        text = "no.",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = Color(0xFF777777)
+//                        color = LightGray
                     )
                     Text(
                         text = "$numberOfTransactions",

@@ -95,13 +95,6 @@ fun InDriveTopBottomNavigation() {
     val navController = rememberNavController() // Create NavController here
     var isChecked by remember { mutableStateOf(false) }
 
-    LaunchedEffect(key1 = true, block = {
-        viewModel.invoiceItems
-        viewModel.invoiceItems
-        viewModel.customerList
-        viewModel.productList
-    })
-
     Scaffold(
         scaffoldState = scaffoldState,
         topBar = {
@@ -237,7 +230,7 @@ fun InDriveTopBottomNavigation() {
                 val invoiceId = backStackEntry.arguments?.getLong("invoiceId")
                 invoiceId?.let {
                     // Show the InvoiceDetailScreen for the given invoiceId
-                    InvoiceDetailScreen(invoiceId = it)
+                    InvoiceDetailScreen(invoiceId = it, viewModel = viewModel)
                 }
             }
 //

@@ -51,5 +51,8 @@
     <string name="invoicing">INVOICING</string>
     <string name="reports">REPORTS</string>
     <string name="orders">ORDERS</string>
+    <string name="invoice_receipt">INVOICE RECEIPT</string>
+    <string name="amount_tendered">Amount Tendered</string>
+    <string name="quantity">Quantity</string>
 </resources>
 

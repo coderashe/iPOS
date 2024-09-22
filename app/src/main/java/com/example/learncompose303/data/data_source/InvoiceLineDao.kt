@@ -20,5 +20,9 @@ interface InvoiceLineDao {
 
     @Query("SELECT * FROM invoiceline WHERE invoiceID = :id")
     suspend fun getInvoiceLineById(id: Long): InvoiceLine?
+
+    @Query("SELECT * FROM invoiceline WHERE invoiceId = :invoiceId")
+    suspend fun getInvoiceLinesByInvoiceId(invoiceId: Long): List<InvoiceLine>
+
 }
 

@@ -1,5 +1,6 @@
 package com.example.learncompose303.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -12,10 +13,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
@@ -30,6 +34,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -44,6 +49,16 @@ import com.example.learncompose303.data.entities.Customer
 import com.example.learncompose303.data.entities.InvoiceItem
 import com.example.learncompose303.data.entities.Product
 import com.example.learncompose303.viewmodels.InvoiceViewModel
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonColors
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.ui.res.stringResource
+import com.example.learncompose303.R
+import com.example.learncompose303.ui.theme.Gray1
+import com.example.learncompose303.ui.theme.LightGray
+import com.example.learncompose303.ui.theme.MyGray
 
 @Composable
 fun CartScreen(
@@ -72,50 +87,54 @@ fun CartScreen(
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        Text("Customer: ${customer.name}", fontWeight = FontWeight.Bold, fontSize = 18.sp)
-        Divider(modifier = Modifier.padding(vertical = 8.dp), color = Color.Transparent)
-        Spacer(modifier = Modifier.height(16.dp))
+        Text("For: ${customer.name}", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+        Divider(
+            modifier = Modifier.padding(vertical = 8.dp),
+            color = MaterialTheme.colorScheme.primary
+        )
+        Spacer(modifier = Modifier.height(8.dp))
 //
 
-        // Display the total price of all selected products
-        Text(
-            text = "Total Price: \$${totalPrice}",
-            fontWeight = FontWeight.Bold,
-            fontSize = 18.sp
+        Row(modifier = Modifier.fillMaxWidth()) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "Total Price: \$${totalPrice}",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    text = "Change: \$${changeBalance}",
+                    style = MaterialTheme.typography.bodySmall,
+                    fontSize = 16.sp
+                )
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            Column {
+                OutlinedTextField(
+                    value = amountTendered,
+                    onValueChange = { newValue -> amountTendered = newValue },
+                    label = { Text(stringResource(R.string.amount_tendered)) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
+                )
+            }
+        }
+        Divider(
+            modifier = Modifier.padding(vertical = 8.dp),
+            color = MaterialTheme.colorScheme.primary
         )
-
         Spacer(modifier = Modifier.height(8.dp))
-
-        // Display the change balance
-        Text(
-            text = "Change: \$${changeBalance}",
-            fontWeight = FontWeight.Bold,
-            fontSize = 16.sp
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // TextField for entering the amount tendered by the customer
-        TextField(
-            value = amountTendered,
-            onValueChange = { newValue -> amountTendered = newValue },
-            label = { Text("Amount Tendered") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
 
         Button(
             onClick = {
-                // Finalize the invoice when the button is clicked
                 viewModel.submitInvoice(customer.customerId)
-
                 // Navigate to the receipt screen or another destination after submitting the invoice
                 navController.navigate(Destinations.Rides.route) // Replace this with your actual destination for receipt
             },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth(),
+//            colors = ButtonDefaults.buttonColors(MyGray)
         ) {
-            Text("Finalize Invoice")
+            Text("Submit Invoice")
         }
 //
 
@@ -123,7 +142,7 @@ fun CartScreen(
 
         // Display the list of selected products and their total cost
         LazyColumn(
-            modifier = Modifier.height(400.dp)
+//            modifier = Modifier.height(400.dp)
         ) {
             items(selectedProducts) { product ->
                 var quantity by remember { mutableStateOf(1) } // State to store quantity
@@ -135,39 +154,54 @@ fun CartScreen(
                     totalPrice = selectedProducts.sumOf { it.price * quantity }
                 }
 
-                Row(
+                Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 8.dp)
+                        .padding(2.dp),
+                    elevation = CardDefaults.cardElevation(4.dp),
+                    shape = RoundedCornerShape(8.dp),
+//        colors = MaterialTheme.colorScheme.surface
                 ) {
-                    Column(
-                        modifier = Modifier.weight(1f)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(4.dp),
+//                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(product.name)
-                        Text("Price: \$${product.price}")
-                    }
-                    Spacer(modifier = Modifier.width(16.dp))
+                        Column(
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(product.name, style = MaterialTheme.typography.titleMedium)
+                            Text(
+                                "\$${product.price}",
+                                style = MaterialTheme.typography.titleSmall
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(16.dp))
 
-                    Column {
+                        Column(horizontalAlignment = Alignment.End) {
+                            // Input for quantity
+                            OutlinedTextField(
+                                value = quantity.toString(),
+                                onValueChange = { newValue ->
+                                    quantity = newValue.toIntOrNull() ?: 1
+                                },
+                                label = { Text(text = stringResource(R.string.quantity)) },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                            Text(
+                                text = "SubTotal: \$${productTotalPrice}",
+                                color = MaterialTheme.colorScheme.primary,
+                                style = MaterialTheme.typography.titleSmall
+                            )
+                        }
 
-                        // Input for quantity
-                        TextField(
-                            value = quantity.toString(),
-                            onValueChange = { newValue ->
-                                quantity = newValue.toIntOrNull() ?: 1
-                            },
-//                            modifier = Modifier.width(130.dp)
-                        )
-
-                        // Display the total cost for each product
-                        Text(
-                            text = "Total: \$${productTotalPrice}",
-                            textAlign = TextAlign.End
-//                            modifier = Modifier.padding(start = 16.dp)
-                        )
                     }
 
                 }
+
+
             }
         }
 

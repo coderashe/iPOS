@@ -1,5 +1,6 @@
 package com.example.learncompose303.screens
 
+import android.util.Log
 import androidx.compose.runtime.collectAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -41,6 +42,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -58,8 +60,13 @@ fun ReportsScreen(
     viewModel: InvoiceViewModel = viewModel(),
     onInvoiceClick: (InvoiceLine) -> Unit // Lambda function to handle invoice click
 ) {
+    val invoices by viewModel.invoiceList.collectAsState()
 
-    val invoiceLines by viewModel.invoiceLineList.collectAsState()
+    LaunchedEffect(key1 = true) {
+        viewModel.fetchAllInvoices()
+    }
+
+    Log.d("TheInvoices", "$invoices") // Log the fetched invoices to debug
 
     LazyColumn(
         modifier = Modifier
@@ -67,10 +74,14 @@ fun ReportsScreen(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        items(invoiceLines) { invoiceLine ->
-            InvoiceCard(invoiceLine = invoiceLine, onClick = {
+        items(invoices) { invoice ->
+            InvoiceCard(invoice = invoice, onClick = {
+                val theInvoiceLine = viewModel.getInvoiceLineById(invoice.invoiceId)
                 // Load invoice lines when the invoice is clicked
-                onInvoiceClick(invoiceLine)
+                if (theInvoiceLine != null) {
+                    onInvoiceClick(theInvoiceLine)
+                }
+
             })
         }
     }
@@ -79,7 +90,7 @@ fun ReportsScreen(
 
 
 @Composable
-fun InvoiceCard(invoiceLine: InvoiceLine, onClick: () -> Unit) {
+fun InvoiceCard(invoice: Invoice, onClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -93,25 +104,24 @@ fun InvoiceCard(invoiceLine: InvoiceLine, onClick: () -> Unit) {
             modifier = Modifier.padding(16.dp)
         ) {
             Text(
-                text = "Invoice ID: ${invoiceLine.invoiceID}",
+                text = "Invoice: ${invoice.invoiceId}",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.primary
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "Customer ID: ${invoiceLine.customerID}",
+                text = "$${invoice.totalAmount}",
                 style = MaterialTheme.typography.bodyMedium
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "Total Amount: $${invoiceLine.totalAmount}",
-                style = MaterialTheme.typography.bodyMedium
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = "Date: ${Date(invoiceLine.invoiceDate)}", // Formatting date can be customized
-                style = MaterialTheme.typography.bodySmall
+                text = "${Date(invoice.invoiceDate)}", // Formatting date can be customized
+                style = MaterialTheme.typography.bodySmall,
+                textAlign = TextAlign.End
             )
         }
     }
 }
+
+
+//    val invoiceLines by viewModel.invoiceLineList.collectAsState()
