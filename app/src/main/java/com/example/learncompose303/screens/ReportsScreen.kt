@@ -75,25 +75,8 @@ fun ReportsScreen(
         }
     }
 
-    // Display the invoice lines in a separate section or dialog
-    if (invoiceLines.isNotEmpty()) {
-        InvoiceLinesDisplay(invoiceLines)
-    }
 }
 
-// Composable to display invoice lines
-@Composable
-fun InvoiceLinesDisplay(invoiceLines: List<InvoiceLine>) {
-    LazyColumn(
-        modifier = Modifier.padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        items(invoiceLines) { line ->
-            Text(text = "${line.productName} - Qty: ${line.productQtySold} - Price: ${line.productPrice}")
-            // Add more details as needed
-        }
-    }
-}
 
 @Composable
 fun InvoiceCard(invoiceLine: InvoiceLine, onClick: () -> Unit) {
