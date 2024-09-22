@@ -17,6 +17,11 @@ sealed class Destinations(val route: String) {
     data object Profile : Destinations("profile")
     data object Post : Destinations("post")
     data object TTTScreen : Destinations("game")
+    data object Reports : Destinations("reports")
+    data object InvoiceDetail : Destinations("invoice_detail/{invoiceId}") {
+        fun createRoute(invoiceId: Long) = "invoice_detail/$invoiceId"
+    }
+
     data object Detail : Destinations("detail/{itemId}") {
         fun createRoute(itemId: Int) = "detail/$itemId"
     }

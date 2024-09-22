@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
 interface InvoiceItemRepository {
-    suspend fun getItemsForInvoice(invoiceId: Long): List<InvoiceItem>
+    suspend fun getInvoiceItemsByInvoiceId(invoiceId: Long): Flow<List<InvoiceItem>> // Return a Flow
     suspend fun insertInvoiceItem(item: InvoiceItem): Long
     suspend fun deleteInvoiceItem(item: InvoiceItem)
 }
@@ -16,10 +16,8 @@ interface InvoiceItemRepository {
 class InvoiceItemRepositoryImpl @Inject constructor(
     private val invoiceItemDao: InvoiceItemDao
 ) : InvoiceItemRepository {
-    override suspend fun getItemsForInvoice(invoiceId: Long): List<InvoiceItem> {
-        return withContext(Dispatchers.IO) {
-            invoiceItemDao.getItemsForInvoice(invoiceId)
-        }
+    override suspend fun getInvoiceItemsByInvoiceId(invoiceId: Long): Flow<List<InvoiceItem>> {
+        return invoiceItemDao.getItemsForInvoice(invoiceId) // Flow is returned directly
     }
 
     override suspend fun insertInvoiceItem(item: InvoiceItem): Long {

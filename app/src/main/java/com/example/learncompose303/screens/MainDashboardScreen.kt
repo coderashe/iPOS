@@ -156,7 +156,7 @@ fun QuickAccessButtons(navController: NavController) {
             label = stringResource(R.string.orders),
             subTitle = "--",
             icon = Icons.Default.More,
-            onClick = { /* Navigate to Stock Loading Screen */ }
+            onClick = {/* Navigate to Order Screen */ }
         )
         QuickAccessCard(
             label = stringResource(R.string.load_stocks),
@@ -178,8 +178,11 @@ fun QuickAccessButtons(navController: NavController) {
             label = stringResource(R.string.reports),
             subTitle = "--",
             icon = Icons.Default.BarChart,
-            onClick = { /* Navigate to Reports Screen */ }
+            onClick = {
+                navController.navigate(Destinations.Reports.route)  /* Navigate to Reports Screen */
+            }
         )
+
     }
 }
 

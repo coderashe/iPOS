@@ -107,10 +107,13 @@ fun CartScreen(
 
         Button(
             onClick = {
-                navController.navigate(Destinations.Rides.route) // Navigate to InvoiceScreen
+                // Finalize the invoice when the button is clicked
+                viewModel.submitInvoice(customer.customerId)
+
+                // Navigate to the receipt screen or another destination after submitting the invoice
+                navController.navigate(Destinations.Rides.route) // Replace this with your actual destination for receipt
             },
             modifier = Modifier.fillMaxWidth()
-            //            .align(Alignment.End)
         ) {
             Text("Finalize Invoice")
         }

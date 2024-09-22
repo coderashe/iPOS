@@ -8,6 +8,7 @@ data class InvoiceItem(
     @PrimaryKey(autoGenerate = true) val itemId: Long = 0,
     val invoiceId: Long,
     val productId: Long,
+    val customerId: Long,
     val quantity: Int,
     val price: Double, // Price per unit
     val total: Double // quantity * price

@@ -7,6 +7,7 @@ import com.example.learncompose303.data.data_source.CartItemDao
 import com.example.learncompose303.data.data_source.CustomerDao
 import com.example.learncompose303.data.data_source.InvoiceDao
 import com.example.learncompose303.data.data_source.InvoiceItemDao
+import com.example.learncompose303.data.data_source.InvoiceLineDao
 import com.example.learncompose303.data.data_source.NoteDao
 import com.example.learncompose303.data.data_source.PaymentDao
 import com.example.learncompose303.data.data_source.ProductDao
@@ -16,6 +17,7 @@ import com.example.learncompose303.data.entities.CartItem
 import com.example.learncompose303.data.entities.Customer
 import com.example.learncompose303.data.entities.Invoice
 import com.example.learncompose303.data.entities.InvoiceItem
+import com.example.learncompose303.data.entities.InvoiceLine
 import com.example.learncompose303.data.entities.Payment
 import com.example.learncompose303.data.entities.Product
 
@@ -24,8 +26,8 @@ import com.example.learncompose303.data.entities.Product
         StudentEntity::class, Customer::class,
         Invoice::class, InvoiceItem::class,
         Payment::class, Product::class,
-        CartItem::class],
-    version = 5,
+        CartItem::class, InvoiceLine::class],
+    version = 8,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -38,6 +40,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun paymentDao(): PaymentDao
     abstract fun productDao(): ProductDao
     abstract fun cartItemDao(): CartItemDao
+    abstract fun invoiceLineDao(): InvoiceLineDao
 
     companion object {
         const val DATABASE_NAME = "learn_db"

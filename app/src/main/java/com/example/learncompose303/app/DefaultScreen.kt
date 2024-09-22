@@ -64,13 +64,17 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
 import com.example.learncompose303.screens.CartScreen
 import com.example.learncompose303.screens.CustomerSelectionScreen
+import com.example.learncompose303.screens.InvoiceDetailScreen
 import com.example.learncompose303.screens.InvoicingScreen
 import com.example.learncompose303.screens.LoadStockScreen
 import com.example.learncompose303.screens.MyIncomeScreen
 import com.example.learncompose303.screens.PriorityScreen
 import com.example.learncompose303.screens.ProductSelectionScreen
+import com.example.learncompose303.screens.ReportsScreen
 import com.example.learncompose303.screens.RideRequestsScreen
 import com.example.learncompose303.screens.WalletScreen
 import com.example.learncompose303.viewmodels.InvoiceViewModel
@@ -207,6 +211,7 @@ fun InDriveTopBottomNavigation() {
 
                 }
             }
+
 //            LoadStocks screen
             composable(Destinations.LoadStocks.route) {
                 LoadStockScreen(
@@ -215,6 +220,27 @@ fun InDriveTopBottomNavigation() {
                     {}
                 )
             }
+//
+            composable(Destinations.Reports.route) {
+                ReportsScreen(
+                    viewModel = viewModel,
+                    onInvoiceClick = { invoiceLine ->
+                        navController.navigate(Destinations.InvoiceDetail.createRoute(invoiceLine.invoiceID))
+                    }
+                )
+            }
+            // For Invoice Detail Screen
+            composable(
+                route = Destinations.InvoiceDetail.route,
+                arguments = listOf(navArgument("invoiceId") { type = NavType.LongType })
+            ) { backStackEntry ->
+                val invoiceId = backStackEntry.arguments?.getLong("invoiceId")
+                invoiceId?.let {
+                    // Show the InvoiceDetailScreen for the given invoiceId
+                    InvoiceDetailScreen(invoiceId = it)
+                }
+            }
+//
 
         }
 

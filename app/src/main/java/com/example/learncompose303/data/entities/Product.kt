@@ -8,5 +8,7 @@ data class Product(
     @PrimaryKey(autoGenerate = true) val productId: Long = 0,
     val name: String,
     val price: Double,
-    val imageResId: Int? = null
+    val imageResId: Int? = null,
+//    val totalStockLevel: Double // New field for tracking stock levels
 )
+
