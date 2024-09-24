@@ -18,12 +18,22 @@ import androidx.room.PrimaryKey
             parentColumns = ["productId"],
             childColumns = ["productId"],
             onDelete = ForeignKey.CASCADE
+        ),
+        ForeignKey(
+            entity = Invoice::class,
+            parentColumns = ["invoiceId"],
+            childColumns = ["invoiceId"],
+            onDelete = ForeignKey.CASCADE
         )
     ]
 )
+
 data class CartItem(
     @PrimaryKey(autoGenerate = true) val cartItemId: Long = 0,
     val customerId: Long,
     val productId: Long,
-    val quantity: Int
+    val invoiceId: Long,
+    val totalAmount: Double,
+    val totalAmountTendered: Double,
+    val change: Double
 )

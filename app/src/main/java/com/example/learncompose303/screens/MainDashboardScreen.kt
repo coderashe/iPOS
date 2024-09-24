@@ -156,7 +156,7 @@ fun QuickAccessButtons(navController: NavController) {
             label = stringResource(R.string.orders),
             subTitle = "--",
             icon = Icons.Default.More,
-            onClick = {/* Navigate to Order Screen */ }
+            onClick = { navController.navigate(Destinations.OrderReports.route)             /* Navigate to OrderReports Screen */ }
         )
         QuickAccessCard(
             label = stringResource(R.string.load_stocks),

@@ -10,6 +10,7 @@ import com.example.learncompose303.data.data_source.InvoiceDao
 import com.example.learncompose303.data.data_source.InvoiceItemDao
 import com.example.learncompose303.data.data_source.InvoiceLineDao
 import com.example.learncompose303.data.data_source.NoteDao
+import com.example.learncompose303.data.data_source.OrderDao
 import com.example.learncompose303.data.data_source.PaymentDao
 import com.example.learncompose303.data.data_source.ProductDao
 import com.example.learncompose303.data.data_source.StudentDao
@@ -30,6 +31,8 @@ import com.example.learncompose303.data.repositories.InvoiceRepository
 import com.example.learncompose303.data.repositories.InvoiceRepositoryImpl
 import com.example.learncompose303.data.repositories.ItemRepository
 import com.example.learncompose303.data.repositories.NoteRepositoryImpl
+import com.example.learncompose303.data.repositories.OrderRepository
+import com.example.learncompose303.data.repositories.OrderRepositoryImpl
 import com.example.learncompose303.data.repositories.PaymentRepository
 import com.example.learncompose303.data.repositories.PaymentRepositoryImpl
 import com.example.learncompose303.data.repositories.ProductRepository
@@ -128,6 +131,17 @@ object AppModule {
     fun provideInvoiceLineRepository(invoiceLineDao: InvoiceLineDao): InvoiceLineRepository {
         return InvoiceLineRepositoryImp(invoiceLineDao)
     }
+
+    @Provides
+    fun provideOrderDao(database: AppDatabase): OrderDao {
+        return database.orderDao()
+    }
+
+    @Provides
+    fun provideOrderRepository(orderDao: OrderDao): OrderRepository {
+        return OrderRepositoryImpl(orderDao)
+    }
+
 
     @Provides
     @Singleton

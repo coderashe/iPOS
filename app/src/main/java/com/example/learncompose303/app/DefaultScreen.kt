@@ -72,6 +72,8 @@ import com.example.learncompose303.screens.InvoiceDetailScreen
 import com.example.learncompose303.screens.InvoicingScreen
 import com.example.learncompose303.screens.LoadStockScreen
 import com.example.learncompose303.screens.MyIncomeScreen
+import com.example.learncompose303.screens.OrderScreen
+import com.example.learncompose303.screens.OrdersReportsScreen
 import com.example.learncompose303.screens.PriorityScreen
 import com.example.learncompose303.screens.ProductSelectionScreen
 import com.example.learncompose303.screens.ReportsScreen
@@ -158,7 +160,6 @@ fun InDriveTopBottomNavigation() {
             }
 
 // Product Selection Screen
-            // Product Selection Screen
             composable(Destinations.ProductSelection.route + "/{customerId}") { backStackEntry ->
                 val customerId =
                     backStackEntry.arguments?.getString("customerId")?.toLong() ?: return@composable
@@ -172,10 +173,8 @@ fun InDriveTopBottomNavigation() {
 
                     ProductSelectionScreen(
                         customer = customer,
-                        onAddProduct = { product ->
-                            viewModel.addProductToCart(product)
-                        },
                         onProceedToCart = {
+                            // Navigate to the Cart screen with the customer ID
                             navController.navigate(Destinations.Cart.route + "/${customer.customerId}")
                         },
                         navController = navController,
@@ -183,6 +182,7 @@ fun InDriveTopBottomNavigation() {
                     )
                 }
             }
+
 
 // Cart Screen Selection
             composable(Destinations.Cart.route + "/{customerId}") { backStackEntry ->
@@ -232,6 +232,23 @@ fun InDriveTopBottomNavigation() {
                     // Show the InvoiceDetailScreen for the given invoiceId
                     InvoiceDetailScreen(invoiceId = it, viewModel = viewModel)
                 }
+            }
+
+            // Order Screen
+            composable(Destinations.Order.route) {
+                OrderScreen(onSubmit = { productName, quantity, dueDate, notes ->
+                    // Handle order submission logic
+                    viewModel.submitOrder(productName, quantity, dueDate, notes)
+                    // Navigate back or to another screen
+                    navController.popBackStack()
+                })
+            }
+
+            composable(Destinations.OrderReports.route) {
+                OrdersReportsScreen(
+                    viewModel = viewModel,
+                    onNewOrderClick = { navController.navigate(Destinations.Order.route) }
+                )
             }
 //
 

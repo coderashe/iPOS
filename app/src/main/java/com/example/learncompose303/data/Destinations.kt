@@ -4,6 +4,12 @@ sealed class Destinations(val route: String) {
     //    data object Rides : Destinations("Ride requests")
     data object Rides : Destinations("rides")
     data object Invoice : Destinations("invoicing")
+    data object Order : Destinations("order")
+    data object OrderReports : Destinations("orderReports")
+    data object OrderReportDetail : Destinations("order_report/{id}") {
+        fun createRoute(id: Long) = "order_report/$id"
+    }
+
     data object LoadStocks : Destinations("loadStocks")
     data object Cart : Destinations("cartScreen")
     data object CustomerSelection : Destinations("customerSelection")

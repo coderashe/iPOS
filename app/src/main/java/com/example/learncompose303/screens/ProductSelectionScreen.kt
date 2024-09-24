@@ -25,6 +25,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -54,16 +55,189 @@ import com.example.learncompose303.ui.theme.Blue1
 import com.example.learncompose303.ui.theme.MyGray
 import com.example.learncompose303.viewmodels.InvoiceViewModel
 
+//@Composable
+//fun ProductSelectionScreen(
+//    customer: Customer,
+//    onAddProduct: (Product) -> Unit,
+//    onProceedToCart: () -> Unit,
+//    navController: NavController,
+//    viewModel: InvoiceViewModel = viewModel()
+//) {
+////    fetch all products
+//    val products by viewModel.productList.collectAsState()
+//
+//    Column(
+//        modifier = Modifier
+//            .fillMaxSize()
+//            .padding(16.dp)
+//    ) {
+//        Row {
+//            Text(
+//                "Customer: ${customer.name}",
+//                fontWeight = FontWeight.Bold,
+//                fontSize = 18.sp,
+//                modifier = Modifier.weight(1f)
+//            )
+//            Spacer(modifier = Modifier.width(16.dp))
+//            Button(
+//                onClick = onProceedToCart,
+//            ) {
+//                Text(
+//                    "Proceed to Cart",
+//                )
+//            }
+//        }
+//
+//        Spacer(modifier = Modifier.height(16.dp))
+//
+//        LazyColumn {
+//            items(products.chunked(3)) { rowItems ->
+//                Row(
+//                    modifier = Modifier.fillMaxWidth(),
+//                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+//                ) {
+//                    for (product in rowItems) {
+//                        ProductCard(product = product, onAddProduct = {
+//                            // Add the selected product to cart
+//                            viewModel.addProductToCart(product)
+//                        })
+//                    }
+//                    if (rowItems.size == 1) {
+//                        Spacer(modifier = Modifier.weight(1f)) // Fill the space for uneven row
+//                    }
+//                }
+//            }
+//        }
+//
+//        Spacer(modifier = Modifier.height(16.dp))
+//
+//    }
+//}
+//
+//@Composable
+//fun ProductCard(product: Product, onAddProduct: (Product) -> Unit) {
+//    var isChecked by remember { mutableStateOf(false) }
+//    Card(
+//        shape = RoundedCornerShape(8.dp),
+////        colors = CardDefaults.cardColors(MaterialTheme.colorScheme.onSurface),
+//        modifier = Modifier
+//            .width(175.dp)
+//            .padding(8.dp)
+//            .clickable {
+//                onAddProduct(product)
+//                isChecked = true
+//            },
+//        elevation = CardDefaults.cardElevation(4.dp)
+//    ) {
+//        Column(
+//            modifier = Modifier
+//                .fillMaxSize()
+//                .padding(2.dp),
+//        ) {
+//            // Product Image
+//            product.imageResId?.let { painterResource(id = it) }?.let {
+//                Image(
+//                    painter = it,
+//                    contentDescription = product.name,
+//                    modifier = Modifier
+//                        .size(100.dp)
+//                        .clip(CircleShape)
+//                        .align(Alignment.CenterHorizontally),
+//                    contentScale = ContentScale.Crop
+//                )
+//            }
+//            Spacer(modifier = Modifier.height(8.dp))
+//            Text("\$${product.price}", style = MaterialTheme.typography.headlineSmall)
+//            Spacer(modifier = Modifier.height(8.dp))
+//            Text(product.name, style = MaterialTheme.typography.bodySmall)
+//            Button(
+//                modifier = Modifier.fillMaxWidth(),
+//                onClick = {
+//                    onAddProduct(product)
+//                    isChecked = true
+//                },
+//                colors = ButtonDefaults.buttonColors(
+//                    if (isChecked) Color.Red else Blue1
+//                ),
+//                shape = RoundedCornerShape(8.dp)
+//            ) {
+//                Text(
+//                    text = if (isChecked) "Added" else "Add to Cart",
+//                    color = if (isChecked) Color.White else Color.Black
+//                )
+//            }
+//        }
+//    }
+//}
+
+//@Composable
+//fun ProductSelectionScreen(
+//    customer: Customer,
+//    onProceedToCart: () -> Unit,
+//    navController: NavController,
+//    viewModel: InvoiceViewModel = viewModel()
+//) {
+//    val products by viewModel.productList.collectAsState()
+//    val selectedProducts by viewModel.selectedProducts.collectAsState() // Get selected products
+//
+//    Column(
+//        modifier = Modifier
+//            .fillMaxSize()
+//            .padding(16.dp)
+//    ) {
+//        Row {
+//            Text(
+//                "Customer: ${customer.name}",
+//                fontWeight = FontWeight.Bold,
+//                fontSize = 18.sp,
+//                modifier = Modifier.weight(1f)
+//            )
+//            Spacer(modifier = Modifier.width(16.dp))
+//            Button(
+//                onClick = onProceedToCart,
+//            ) {
+//                Text("Proceed to Cart")
+//            }
+//        }
+//
+//        Spacer(modifier = Modifier.height(16.dp))
+//
+//        LazyColumn {
+//            items(products.chunked(3)) { rowItems ->
+//                Row(
+//                    modifier = Modifier.fillMaxWidth(),
+//                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+//                ) {
+//                    for (product in rowItems) {
+//                        val isSelected = selectedProducts.contains(product)
+//                        ProductCard(
+//                            product = product,
+//                            isSelected = isSelected,
+//                            onAddProduct = {
+//                                viewModel.addProductToCart(product)
+//                            }
+//                        )
+//                    }
+//                    if (rowItems.size == 1) {
+//                        Spacer(modifier = Modifier.weight(1f)) // Fill the space for uneven row
+//                    }
+//                }
+//            }
+//        }
+//
+//        Spacer(modifier = Modifier.height(16.dp))
+//    }
+//}
+
 @Composable
 fun ProductSelectionScreen(
     customer: Customer,
-    onAddProduct: (Product) -> Unit,
     onProceedToCart: () -> Unit,
     navController: NavController,
     viewModel: InvoiceViewModel = viewModel()
 ) {
-//    fetch all products
     val products by viewModel.productList.collectAsState()
+    val selectedProducts by viewModel.selectedProducts.collectAsState() // Get selected products
 
     Column(
         modifier = Modifier
@@ -81,9 +255,7 @@ fun ProductSelectionScreen(
             Button(
                 onClick = onProceedToCart,
             ) {
-                Text(
-                    "Proceed to Cart",
-                )
+                Text("Proceed to Cart")
             }
         }
 
@@ -96,10 +268,14 @@ fun ProductSelectionScreen(
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     for (product in rowItems) {
-                        ProductCard(product = product, onAddProduct = {
-                            // Add the selected product to cart
-                            viewModel.addProductToCart(product)
-                        })
+                        val isSelected = selectedProducts.contains(product)
+                        ProductCard(
+                            product = product,
+                            isSelected = isSelected,
+                            onAddProduct = {
+                                viewModel.addProductToCart(product)
+                            }
+                        )
                     }
                     if (rowItems.size == 1) {
                         Spacer(modifier = Modifier.weight(1f)) // Fill the space for uneven row
@@ -109,59 +285,25 @@ fun ProductSelectionScreen(
         }
 
         Spacer(modifier = Modifier.height(16.dp))
-
     }
 }
 
 @Composable
-fun ProductCard1(product: Product, onAddProduct: (Product) -> Unit) {
-    var isChecked by remember { mutableStateOf(false) }
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(8.dp)
-            .clickable { onAddProduct(product) },
-        elevation = CardDefaults.cardElevation(4.dp)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(product.name, fontWeight = FontWeight.Bold)
-            Text("Price: \$${product.price}")
-            Spacer(modifier = Modifier.height(8.dp))
-            Button(
-                onClick = {
-                    onAddProduct(product)
-                    isChecked = true
-                },
-                colors = ButtonDefaults.buttonColors(
-                    if (isChecked) Color.Red else Blue1
-                )
-            ) {
-                Text(
-                    text = if (isChecked) "Added" else "Add to Cart",
-                    color = if (isChecked) Color.White else Color.Black
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun ProductCard(product: Product, onAddProduct: (Product) -> Unit) {
-    var isChecked by remember { mutableStateOf(false) }
+fun ProductCard(product: Product, isSelected: Boolean, onAddProduct: (Product) -> Unit) {
     Card(
         shape = RoundedCornerShape(8.dp),
         modifier = Modifier
-            .width(165.dp)
-            .height(250.dp)
+            .width(175.dp)
             .padding(8.dp)
-            .clickable { onAddProduct(product) },
+            .clickable {
+                onAddProduct(product)
+            },
         elevation = CardDefaults.cardElevation(4.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(2.dp)
-                .background(Color.Transparent, shape = RoundedCornerShape(8.dp)),
+                .padding(2.dp),
         ) {
             // Product Image
             product.imageResId?.let { painterResource(id = it) }?.let {
@@ -169,86 +311,31 @@ fun ProductCard(product: Product, onAddProduct: (Product) -> Unit) {
                     painter = it,
                     contentDescription = product.name,
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .height(120.dp)
-                        .clip(CircleShape),
+                        .size(100.dp)
+                        .clip(CircleShape)
+                        .align(Alignment.CenterHorizontally),
                     contentScale = ContentScale.Crop
                 )
             }
-
             Spacer(modifier = Modifier.height(8.dp))
-
-            Text(product.name, fontWeight = FontWeight.Bold)
-            Text("Price: \$${product.price}")
+            Text("\$${product.price}", style = MaterialTheme.typography.headlineSmall)
             Spacer(modifier = Modifier.height(8.dp))
+            Text(product.name, style = MaterialTheme.typography.bodySmall)
             Button(
+                modifier = Modifier.fillMaxWidth(),
                 onClick = {
                     onAddProduct(product)
-                    isChecked = true
                 },
                 colors = ButtonDefaults.buttonColors(
-                    if (isChecked) Color.Red else Blue1
-                )
+                    if (isSelected) Color.Red else Blue1
+                ),
+                shape = RoundedCornerShape(8.dp)
             ) {
                 Text(
-                    text = if (isChecked) "Added" else "Add to Cart",
-                    color = if (isChecked) Color.White else Color.Black
+                    text = if (isSelected) "Added" else "Add to Cart",
+                    color = if (isSelected) Color.White else Color.Black
                 )
             }
-//            Row(
-//                modifier = Modifier
-//                    .fillMaxWidth()
-//                    .padding(6.dp),
-//                verticalAlignment = Alignment.CenterVertically,
-//                horizontalArrangement = Arrangement.SpaceBetween
-//            ) {
-//                Text(
-//                    text = product.price,
-//                    fontWeight = FontWeight.SemiBold,
-//                    fontSize = 16.sp,
-//                    color = Color.Gray
-//                )
-//
-//                // Add to Cart Button
-//                IconButton(
-//                    onClick = onAddToCart,
-//                    modifier = Modifier
-//                        .size(40.dp)
-//                        .background(MyGray, shape = CircleShape)
-//                        .padding(8.dp)
-//                ) {
-//                    Icon(
-//                        painter = painterResource(id = R.drawable.ic_input_add),
-//                        contentDescription = "Add to Cart",
-//                    )
-//                }
-//            }
         }
     }
-}
-
-@Preview
-@Composable
-fun PrevProductScreen() {
-
-    val viewModel: InvoiceViewModel = viewModel()
-    val navController = rememberNavController()
-
-    // Sample data
-    val customer =
-        Customer(
-            customerId = 1,
-            name = "John Doe",
-            email = "john.doe@example.com",
-            "0769853534",
-            "State House"
-        )
-
-    ProductSelectionScreen(
-        customer = customer,
-        {},
-        {},
-        navController,
-        viewModel
-    )
 }

@@ -1,5 +1,10 @@
 package com.example.learncompose303.screens
 
+import android.content.ActivityNotFoundException
+import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -54,6 +59,7 @@ import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import com.example.learncompose303.R
 import com.example.learncompose303.ui.theme.Gray1
@@ -66,6 +72,7 @@ fun CartScreen(
     navController: NavController,
     viewModel: InvoiceViewModel = viewModel()
 ) {
+    val context = LocalContext.current
     // Get the selected products
     val selectedProducts by viewModel.selectedProducts.collectAsState()
 
@@ -123,20 +130,130 @@ fun CartScreen(
             color = MaterialTheme.colorScheme.primary
         )
         Spacer(modifier = Modifier.height(8.dp))
-
         Button(
             onClick = {
-                viewModel.submitInvoice(customer.customerId)
-                // Navigate to the receipt screen or another destination after submitting the invoice
-                navController.navigate(Destinations.Rides.route) // Replace this with your actual destination for receipt
+                if (amountTendered.isNotEmpty() && amountTendered.toDouble() != 0.0) {
+                    // Submit the invoice and capture cart item details
+                    viewModel.submitInvoice(customer.customerId, amountTendered.toDouble())
+
+                    // Collect selected products for WhatsApp message
+                    val selectedProducts =
+                        viewModel.selectedProducts.value // Get the selected products
+                    val productDetails = selectedProducts.joinToString("\n") { product ->
+                        "${product.name}, $${product.price}, Quantity: ${1}"
+                    }
+
+// Format the message with bold headings and proper alignment
+                    val message = "*INVOICE RECEIPT:*\n\n" +
+                            "*CUSTOMER DETAILS*\n" +
+                            "${customer.name}\n" +
+                            "${customer.phone}\n\n" +
+                            "*PRODUCTS PURCHASED:*\n" +
+                            "$productDetails\n\n" +
+                            "*SALES TOTALS*\n" +
+                            "Total Amount:* $$totalPrice*\n" +
+                            "Amount Tendered:* $$amountTendered*\n" +
+                            "Change:* $${amountTendered.toDouble() - totalPrice}*\n\n" +
+                            "Thank you for your purchase!...\n              ISTARTK  \u00A9 2024"
+
+// Create an intent to send the message
+                    val sendIntent = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_TEXT, message)
+                    }
+
+                    try {
+                        // Use a chooser to select WhatsApp or WhatsApp Business and send message
+                        val chooserIntent = Intent.createChooser(
+                            sendIntent,
+                            "Send via WhatsApp or WhatsApp Business"
+                        )
+                        chooserIntent.resolveActivity(context.packageManager)?.let {
+                            context.startActivity(chooserIntent)
+                        } ?: run {
+                            Toast.makeText(context, "No messaging app found", Toast.LENGTH_SHORT)
+                                .show()
+                        }
+                    } catch (e: Exception) {
+                        Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                    }
+
+                    // Navigate to the receipt screen or another destination after submitting the invoice
+                    navController.navigate(Destinations.Rides.route) // Replace this with your actual destination for receipt
+                    Toast.makeText(context, "Invoice paid successfully", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(context, "Please enter valid details", Toast.LENGTH_SHORT).show()
+                }
             },
             modifier = Modifier
                 .fillMaxWidth(),
-//            colors = ButtonDefaults.buttonColors(MyGray)
         ) {
             Text("Submit Invoice")
         }
+
+//        Button(
+//            onClick = {
+//                if (amountTendered.isNotEmpty() && amountTendered.toDouble() != 0.0) {
+//                    // Submit the invoice and capture cart item details
+//                    viewModel.submitInvoice(customer.customerId, amountTendered.toDouble())
 //
+//                    // Collect selected products for WhatsApp message
+//                    val selectedProducts =
+//                        viewModel.selectedProducts.value // Get the selected products
+//                    val productDetails = selectedProducts.joinToString("\n") { product ->
+//                        "Product: ${product.name}, Price: ${product.price}, Quantity: ${1}"
+//                    }
+//
+//                    // Format the message
+//                    val message = """
+//                Invoice Receipt:
+//                Customer: ${customer.name}
+//                Phone: ${customer.phone}
+//
+//                Products Purchased:
+//                $productDetails
+//
+//                Total Amount: $totalPrice
+//                Amount Tendered: $amountTendered
+//                Change: ${amountTendered.toDouble() - totalPrice}
+//
+//                Thank you for your purchase!
+//            """.trimIndent()
+//
+//                    // Create an intent to send the message
+//                    val sendIntent = Intent(Intent.ACTION_SEND).apply {
+//                        type = "text/plain"
+//                        putExtra(Intent.EXTRA_TEXT, message)
+//                    }
+//
+//                    try {
+//                        // Use a chooser to select WhatsApp or WhatsApp Business and send message
+//                        val chooserIntent = Intent.createChooser(
+//                            sendIntent,
+//                            "Send via WhatsApp or WhatsApp Business"
+//                        )
+//                        chooserIntent.resolveActivity(context.packageManager)?.let {
+//                            context.startActivity(chooserIntent)
+//                        } ?: run {
+//                            Toast.makeText(context, "No messaging app found", Toast.LENGTH_SHORT)
+//                                .show()
+//                        }
+//                    } catch (e: Exception) {
+//                        Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+//                    }
+//
+//                    // Navigate to the receipt screen or another destination after submitting the invoice
+//                    navController.navigate(Destinations.Rides.route) // Replace this with your actual destination for receipt
+//                    Toast.makeText(context, "Invoice paid successfully", Toast.LENGTH_SHORT).show()
+//                } else {
+//                    Toast.makeText(context, "Please enter valid details", Toast.LENGTH_SHORT).show()
+//                }
+//            },
+//            modifier = Modifier
+//                .fillMaxWidth(),
+//        ) {
+//            Text("Submit Invoice")
+//        }
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -208,7 +325,6 @@ fun CartScreen(
 
     }
 }
-
 
 @Preview(showBackground = true)
 @Composable

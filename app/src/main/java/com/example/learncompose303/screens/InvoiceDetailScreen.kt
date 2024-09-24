@@ -70,7 +70,7 @@ fun InvoiceDetailScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
+            .padding(8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Text(text = "INVOICE RECEIPT")

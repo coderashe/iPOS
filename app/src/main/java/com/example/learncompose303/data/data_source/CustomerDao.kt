@@ -17,6 +17,9 @@ interface CustomerDao {
     @Query("SELECT * FROM Customer WHERE customerId = :id")
     suspend fun getCustomerById(id: Long): Customer?
 
+    @Query("SELECT * FROM Customer WHERE name = :name")
+    suspend fun getWalkinCustomer(name: String): Customer?
+
     // Fetch all customers as a Flow
     @Query("SELECT * FROM Customer")
     fun getAllCustomers(): Flow<List<Customer>>

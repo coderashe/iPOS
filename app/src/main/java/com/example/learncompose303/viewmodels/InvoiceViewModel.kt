@@ -9,12 +9,14 @@ import com.example.learncompose303.data.entities.Customer
 import com.example.learncompose303.data.entities.Invoice
 import com.example.learncompose303.data.entities.InvoiceItem
 import com.example.learncompose303.data.entities.InvoiceLine
+import com.example.learncompose303.data.entities.Order
 import com.example.learncompose303.data.entities.Product
 import com.example.learncompose303.data.repositories.CartItemRepository
 import com.example.learncompose303.data.repositories.CustomerRepository
 import com.example.learncompose303.data.repositories.InvoiceItemRepository
 import com.example.learncompose303.data.repositories.InvoiceLineRepository
 import com.example.learncompose303.data.repositories.InvoiceRepository
+import com.example.learncompose303.data.repositories.OrderRepository
 import com.example.learncompose303.data.repositories.ProductRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,8 +33,22 @@ class InvoiceViewModel @Inject constructor(
     private val productRepository: ProductRepository,
     private val invoiceItemRepository: InvoiceItemRepository,
     private val cartItemRepository: CartItemRepository,
-    private val invoiceLineRepository: InvoiceLineRepository
+    private val invoiceLineRepository: InvoiceLineRepository,
+    private val orderRepository: OrderRepository
 ) : ViewModel() {
+
+    // Cart items (CartItem)
+    private val _cartItems = MutableStateFlow(emptyList<CartItem>())
+
+    val cartItems = _cartItems.asStateFlow()
+
+    // Orders list
+    private val _orderList = MutableStateFlow<List<Order>>(emptyList())
+    val orderList: StateFlow<List<Order>> = _orderList.asStateFlow()
+
+    // Selected order
+    private val _selectedOrder = MutableStateFlow<Order?>(null)
+    val selectedOrder: StateFlow<Order?> = _selectedOrder.asStateFlow()
 
     // Customer list
     private val _customerList = MutableStateFlow(emptyList<Customer>())
@@ -54,11 +70,6 @@ class InvoiceViewModel @Inject constructor(
 
     val invoiceItems = _invoiceItems.asStateFlow()
 
-    // Cart items (CartItem)
-    private val _cartItems = MutableStateFlow(emptyList<CartItem>())
-
-    val cartItems = _cartItems.asStateFlow()
-
     // For fetching invoices and items
     private val _invoiceList = MutableStateFlow(emptyList<Invoice>())
     val invoiceList = _invoiceList.asStateFlow()
@@ -78,6 +89,7 @@ class InvoiceViewModel @Inject constructor(
         fetchInvoiceLines()
         insertInitialCustomers()
         fetchCustomers()
+        fetchAllOrders()
     }
 
     private fun fetchInvoices() = viewModelScope.launch {
@@ -106,6 +118,7 @@ class InvoiceViewModel @Inject constructor(
                 Customer(3, "John Doe", "jane@example.com", "987654321", "State House"),
                 Customer(4, "Amy Petersen", "jane@example.com", "987654321", "State House"),
                 Customer(5, "Amara Brown", "jane@example.com", "987654321", "State House"),
+                Customer(6, "walkInCustomer", "cashsale@istart.com", "0776815030", null),
             )
             customerRepository.insertCustomers(initialCustomers)
         }
@@ -123,10 +136,25 @@ class InvoiceViewModel @Inject constructor(
         return customerList.value.firstOrNull { it.customerId == customerId }
     }
 
+    fun getProductById(productId: Long?): Product? {
+        return productList.value.firstOrNull { it.productId == productId }
+    }
+
+    fun getWalkinCustomer(): Customer? {
+        return customerList.value.firstOrNull { it.name == "walkInCustomer" }
+    }
+
+    // Fetch products from the database
+    private fun fetchProducts() = viewModelScope.launch {
+        productRepository.getAllProducts().collectLatest { productList ->
+            _productList.value = productList
+        }
+    }
+
     // Insert initial products into the database
     private fun insertInitialProducts() = viewModelScope.launch {
         val existingProducts =
-            productRepository.getAllProductsOnce() // Assuming you have this method implemented in the repository
+            productRepository.getAllProductsOnce()
         if (existingProducts.isEmpty()) {
             val initialProducts = listOf(
                 Product(name = "Product 1", price = 10.0, imageResId = R.drawable.meat1),
@@ -144,6 +172,27 @@ class InvoiceViewModel @Inject constructor(
         }
     }
 
+    fun insertProduct(product: Product) = viewModelScope.launch {
+        productRepository.insertProduct(product)
+    }
+
+    // Add a product to the cart (selected products list)
+    fun addProductToCart(product: Product) {
+        val updatedList = _selectedProducts.value.toMutableList()
+        if (updatedList.contains(product)) {
+            updatedList.remove(product) // Deselect if already added
+        } else {
+            updatedList.add(product) // Add if not already selected
+        }
+        _selectedProducts.value = updatedList
+    }
+
+//    fun addProductToCart(product: Product) {
+//        val updatedList = _selectedProducts.value.toMutableList()
+//        updatedList.add(product)
+//        _selectedProducts.value = updatedList
+//    }
+
     fun getInvoiceLineById(invoiceID: Long?): InvoiceLine? {
         return invoiceLineList.value.firstOrNull { it.invoiceID == invoiceID }
     }
@@ -152,24 +201,6 @@ class InvoiceViewModel @Inject constructor(
         invoiceLineRepository.getAllInvoiceLines().collectLatest { invoiceLineList ->
             _invoiceLineList.value = invoiceLineList
         }
-    }
-
-    // Fetch products from the database
-    private fun fetchProducts() = viewModelScope.launch {
-        productRepository.getAllProducts().collectLatest { productList ->
-            _productList.value = productList
-        }
-    }
-
-    fun insertProduct(product: Product) = viewModelScope.launch {
-        productRepository.insertProduct(product)
-    }
-
-    // Add a product to the cart (selected products list)
-    fun addProductToCart(product: Product) {
-        val updatedList = _selectedProducts.value.toMutableList()
-        updatedList.add(product)
-        _selectedProducts.value = updatedList
     }
 
 
@@ -181,10 +212,48 @@ class InvoiceViewModel @Inject constructor(
         }
     }
 
+    // Insert a new order
+    fun submitOrder(productName: String, quantity: Int, dueDate: String, notes: String) =
+        viewModelScope.launch {
+            val newOrder = Order(
+                productName = productName,
+                quantity = quantity,
+                dueDate = dueDate,
+                notes = notes
+            )
+            orderRepository.insertOrder(newOrder)
+            fetchAllOrders()
+        }
+
+    // Fetch all orders
+    fun fetchAllOrders() = viewModelScope.launch {
+        orderRepository.getAllOrders().collectLatest { orders ->
+            _orderList.value = orders
+        }
+    }
+
+    // Get order by ID
+    fun getOrderById(orderId: Int) = viewModelScope.launch {
+        val order = orderRepository.getOrderById(orderId)
+        _selectedOrder.value = order
+    }
+
+    // Delete a specific order
+    fun deleteOrder(order: Order) = viewModelScope.launch {
+        orderRepository.deleteOrder(order)
+        fetchAllOrders()
+    }
+
+    // Delete all orders
+    fun deleteAllOrders() = viewModelScope.launch {
+        orderRepository.deleteAllOrders()
+        fetchAllOrders()
+    }
+
 
     // Update quantity in the cart
-    fun updateCartItem(cartItem: CartItem, newQuantity: Int) = viewModelScope.launch {
-        val updatedItem = cartItem.copy(quantity = newQuantity)
+    fun updateCartItem(cartItem: CartItem, newQuantity: Double) = viewModelScope.launch {
+        val updatedItem = cartItem.copy(totalAmount = newQuantity)
         cartItemRepository.updateCartItem(updatedItem)
         refreshCartItems(cartItem.customerId)
     }
@@ -224,24 +293,32 @@ class InvoiceViewModel @Inject constructor(
         return invoiceList.value.firstOrNull { it.invoiceId == invoiceId }
     }
 
-    fun submitInvoice(customerId: Long) = viewModelScope.launch {
+    fun submitInvoice(customerId: Long, amountTendered: Double) = viewModelScope.launch {
         try {
             var totalAmount = 0.0
 
             // Log the start of the operation
             Log.d("Invoice", "Starting invoice submission for customerId: $customerId")
 
+            // Fetch customer details
+            val customer = customerRepository.getCustomerById(customerId)
+            if (customer == null) {
+                Log.e("InvoiceError", "Customer not found for customerId: $customerId")
+                return@launch
+            }
+
             // Fetch selected products from the selectedProducts list and calculate total amount
             val selectedProductsWithDetails = _selectedProducts.value.map { product ->
-                totalAmount += product.price // Assuming each product is counted as 1 quantity here
-                Log.d(
-                    "Invoice",
-                    "Adding product: ${product.name}, price: ${product.price}, total so far: $totalAmount"
-                )
+                totalAmount += product.price * 1 // Assuming `product.quantity` is available
                 product
             }
 
-            Log.d("Invoice", "Total Amount Calculated: $totalAmount")
+            // Calculate change
+            val change = amountTendered - totalAmount
+            if (change < 0) {
+                Log.e("InvoiceError", "Amount tendered is less than total amount!")
+                return@launch
+            }
 
             // Only proceed if there are valid selected products and totalAmount > 0
             if (selectedProductsWithDetails.isNotEmpty() && totalAmount > 0) {
@@ -251,7 +328,7 @@ class InvoiceViewModel @Inject constructor(
                     totalAmount = totalAmount,
                     invoiceDate = System.currentTimeMillis(),
                     dueDate = null,
-                    status = "Pending" // Assuming status is "Pending" for a new invoice
+                    status = "Paid"
                 )
 
                 // Insert the invoice and get the invoiceId
@@ -259,44 +336,53 @@ class InvoiceViewModel @Inject constructor(
 
                 Log.d("Invoice", "Inserted Invoice with id: $invoiceId")
 
-                // Convert selected products to InvoiceItems and store them
+                // Insert CartItems for each selected product
+                selectedProductsWithDetails.forEach { product ->
+                    val cartItem = CartItem(
+                        customerId = customerId,
+                        productId = product.productId,
+                        invoiceId = invoiceId,
+                        totalAmount = totalAmount, // Total price for this product
+                        totalAmountTendered = amountTendered, // Amount tendered by the customer
+                        change = change // Change to be given back to the customer
+                    )
+
+                    cartItemRepository.insertCartItem(cartItem)
+                    Log.d("Invoice", "Inserted CartItem: $cartItem")
+                }
+
+                // Insert InvoiceItems for each product
                 selectedProductsWithDetails.forEach { product ->
                     val invoiceItem = InvoiceItem(
                         invoiceId = invoiceId,
                         productId = product.productId,
                         customerId = customerId,
-                        quantity = 1, // Assuming 1 quantity per selected product (adjust as needed)
+                        quantity = 1, // Quantity of the product
                         price = product.price,
-                        total = product.price // Since quantity is 1
+                        total = product.price * 1
                     )
                     invoiceItemRepository.insertInvoiceItem(invoiceItem)
                     Log.d("Invoice", "Inserted InvoiceItem: $invoiceItem")
                 }
 
-                // Now, insert a row into the InvoiceLine table for the submitted invoice
-                val customer =
-                    customerRepository.getCustomerById(customerId) // Fetch customer details
+                // Insert InvoiceLine records for the report
                 selectedProductsWithDetails.forEach { product ->
-                    val invoiceLine = customer?.let {
-                        InvoiceLine(
-                            invoiceID = invoiceId, // Get invoiceId from inserted invoice
-                            invoiceStatus = invoice.status, // Get status from the inserted invoice object
-                            productID = product.productId,
-                            productName = product.name,
-                            productPrice = product.price,
-                            productQtySold = 1, // Assuming 1 quantity per product
-                            customerID = customerId, // Set customerId
-                            customerName = it.name,
-                            customerPhone = customer.phone,
-                            totalAmount = totalAmount,
-                            amountTendered = null, // Add logic for amountTendered if applicable
-                            changeBalance = null, // Add logic for changeBalance if applicable
-                            invoiceDate = System.currentTimeMillis()
-                        )
-                    }
-                    if (invoiceLine != null) {
-                        invoiceLineRepository.insertInvoiceLine(invoiceLine) // Insert InvoiceLine record
-                    }
+                    val invoiceLine = InvoiceLine(
+                        invoiceID = invoiceId, // Get invoiceId from inserted invoice
+                        invoiceStatus = invoice.status, // Get status from the inserted invoice object
+                        productID = product.productId,
+                        productName = product.name,
+                        productPrice = product.price,
+                        productQtySold = 1, // Set product quantity
+                        customerID = customerId, // Set customerId
+                        customerName = customer.name,
+                        customerPhone = customer.phone,
+                        totalAmount = totalAmount,
+                        amountTendered = amountTendered, // Add logic for amountTendered
+                        changeBalance = change, // Add logic for changeBalance
+                        invoiceDate = System.currentTimeMillis()
+                    )
+                    invoiceLineRepository.insertInvoiceLine(invoiceLine)
                     Log.d("Invoice", "Inserted InvoiceLine: $invoiceLine")
                 }
 
@@ -312,8 +398,6 @@ class InvoiceViewModel @Inject constructor(
     }
 
 
-    //
-    // Submit invoice (use cart items)
 //    fun submitInvoice(customerId: Long) = viewModelScope.launch {
 //        try {
 //            var totalAmount = 0.0
@@ -335,16 +419,17 @@ class InvoiceViewModel @Inject constructor(
 //
 //            // Only proceed if there are valid selected products and totalAmount > 0
 //            if (selectedProductsWithDetails.isNotEmpty() && totalAmount > 0) {
-//                // Insert the invoice
-//                val invoiceId = invoiceRepository.insertInvoice(
-//                    Invoice(
-//                        customerId = customerId,
-//                        totalAmount = totalAmount,
-//                        invoiceDate = System.currentTimeMillis(),
-//                        dueDate = null,
-//                        status = "Pending"
-//                    )
+//                // Create an Invoice object
+//                val invoice = Invoice(
+//                    customerId = customerId,
+//                    totalAmount = totalAmount,
+//                    invoiceDate = System.currentTimeMillis(),
+//                    dueDate = null,
+//                    status = "Pending" // Assuming status is "Pending" for a new invoice
 //                )
+//
+//                // Insert the invoice and get the invoiceId
+//                val invoiceId = invoiceRepository.insertInvoice(invoice) // Insert the invoice
 //
 //                Log.d("Invoice", "Inserted Invoice with id: $invoiceId")
 //
@@ -363,13 +448,13 @@ class InvoiceViewModel @Inject constructor(
 //                }
 //
 //                // Now, insert a row into the InvoiceLine table for the submitted invoice
-//                // Fetch the customer details
-//                val customer = customerRepository.getCustomerById(customerId) // Fetch customer details
+//                val customer =
+//                    customerRepository.getCustomerById(customerId) // Fetch customer details
 //                selectedProductsWithDetails.forEach { product ->
 //                    val invoiceLine = customer?.let {
 //                        InvoiceLine(
 //                            invoiceID = invoiceId, // Get invoiceId from inserted invoice
-//                            invoiceStatus = "PAID", // Get status from the inserted invoice
+//                            invoiceStatus = invoice.status, // Get status from the inserted invoice object
 //                            productID = product.productId,
 //                            productName = product.name,
 //                            productPrice = product.price,
@@ -384,8 +469,8 @@ class InvoiceViewModel @Inject constructor(
 //                        )
 //                    }
 //                    if (invoiceLine != null) {
-//                        invoiceLineRepository.insertInvoiceLine(invoiceLine)
-//                    } // Assuming this is the method for inserting into invoiceLines
+//                        invoiceLineRepository.insertInvoiceLine(invoiceLine) // Insert InvoiceLine record
+//                    }
 //                    Log.d("Invoice", "Inserted InvoiceLine: $invoiceLine")
 //                }
 //

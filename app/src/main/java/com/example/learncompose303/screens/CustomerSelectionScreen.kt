@@ -1,8 +1,10 @@
 package com.example.learncompose303.screens
 
 import android.annotation.SuppressLint
+import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -17,9 +19,11 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -44,8 +48,14 @@ fun CustomerSelectionScreen(
     navController: NavController,
     viewModel: InvoiceViewModel = viewModel()
 ) {
+    LaunchedEffect(key1 = true) {
+        viewModel.getWalkinCustomer()
+    }
     // Fetch the customer list from the ViewModel
     val customers by viewModel.customerList.collectAsState()
+
+    val walkInCustomer = viewModel.getWalkinCustomer()
+    Log.d("WalkInCustomer", "$walkInCustomer")
 
     Scaffold(
         floatingActionButton = {
@@ -59,7 +69,27 @@ fun CustomerSelectionScreen(
                     .fillMaxSize()
                     .padding(16.dp)
             ) {
-                Text("Select Customer", fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                Row {
+
+                    Text(
+                        modifier = Modifier
+                            .weight(1f),
+                        text = "Select Customer",
+                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.titleMedium
+                    )
+
+                    Button(
+                        onClick = {
+                            if (walkInCustomer != null) {
+                                onCustomerSelected(walkInCustomer)
+                                Log.d("WalkInCustomer", "$walkInCustomer")
+                            }
+                        },
+                    ) {
+                        Text(text = "Cash Sale")
+                    }
+                }
                 Spacer(modifier = Modifier.height(16.dp))
 
                 // Show the list of customers

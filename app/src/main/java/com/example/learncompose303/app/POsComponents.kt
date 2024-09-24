@@ -1,6 +1,7 @@
 package com.example.learncompose303.app
 
 import android.annotation.SuppressLint
+import android.app.DatePickerDialog
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -20,7 +21,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
@@ -29,24 +33,34 @@ import androidx.compose.material3.CardColors
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.learncompose303.R
+import com.example.learncompose303.data.entities.Product
+import com.example.learncompose303.ui.theme.Blue1
 import com.example.learncompose303.ui.theme.Gray1
 import com.example.learncompose303.ui.theme.Green1
 import com.example.learncompose303.ui.theme.LightGray
@@ -56,6 +70,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
+import java.util.Calendar
 
 @Composable
 fun CarouselCard(
@@ -75,8 +90,7 @@ fun CarouselCard(
     ) {
         Row(
             modifier = Modifier
-                .fillMaxSize()
-                .background(MyGray),
+                .fillMaxSize(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
@@ -92,23 +106,16 @@ fun CarouselCard(
                     style = MaterialTheme.typography.headlineSmall.copy(
                         fontWeight = FontWeight.Bold
                     ),
-                    color = Color.Black
                 )
-
                 Spacer(modifier = Modifier.height(8.dp))
-
                 Text(
                     text = taglineText,
                     style = MaterialTheme.typography.labelMedium,
-                    color = Color.Gray
                 )
-
                 Spacer(modifier = Modifier.height(16.dp))
-
                 Button(
                     onClick = onButtonClick,
                     modifier = Modifier.align(Alignment.Start),
-//                    colors = ButtonDefaults.buttonColors(Green1)
                 ) {
                     Text(text = buttonText)
                 }
@@ -292,6 +299,97 @@ fun SalesmanInfoCard(
 @Composable
 fun SpacerHeight() {
     Spacer(modifier = Modifier.height(8.dp))
+}
+
+@Composable
+fun SimpleProductCard(product: Product) {
+    var isChecked by remember { mutableStateOf(false) }
+    Card(
+        shape = RoundedCornerShape(8.dp),
+        modifier = Modifier
+            .width(165.dp)
+            .height(250.dp)
+            .padding(8.dp),
+        elevation = CardDefaults.cardElevation(4.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(2.dp)
+                .background(Color.Transparent, shape = RoundedCornerShape(8.dp)),
+        ) {
+            // Product Image
+            product.imageResId?.let { painterResource(id = it) }?.let {
+                Image(
+                    painter = it,
+                    contentDescription = product.name,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(120.dp)
+                        .clip(CircleShape),
+                    contentScale = ContentScale.Crop
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(product.name, fontWeight = FontWeight.Bold)
+            Text("Price: \$${product.price}")
+            Spacer(modifier = Modifier.height(8.dp))
+            Button(
+                onClick = {
+                },
+                colors = ButtonDefaults.buttonColors(
+                    if (isChecked) Color.Red else Blue1
+                )
+            ) {
+                Text(
+                    text = if (isChecked) "Added" else "Add to Cart",
+                    color = if (isChecked) Color.White else Color.Black
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun DueDatePicker(dueDate: String, onDateSelected: (String) -> Unit) {
+    val context = LocalContext.current
+    val calendar = Calendar.getInstance()
+
+    // State to track the selected due date
+    var selectedDate by remember { mutableStateOf(dueDate) }
+
+    // Date Picker Dialog
+    val datePickerDialog = remember {
+        DatePickerDialog(
+            context,
+            { _, year, month, dayOfMonth ->
+                selectedDate = "$dayOfMonth/${month + 1}/$year"
+                onDateSelected(selectedDate) // Notify parent about the selected date
+            },
+            calendar.get(Calendar.YEAR),
+            calendar.get(Calendar.MONTH),
+            calendar.get(Calendar.DAY_OF_MONTH)
+        )
+    }
+
+    // Due Date Input (with Calendar Picker)
+    OutlinedTextField(
+        value = selectedDate,
+        onValueChange = { }, // No manual changes allowed for read-only input
+        label = { Text("Due Date") },
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { datePickerDialog.show() }, // Show the date picker dialog on click
+        readOnly = true, // Prevent typing, make it clickable only
+        trailingIcon = {
+            Icon(
+                imageVector = Icons.Default.CalendarToday,
+                contentDescription = "Pick Date"
+            )
+        }
+    )
 }
 
 @Preview(showBackground = true)

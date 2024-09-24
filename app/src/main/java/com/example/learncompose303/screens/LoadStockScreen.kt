@@ -40,6 +40,8 @@ fun LoadStockScreen(
     var imageResId by remember { mutableStateOf<Int?>(null) }
     val context = LocalContext.current
 
+    val defaultImage = R.drawable.meat3
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -73,8 +75,8 @@ fun LoadStockScreen(
                 // Logic to pick image
                 // You can use a library like Coil for image selection
                 // For now, we simulate with a placeholder
-                imageResId =
-                    R.drawable.meat3
+//                imageResId =
+//                    R.drawable.meat3
             },
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -91,7 +93,7 @@ fun LoadStockScreen(
                     val newProduct = Product(
                         name = productName,
                         price = price,
-                        imageResId = imageResId
+                        imageResId = imageResId ?: defaultImage
                     )
                     viewModel.insertProduct(newProduct) // Add product to database
                     onProductAdded()

@@ -11,6 +11,7 @@ interface CustomerRepository {
 
     // Fetch customer by ID
     suspend fun getCustomerById(id: Long): Customer?
+    suspend fun getWalkinCustomer(name: String): Customer?
 
     // Insert a single customer
     suspend fun insertCustomer(customer: Customer): Long
@@ -38,6 +39,12 @@ class CustomerRepositoryImpl @Inject constructor(
     override suspend fun getCustomerById(id: Long): Customer? {
         return withContext(Dispatchers.IO) {
             customerDao.getCustomerById(id)
+        }
+    }
+
+    override suspend fun getWalkinCustomer(name: String): Customer? {
+        return withContext(Dispatchers.IO) {
+            customerDao.getWalkinCustomer(name)
         }
     }
 

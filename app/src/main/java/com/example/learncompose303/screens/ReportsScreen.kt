@@ -65,24 +65,39 @@ fun ReportsScreen(
     LaunchedEffect(key1 = true) {
         viewModel.fetchAllInvoices()
     }
+    Box(modifier = Modifier.fillMaxSize()) {
 
-    Log.d("TheInvoices", "$invoices") // Log the fetched invoices to debug
+        if (invoices.isEmpty()) {
+            // Display message when there are no orders
+            Text(
+                text = "No Invoices yet!",
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .padding(16.dp),
+                style = MaterialTheme.typography.headlineSmall,
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.error
+            )
+        } else {
 
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        items(invoices) { invoice ->
-            InvoiceCard(invoice = invoice, onClick = {
-                val theInvoiceLine = viewModel.getInvoiceLineById(invoice.invoiceId)
-                // Load invoice lines when the invoice is clicked
-                if (theInvoiceLine != null) {
-                    onInvoiceClick(theInvoiceLine)
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(8.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(invoices) { invoice ->
+                    InvoiceCard(invoice = invoice, onClick = {
+                        val theInvoiceLine = viewModel.getInvoiceLineById(invoice.invoiceId)
+                        // Load invoice lines when the invoice is clicked
+                        if (theInvoiceLine != null) {
+                            onInvoiceClick(theInvoiceLine)
+                        }
+
+                    })
                 }
+            }
 
-            })
         }
     }
 
@@ -95,7 +110,7 @@ fun InvoiceCard(invoice: Invoice, onClick: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() }
-            .padding(8.dp),
+            .padding(top = 8.dp),
         elevation = CardDefaults.cardElevation(4.dp),
         shape = RoundedCornerShape(12.dp),
 //        colors = MaterialTheme.colorScheme.surface
