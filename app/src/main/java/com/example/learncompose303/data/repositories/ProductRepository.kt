@@ -14,7 +14,7 @@ interface ProductRepository {
     suspend fun insertProduct(product: Product): Long
     suspend fun updateProduct(product: Product)
     suspend fun deleteProduct(product: Product)
-    suspend fun insertProducts(product: List<Product>)
+    suspend fun insertProducts(products: List<Product>): List<Long> // Return list of inserted product IDs
     suspend fun getAllProductsOnce(): List<Product>
 }
 
@@ -52,9 +52,9 @@ class ProductRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun insertProducts(product: List<Product>) {
+    override suspend fun insertProducts(products: List<Product>): List<Long> {
         return withContext(Dispatchers.IO) {
-            productDao.insertProducts(product)
+            productDao.insertProducts(products)
         }
     }
 

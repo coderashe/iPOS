@@ -91,10 +91,18 @@ fun LoadStockScreen(
                 val price = productPrice.toDoubleOrNull()
                 if (productName.isNotEmpty() && price != null) {
                     val newProduct = Product(
-                        name = productName,
-                        price = price,
-                        imageResId = imageResId ?: defaultImage
+                        productDescription = productName,
+                        currentStockLevel = 100,
+                        saleable = true,
+                        purchasable = true,
+                        averageCost = 8.0,
+                        standardCost = 10.0,
+                        salesTaxCode = "VAT",
+                        purchasableTaxCode = "VAT",
+                        inclusiveTaxed = true,
+//                        imageResId = imageResId ?: defaultImage
                     )
+
                     viewModel.insertProduct(newProduct) // Add product to database
                     onProductAdded()
                     Toast.makeText(context, "Product added!", Toast.LENGTH_SHORT).show()

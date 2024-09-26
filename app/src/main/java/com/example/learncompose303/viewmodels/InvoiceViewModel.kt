@@ -1,6 +1,8 @@
 package com.example.learncompose303.viewmodels
 
+import android.os.Build
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.learncompose303.R
@@ -10,6 +12,7 @@ import com.example.learncompose303.data.entities.Invoice
 import com.example.learncompose303.data.entities.InvoiceItem
 import com.example.learncompose303.data.entities.InvoiceLine
 import com.example.learncompose303.data.entities.Order
+import com.example.learncompose303.data.entities.PriceList
 import com.example.learncompose303.data.entities.Product
 import com.example.learncompose303.data.repositories.CartItemRepository
 import com.example.learncompose303.data.repositories.CustomerRepository
@@ -17,6 +20,7 @@ import com.example.learncompose303.data.repositories.InvoiceItemRepository
 import com.example.learncompose303.data.repositories.InvoiceLineRepository
 import com.example.learncompose303.data.repositories.InvoiceRepository
 import com.example.learncompose303.data.repositories.OrderRepository
+import com.example.learncompose303.data.repositories.PriceListRepository
 import com.example.learncompose303.data.repositories.ProductRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,6 +28,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 import javax.inject.Inject
 
 @HiltViewModel
@@ -34,8 +39,16 @@ class InvoiceViewModel @Inject constructor(
     private val invoiceItemRepository: InvoiceItemRepository,
     private val cartItemRepository: CartItemRepository,
     private val invoiceLineRepository: InvoiceLineRepository,
-    private val orderRepository: OrderRepository
+    private val orderRepository: OrderRepository,
+    private val priceListRepository: PriceListRepository
 ) : ViewModel() {
+
+    private val _productWithPriceDetails =
+        MutableStateFlow<List<Pair<Product, Double>>>(emptyList())
+    val productWithPriceDetails: StateFlow<List<Pair<Product, Double>>> = _productWithPriceDetails
+
+    private val _priceList = MutableStateFlow(emptyList<PriceList>())
+    val priceList = _priceList.asStateFlow()
 
     // Cart items (CartItem)
     private val _cartItems = MutableStateFlow(emptyList<CartItem>())
@@ -83,7 +96,8 @@ class InvoiceViewModel @Inject constructor(
 
     init {
 //      Essential db operations to load data
-        fetchInvoices()
+        fetchPriceList()
+        loadInvoices()
         insertInitialProducts()
         fetchProducts()
         fetchInvoiceLines()
@@ -92,7 +106,31 @@ class InvoiceViewModel @Inject constructor(
         fetchAllOrders()
     }
 
-    private fun fetchInvoices() = viewModelScope.launch {
+    private fun fetchPriceList() {
+        viewModelScope.launch {
+            priceListRepository.getAllPriceLists().collect { prices ->
+                _priceList.value = prices
+            }
+        }
+    }
+
+    fun getPricelistById(productId: Long?): PriceList? {
+        return priceList.value.firstOrNull { it.productId == productId }
+    }
+
+    // Function to get PriceList by productId
+    fun getPriceDetailsForSelectedProducts(selectedProducts: List<Product>) {
+        viewModelScope.launch {
+            val productDetailsWithPrices = selectedProducts.map { product ->
+                val priceList = priceListRepository.getPriceListByProductId(product.productId)
+                val productPrice = priceList?.sellingPrice ?: 0.0
+                product to productPrice
+            }
+            _productWithPriceDetails.value = productDetailsWithPrices
+        }
+    }
+
+    private fun loadInvoices() = viewModelScope.launch {
         invoiceRepository.getAllInvoices().collectLatest { invoiceList ->
             _invoiceList.value = invoiceList
         }
@@ -136,10 +174,6 @@ class InvoiceViewModel @Inject constructor(
         return customerList.value.firstOrNull { it.customerId == customerId }
     }
 
-    fun getProductById(productId: Long?): Product? {
-        return productList.value.firstOrNull { it.productId == productId }
-    }
-
     fun getWalkinCustomer(): Customer? {
         return customerList.value.firstOrNull { it.name == "walkInCustomer" }
     }
@@ -151,26 +185,96 @@ class InvoiceViewModel @Inject constructor(
         }
     }
 
+    val defaultImage = R.drawable.meat3
+
     // Insert initial products into the database
     private fun insertInitialProducts() = viewModelScope.launch {
-        val existingProducts =
-            productRepository.getAllProductsOnce()
+        val existingProducts = productRepository.getAllProductsOnce()
+
         if (existingProducts.isEmpty()) {
             val initialProducts = listOf(
-                Product(name = "Product 1", price = 10.0, imageResId = R.drawable.meat1),
-                Product(name = "Product 2", price = 20.0, imageResId = R.drawable.chicken2),
-                Product(name = "Product 3", price = 30.0, imageResId = R.drawable.meat3),
-                Product(name = "Product 4", price = 40.0, imageResId = R.drawable.meat4),
-                Product(name = "Product 5", price = 50.0, imageResId = R.drawable.chicken1),
-                Product(name = "Product 6", price = 60.0, imageResId = R.drawable.meat2),
-                Product(name = "Product 7", price = 70.0, imageResId = R.drawable.meat6),
-                Product(name = "Product 8", price = 80.0, imageResId = R.drawable.meat7),
-                Product(name = "Product 9", price = 90.0, imageResId = R.drawable.chicken1),
-                Product(name = "Product 10", price = 100.0, imageResId = R.drawable.meat4)
+                Product(
+                    productDescription = "Product 1",
+                    currentStockLevel = 100,
+                    saleable = true,
+                    purchasable = true,
+                    averageCost = 8.0,
+                    standardCost = 10.0,
+                    salesTaxCode = "VAT",
+                    purchasableTaxCode = "VAT",
+                    inclusiveTaxed = true,
+                ),
+                Product(
+                    productDescription = "Product 2",
+                    currentStockLevel = 150,
+                    saleable = true,
+                    purchasable = true,
+                    averageCost = 15.0,
+                    standardCost = 20.0,
+                    salesTaxCode = "VAT",
+                    purchasableTaxCode = "VAT",
+                    inclusiveTaxed = true
+                ),
+                Product(
+                    productDescription = "Product 3",
+                    currentStockLevel = 200,
+                    saleable = true,
+                    purchasable = true,
+                    averageCost = 25.0,
+                    standardCost = 30.0,
+                    salesTaxCode = "VAT",
+                    purchasableTaxCode = "VAT",
+                    inclusiveTaxed = true
+                ),
+                Product(
+                    productDescription = "Product 4",
+                    currentStockLevel = 250,
+                    saleable = true,
+                    purchasable = true,
+                    averageCost = 35.0,
+                    standardCost = 40.0,
+                    salesTaxCode = "VAT",
+                    purchasableTaxCode = "VAT",
+                    inclusiveTaxed = true
+                ),
+                Product(
+                    productDescription = "Product 5",
+                    currentStockLevel = 300,
+                    saleable = true,
+                    purchasable = true,
+                    averageCost = 45.0,
+                    standardCost = 50.0,
+                    salesTaxCode = "VAT",
+                    purchasableTaxCode = "VAT",
+                    inclusiveTaxed = true
+                )
             )
-            productRepository.insertProducts(initialProducts)
+
+            // Insert initial products and get the inserted IDs
+            val productIds = productRepository.insertProducts(initialProducts)
+
+            // After inserting products, insert into PriceList table
+            productIds.forEachIndexed { index, productId ->
+                val product = initialProducts[index]
+                val sellingPrice = product.standardCost * 1.2 // Example of a 20% markup
+                val markupPercentage =
+                    ((sellingPrice - product.standardCost) / product.standardCost) * 100
+                val grossProfitPercentage =
+                    ((sellingPrice - product.averageCost) / sellingPrice) * 100
+
+                val priceList = PriceList(
+                    productId = productId,
+                    productDescription = product.productDescription,
+                    unitCost = product.standardCost,
+                    sellingPrice = sellingPrice,
+                    markupPercentage = markupPercentage,
+                    grossProfitPercentage = grossProfitPercentage
+                )
+                priceListRepository.insertPriceList(priceList)
+            }
         }
     }
+
 
     fun insertProduct(product: Product) = viewModelScope.launch {
         productRepository.insertProduct(product)
@@ -187,11 +291,44 @@ class InvoiceViewModel @Inject constructor(
         _selectedProducts.value = updatedList
     }
 
-//    fun addProductToCart(product: Product) {
-//        val updatedList = _selectedProducts.value.toMutableList()
-//        updatedList.add(product)
-//        _selectedProducts.value = updatedList
-//    }
+    // Function to compute today's sales total and number of transactions
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun getTodaySalesInfo(): Pair<Double, Int> {
+        val today = LocalDate.now()
+
+        // Log the current date for reference
+        Log.d("InvoiceViewModel", "Today's Date: $today")
+
+        // Log the entire invoice list for debugging
+        Log.d("InvoiceViewModel", "Invoice List: ${_invoiceList.value}")
+
+        // Filter invoices for today
+        val todayInvoices = _invoiceList.value.filter { invoice ->
+            // Convert the invoiceDate timestamp (assuming it's in milliseconds) to LocalDate
+            val invoiceDate =
+                LocalDate.ofEpochDay(invoice.invoiceDate / (24 * 60 * 60 * 1000)) // Ensure this is in milliseconds
+
+            // Log each invoice date being checked
+            Log.d(
+                "InvoiceViewModel",
+                "Invoice Date: ${invoice.invoiceDate}, LocalDate: $invoiceDate"
+            )
+
+            // Check if the invoice date matches today
+            invoiceDate == today
+        }
+
+        // Calculate total sales and transaction count
+        val totalSales = todayInvoices.sumOf { it.totalAmount }
+        val transactionCount = todayInvoices.size
+
+        // Log the filtered invoices for debugging
+        Log.d("InvoiceViewModel", "Today's Invoices: $todayInvoices")
+        Log.d("InvoiceViewModel", "Total Sales: $totalSales, Transaction Count: $transactionCount")
+
+        return totalSales to transactionCount
+    }
+
 
     fun getInvoiceLineById(invoiceID: Long?): InvoiceLine? {
         return invoiceLineList.value.firstOrNull { it.invoiceID == invoiceID }
@@ -296,6 +433,8 @@ class InvoiceViewModel @Inject constructor(
     fun submitInvoice(customerId: Long, amountTendered: Double) = viewModelScope.launch {
         try {
             var totalAmount = 0.0
+            val taxPercentage = 0.15 // Example tax percentage
+            val discountPercentage = 0.1 // Example discount percentage
 
             // Log the start of the operation
             Log.d("Invoice", "Starting invoice submission for customerId: $customerId")
@@ -307,10 +446,17 @@ class InvoiceViewModel @Inject constructor(
                 return@launch
             }
 
-            // Fetch selected products from the selectedProducts list and calculate total amount
+            // Fetch selected products and their prices from PriceList, then calculate total amount
             val selectedProductsWithDetails = _selectedProducts.value.map { product ->
-                totalAmount += product.price * 1 // Assuming `product.quantity` is available
-                product
+                // Fetch the corresponding price from the PriceList entity
+                val priceList = priceListRepository.getPriceListByProductId(product.productId)
+                val basePrice = priceList?.sellingPrice ?: 0.0
+                val taxAmount = basePrice * taxPercentage
+                val discountAmount = basePrice * discountPercentage
+                val finalPrice = basePrice + taxAmount - discountAmount
+                totalAmount += finalPrice * 1 // Assuming `product.quantity` is available
+
+                product to finalPrice // Pair product with calculated final price
             }
 
             // Calculate change
@@ -332,58 +478,51 @@ class InvoiceViewModel @Inject constructor(
                 )
 
                 // Insert the invoice and get the invoiceId
-                val invoiceId = invoiceRepository.insertInvoice(invoice) // Insert the invoice
+                val invoiceId = invoiceRepository.insertInvoice(invoice)
 
                 Log.d("Invoice", "Inserted Invoice with id: $invoiceId")
 
-                // Insert CartItems for each selected product
-                selectedProductsWithDetails.forEach { product ->
+                // Insert CartItems and InvoiceItems for each selected product
+                selectedProductsWithDetails.forEach { (product, finalPrice) ->
                     val cartItem = CartItem(
                         customerId = customerId,
                         productId = product.productId,
                         invoiceId = invoiceId,
-                        totalAmount = totalAmount, // Total price for this product
-                        totalAmountTendered = amountTendered, // Amount tendered by the customer
-                        change = change // Change to be given back to the customer
+                        totalAmount = finalPrice, // Final price after tax and discount
+                        totalAmountTendered = amountTendered,
+                        change = change
                     )
-
                     cartItemRepository.insertCartItem(cartItem)
-                    Log.d("Invoice", "Inserted CartItem: $cartItem")
-                }
 
-                // Insert InvoiceItems for each product
-                selectedProductsWithDetails.forEach { product ->
                     val invoiceItem = InvoiceItem(
                         invoiceId = invoiceId,
                         productId = product.productId,
                         customerId = customerId,
                         quantity = 1, // Quantity of the product
-                        price = product.price,
-                        total = product.price * 1
+                        price = finalPrice,
+                        total = finalPrice * 1
                     )
                     invoiceItemRepository.insertInvoiceItem(invoiceItem)
-                    Log.d("Invoice", "Inserted InvoiceItem: $invoiceItem")
                 }
 
                 // Insert InvoiceLine records for the report
-                selectedProductsWithDetails.forEach { product ->
+                selectedProductsWithDetails.forEach { (product, finalPrice) ->
                     val invoiceLine = InvoiceLine(
-                        invoiceID = invoiceId, // Get invoiceId from inserted invoice
-                        invoiceStatus = invoice.status, // Get status from the inserted invoice object
+                        invoiceID = invoiceId,
+                        invoiceStatus = invoice.status,
                         productID = product.productId,
-                        productName = product.name,
-                        productPrice = product.price,
-                        productQtySold = 1, // Set product quantity
-                        customerID = customerId, // Set customerId
+                        productName = product.productDescription,
+                        productPrice = finalPrice,
+                        productQtySold = 1,
+                        customerID = customerId,
                         customerName = customer.name,
                         customerPhone = customer.phone,
                         totalAmount = totalAmount,
-                        amountTendered = amountTendered, // Add logic for amountTendered
-                        changeBalance = change, // Add logic for changeBalance
+                        amountTendered = amountTendered,
+                        changeBalance = change,
                         invoiceDate = System.currentTimeMillis()
                     )
                     invoiceLineRepository.insertInvoiceLine(invoiceLine)
-                    Log.d("Invoice", "Inserted InvoiceLine: $invoiceLine")
                 }
 
                 // Clear the selected products list after invoice submission
@@ -397,92 +536,5 @@ class InvoiceViewModel @Inject constructor(
         }
     }
 
-
-//    fun submitInvoice(customerId: Long) = viewModelScope.launch {
-//        try {
-//            var totalAmount = 0.0
-//
-//            // Log the start of the operation
-//            Log.d("Invoice", "Starting invoice submission for customerId: $customerId")
-//
-//            // Fetch selected products from the selectedProducts list and calculate total amount
-//            val selectedProductsWithDetails = _selectedProducts.value.map { product ->
-//                totalAmount += product.price // Assuming each product is counted as 1 quantity here
-//                Log.d(
-//                    "Invoice",
-//                    "Adding product: ${product.name}, price: ${product.price}, total so far: $totalAmount"
-//                )
-//                product
-//            }
-//
-//            Log.d("Invoice", "Total Amount Calculated: $totalAmount")
-//
-//            // Only proceed if there are valid selected products and totalAmount > 0
-//            if (selectedProductsWithDetails.isNotEmpty() && totalAmount > 0) {
-//                // Create an Invoice object
-//                val invoice = Invoice(
-//                    customerId = customerId,
-//                    totalAmount = totalAmount,
-//                    invoiceDate = System.currentTimeMillis(),
-//                    dueDate = null,
-//                    status = "Pending" // Assuming status is "Pending" for a new invoice
-//                )
-//
-//                // Insert the invoice and get the invoiceId
-//                val invoiceId = invoiceRepository.insertInvoice(invoice) // Insert the invoice
-//
-//                Log.d("Invoice", "Inserted Invoice with id: $invoiceId")
-//
-//                // Convert selected products to InvoiceItems and store them
-//                selectedProductsWithDetails.forEach { product ->
-//                    val invoiceItem = InvoiceItem(
-//                        invoiceId = invoiceId,
-//                        productId = product.productId,
-//                        customerId = customerId,
-//                        quantity = 1, // Assuming 1 quantity per selected product (adjust as needed)
-//                        price = product.price,
-//                        total = product.price // Since quantity is 1
-//                    )
-//                    invoiceItemRepository.insertInvoiceItem(invoiceItem)
-//                    Log.d("Invoice", "Inserted InvoiceItem: $invoiceItem")
-//                }
-//
-//                // Now, insert a row into the InvoiceLine table for the submitted invoice
-//                val customer =
-//                    customerRepository.getCustomerById(customerId) // Fetch customer details
-//                selectedProductsWithDetails.forEach { product ->
-//                    val invoiceLine = customer?.let {
-//                        InvoiceLine(
-//                            invoiceID = invoiceId, // Get invoiceId from inserted invoice
-//                            invoiceStatus = invoice.status, // Get status from the inserted invoice object
-//                            productID = product.productId,
-//                            productName = product.name,
-//                            productPrice = product.price,
-//                            productQtySold = 1, // Assuming 1 quantity per product
-//                            customerID = customerId, // Set customerId
-//                            customerName = it.name,
-//                            customerPhone = customer.phone,
-//                            totalAmount = totalAmount,
-//                            amountTendered = null, // Add logic for amountTendered if applicable
-//                            changeBalance = null, // Add logic for changeBalance if applicable
-//                            invoiceDate = System.currentTimeMillis()
-//                        )
-//                    }
-//                    if (invoiceLine != null) {
-//                        invoiceLineRepository.insertInvoiceLine(invoiceLine) // Insert InvoiceLine record
-//                    }
-//                    Log.d("Invoice", "Inserted InvoiceLine: $invoiceLine")
-//                }
-//
-//                // Clear the selected products list after invoice submission
-//                _selectedProducts.value = emptyList()
-//                Log.d("Invoice", "Cleared selected products for customer: $customerId")
-//            } else {
-//                Log.e("InvoiceError", "No valid selected products to invoice or total amount is 0")
-//            }
-//        } catch (e: Exception) {
-//            Log.e("InvoiceError", "Error during invoice submission: ${e.message}")
-//        }
-//    }
 
 }

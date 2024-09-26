@@ -27,7 +27,8 @@ interface ProductDao {
 
     // Insert multiple Products
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertProducts(product: List<Product>)
+    suspend fun insertProducts(products: List<Product>): List<Long> // Return list of inserted product IDs
+//    suspend fun insertProducts(product: List<Product>)
 
     @Update
     suspend fun updateProduct(product: Product)

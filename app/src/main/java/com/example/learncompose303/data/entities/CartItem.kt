@@ -27,7 +27,6 @@ import androidx.room.PrimaryKey
         )
     ]
 )
-
 data class CartItem(
     @PrimaryKey(autoGenerate = true) val cartItemId: Long = 0,
     val customerId: Long,
@@ -35,5 +34,9 @@ data class CartItem(
     val invoiceId: Long,
     val totalAmount: Double,
     val totalAmountTendered: Double,
-    val change: Double
+    val change: Double,
+    val taxAmount: Double? = null, // Tax amount on this cart item (optional)
+    val discountAmount: Double? = null, // Discounts applied to the item
+    val createdAt: Long = System.currentTimeMillis(), // Track when the item was added to the cart
+    val updatedAt: Long? = null // Track when the item was last updated
 )

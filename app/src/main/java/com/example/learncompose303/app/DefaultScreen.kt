@@ -139,7 +139,7 @@ fun InDriveTopBottomNavigation() {
             startDestination = Destinations.Rides.route,
             modifier = Modifier.padding(paddingValues)
         ) {
-            composable(Destinations.Rides.route) { RideRequestsScreen(navController) }
+            composable(Destinations.Rides.route) { RideRequestsScreen(navController, viewModel) }
             composable(Destinations.Income.route) { MyIncomeScreen() }
             composable(Destinations.Priority.route) { PriorityScreen() }
             composable(Destinations.Wallet.route) { WalletScreen() }

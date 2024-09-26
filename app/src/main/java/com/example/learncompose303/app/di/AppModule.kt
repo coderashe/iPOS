@@ -12,6 +12,7 @@ import com.example.learncompose303.data.data_source.InvoiceLineDao
 import com.example.learncompose303.data.data_source.NoteDao
 import com.example.learncompose303.data.data_source.OrderDao
 import com.example.learncompose303.data.data_source.PaymentDao
+import com.example.learncompose303.data.data_source.PriceListDao
 import com.example.learncompose303.data.data_source.ProductDao
 import com.example.learncompose303.data.data_source.StudentDao
 import com.example.learncompose303.data.domain.repository.NoteRepository
@@ -35,6 +36,8 @@ import com.example.learncompose303.data.repositories.OrderRepository
 import com.example.learncompose303.data.repositories.OrderRepositoryImpl
 import com.example.learncompose303.data.repositories.PaymentRepository
 import com.example.learncompose303.data.repositories.PaymentRepositoryImpl
+import com.example.learncompose303.data.repositories.PriceListRepository
+import com.example.learncompose303.data.repositories.PriceListRepositoryImpl
 import com.example.learncompose303.data.repositories.ProductRepository
 import com.example.learncompose303.data.repositories.ProductRepositoryImpl
 import com.example.learncompose303.data.repositories.RepositoryImpl
@@ -142,6 +145,18 @@ object AppModule {
         return OrderRepositoryImpl(orderDao)
     }
 
+    //
+    @Provides
+    fun providePriceListDao(database: AppDatabase): PriceListDao {
+        return database.pricelistDao()
+    }
+
+    @Provides
+    fun providePriceListRepository(priceListDao: PriceListDao): PriceListRepository {
+        return PriceListRepositoryImpl(priceListDao)
+    }
+
+//
 
     @Provides
     @Singleton

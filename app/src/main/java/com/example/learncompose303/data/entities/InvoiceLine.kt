@@ -3,7 +3,7 @@ package com.example.learncompose303.data.entities
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
-@Entity
+@Entity(tableName = "invoice_lines")
 data class InvoiceLine(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
@@ -17,7 +17,11 @@ data class InvoiceLine(
     val customerName: String,
     val customerPhone: String?,
     val totalAmount: Double,
-    val amountTendered: Double?, // If applicable
-    val changeBalance: Double?, // If applicable
-    val invoiceDate: Long
+    val amountTendered: Double?,
+    val changeBalance: Double?,
+    val invoiceDate: Long,
+    val taxAmount: Double? = null, // Tax amount for this invoice line
+    val discountAmount: Double? = null, // Discount applied to the line item
+    val createdAt: Long = System.currentTimeMillis(), // Created timestamp for auditing
+    val updatedAt: Long? = null // Last update timestamp for auditing
 )

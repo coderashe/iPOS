@@ -15,13 +15,13 @@ interface InvoiceLineDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertInvoiceLine(invoiceLine: InvoiceLine)
 
-    @Query("SELECT * FROM invoiceline")
+    @Query("SELECT * FROM invoice_lines")
     fun getAllInvoiceLines(): Flow<List<InvoiceLine>>
 
-    @Query("SELECT * FROM invoiceline WHERE invoiceID = :id")
+    @Query("SELECT * FROM invoice_lines WHERE invoiceID = :id")
     suspend fun getInvoiceLineById(id: Long): InvoiceLine?
 
-    @Query("SELECT * FROM invoiceline WHERE invoiceId = :invoiceId")
+    @Query("SELECT * FROM invoice_lines WHERE invoiceId = :invoiceId")
     suspend fun getInvoiceLinesByInvoiceId(invoiceId: Long): List<InvoiceLine>
 
 }

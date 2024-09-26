@@ -2,13 +2,19 @@ package com.example.learncompose303.data.entities
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.example.learncompose303.R
 
 @Entity(tableName = "products")
 data class Product(
     @PrimaryKey(autoGenerate = true) val productId: Long = 0,
-    val name: String,
-    val price: Double,
-    val imageResId: Int? = null,
-//    val totalStockLevel: Double // New field for tracking stock levels
+    val productDescription: String,
+    val currentStockLevel: Int,
+    val saleable: Boolean, // Determines if the product can be sold
+    val purchasable: Boolean, // Determines if the product can be purchased
+    val averageCost: Double, // Average cost of the product
+    val standardCost: Double, // Standard cost used for cost comparison
+    val salesTaxCode: String?, // Tax code for sales
+    val purchasableTaxCode: String?, // Tax code for purchases
+    val inclusiveTaxed: Boolean, // Whether the price is inclusive of tax
+    val imageResId: Int? = R.drawable.meat3
 )
-

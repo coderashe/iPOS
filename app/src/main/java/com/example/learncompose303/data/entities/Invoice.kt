@@ -10,5 +10,8 @@ data class Invoice(
     val totalAmount: Double,
     val invoiceDate: Long,  // Store as timestamp
     val dueDate: Long?,
-    val status: String // e.g., "Paid", "Pending", "Overdue"
+    val status: String, // e.g., "Paid", "Pending", "Overdue"
+    val currencyCode: String = "USD", // To support multi-currency
+    val lastUpdated: Long? = null, // Timestamp of last update for auditing
+    val isArchived: Boolean = false // To mark if the invoice is archived or not
 )

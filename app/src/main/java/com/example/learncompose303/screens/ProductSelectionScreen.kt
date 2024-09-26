@@ -1,6 +1,7 @@
 package com.example.learncompose303.screens
 
 import android.R
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -138,7 +139,7 @@ import com.example.learncompose303.viewmodels.InvoiceViewModel
 //            product.imageResId?.let { painterResource(id = it) }?.let {
 //                Image(
 //                    painter = it,
-//                    contentDescription = product.name,
+//                    contentDescription = product.productDescription,
 //                    modifier = Modifier
 //                        .size(100.dp)
 //                        .clip(CircleShape)
@@ -149,7 +150,7 @@ import com.example.learncompose303.viewmodels.InvoiceViewModel
 //            Spacer(modifier = Modifier.height(8.dp))
 //            Text("\$${product.price}", style = MaterialTheme.typography.headlineSmall)
 //            Spacer(modifier = Modifier.height(8.dp))
-//            Text(product.name, style = MaterialTheme.typography.bodySmall)
+//            Text(product.productDescription, style = MaterialTheme.typography.bodySmall)
 //            Button(
 //                modifier = Modifier.fillMaxWidth(),
 //                onClick = {
@@ -258,9 +259,7 @@ fun ProductSelectionScreen(
                 Text("Proceed to Cart")
             }
         }
-
         Spacer(modifier = Modifier.height(16.dp))
-
         LazyColumn {
             items(products.chunked(3)) { rowItems ->
                 Row(
@@ -269,13 +268,22 @@ fun ProductSelectionScreen(
                 ) {
                     for (product in rowItems) {
                         val isSelected = selectedProducts.contains(product)
-                        ProductCard(
-                            product = product,
-                            isSelected = isSelected,
-                            onAddProduct = {
-                                viewModel.addProductToCart(product)
-                            }
-                        )
+                        val price = viewModel.getPricelistById(product.productId)
+                        if (price != null) {
+                            ProductCard(
+                                product = product,
+                                isSelected = isSelected,
+                                onAddProduct = {
+                                    viewModel.addProductToCart(product)
+                                },
+                                price = price.sellingPrice
+                            )
+                        } else {
+                            Log.d(
+                                "HazyLogs",
+                                "No price found for product ID: ${product.productId}"
+                            )
+                        }
                     }
                     if (rowItems.size == 1) {
                         Spacer(modifier = Modifier.weight(1f)) // Fill the space for uneven row
@@ -283,13 +291,18 @@ fun ProductSelectionScreen(
                 }
             }
         }
-
         Spacer(modifier = Modifier.height(16.dp))
     }
 }
 
 @Composable
-fun ProductCard(product: Product, isSelected: Boolean, onAddProduct: (Product) -> Unit) {
+fun ProductCard(
+    product: Product,
+    isSelected: Boolean,
+    onAddProduct: (Product) -> Unit,
+    price: Double
+) {
+
     Card(
         shape = RoundedCornerShape(8.dp),
         modifier = Modifier
@@ -309,7 +322,7 @@ fun ProductCard(product: Product, isSelected: Boolean, onAddProduct: (Product) -
             product.imageResId?.let { painterResource(id = it) }?.let {
                 Image(
                     painter = it,
-                    contentDescription = product.name,
+                    contentDescription = product.productDescription,
                     modifier = Modifier
                         .size(100.dp)
                         .clip(CircleShape)
@@ -318,9 +331,9 @@ fun ProductCard(product: Product, isSelected: Boolean, onAddProduct: (Product) -
                 )
             }
             Spacer(modifier = Modifier.height(8.dp))
-            Text("\$${product.price}", style = MaterialTheme.typography.headlineSmall)
+            Text("\$${price}", style = MaterialTheme.typography.headlineSmall)
             Spacer(modifier = Modifier.height(8.dp))
-            Text(product.name, style = MaterialTheme.typography.bodySmall)
+            Text(product.productDescription, style = MaterialTheme.typography.bodySmall)
             Button(
                 modifier = Modifier.fillMaxWidth(),
                 onClick = {

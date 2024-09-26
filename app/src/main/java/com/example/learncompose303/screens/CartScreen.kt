@@ -59,12 +59,16 @@ import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.viewModelScope
 import com.example.learncompose303.R
 import com.example.learncompose303.ui.theme.Gray1
 import com.example.learncompose303.ui.theme.LightGray
 import com.example.learncompose303.ui.theme.MyGray
+import kotlinx.coroutines.launch
 
 @Composable
 fun CartScreen(
@@ -73,12 +77,31 @@ fun CartScreen(
     viewModel: InvoiceViewModel = viewModel()
 ) {
     val context = LocalContext.current
+
     // Get the selected products
     val selectedProducts by viewModel.selectedProducts.collectAsState()
 
+    // Collect product price details
+    val productWithPriceDetails by viewModel.productWithPriceDetails.collectAsState(initial = emptyList())
+    val productDetails = productWithPriceDetails.joinToString("\n") { (product, price) ->
+        "${product.productDescription}, $$price, Quantity: 1" // Assuming quantity is 1 for now
+    }
+
     // State to hold the total amount tendered by the customer
     var amountTendered by remember { mutableStateOf("") }
-    var totalPrice by remember { mutableStateOf(0.0) }
+
+    // Map to hold quantities for each product
+    val productQuantities = remember { mutableStateMapOf<Long, Int>() }
+
+    // Calculate totalPrice using sumOf for all product prices and quantities
+    val totalPrice by remember {
+        derivedStateOf {
+            productWithPriceDetails.sumOf { (product, price) ->
+                val quantity = productQuantities[product.productId] ?: 1
+                price * quantity
+            }
+        }
+    }
 
     // State to hold the change balance
     val changeBalance = if (amountTendered.isNotEmpty()) {
@@ -87,6 +110,11 @@ fun CartScreen(
         } ?: 0.0
     } else {
         0.0
+    }
+
+    // Load price details for selected products when the screen is entered
+    LaunchedEffect(selectedProducts) {
+        viewModel.getPriceDetailsForSelectedProducts(selectedProducts)
     }
 
     Column(
@@ -100,7 +128,6 @@ fun CartScreen(
             color = MaterialTheme.colorScheme.primary
         )
         Spacer(modifier = Modifier.height(8.dp))
-//
 
         Row(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.weight(1f)) {
@@ -109,6 +136,7 @@ fun CartScreen(
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.primary
                 )
+
                 Text(
                     text = "Change: \$${changeBalance}",
                     style = MaterialTheme.typography.bodySmall,
@@ -120,7 +148,7 @@ fun CartScreen(
                 OutlinedTextField(
                     value = amountTendered,
                     onValueChange = { newValue -> amountTendered = newValue },
-                    label = { Text(stringResource(R.string.amount_tendered)) },
+                    label = { Text("Amount Tendered") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
                 )
             }
@@ -130,145 +158,93 @@ fun CartScreen(
             color = MaterialTheme.colorScheme.primary
         )
         Spacer(modifier = Modifier.height(8.dp))
+
         Button(
             onClick = {
-                if (amountTendered.isNotEmpty() && amountTendered.toDouble() != 0.0) {
-                    // Submit the invoice and capture cart item details
-                    viewModel.submitInvoice(customer.customerId, amountTendered.toDouble())
+                val tenderedAmount = amountTendered.toDoubleOrNull()
 
-                    // Collect selected products for WhatsApp message
-                    val selectedProducts =
-                        viewModel.selectedProducts.value // Get the selected products
-                    val productDetails = selectedProducts.joinToString("\n") { product ->
-                        "${product.name}, $${product.price}, Quantity: ${1}"
-                    }
+                if (amountTendered.isNotEmpty() && tenderedAmount != null && tenderedAmount > 0) {
+                    if (tenderedAmount >= totalPrice) {
+                        // Submit the invoice and capture cart item details
+                        viewModel.submitInvoice(customer.customerId, tenderedAmount)
 
-// Format the message with bold headings and proper alignment
-                    val message = "*INVOICE RECEIPT:*\n\n" +
-                            "*CUSTOMER DETAILS*\n" +
-                            "${customer.name}\n" +
-                            "${customer.phone}\n\n" +
-                            "*PRODUCTS PURCHASED:*\n" +
-                            "$productDetails\n\n" +
-                            "*SALES TOTALS*\n" +
-                            "Total Amount:* $$totalPrice*\n" +
-                            "Amount Tendered:* $$amountTendered*\n" +
-                            "Change:* $${amountTendered.toDouble() - totalPrice}*\n\n" +
-                            "Thank you for your purchase!...\n              ISTARTK  \u00A9 2024"
+                        // Your code for sharing the invoice message...
 
-// Create an intent to send the message
-                    val sendIntent = Intent(Intent.ACTION_SEND).apply {
-                        type = "text/plain"
-                        putExtra(Intent.EXTRA_TEXT, message)
-                    }
+                        // Create an intent to send the message
+                        val message = "*INVOICE RECEIPT:*\n\n" +
+                                "*CUSTOMER DETAILS*\n" +
+                                "${customer.name}\n" +
+                                "${customer.phone}\n\n" +
+                                "*PRODUCTS PURCHASED:*\n" +
+                                "$productDetails\n\n" +
+                                "*SALES TOTALS*\n" +
+                                "Total Amount: *$$totalPrice*\n" +
+                                "Amount Tendered: *$$amountTendered*\n" +
+                                "Change: *$${amountTendered.toDouble() - totalPrice}*\n\n" +
+                                "Thank you for your purchase!...\n              ISTARTK  \u00A9 2024"
 
-                    try {
-                        // Use a chooser to select WhatsApp or WhatsApp Business and send message
-                        val chooserIntent = Intent.createChooser(
-                            sendIntent,
-                            "Send via WhatsApp or WhatsApp Business"
-                        )
-                        chooserIntent.resolveActivity(context.packageManager)?.let {
-                            context.startActivity(chooserIntent)
-                        } ?: run {
-                            Toast.makeText(context, "No messaging app found", Toast.LENGTH_SHORT)
+                        val sendIntent = Intent(Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(Intent.EXTRA_TEXT, message)
+                        }
+
+                        try {
+                            // Use a chooser to select WhatsApp or WhatsApp Business and send message
+                            val chooserIntent = Intent.createChooser(
+                                sendIntent,
+                                "Send via WhatsApp or WhatsApp Business"
+                            )
+                            chooserIntent.resolveActivity(context.packageManager)?.let {
+                                context.startActivity(chooserIntent)
+                            } ?: run {
+                                Toast.makeText(
+                                    context,
+                                    "No messaging app found",
+                                    Toast.LENGTH_SHORT
+                                )
+                                    .show()
+                            }
+                        } catch (e: Exception) {
+                            Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT)
                                 .show()
                         }
-                    } catch (e: Exception) {
-                        Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
-                    }
 
-                    // Navigate to the receipt screen or another destination after submitting the invoice
-                    navController.navigate(Destinations.Rides.route) // Replace this with your actual destination for receipt
-                    Toast.makeText(context, "Invoice paid successfully", Toast.LENGTH_SHORT).show()
+                        // Navigate to the receipt screen or another destination after submitting the invoice
+                        navController.navigate(Destinations.Rides.route) // Replace this with your actual destination for receipt
+                        Toast.makeText(context, "Invoice paid successfully", Toast.LENGTH_SHORT)
+                            .show()
+                    } else {
+                        Toast.makeText(
+                            context,
+                            "Amount tendered must be greater than or equal to total price",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
                 } else {
-                    Toast.makeText(context, "Please enter valid details", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Please enter valid details", Toast.LENGTH_SHORT)
+                        .show()
                 }
             },
-            modifier = Modifier
-                .fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth(),
         ) {
             Text("Submit Invoice")
         }
 
-//        Button(
-//            onClick = {
-//                if (amountTendered.isNotEmpty() && amountTendered.toDouble() != 0.0) {
-//                    // Submit the invoice and capture cart item details
-//                    viewModel.submitInvoice(customer.customerId, amountTendered.toDouble())
-//
-//                    // Collect selected products for WhatsApp message
-//                    val selectedProducts =
-//                        viewModel.selectedProducts.value // Get the selected products
-//                    val productDetails = selectedProducts.joinToString("\n") { product ->
-//                        "Product: ${product.name}, Price: ${product.price}, Quantity: ${1}"
-//                    }
-//
-//                    // Format the message
-//                    val message = """
-//                Invoice Receipt:
-//                Customer: ${customer.name}
-//                Phone: ${customer.phone}
-//
-//                Products Purchased:
-//                $productDetails
-//
-//                Total Amount: $totalPrice
-//                Amount Tendered: $amountTendered
-//                Change: ${amountTendered.toDouble() - totalPrice}
-//
-//                Thank you for your purchase!
-//            """.trimIndent()
-//
-//                    // Create an intent to send the message
-//                    val sendIntent = Intent(Intent.ACTION_SEND).apply {
-//                        type = "text/plain"
-//                        putExtra(Intent.EXTRA_TEXT, message)
-//                    }
-//
-//                    try {
-//                        // Use a chooser to select WhatsApp or WhatsApp Business and send message
-//                        val chooserIntent = Intent.createChooser(
-//                            sendIntent,
-//                            "Send via WhatsApp or WhatsApp Business"
-//                        )
-//                        chooserIntent.resolveActivity(context.packageManager)?.let {
-//                            context.startActivity(chooserIntent)
-//                        } ?: run {
-//                            Toast.makeText(context, "No messaging app found", Toast.LENGTH_SHORT)
-//                                .show()
-//                        }
-//                    } catch (e: Exception) {
-//                        Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
-//                    }
-//
-//                    // Navigate to the receipt screen or another destination after submitting the invoice
-//                    navController.navigate(Destinations.Rides.route) // Replace this with your actual destination for receipt
-//                    Toast.makeText(context, "Invoice paid successfully", Toast.LENGTH_SHORT).show()
-//                } else {
-//                    Toast.makeText(context, "Please enter valid details", Toast.LENGTH_SHORT).show()
-//                }
-//            },
-//            modifier = Modifier
-//                .fillMaxWidth(),
-//        ) {
-//            Text("Submit Invoice")
-//        }
-
         Spacer(modifier = Modifier.height(16.dp))
 
         // Display the list of selected products and their total cost
-        LazyColumn(
-//            modifier = Modifier.height(400.dp)
-        ) {
+        LazyColumn {
             items(selectedProducts) { product ->
-                var quantity by remember { mutableStateOf(1) } // State to store quantity
+                var quantity by remember { mutableStateOf(1) }
 
-                val productTotalPrice = product.price * quantity
+                // Find the product price from the collected productWithPriceDetails
+                val productPrice =
+                    productWithPriceDetails.find { it.first.productId == product.productId }?.second
+                        ?: 0.0
+                val productTotalPrice = productPrice * quantity
 
-                // Update total price whenever quantity changes
                 LaunchedEffect(quantity) {
-                    totalPrice = selectedProducts.sumOf { it.price * quantity }
+                    productQuantities[product.productId] = quantity
                 }
 
                 Card(
@@ -277,54 +253,64 @@ fun CartScreen(
                         .padding(2.dp),
                     elevation = CardDefaults.cardElevation(4.dp),
                     shape = RoundedCornerShape(8.dp),
-//        colors = MaterialTheme.colorScheme.surface
                 ) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(4.dp),
-//                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(
                             modifier = Modifier.weight(1f)
                         ) {
-                            Text(product.name, style = MaterialTheme.typography.titleMedium)
                             Text(
-                                "\$${product.price}",
+                                product.productDescription,
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                            Text(
+                                "\$${productPrice}",
                                 style = MaterialTheme.typography.titleSmall
                             )
                         }
                         Spacer(modifier = Modifier.width(16.dp))
 
                         Column(horizontalAlignment = Alignment.End) {
-                            // Input for quantity
+//                            // Input for quantity with better handling
+//                            OutlinedTextField(
+//                                value = quantity.toString(),
+//                                onValueChange = { newValue ->
+//                                    quantity =
+//                                        newValue.toIntOrNull() ?: 1 // Default to 1 if invalid input
+//                                },
+//                                label = { Text("Quantity") },
+//                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+//                                shape = RoundedCornerShape(8.dp)
+//                            )
+
+                            // Input for quantity with better handling
                             OutlinedTextField(
-                                value = quantity.toString(),
+                                value = if (quantity == 0) "" else quantity.toString(),
                                 onValueChange = { newValue ->
-                                    quantity = newValue.toIntOrNull() ?: 1
+                                    quantity =
+                                        newValue.toIntOrNull()?.takeIf { it > 0 } ?: 1
                                 },
-                                label = { Text(text = stringResource(R.string.quantity)) },
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                label = { Text("Quantity") },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                 shape = RoundedCornerShape(8.dp)
                             )
+
                             Text(
                                 text = "SubTotal: \$${productTotalPrice}",
                                 color = MaterialTheme.colorScheme.primary,
                                 style = MaterialTheme.typography.titleSmall
                             )
                         }
-
                     }
-
                 }
-
-
             }
         }
-
-
     }
 }
+
 
 @Preview(showBackground = true)
 @Composable

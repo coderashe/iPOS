@@ -1,7 +1,10 @@
 package com.example.learncompose303.app
 
+import androidx.lifecycle.viewmodel.compose.viewModel
 import android.annotation.SuppressLint
 import android.app.DatePickerDialog
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -66,6 +69,7 @@ import com.example.learncompose303.ui.theme.Green1
 import com.example.learncompose303.ui.theme.LightGray
 import com.example.learncompose303.ui.theme.LightGreen
 import com.example.learncompose303.ui.theme.MyGray
+import com.example.learncompose303.viewmodels.InvoiceViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -222,20 +226,21 @@ fun AutoSlidingCarousel(
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun SalesmanInfoCard(
     salesmanName: String,
     shopName: String,
-    currentSalesTotal: Double,
-    numberOfTransactions: Int
+    viewModel: InvoiceViewModel = viewModel()
 ) {
+    val (currentSalesTotal, numberOfTransactions) = viewModel.getTodaySalesInfo()
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(16.dp),
         shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.cardElevation(8.dp),
-//        colors = CardColors(containerColor = (MyGray)) // Light background color
     ) {
         Column(
             modifier = Modifier
@@ -283,7 +288,6 @@ fun SalesmanInfoCard(
                     Text(
                         text = "no.",
                         style = MaterialTheme.typography.bodyMedium,
-//                        color = LightGray
                     )
                     Text(
                         text = "$numberOfTransactions",
@@ -299,57 +303,6 @@ fun SalesmanInfoCard(
 @Composable
 fun SpacerHeight() {
     Spacer(modifier = Modifier.height(8.dp))
-}
-
-@Composable
-fun SimpleProductCard(product: Product) {
-    var isChecked by remember { mutableStateOf(false) }
-    Card(
-        shape = RoundedCornerShape(8.dp),
-        modifier = Modifier
-            .width(165.dp)
-            .height(250.dp)
-            .padding(8.dp),
-        elevation = CardDefaults.cardElevation(4.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(2.dp)
-                .background(Color.Transparent, shape = RoundedCornerShape(8.dp)),
-        ) {
-            // Product Image
-            product.imageResId?.let { painterResource(id = it) }?.let {
-                Image(
-                    painter = it,
-                    contentDescription = product.name,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(120.dp)
-                        .clip(CircleShape),
-                    contentScale = ContentScale.Crop
-                )
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(product.name, fontWeight = FontWeight.Bold)
-            Text("Price: \$${product.price}")
-            Spacer(modifier = Modifier.height(8.dp))
-            Button(
-                onClick = {
-                },
-                colors = ButtonDefaults.buttonColors(
-                    if (isChecked) Color.Red else Blue1
-                )
-            ) {
-                Text(
-                    text = if (isChecked) "Added" else "Add to Cart",
-                    color = if (isChecked) Color.White else Color.Black
-                )
-            }
-        }
-    }
 }
 
 @Composable
@@ -391,15 +344,3 @@ fun DueDatePicker(dueDate: String, onDateSelected: (String) -> Unit) {
         }
     )
 }
-
-@Preview(showBackground = true)
-@Composable
-fun PreviewSalesmanInfoCard() {
-    SalesmanInfoCard(
-        salesmanName = "John Doe",
-        shopName = "Tech World",
-        currentSalesTotal = 12456.78,
-        numberOfTransactions = 52
-    )
-}
-

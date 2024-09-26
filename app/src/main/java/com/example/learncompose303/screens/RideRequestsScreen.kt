@@ -35,6 +35,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -46,9 +47,14 @@ import com.example.learncompose303.app.CustomHeadingMedium
 import com.example.learncompose303.app.SalesmanInfoCard
 import com.example.learncompose303.app.SpacerHeight
 import com.example.learncompose303.data.Destinations
+import com.example.learncompose303.viewmodels.InvoiceViewModel
 
 @Composable
-fun RideRequestsScreen(navController: NavHostController) {
+fun RideRequestsScreen(
+    navController: NavHostController,
+    viewModel: InvoiceViewModel = viewModel() // Ensure you get the ViewModel here
+) {
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -59,8 +65,7 @@ fun RideRequestsScreen(navController: NavHostController) {
         SalesmanInfoCard(
             salesmanName = "Simba Start",
             shopName = "ISTART CAPITAL MRT",
-            currentSalesTotal = 12456.78,
-            numberOfTransactions = 52
+            viewModel = viewModel // Pass the viewModel explicitly
         )
         SpacerHeight()
         SearchBarExample()
@@ -73,6 +78,4 @@ fun RideRequestsScreen(navController: NavHostController) {
         )
         QuickAccessButtons(navController)
     }
-
 }
-
