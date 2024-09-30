@@ -92,7 +92,7 @@ fun LoadStockScreen(
                 if (productName.isNotEmpty() && price != null) {
                     val newProduct = Product(
                         productDescription = productName,
-                        currentStockLevel = 100,
+                        currentStockLevel = 100.00,
                         saleable = true,
                         purchasable = true,
                         averageCost = 8.0,
@@ -100,7 +100,6 @@ fun LoadStockScreen(
                         salesTaxCode = "VAT",
                         purchasableTaxCode = "VAT",
                         inclusiveTaxed = true,
-//                        imageResId = imageResId ?: defaultImage
                     )
 
                     viewModel.insertProduct(newProduct) // Add product to database

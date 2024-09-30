@@ -1,13 +1,8 @@
 package com.example.learncompose303.screens
 
-import android.content.ActivityNotFoundException
-import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
+import android.util.Log
 import android.widget.Toast
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -26,22 +21,17 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.LineHeightStyle
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -49,26 +39,12 @@ import androidx.navigation.NavController
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
 import com.example.learncompose303.data.Destinations
-import com.example.learncompose303.data.entities.CartItem
 import com.example.learncompose303.data.entities.Customer
-import com.example.learncompose303.data.entities.InvoiceItem
-import com.example.learncompose303.data.entities.Product
 import com.example.learncompose303.viewmodels.InvoiceViewModel
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonColors
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
-import androidx.lifecycle.viewModelScope
-import com.example.learncompose303.R
-import com.example.learncompose303.ui.theme.Gray1
-import com.example.learncompose303.ui.theme.LightGray
-import com.example.learncompose303.ui.theme.MyGray
-import kotlinx.coroutines.launch
 
 @Composable
 fun CartScreen(
@@ -83,12 +59,18 @@ fun CartScreen(
 
     // Collect product price details
     val productWithPriceDetails by viewModel.productWithPriceDetails.collectAsState(initial = emptyList())
-    val productDetails = productWithPriceDetails.joinToString("\n") { (product, price) ->
-        "${product.productDescription}, $$price, Quantity: 1" // Assuming quantity is 1 for now
+    val productDetails = productWithPriceDetails.joinToString("\n") { (product, price, quantity) ->
+        "${product.productDescription}, $$price, Quantity: $quantity"
     }
+
+//    val productDetails = productWithPriceDetails.joinToString("\n") { (product, price) ->
+//        "${product.productDescription}, $$price, Quantity: 1"
+//    }
 
     // State to hold the total amount tendered by the customer
     var amountTendered by remember { mutableStateOf("") }
+    var quantitySold by remember { mutableStateOf(1) }
+    var newQuantitySold by remember { mutableStateOf(1) }
 
     // Map to hold quantities for each product
     val productQuantities = remember { mutableStateMapOf<Long, Int>() }
@@ -114,7 +96,7 @@ fun CartScreen(
 
     // Load price details for selected products when the screen is entered
     LaunchedEffect(selectedProducts) {
-        viewModel.getPriceDetailsForSelectedProducts(selectedProducts)
+        viewModel.getPriceDetailsForSelectedProducts(selectedProducts, productQuantities)
     }
 
     Column(
@@ -165,12 +147,15 @@ fun CartScreen(
 
                 if (amountTendered.isNotEmpty() && tenderedAmount != null && tenderedAmount > 0) {
                     if (tenderedAmount >= totalPrice) {
-                        // Submit the invoice and capture cart item details
-                        viewModel.submitInvoice(customer.customerId, tenderedAmount)
+                        // Submit the invoice with individual product quantities
+                        viewModel.submitInvoice(
+                            customer.customerId,
+                            tenderedAmount,
+                            productQuantities // Pass the product quantities map here
+                        )
 
                         // Your code for sharing the invoice message...
 
-                        // Create an intent to send the message
                         val message = "*INVOICE RECEIPT:*\n\n" +
                                 "*CUSTOMER DETAILS*\n" +
                                 "${customer.name}\n" +
@@ -189,7 +174,6 @@ fun CartScreen(
                         }
 
                         try {
-                            // Use a chooser to select WhatsApp or WhatsApp Business and send message
                             val chooserIntent = Intent.createChooser(
                                 sendIntent,
                                 "Send via WhatsApp or WhatsApp Business"
@@ -210,7 +194,7 @@ fun CartScreen(
                         }
 
                         // Navigate to the receipt screen or another destination after submitting the invoice
-                        navController.navigate(Destinations.Rides.route) // Replace this with your actual destination for receipt
+                        navController.navigate(Destinations.Rides.route)
                         Toast.makeText(context, "Invoice paid successfully", Toast.LENGTH_SHORT)
                             .show()
                     } else {
@@ -230,21 +214,26 @@ fun CartScreen(
             Text("Submit Invoice")
         }
 
+
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Display the list of selected products and their total cost
+// Display the list of selected products and their total cost
         LazyColumn {
             items(selectedProducts) { product ->
-                var quantity by remember { mutableStateOf(1) }
 
                 // Find the product price from the collected productWithPriceDetails
                 val productPrice =
                     productWithPriceDetails.find { it.first.productId == product.productId }?.second
                         ?: 0.0
-                val productTotalPrice = productPrice * quantity
 
-                LaunchedEffect(quantity) {
-                    productQuantities[product.productId] = quantity
+                // Get the current quantity for this product from the map, default to 1 if not present
+                val quantitySold = productQuantities[product.productId] ?: 1
+
+                // Calculate the total price for the product
+                val productTotalPrice = productPrice * quantitySold
+
+                LaunchedEffect(quantitySold) {
+                    productQuantities[product.productId] = quantitySold
                 }
 
                 Card(
@@ -274,24 +263,13 @@ fun CartScreen(
                         Spacer(modifier = Modifier.width(16.dp))
 
                         Column(horizontalAlignment = Alignment.End) {
-//                            // Input for quantity with better handling
-//                            OutlinedTextField(
-//                                value = quantity.toString(),
-//                                onValueChange = { newValue ->
-//                                    quantity =
-//                                        newValue.toIntOrNull() ?: 1 // Default to 1 if invalid input
-//                                },
-//                                label = { Text("Quantity") },
-//                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-//                                shape = RoundedCornerShape(8.dp)
-//                            )
 
                             // Input for quantity with better handling
                             OutlinedTextField(
-                                value = if (quantity == 0) "" else quantity.toString(),
+                                value = if (quantitySold == 0) "" else quantitySold.toString(),
                                 onValueChange = { newValue ->
-                                    quantity =
-                                        newValue.toIntOrNull()?.takeIf { it > 0 } ?: 1
+                                    val newQuantity = newValue.toIntOrNull()?.takeIf { it > 0 } ?: 1
+                                    productQuantities[product.productId] = newQuantity
                                 },
                                 label = { Text("Quantity") },
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -308,30 +286,9 @@ fun CartScreen(
                 }
             }
         }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
     }
-}
 
-
-@Preview(showBackground = true)
-@Composable
-fun PreviewCartScreen() {
-
-    val viewModel: InvoiceViewModel = viewModel()
-    val navController = rememberNavController()
-
-    // Sample data
-    val customer =
-        Customer(
-            customerId = 1,
-            name = "John Doe",
-            email = "john.doe@example.com",
-            "0769853534",
-            "State House"
-        )
-
-    CartScreen(
-        customer = customer,
-        navController,
-        viewModel
-    )
 }

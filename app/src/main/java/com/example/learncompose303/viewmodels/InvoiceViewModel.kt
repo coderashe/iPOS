@@ -3,6 +3,8 @@ package com.example.learncompose303.viewmodels
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.remember
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.learncompose303.R
@@ -43,9 +45,12 @@ class InvoiceViewModel @Inject constructor(
     private val priceListRepository: PriceListRepository
 ) : ViewModel() {
 
+    // Use Triple to hold product, price, and quantity
     private val _productWithPriceDetails =
-        MutableStateFlow<List<Pair<Product, Double>>>(emptyList())
-    val productWithPriceDetails: StateFlow<List<Pair<Product, Double>>> = _productWithPriceDetails
+        MutableStateFlow<List<Triple<Product, Double, Int>>>(emptyList())
+    val productWithPriceDetails: StateFlow<List<Triple<Product, Double, Int>>> =
+        _productWithPriceDetails
+
 
     private val _priceList = MutableStateFlow(emptyList<PriceList>())
     val priceList = _priceList.asStateFlow()
@@ -118,17 +123,27 @@ class InvoiceViewModel @Inject constructor(
         return priceList.value.firstOrNull { it.productId == productId }
     }
 
-    // Function to get PriceList by productId
-    fun getPriceDetailsForSelectedProducts(selectedProducts: List<Product>) {
+    // Modify to return a Triple with product, price, and quantity
+    fun getPriceDetailsForSelectedProducts(
+        selectedProducts: List<Product>,
+        productQuantities: Map<Long, Int>
+    ) {
         viewModelScope.launch {
             val productDetailsWithPrices = selectedProducts.map { product ->
                 val priceList = priceListRepository.getPriceListByProductId(product.productId)
                 val productPrice = priceList?.sellingPrice ?: 0.0
-                product to productPrice
+                val quantitySold = productQuantities[product.productId]
+                    ?: 1 // Get quantity from productQuantities map
+                Triple(
+                    product,
+                    productPrice,
+                    quantitySold
+                ) // Return Triple with product, price, and quantity
             }
             _productWithPriceDetails.value = productDetailsWithPrices
         }
     }
+
 
     private fun loadInvoices() = viewModelScope.launch {
         invoiceRepository.getAllInvoices().collectLatest { invoiceList ->
@@ -195,7 +210,7 @@ class InvoiceViewModel @Inject constructor(
             val initialProducts = listOf(
                 Product(
                     productDescription = "Product 1",
-                    currentStockLevel = 100,
+                    currentStockLevel = 100.00,
                     saleable = true,
                     purchasable = true,
                     averageCost = 8.0,
@@ -206,7 +221,7 @@ class InvoiceViewModel @Inject constructor(
                 ),
                 Product(
                     productDescription = "Product 2",
-                    currentStockLevel = 150,
+                    currentStockLevel = 150.00,
                     saleable = true,
                     purchasable = true,
                     averageCost = 15.0,
@@ -217,7 +232,7 @@ class InvoiceViewModel @Inject constructor(
                 ),
                 Product(
                     productDescription = "Product 3",
-                    currentStockLevel = 200,
+                    currentStockLevel = 200.00,
                     saleable = true,
                     purchasable = true,
                     averageCost = 25.0,
@@ -228,7 +243,7 @@ class InvoiceViewModel @Inject constructor(
                 ),
                 Product(
                     productDescription = "Product 4",
-                    currentStockLevel = 250,
+                    currentStockLevel = 250.00,
                     saleable = true,
                     purchasable = true,
                     averageCost = 35.0,
@@ -239,7 +254,7 @@ class InvoiceViewModel @Inject constructor(
                 ),
                 Product(
                     productDescription = "Product 5",
-                    currentStockLevel = 300,
+                    currentStockLevel = 300.00,
                     saleable = true,
                     purchasable = true,
                     averageCost = 45.0,
@@ -430,111 +445,175 @@ class InvoiceViewModel @Inject constructor(
         return invoiceList.value.firstOrNull { it.invoiceId == invoiceId }
     }
 
-    fun submitInvoice(customerId: Long, amountTendered: Double) = viewModelScope.launch {
+    suspend fun deductQuantityAndUpdateStock(productId: Long, quantitySold: Int) {
         try {
-            var totalAmount = 0.0
-            val taxPercentage = 0.15 // Example tax percentage
-            val discountPercentage = 0.1 // Example discount percentage
+            // Fetch the product from the repository
+            val product = productRepository.getProductById(productId)
 
-            // Log the start of the operation
-            Log.d("Invoice", "Starting invoice submission for customerId: $customerId")
-
-            // Fetch customer details
-            val customer = customerRepository.getCustomerById(customerId)
-            if (customer == null) {
-                Log.e("InvoiceError", "Customer not found for customerId: $customerId")
-                return@launch
+            // Check if the product exists
+            if (product == null) {
+                Log.e("StockUpdateError", "Product not found with productId: $productId")
+                return
             }
 
-            // Fetch selected products and their prices from PriceList, then calculate total amount
-            val selectedProductsWithDetails = _selectedProducts.value.map { product ->
-                // Fetch the corresponding price from the PriceList entity
-                val priceList = priceListRepository.getPriceListByProductId(product.productId)
-                val basePrice = priceList?.sellingPrice ?: 0.0
-                val taxAmount = basePrice * taxPercentage
-                val discountAmount = basePrice * discountPercentage
-                val finalPrice = basePrice + taxAmount - discountAmount
-                totalAmount += finalPrice * 1 // Assuming `product.quantity` is available
-
-                product to finalPrice // Pair product with calculated final price
+            // Check if the product is saleable
+            if (!product.saleable) {
+                Log.e("StockUpdateError", "Product with productId: $productId is not saleable")
+                return
             }
 
-            // Calculate change
-            val change = amountTendered - totalAmount
-            if (change < 0) {
-                Log.e("InvoiceError", "Amount tendered is less than total amount!")
-                return@launch
-            }
-
-            // Only proceed if there are valid selected products and totalAmount > 0
-            if (selectedProductsWithDetails.isNotEmpty() && totalAmount > 0) {
-                // Create an Invoice object
-                val invoice = Invoice(
-                    customerId = customerId,
-                    totalAmount = totalAmount,
-                    invoiceDate = System.currentTimeMillis(),
-                    dueDate = null,
-                    status = "Paid"
+            // Check if there is enough stock to sell the desired quantity
+            if (product.currentStockLevel < quantitySold) {
+                Log.e(
+                    "StockUpdateError",
+                    "Insufficient stock for product: ${product.productDescription}. " +
+                            "Available: ${product.currentStockLevel}, Required: $quantitySold"
                 )
-
-                // Insert the invoice and get the invoiceId
-                val invoiceId = invoiceRepository.insertInvoice(invoice)
-
-                Log.d("Invoice", "Inserted Invoice with id: $invoiceId")
-
-                // Insert CartItems and InvoiceItems for each selected product
-                selectedProductsWithDetails.forEach { (product, finalPrice) ->
-                    val cartItem = CartItem(
-                        customerId = customerId,
-                        productId = product.productId,
-                        invoiceId = invoiceId,
-                        totalAmount = finalPrice, // Final price after tax and discount
-                        totalAmountTendered = amountTendered,
-                        change = change
-                    )
-                    cartItemRepository.insertCartItem(cartItem)
-
-                    val invoiceItem = InvoiceItem(
-                        invoiceId = invoiceId,
-                        productId = product.productId,
-                        customerId = customerId,
-                        quantity = 1, // Quantity of the product
-                        price = finalPrice,
-                        total = finalPrice * 1
-                    )
-                    invoiceItemRepository.insertInvoiceItem(invoiceItem)
-                }
-
-                // Insert InvoiceLine records for the report
-                selectedProductsWithDetails.forEach { (product, finalPrice) ->
-                    val invoiceLine = InvoiceLine(
-                        invoiceID = invoiceId,
-                        invoiceStatus = invoice.status,
-                        productID = product.productId,
-                        productName = product.productDescription,
-                        productPrice = finalPrice,
-                        productQtySold = 1,
-                        customerID = customerId,
-                        customerName = customer.name,
-                        customerPhone = customer.phone,
-                        totalAmount = totalAmount,
-                        amountTendered = amountTendered,
-                        changeBalance = change,
-                        invoiceDate = System.currentTimeMillis()
-                    )
-                    invoiceLineRepository.insertInvoiceLine(invoiceLine)
-                }
-
-                // Clear the selected products list after invoice submission
-                _selectedProducts.value = emptyList()
-                Log.d("Invoice", "Cleared selected products for customer: $customerId")
-            } else {
-                Log.e("InvoiceError", "No valid selected products to invoice or total amount is 0")
+                return
             }
+
+            // Deduct the quantity sold from the current stock level
+            val newStockLevel = product.currentStockLevel - quantitySold
+
+            // Create a new product object with the updated stock level
+            val updatedProduct = product.copy(currentStockLevel = newStockLevel)
+
+            // Update the product in the database
+            productRepository.updateProduct(updatedProduct)
+
+            Log.d(
+                "StockUpdate",
+                "Stock updated for product: ${product.productDescription}, New stock: $newStockLevel"
+            )
+
         } catch (e: Exception) {
-            Log.e("InvoiceError", "Error during invoice submission: ${e.message}")
+            Log.e(
+                "StockUpdateError",
+                "Error while updating stock for productId: $productId: ${e.message}"
+            )
         }
     }
 
 
+    //    new submit
+    fun submitInvoice(customerId: Long, amountTendered: Double, productQuantities: Map<Long, Int>) =
+        viewModelScope.launch {
+            try {
+                var totalAmount = 0.0
+                val taxPercentage = 0.15 // Example tax percentage
+                val discountPercentage = 0.0 // Example discount percentage
+
+                // Log the start of the operation
+                Log.d("Invoice", "Starting invoice submission for customerId: $customerId")
+
+                // Fetch customer details
+                val customer = customerRepository.getCustomerById(customerId)
+                if (customer == null) {
+                    Log.e("InvoiceError", "Customer not found for customerId: $customerId")
+                    return@launch
+                }
+
+                // Fetch selected products and calculate total amount based on quantities
+                val selectedProductsWithDetails = _selectedProducts.value.map { product ->
+                    val quantitySold = productQuantities[product.productId] ?: 1
+                    // Fetch the corresponding price from the PriceList entity
+                    val priceList = priceListRepository.getPriceListByProductId(product.productId)
+                    val basePrice = priceList?.sellingPrice ?: 0.0
+                    val taxAmount = basePrice * taxPercentage
+                    val discountAmount = basePrice * discountPercentage
+
+                    val finalPrice = basePrice
+                    totalAmount += finalPrice * quantitySold // Use product-specific quantity for calculations
+
+                    Triple(
+                        product,
+                        finalPrice,
+                        quantitySold
+                    ) // Return a Triple of product, final price, and quantity
+                }
+
+                // Calculate change
+                val change = amountTendered - totalAmount
+                if (change < 0) {
+                    Log.e("InvoiceError", "Amount tendered is less than total amount!")
+                    return@launch
+                }
+
+                // Only proceed if there are valid selected products and totalAmount > 0
+                if (selectedProductsWithDetails.isNotEmpty() && totalAmount > 0) {
+                    // Create an Invoice object
+                    val invoice = Invoice(
+                        customerId = customerId,
+                        totalAmount = totalAmount,
+                        invoiceDate = System.currentTimeMillis(),
+                        dueDate = null,
+                        status = "Paid"
+                    )
+
+                    // Insert the invoice and get the invoiceId
+                    val invoiceId = invoiceRepository.insertInvoice(invoice)
+
+                    Log.d("Invoice", "Inserted Invoice with id: $invoiceId")
+
+                    // Insert CartItems, InvoiceItems, and deduct stock for each selected product
+                    selectedProductsWithDetails.forEach { (product, finalPrice, quantitySold) ->
+                        // Deduct the sold quantity from stock
+                        deductQuantityAndUpdateStock(product.productId, quantitySold)
+
+                        // Create CartItem record
+                        val cartItem = CartItem(
+                            customerId = customerId,
+                            productId = product.productId,
+                            invoiceId = invoiceId,
+                            totalAmount = finalPrice * quantitySold,
+                            totalAmountTendered = amountTendered,
+                            change = change
+                        )
+                        cartItemRepository.insertCartItem(cartItem)
+
+                        // Create InvoiceItem record
+                        val invoiceItem = InvoiceItem(
+                            invoiceId = invoiceId,
+                            productId = product.productId,
+                            customerId = customerId,
+                            quantity = quantitySold,
+                            price = finalPrice,
+                            total = finalPrice * quantitySold
+                        )
+                        invoiceItemRepository.insertInvoiceItem(invoiceItem)
+                    }
+
+                    // Insert InvoiceLine records for the report
+                    selectedProductsWithDetails.forEach { (product, finalPrice, quantitySold) ->
+                        val invoiceLine = InvoiceLine(
+                            invoiceID = invoiceId,
+                            invoiceStatus = invoice.status,
+                            productID = product.productId,
+                            productName = product.productDescription,
+                            productPrice = finalPrice,
+                            productQtySold = quantitySold,
+                            customerID = customerId,
+                            customerName = customer.name,
+                            customerPhone = customer.phone,
+                            totalAmount = totalAmount,
+                            amountTendered = amountTendered,
+                            changeBalance = change,
+                            invoiceDate = System.currentTimeMillis()
+                        )
+                        invoiceLineRepository.insertInvoiceLine(invoiceLine)
+                    }
+
+                    // Clear the selected products list after invoice submission
+                    _selectedProducts.value = emptyList()
+                    Log.d("Invoice", "Cleared selected products for customer: $customerId")
+                } else {
+                    Log.e(
+                        "InvoiceError",
+                        "No valid selected products to invoice or total amount is 0"
+                    )
+                }
+            } catch (e: Exception) {
+                Log.e("InvoiceError", "Error during invoice submission: ${e.message}")
+            }
+        }
 }

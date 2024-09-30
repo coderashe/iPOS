@@ -8,7 +8,7 @@ import com.example.learncompose303.R
 data class Product(
     @PrimaryKey(autoGenerate = true) val productId: Long = 0,
     val productDescription: String,
-    val currentStockLevel: Int,
+    val currentStockLevel: Double,
     val saleable: Boolean, // Determines if the product can be sold
     val purchasable: Boolean, // Determines if the product can be purchased
     val averageCost: Double, // Average cost of the product

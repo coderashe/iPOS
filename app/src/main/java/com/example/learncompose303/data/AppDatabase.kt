@@ -32,7 +32,7 @@ import com.example.learncompose303.data.entities.Product
         Payment::class, Product::class,
         CartItem::class, InvoiceLine::class,
         Order::class, PriceList::class],
-    version = 11,
+    version = 12,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

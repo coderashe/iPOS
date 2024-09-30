@@ -1,5 +1,33 @@
 package com.example.learncompose303.data.domain.util
 
+import android.util.Log
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.compose.rememberNavController
+import com.example.learncompose303.data.entities.Customer
+import com.example.learncompose303.screens.CartScreen
+import com.example.learncompose303.viewmodels.InvoiceViewModel
+
 //
 //
 ////                    DefaultScreen()
@@ -513,3 +541,423 @@ package com.example.learncompose303.data.domain.util
 //    }
 //}
 
+// old button
+//        Button(
+//            onClick = {
+//                val tenderedAmount = amountTendered.toDoubleOrNull()
+//
+//                if (amountTendered.isNotEmpty() && tenderedAmount != null && tenderedAmount > 0) {
+//                    if (tenderedAmount >= totalPrice) {
+//                        // Submit the invoice and capture cart item details
+//                        viewModel.submitInvoice(
+//                            customer.customerId,
+//                            tenderedAmount,
+//                            productQuantities = quantitySold
+//                        )
+//
+//                        // Your code for sharing the invoice message...
+//
+//                        // Create an intent to send the message
+//                        val message = "*INVOICE RECEIPT:*\n\n" +
+//                                "*CUSTOMER DETAILS*\n" +
+//                                "${customer.name}\n" +
+//                                "${customer.phone}\n\n" +
+//                                "*PRODUCTS PURCHASED:*\n" +
+//                                "$productDetails\n\n" +
+//                                "*SALES TOTALS*\n" +
+//                                "Total Amount: *$$totalPrice*\n" +
+//                                "Amount Tendered: *$$amountTendered*\n" +
+//                                "Change: *$${amountTendered.toDouble() - totalPrice}*\n\n" +
+//                                "Thank you for your purchase!...\n              ISTARTK  \u00A9 2024"
+//
+//                        val sendIntent = Intent(Intent.ACTION_SEND).apply {
+//                            type = "text/plain"
+//                            putExtra(Intent.EXTRA_TEXT, message)
+//                        }
+//
+//                        try {
+//                            // Use a chooser to select WhatsApp or WhatsApp Business and send message
+//                            val chooserIntent = Intent.createChooser(
+//                                sendIntent,
+//                                "Send via WhatsApp or WhatsApp Business"
+//                            )
+//                            chooserIntent.resolveActivity(context.packageManager)?.let {
+//                                context.startActivity(chooserIntent)
+//                            } ?: run {
+//                                Toast.makeText(
+//                                    context,
+//                                    "No messaging app found",
+//                                    Toast.LENGTH_SHORT
+//                                )
+//                                    .show()
+//                            }
+//                        } catch (e: Exception) {
+//                            Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT)
+//                                .show()
+//                        }
+//
+//                        // Navigate to the receipt screen or another destination after submitting the invoice
+//                        navController.navigate(Destinations.Rides.route) // Replace this with your actual destination for receipt
+//                        Toast.makeText(context, "Invoice paid successfully", Toast.LENGTH_SHORT)
+//                            .show()
+//                    } else {
+//                        Toast.makeText(
+//                            context,
+//                            "Amount tendered must be greater than or equal to total price",
+//                            Toast.LENGTH_SHORT
+//                        ).show()
+//                    }
+//                } else {
+//                    Toast.makeText(context, "Please enter valid details", Toast.LENGTH_SHORT)
+//                        .show()
+//                }
+//            },
+//            modifier = Modifier.fillMaxWidth(),
+//        ) {
+//            Text("Submit Invoice")
+//        }
+
+
+//
+//LazyColumn {
+//    items(selectedProducts) { product ->
+//
+//        // Find the product price from the collected productWithPriceDetails
+//        val productPrice =
+//            productWithPriceDetails.find { it.first.productId == product.productId }?.second
+//                ?: 0.0
+//
+//        // Get the current quantity for this product from the map, default to 1 if not present
+//        newQuantitySold = productQuantities[product.productId] ?: quantitySold
+//
+//        // Calculate the total price for the product
+//        val productTotalPrice = productPrice * newQuantitySold
+//
+//        LaunchedEffect(quantitySold) {
+//            productQuantities[product.productId] = newQuantitySold
+//        }
+//
+//        Card(
+//            modifier = Modifier
+//                .fillMaxWidth()
+//                .padding(2.dp),
+//            elevation = CardDefaults.cardElevation(4.dp),
+//            shape = RoundedCornerShape(8.dp),
+//        ) {
+//            Row(
+//                modifier = Modifier
+//                    .fillMaxWidth()
+//                    .padding(4.dp),
+//            ) {
+//                Column(
+//                    modifier = Modifier.weight(1f)
+//                ) {
+//                    Text(
+//                        product.productDescription,
+//                        style = MaterialTheme.typography.titleMedium
+//                    )
+//                    Text(
+//                        "\$${productPrice}",
+//                        style = MaterialTheme.typography.titleSmall
+//                    )
+//                }
+//                Spacer(modifier = Modifier.width(16.dp))
+//
+//                Column(horizontalAlignment = Alignment.End) {
+//
+//                    // Input for quantity with better handling
+//                    OutlinedTextField(
+//                        value = if (newQuantitySold == 0) "" else newQuantitySold.toString(),
+//                        onValueChange = { newValue ->
+//                            val newQuantity = newValue.toIntOrNull()?.takeIf { it > 0 } ?: 1
+//                            productQuantities[product.productId] = newQuantity
+//                        },
+//                        label = { Text("Quantity") },
+//                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+//                        shape = RoundedCornerShape(8.dp)
+//                    )
+//
+//                    Text(
+//                        text = "SubTotal: \$${productTotalPrice}",
+//                        color = MaterialTheme.colorScheme.primary,
+//                        style = MaterialTheme.typography.titleSmall
+//                    )
+//                }
+//            }
+//        }
+//
+//        quantitySold = newQuantitySold
+//        Log.d("CheckingQuantity", "Quantity for each product is $quantitySold")
+//    }
+//}
+
+
+//    private val _productWithPriceDetails =
+//        MutableStateFlow<List<Pair<Product, Double>>>(emptyList())
+//    val productWithPriceDetails: StateFlow<List<Pair<Product, Double>>> = _productWithPriceDetails
+
+//    // Function to get PriceList by productId
+//    fun getPriceDetailsForSelectedProducts(selectedProducts: List<Product>) {
+//        viewModelScope.launch {
+//            val productDetailsWithPrices = selectedProducts.map { product ->
+//                val priceList = priceListRepository.getPriceListByProductId(product.productId)
+//                val productPrice = priceList?.sellingPrice ?: 0.0
+//                product to productPrice
+//            }
+//            _productWithPriceDetails.value = productDetailsWithPrices
+//        }
+//    }
+
+
+//    old 2 worked with deducting Stock
+//    fun submitInvoice(customerId: Long, amountTendered: Double, quantitySold: Int) =
+//        viewModelScope.launch {
+//            try {
+//                var totalAmount = 0.0
+//                val taxPercentage = 0.15 // Example tax percentage
+//                val discountPercentage = 0.0 // Example discount percentage
+//
+//                // Log the start of the operation
+//                Log.d("Invoice", "Starting invoice submission for customerId: $customerId")
+//
+//                // Fetch customer details
+//                val customer = customerRepository.getCustomerById(customerId)
+//                if (customer == null) {
+//                    Log.e("InvoiceError", "Customer not found for customerId: $customerId")
+//                    return@launch
+//                }
+//
+//                // Fetch selected products and their prices from PriceList, then calculate total amount
+//                val selectedProductsWithDetails = _selectedProducts.value.map { product ->
+//                    // Fetch the corresponding price from the PriceList entity
+//                    val priceList = priceListRepository.getPriceListByProductId(product.productId)
+//                    val basePrice = priceList?.sellingPrice ?: 0.0
+//                    val taxAmount = basePrice * taxPercentage
+//                    val discountAmount = basePrice * discountPercentage
+//
+////                    val finalPrice = basePrice + taxAmount - discountAmount
+//                    val finalPrice = basePrice
+//                    totalAmount += finalPrice * quantitySold // Use product.quantity for calculations
+//
+//                    product to finalPrice // Pair product with calculated final price
+//                }
+//
+//                // Calculate change
+//                val change = amountTendered - totalAmount
+//                if (change < 0) {
+//                    Log.e("InvoiceError", "Amount tendered is less than total amount!")
+//                    return@launch
+//                }
+//
+//                // Only proceed if there are valid selected products and totalAmount > 0
+//                if (selectedProductsWithDetails.isNotEmpty() && totalAmount > 0) {
+//                    // Create an Invoice object
+//                    val invoice = Invoice(
+//                        customerId = customerId,
+//                        totalAmount = totalAmount,
+//                        invoiceDate = System.currentTimeMillis(),
+//                        dueDate = null,
+//                        status = "Paid"
+//                    )
+//
+//                    // Insert the invoice and get the invoiceId
+//                    val invoiceId = invoiceRepository.insertInvoice(invoice)
+//
+//                    Log.d("Invoice", "Inserted Invoice with id: $invoiceId")
+//
+//                    // Insert CartItems, InvoiceItems, and deduct stock for each selected product
+//                    selectedProductsWithDetails.forEach { (product, finalPrice) ->
+//
+//                        // Deduct the sold quantity from stock
+//                        deductQuantityAndUpdateStock(product.productId, quantitySold)
+//
+//                        // Create CartItem record
+//                        val cartItem = CartItem(
+//                            customerId = customerId,
+//                            productId = product.productId,
+//                            invoiceId = invoiceId,
+//                            totalAmount = finalPrice * quantitySold,
+//                            totalAmountTendered = amountTendered,
+//                            change = change
+//                        )
+//                        cartItemRepository.insertCartItem(cartItem)
+//
+//                        // Create InvoiceItem record
+//                        val invoiceItem = InvoiceItem(
+//                            invoiceId = invoiceId,
+//                            productId = product.productId,
+//                            customerId = customerId,
+//                            quantity = quantitySold.toInt(),
+//                            price = finalPrice,
+//                            total = finalPrice * quantitySold
+//                        )
+//                        invoiceItemRepository.insertInvoiceItem(invoiceItem)
+//                    }
+//
+//                    // Insert InvoiceLine records for the report
+//                    selectedProductsWithDetails.forEach { (product, finalPrice) ->
+//                        val invoiceLine = InvoiceLine(
+//                            invoiceID = invoiceId,
+//                            invoiceStatus = invoice.status,
+//                            productID = product.productId,
+//                            productName = product.productDescription,
+//                            productPrice = finalPrice,
+//                            productQtySold = quantitySold.toInt(),
+//                            customerID = customerId,
+//                            customerName = customer.name,
+//                            customerPhone = customer.phone,
+//                            totalAmount = totalAmount,
+//                            amountTendered = amountTendered,
+//                            changeBalance = change,
+//                            invoiceDate = System.currentTimeMillis()
+//                        )
+//                        invoiceLineRepository.insertInvoiceLine(invoiceLine)
+//                    }
+//
+//                    // Clear the selected products list after invoice submission
+//                    _selectedProducts.value = emptyList()
+//                    Log.d("Invoice", "Cleared selected products for customer: $customerId")
+//                } else {
+//                    Log.e(
+//                        "InvoiceError",
+//                        "No valid selected products to invoice or total amount is 0"
+//                    )
+//                }
+//            } catch (e: Exception) {
+//                Log.e("InvoiceError", "Error during invoice submission: ${e.message}")
+//            }
+//        }
+
+
+//    old submit which was working fine
+//    fun submitInvoice(customerId: Long, amountTendered: Double) = viewModelScope.launch {
+//        try {
+//            var totalAmount = 0.0
+//            val taxPercentage = 0.15 // Example tax percentage
+//            val discountPercentage = 0.0 // Example discount percentage
+//
+//            // Log the start of the operation
+//            Log.d("Invoice", "Starting invoice submission for customerId: $customerId")
+//
+//            // Fetch customer details
+//            val customer = customerRepository.getCustomerById(customerId)
+//            if (customer == null) {
+//                Log.e("InvoiceError", "Customer not found for customerId: $customerId")
+//                return@launch
+//            }
+//
+//            // Fetch selected products and their prices from PriceList, then calculate total amount
+//            val selectedProductsWithDetails = _selectedProducts.value.map { product ->
+//                // Fetch the corresponding price from the PriceList entity
+//                val priceList = priceListRepository.getPriceListByProductId(product.productId)
+//                val basePrice = priceList?.sellingPrice ?: 0.0
+//                val taxAmount = basePrice * taxPercentage
+//                val discountAmount = basePrice * discountPercentage
+//                val finalPrice = basePrice + taxAmount - discountAmount
+//                totalAmount += finalPrice * 1 // Assuming `product.quantity` is available
+//
+//                product to finalPrice // Pair product with calculated final price
+//            }
+//
+//            // Calculate change
+//            val change = amountTendered - totalAmount
+//            if (change < 0) {
+//                Log.e("InvoiceError", "Amount tendered is less than total amount!")
+//                return@launch
+//            }
+//
+//            // Only proceed if there are valid selected products and totalAmount > 0
+//            if (selectedProductsWithDetails.isNotEmpty() && totalAmount > 0) {
+//                // Create an Invoice object
+//                val invoice = Invoice(
+//                    customerId = customerId,
+//                    totalAmount = totalAmount,
+//                    invoiceDate = System.currentTimeMillis(),
+//                    dueDate = null,
+//                    status = "Paid"
+//                )
+//
+//                // Insert the invoice and get the invoiceId
+//                val invoiceId = invoiceRepository.insertInvoice(invoice)
+//
+//                Log.d("Invoice", "Inserted Invoice with id: $invoiceId")
+//
+//                // Insert CartItems and InvoiceItems for each selected product
+//                selectedProductsWithDetails.forEach { (product, finalPrice) ->
+//                    val cartItem = CartItem(
+//                        customerId = customerId,
+//                        productId = product.productId,
+//                        invoiceId = invoiceId,
+//                        totalAmount = finalPrice, // Final price after tax and discount
+//                        totalAmountTendered = amountTendered,
+//                        change = change
+//                    )
+//                    cartItemRepository.insertCartItem(cartItem)
+//
+//                    val invoiceItem = InvoiceItem(
+//                        invoiceId = invoiceId,
+//                        productId = product.productId,
+//                        customerId = customerId,
+//                        quantity = 1, // Quantity of the product
+//                        price = finalPrice,
+//                        total = finalPrice * 1
+//                    )
+//                    invoiceItemRepository.insertInvoiceItem(invoiceItem)
+//                }
+//
+//                // Insert InvoiceLine records for the report
+//                selectedProductsWithDetails.forEach { (product, finalPrice) ->
+//                    val invoiceLine = InvoiceLine(
+//                        invoiceID = invoiceId,
+//                        invoiceStatus = invoice.status,
+//                        productID = product.productId,
+//                        productName = product.productDescription,
+//                        productPrice = finalPrice,
+//                        productQtySold = 1,
+//                        customerID = customerId,
+//                        customerName = customer.name,
+//                        customerPhone = customer.phone,
+//                        totalAmount = totalAmount,
+//                        amountTendered = amountTendered,
+//                        changeBalance = change,
+//                        invoiceDate = System.currentTimeMillis()
+//                    )
+//                    invoiceLineRepository.insertInvoiceLine(invoiceLine)
+//                }
+//
+//                // Clear the selected products list after invoice submission
+//                _selectedProducts.value = emptyList()
+//                Log.d("Invoice", "Cleared selected products for customer: $customerId")
+//            } else {
+//                Log.e("InvoiceError", "No valid selected products to invoice or total amount is 0")
+//            }
+//        } catch (e: Exception) {
+//            Log.e("InvoiceError", "Error during invoice submission: ${e.message}")
+//        }
+//    }
+
+//
+
+//@Preview(showBackground = true)
+//@Composable
+//fun PreviewCartScreen() {
+//
+//    val viewModel: InvoiceViewModel = viewModel()
+//    val navController = rememberNavController()
+//
+//    // Sample data
+//    val customer =
+//        Customer(
+//            customerId = 1,
+//            name = "John Doe",
+//            email = "john.doe@example.com",
+//            "0769853534",
+//            "State House"
+//        )
+//
+//    CartScreen(
+//        customer = customer,
+//        navController,
+//        viewModel
+//    )
+//}
