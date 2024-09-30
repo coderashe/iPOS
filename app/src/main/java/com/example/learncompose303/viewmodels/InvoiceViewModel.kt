@@ -1,7 +1,9 @@
 package com.example.learncompose303.viewmodels
 
+import android.content.Context
 import android.os.Build
 import android.util.Log
+import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
@@ -30,6 +32,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import java.io.InputStream
 import java.time.LocalDate
@@ -114,28 +117,59 @@ class InvoiceViewModel @Inject constructor(
     }
 
     // Logic for uploading products from CSV
-    fun uploadProductsFromCsv(inputStream: InputStream) {
+    fun uploadProductsFromCsv(inputStream: InputStream, context: Context) {
         viewModelScope.launch {
             val parser = CsvParser()
             val productsFromCsv = parser.parseProductCsv(inputStream)
 
-            // Convert ProductCsvModel to Product entity
-            val productList = productsFromCsv.map {
-                Product(
-                    productDescription = it.productDescription,
-                    currentStockLevel = it.currentStockLevel,
-                    saleable = it.saleable,
-                    purchasable = it.purchasable,
-                    averageCost = it.averageCost,
-                    standardCost = it.standardCost,
-                    salesTaxCode = it.salesTaxCode,
-                    purchasableTaxCode = it.purchasableTaxCode,
-                    inclusiveTaxed = it.inclusiveTaxed,
-                    imageResId = it.imageResId ?: R.drawable.meat3 // Default image
-                )
+            // Retrieve existing products from the database using the once method
+            val existingProducts = productRepository.getAllProductsOnce()
+
+            // Create a set to track duplicates
+            val existingProductSet = existingProducts.map {
+                Pair(it.productDescription, it.currentStockLevel)
+            }.toSet()
+
+            // Convert ProductCsvModel to Product entity, avoiding duplicates
+            val productList = mutableListOf<Product>()
+            var duplicateCount = 0
+
+            for (productCsv in productsFromCsv) {
+                val productPair = Pair(productCsv.productDescription, productCsv.currentStockLevel)
+                if (!existingProductSet.contains(productPair)) {
+                    productList.add(
+                        Product(
+                            productDescription = productCsv.productDescription,
+                            currentStockLevel = productCsv.currentStockLevel,
+                            saleable = productCsv.saleable,
+                            purchasable = productCsv.purchasable,
+                            averageCost = productCsv.averageCost,
+                            standardCost = productCsv.standardCost,
+                            salesTaxCode = productCsv.salesTaxCode,
+                            purchasableTaxCode = productCsv.purchasableTaxCode,
+                            inclusiveTaxed = productCsv.inclusiveTaxed,
+                            imageResId = productCsv.imageResId ?: R.drawable.meat3 // Default image
+                        )
+                    )
+                } else {
+                    duplicateCount++
+                }
             }
-            // Insert products into the database
+
+            // Insert non-duplicate products into the database
             productRepository.insertProducts(productList)
+
+            // Show toast notification
+            if (duplicateCount > 0) {
+                Toast.makeText(
+                    context,
+                    "$duplicateCount duplicate products were found and skipped.",
+                    Toast.LENGTH_SHORT
+                ).show()
+            } else {
+                Toast.makeText(context, "Products uploaded successfully.", Toast.LENGTH_SHORT)
+                    .show()
+            }
         }
     }
 

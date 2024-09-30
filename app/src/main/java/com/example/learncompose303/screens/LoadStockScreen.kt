@@ -49,7 +49,7 @@ fun LoadStockScreen(
         uri?.let {
             val inputStream = context.contentResolver.openInputStream(it)
             inputStream?.let {
-                viewModel.uploadProductsFromCsv(it)
+                viewModel.uploadProductsFromCsv(it, context)
             }
         }
     }
