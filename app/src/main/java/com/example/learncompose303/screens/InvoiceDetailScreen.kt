@@ -48,6 +48,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.learncompose303.R
+import com.example.learncompose303.app.CustomHeadingMedium
 import com.example.learncompose303.data.entities.Invoice
 import com.example.learncompose303.data.entities.InvoiceItem
 import com.example.learncompose303.data.entities.InvoiceLine
@@ -66,26 +67,66 @@ fun InvoiceDetailScreen(
 
     // Collect the filtered invoiceLines
     val invoiceLines by viewModel.invoiceLines.collectAsState()
+    val invoiceLine = viewModel.getInvoiceLineById(invoiceId)
 
-    Column(
+    Card(
         modifier = Modifier
             .fillMaxSize()
             .padding(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        elevation = CardDefaults.cardElevation(4.dp)
     ) {
-        Text(text = "INVOICE RECEIPT")
 
-        if (invoiceLines.isNotEmpty()) {
-            // Display the invoice lines using LazyColumn
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                items(invoiceLines) { invoiceLine ->
-                    TheInvoiceCard(invoiceLine = invoiceLine)
+        Column(
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            CustomHeadingMedium(
+                heading = "INVOICE RECEIPT",
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+
+            if (invoiceLine != null) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp)
+                ) {
+                    Text(
+                        modifier = Modifier.weight(1f),
+                        text = invoiceLine.customerName,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        modifier = Modifier.weight(1f),
+                        text = "${invoiceLine.customerPhone}",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Text(
+                        text = "#${invoiceLine.invoiceID}",
+                        style = MaterialTheme.typography.bodySmall
+                    )
                 }
+                Text(
+                    modifier = Modifier.padding(8.dp),
+                    text = "${Date(invoiceLine.invoiceDate)}", // Formatting date can be customized
+                    style = MaterialTheme.typography.bodySmall,
+                    textAlign = TextAlign.End
+                )
             }
-        } else {
-            Text(text = "No items found for this invoice.")
+            Spacer(modifier = Modifier.height(4.dp))
+
+            if (invoiceLines.isNotEmpty()) {
+                // Display the invoice lines using LazyColumn
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(invoiceLines) { invoiceLine ->
+                        TheInvoiceCard(invoiceLine = invoiceLine)
+                    }
+                }
+            } else {
+                Text(text = "No items found for this invoice.")
+            }
         }
     }
 }
@@ -94,56 +135,30 @@ fun InvoiceDetailScreen(
 fun TheInvoiceCard(
     invoiceLine: InvoiceLine,
 ) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(8.dp),
-        elevation = CardDefaults.cardElevation(4.dp)
+
+    Column(
+        modifier = Modifier.padding(16.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Text(
-                text = "#${invoiceLine.invoiceID}",
-                style = MaterialTheme.typography.bodySmall
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-            Text(
-                text = invoiceLine.productName,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.primary
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "Price: ${invoiceLine.productPrice}",
-                style = MaterialTheme.typography.bodySmall
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = "Qty Sold: ${invoiceLine.productQtySold}",
-                style = MaterialTheme.typography.bodySmall
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Divider(
-                modifier = Modifier.padding(vertical = 8.dp),
-                color = MaterialTheme.colorScheme.primary
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "Customer: ${invoiceLine.customerName}",
-                style = MaterialTheme.typography.bodySmall
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = "Phone #: ${invoiceLine.customerPhone}",
-                style = MaterialTheme.typography.bodySmall
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = "Date: ${Date(invoiceLine.invoiceDate)}", // Formatting date can be customized
-                style = MaterialTheme.typography.bodySmall,
-                textAlign = TextAlign.End
-            )
-        }
+        Text(
+            text = invoiceLine.productName,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.primary
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = "Price: ${invoiceLine.productPrice}",
+            style = MaterialTheme.typography.bodySmall
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            text = "Qty Sold: ${invoiceLine.productQtySold}",
+            style = MaterialTheme.typography.bodySmall
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Divider(
+            modifier = Modifier.padding(vertical = 8.dp),
+            color = MaterialTheme.colorScheme.primary
+        )
     }
+
 }
