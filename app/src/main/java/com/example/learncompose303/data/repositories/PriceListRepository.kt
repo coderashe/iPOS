@@ -11,6 +11,8 @@ interface PriceListRepository {
     suspend fun getPriceListById(id: Long): PriceList?
     suspend fun getPriceListByProductId(productId: Long): PriceList?
     fun getAllPriceLists(): Flow<List<PriceList>>
+    suspend fun insertPriceListsAll(priceLists: List<PriceList>): List<Long>
+
     suspend fun insertPriceList(priceList: PriceList): Long
     suspend fun insertPriceLists(priceLists: List<PriceList>)
     suspend fun updatePriceList(priceList: PriceList)
@@ -35,6 +37,12 @@ class PriceListRepositoryImpl @Inject constructor(
 
     override fun getAllPriceLists(): Flow<List<PriceList>> {
         return priceListDao.getAllPriceLists()
+    }
+
+    override suspend fun insertPriceListsAll(priceLists: List<PriceList>): List<Long> {
+        return withContext(Dispatchers.IO) {
+            priceLists.map { priceListDao.insertPriceList(it) }
+        }
     }
 
     override suspend fun insertPriceList(priceList: PriceList): Long {

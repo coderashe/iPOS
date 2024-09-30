@@ -1,5 +1,7 @@
 package com.example.learncompose303.screens
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -49,6 +51,7 @@ import com.example.learncompose303.app.SpacerHeight
 import com.example.learncompose303.data.Destinations
 import com.example.learncompose303.viewmodels.InvoiceViewModel
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun RideRequestsScreen(
     navController: NavHostController,
