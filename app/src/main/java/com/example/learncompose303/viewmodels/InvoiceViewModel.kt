@@ -9,6 +9,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.learncompose303.R
 import com.example.learncompose303.data.entities.CartItem
+import com.example.learncompose303.data.entities.CsvParser
 import com.example.learncompose303.data.entities.Customer
 import com.example.learncompose303.data.entities.Invoice
 import com.example.learncompose303.data.entities.InvoiceItem
@@ -30,6 +31,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import java.io.InputStream
 import java.time.LocalDate
 import javax.inject.Inject
 
@@ -109,6 +111,32 @@ class InvoiceViewModel @Inject constructor(
         insertInitialCustomers()
         fetchCustomers()
         fetchAllOrders()
+    }
+
+    // Logic for uploading products from CSV
+    fun uploadProductsFromCsv(inputStream: InputStream) {
+        viewModelScope.launch {
+            val parser = CsvParser()
+            val productsFromCsv = parser.parseProductCsv(inputStream)
+
+            // Convert ProductCsvModel to Product entity
+            val productList = productsFromCsv.map {
+                Product(
+                    productDescription = it.productDescription,
+                    currentStockLevel = it.currentStockLevel,
+                    saleable = it.saleable,
+                    purchasable = it.purchasable,
+                    averageCost = it.averageCost,
+                    standardCost = it.standardCost,
+                    salesTaxCode = it.salesTaxCode,
+                    purchasableTaxCode = it.purchasableTaxCode,
+                    inclusiveTaxed = it.inclusiveTaxed,
+                    imageResId = it.imageResId ?: R.drawable.meat3 // Default image
+                )
+            }
+            // Insert products into the database
+            productRepository.insertProducts(productList)
+        }
     }
 
     private fun fetchPriceList() {

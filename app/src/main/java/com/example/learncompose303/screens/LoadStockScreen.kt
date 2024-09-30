@@ -1,6 +1,9 @@
 package com.example.learncompose303.screens
 
+import android.net.Uri
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -40,7 +43,16 @@ fun LoadStockScreen(
     var imageResId by remember { mutableStateOf<Int?>(null) }
     val context = LocalContext.current
 
-    val defaultImage = R.drawable.meat3
+    val requestFileLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let {
+            val inputStream = context.contentResolver.openInputStream(it)
+            inputStream?.let {
+                viewModel.uploadProductsFromCsv(it)
+            }
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -69,18 +81,13 @@ fun LoadStockScreen(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Image Picker (optional)
         Button(
             onClick = {
-                // Logic to pick image
-                // You can use a library like Coil for image selection
-                // For now, we simulate with a placeholder
-//                imageResId =
-//                    R.drawable.meat3
+                requestFileLauncher.launch("*/*")
             },
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Select Product Image")
+            Text("Upload Products")
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -123,3 +130,5 @@ fun LoadStockScreen(
         }
     }
 }
+
+
