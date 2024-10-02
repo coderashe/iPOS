@@ -144,7 +144,7 @@ fun InDriveTopBottomNavigation() {
 //        set your starting destination of the app
         NavHost(
             navController = navController,
-            startDestination = Destinations.SignUp.route,
+            startDestination = Destinations.SignIn.route,
             modifier = Modifier.padding(paddingValues)
         ) {
             composable(Destinations.SignUp.route) { SignUpPage(navController, authViewModel) }
@@ -486,7 +486,7 @@ fun IndriveDrawerBody(navController: NavController, scaffoldState: ScaffoldState
                 .padding(16.dp)
                 .clickable {
                     authViewModel.signout()
-                    navController.navigate(Destinations.Login.route)
+                    navController.navigate(Destinations.SignIn.route)
                     coroutineScope.launch { scaffoldState.drawerState.close() }
                 }
         ) {
