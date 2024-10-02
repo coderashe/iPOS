@@ -1156,9 +1156,9 @@ fun DisplayCurrentDate() {
 }
 
 @Composable
-fun DisplayTotalBalance(modifier: Modifier) {
+fun DisplayTotalBalance(modifier: Modifier, balance: String) {
     Text(
-        text = stringResource(id = R.string.cash),
+        text = balance,
         color = Color.Black,
         fontSize = 36.sp,
         fontWeight = FontWeight.Bold,

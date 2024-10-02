@@ -58,7 +58,7 @@ import java.util.Date
 @Composable
 fun ReportsScreen(
     viewModel: InvoiceViewModel = viewModel(),
-    onInvoiceClick: (InvoiceLine) -> Unit // Lambda function to handle invoice click
+    onInvoiceClick: (InvoiceLine) -> Unit
 ) {
     val invoices by viewModel.invoiceList.collectAsState()
 

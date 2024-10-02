@@ -38,6 +38,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import java.io.InputStream
+import java.time.DayOfWeek
 import java.time.LocalDate
 import javax.inject.Inject
 
@@ -450,6 +451,74 @@ class InvoiceViewModel @Inject constructor(
 
         // Log the filtered invoices for debugging
         Log.d("InvoiceViewModel", "Today's Invoices: $todayInvoices")
+        Log.d("InvoiceViewModel", "Total Sales: $totalSales, Transaction Count: $transactionCount")
+
+        return totalSales to transactionCount
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun getWeeklySalesInfo(): Pair<Double, Int> {
+        val today = LocalDate.now()
+        val startOfWeek = today.with(DayOfWeek.MONDAY)
+        val endOfWeek = today.with(DayOfWeek.SUNDAY)
+
+        // Log the week range
+        Log.d("InvoiceViewModel", "Week Range: $startOfWeek to $endOfWeek")
+
+        // Filter invoices for the current week
+        val weeklyInvoices = _invoiceList.value.filter { invoice ->
+            val invoiceDate = LocalDate.ofEpochDay(invoice.invoiceDate / (24 * 60 * 60 * 1000))
+
+            // Log each invoice date being checked
+            Log.d("InvoiceViewModel", "Invoice Date: $invoiceDate")
+
+            invoiceDate.isAfter(startOfWeek.minusDays(1)) && invoiceDate.isBefore(
+                endOfWeek.plusDays(
+                    1
+                )
+            )
+        }
+
+        // Calculate total sales and transaction count
+        val totalSales = weeklyInvoices.sumOf { it.totalAmount }
+        val transactionCount = weeklyInvoices.size
+
+        // Log the filtered invoices for debugging
+        Log.d("InvoiceViewModel", "Weekly Invoices: $weeklyInvoices")
+        Log.d("InvoiceViewModel", "Total Sales: $totalSales, Transaction Count: $transactionCount")
+
+        return totalSales to transactionCount
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun getMonthlySalesInfo(): Pair<Double, Int> {
+        val today = LocalDate.now()
+        val startOfMonth = today.withDayOfMonth(1)
+        val endOfMonth = today.withDayOfMonth(today.lengthOfMonth())
+
+        // Log the month range
+        Log.d("InvoiceViewModel", "Month Range: $startOfMonth to $endOfMonth")
+
+        // Filter invoices for the current month
+        val monthlyInvoices = _invoiceList.value.filter { invoice ->
+            val invoiceDate = LocalDate.ofEpochDay(invoice.invoiceDate / (24 * 60 * 60 * 1000))
+
+            // Log each invoice date being checked
+            Log.d("InvoiceViewModel", "Invoice Date: $invoiceDate")
+
+            invoiceDate.isAfter(startOfMonth.minusDays(1)) && invoiceDate.isBefore(
+                endOfMonth.plusDays(
+                    1
+                )
+            )
+        }
+
+        // Calculate total sales and transaction count
+        val totalSales = monthlyInvoices.sumOf { it.totalAmount }
+        val transactionCount = monthlyInvoices.size
+
+        // Log the filtered invoices for debugging
+        Log.d("InvoiceViewModel", "Monthly Invoices: $monthlyInvoices")
         Log.d("InvoiceViewModel", "Total Sales: $totalSales, Transaction Count: $transactionCount")
 
         return totalSales to transactionCount

@@ -255,6 +255,9 @@ fun SalesmanInfoCard(
     shopName: String,
     viewModel: InvoiceViewModel = viewModel()
 ) {
+    LaunchedEffect(key1 = true) {
+        viewModel.getTodaySalesInfo()
+    }
     val (currentSalesTotal, numberOfTransactions) = viewModel.getTodaySalesInfo()
 
     Card(

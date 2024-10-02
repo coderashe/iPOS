@@ -1,6 +1,9 @@
 package com.example.learncompose303.screens
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,6 +28,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -47,9 +51,28 @@ import com.example.learncompose303.app.ThreeItemRow
 import com.example.learncompose303.app.TwoItemColumn
 import com.example.learncompose303.ui.theme.GreenColor
 import com.example.learncompose303.ui.theme.MyGray
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
+import com.example.learncompose303.data.Destinations
+import com.example.learncompose303.viewmodels.InvoiceViewModel
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun MyIncomeScreen() {
+fun MyIncomeScreen(
+    viewModel: InvoiceViewModel = viewModel(),
+    navController: NavController
+) {
+    // State to track the selected filter (Day, Week, Month)
+    var selectedFilter by remember { mutableStateOf("Day") }
+
+    // Variable to hold the current sales info based on filter
+    val (currentSalesTotal, numberOfTransactions) = when (selectedFilter) {
+        "Day" -> viewModel.getTodaySalesInfo()
+        "Week" -> viewModel.getWeeklySalesInfo()
+        "Month" -> viewModel.getMonthlySalesInfo()
+        else -> viewModel.getTodaySalesInfo()
+    }
+
     Column(
         modifier = Modifier
             .background(MyGray)
@@ -57,8 +80,7 @@ fun MyIncomeScreen() {
             .fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-//            1st layer filter by day, week, month
-
+        // 1st layer filter by day, week, month
         Column(
             modifier = Modifier
                 .background(Color.White)
@@ -69,18 +91,20 @@ fun MyIncomeScreen() {
                 modifier = Modifier
                     .padding(4.dp)
             ) {
-                HighlightedButtonRow()
+                HighlightedButtonRow(selectedFilter) { filter ->
+                    selectedFilter = filter  // Update the filter state when a button is pressed
+                }
             }
-//            display date
+            // Display current date
             DisplayCurrentDate()
 
-//            ArrowAndBalanceRow
-            ArrowAndBalanceRow()
+            // ArrowAndBalanceRow will display the balance based on the selected filter
+            ArrowAndBalanceRow(currentSalesTotal.toString())
 
-//            no complete orders
+            // No complete orders section
             CompleteOrdersSection()
-
         }
+
         Spacer(
             modifier = Modifier
                 .height(6.dp)
@@ -88,17 +112,20 @@ fun MyIncomeScreen() {
                 .background(Color.Gray)
         )
 
-//        last section :: history, achievements
-        HistorySection()
+        // Last section :: history, achievements
+        HistorySection(onClick = {
+            navController.navigate(Destinations.Reports.route)
+        })
         AchievementsSection()
-
     }
 }
 
 @Composable
-fun HistorySection() {
+fun HistorySection(onClick: () -> Unit) {
     ThreeItemRow(
-        modifier = Modifier.padding(12.dp),
+        modifier = Modifier
+            .padding(12.dp)
+            .clickable(onClick = onClick),
         startContent = {
             Row(
                 verticalAlignment = Alignment.CenterVertically
@@ -158,13 +185,13 @@ fun AchievementsSection() {
 }
 
 @Composable
-fun ArrowAndBalanceRow() {
+fun ArrowAndBalanceRow(balance: String?) {
     ThreeItemRow(
         startContent = {
             DisplayArrowLeft(modifier = Modifier)
         },
         centerContent = {
-            DisplayTotalBalance(modifier = Modifier)
+            DisplayTotalBalance(modifier = Modifier, "$${balance}" ?: "$0.0")
         },
         endContent = {
             DisplayArrowRight(modifier = Modifier)
@@ -197,22 +224,22 @@ fun CompleteOrdersSection() {
 
 
 @Composable
-fun HighlightedButtonRow() {
-    // State to track the currently selected button
-    var selectedButton by remember { mutableStateOf("Day") }
-
+fun HighlightedButtonRow(
+    selectedFilter: String,
+    onFilterSelected: (String) -> Unit
+) {
     Row(
         modifier = Modifier
             .padding(8.dp)
     ) {
         // First Button (Day)
         Button(
-            onClick = { selectedButton = "Day" },
+            onClick = { onFilterSelected("Day") },
             modifier = Modifier
                 .clip(RoundedCornerShape(2.dp)),
             colors = ButtonDefaults.buttonColors(
-                if (selectedButton == "Day") Color(0xFF3B5998) else Color.LightGray, // Pale dark blue for selected
-                contentColor = if (selectedButton == "Day") Color.White else Color.Black // White for selected text
+                if (selectedFilter == "Day") Color(0xFF3B5998) else Color.LightGray,
+                contentColor = if (selectedFilter == "Day") Color.White else Color.Black
             )
         ) {
             Text(
@@ -225,12 +252,12 @@ fun HighlightedButtonRow() {
 
         // Second Button (Week)
         Button(
-            onClick = { selectedButton = "Week" },
+            onClick = { onFilterSelected("Week") },
             modifier = Modifier
                 .clip(RoundedCornerShape(2.dp)),
             colors = ButtonDefaults.buttonColors(
-                if (selectedButton == "Week") Color(0xFF3B5998) else Color.LightGray,
-                contentColor = if (selectedButton == "Week") Color.White else Color.Black
+                if (selectedFilter == "Week") Color(0xFF3B5998) else Color.LightGray,
+                contentColor = if (selectedFilter == "Week") Color.White else Color.Black
             )
         ) {
             Text(
@@ -243,12 +270,12 @@ fun HighlightedButtonRow() {
 
         // Third Button (Month)
         Button(
-            onClick = { selectedButton = "Month" },
+            onClick = { onFilterSelected("Month") },
             modifier = Modifier
                 .clip(RoundedCornerShape(2.dp)),
             colors = ButtonDefaults.buttonColors(
-                if (selectedButton == "Month") Color(0xFF3B5998) else Color.LightGray,
-                contentColor = if (selectedButton == "Month") Color.White else Color.Black
+                if (selectedFilter == "Month") Color(0xFF3B5998) else Color.LightGray,
+                contentColor = if (selectedFilter == "Month") Color.White else Color.Black
             )
         ) {
             Text(
@@ -257,10 +284,4 @@ fun HighlightedButtonRow() {
             )
         }
     }
-}
-
-@Preview
-@Composable
-fun IncomePrev() {
-    MyIncomeScreen()
 }

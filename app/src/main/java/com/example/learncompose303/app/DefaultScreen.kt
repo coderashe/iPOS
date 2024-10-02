@@ -71,7 +71,6 @@ import androidx.navigation.navArgument
 import com.example.learncompose303.screens.CartScreen
 import com.example.learncompose303.screens.CustomerSelectionScreen
 import com.example.learncompose303.screens.InvoiceDetailScreen
-import com.example.learncompose303.screens.InvoicingScreen
 import com.example.learncompose303.screens.LoadStockScreen
 import com.example.learncompose303.screens.LoginScreen
 import com.example.learncompose303.screens.MyIncomeScreen
@@ -150,10 +149,9 @@ fun InDriveTopBottomNavigation() {
             composable(Destinations.SignUp.route) { SignUpPage(navController, authViewModel) }
             composable(Destinations.SignIn.route) { SignInPage(navController, authViewModel) }
             composable(Destinations.Rides.route) { RideRequestsScreen(navController, viewModel) }
-            composable(Destinations.Income.route) { MyIncomeScreen() }
+            composable(Destinations.Income.route) { MyIncomeScreen(viewModel, navController) }
             composable(Destinations.Priority.route) { PriorityScreen() }
             composable(Destinations.Wallet.route) { WalletScreen() }
-            composable(Destinations.Invoice.route) { InvoicingScreen() }
 
             // Customer Selection Screen
             composable(Destinations.CustomerSelection.route) {
