@@ -10,6 +10,7 @@ import androidx.compose.runtime.remember
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.learncompose303.R
+import com.example.learncompose303.data.StudentEntity
 import com.example.learncompose303.data.entities.CartItem
 import com.example.learncompose303.data.entities.CsvParser
 import com.example.learncompose303.data.entities.Customer
@@ -27,7 +28,9 @@ import com.example.learncompose303.data.repositories.InvoiceRepository
 import com.example.learncompose303.data.repositories.OrderRepository
 import com.example.learncompose303.data.repositories.PriceListRepository
 import com.example.learncompose303.data.repositories.ProductRepository
+import com.example.learncompose303.data.repositories.StudentRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -47,7 +50,9 @@ class InvoiceViewModel @Inject constructor(
     private val cartItemRepository: CartItemRepository,
     private val invoiceLineRepository: InvoiceLineRepository,
     private val orderRepository: OrderRepository,
-    private val priceListRepository: PriceListRepository
+    private val priceListRepository: PriceListRepository,
+    private val studentRepository: StudentRepository
+
 ) : ViewModel() {
 
     // Use Triple to hold product, price, and quantity
@@ -216,52 +221,6 @@ class InvoiceViewModel @Inject constructor(
             }
         }
     }
-
-
-//    fun uploadPriceListsFromCsv(inputStream: InputStream, context: Context) {
-//        viewModelScope.launch {
-//            val parser = CsvParser()
-//            val priceListsFromCsv = parser.parsePriceListCsv(inputStream)
-//
-//            // Fetch existing price lists for duplicate validation
-//            val existingPriceLists = productRepository.getAllProductsOnce()
-//
-//            // Create a set to track duplicates
-//            val existingPriceListSet =
-//                existingPriceLists.map { Pair(it.productId, it.productDescription) }.toSet()
-//
-//            val newPriceLists = priceListsFromCsv.filter { priceList ->
-//                val priceListPair = Pair(priceList.productId, priceList.productDescription)
-//                !existingPriceListSet.contains(priceListPair) // Only include non-duplicates
-//            }
-//
-//            // Convert PriceListCsvModel to PriceList entity
-//            val priceListEntities = newPriceLists.map {
-//                PriceList(
-//                    productId = it.productId,
-//                    productDescription = it.productDescription,
-//                    unitCost = it.unitCost,
-//                    sellingPrice = it.sellingPrice,
-//                    markupPercentage = it.markupPercentage,
-//                    grossProfitPercentage = it.grossProfitPercentage
-//                )
-//            }
-//
-//            // Insert price lists into the database
-//            if (priceListEntities.isNotEmpty()) {
-//                val insertedIds = priceListRepository.insertPriceListsAll(priceListEntities)
-//                // Notify user of successful upload
-//                Toast.makeText(
-//                    context,
-//                    "${insertedIds.size} price lists uploaded successfully.",
-//                    Toast.LENGTH_SHORT
-//                ).show()
-//            } else {
-//                Toast.makeText(context, "No new price lists to upload.", Toast.LENGTH_SHORT).show()
-//            }
-//        }
-//    }
-
 
     private fun fetchPriceList() {
         viewModelScope.launch {
@@ -768,4 +727,69 @@ class InvoiceViewModel @Inject constructor(
                 Log.e("InvoiceError", "Error during invoice submission: ${e.message}")
             }
         }
+
+    private val _studentDetailsList = MutableStateFlow(emptyList<StudentEntity>())
+    val studentDetailsList = _studentDetailsList.asStateFlow()
+
+    private val _loginStatus = MutableStateFlow<String>("")
+    val loginStatus = _loginStatus.asStateFlow()
+
+    fun getStudentDetails() {
+        viewModelScope.launch(Dispatchers.IO) {
+            studentRepository.getAllStudents().collectLatest {
+                _studentDetailsList.tryEmit(it)
+            }
+        }
+    }
+
+    fun updateStudent(studentEntity: StudentEntity) {
+        viewModelScope.launch(Dispatchers.IO) {
+            studentRepository.update(studentEntity)
+        }
+    }
+
+    fun insertStudent(studentEntity: StudentEntity) {
+        viewModelScope.launch(Dispatchers.IO) {
+            studentRepository.insert(studentEntity)
+        }
+    }
+
+    private val _studentName = MutableStateFlow("")
+    val studentName = _studentName.asStateFlow()
+
+    fun setStudentName(name: String) {
+        _studentName.tryEmit(name)
+    }
+
+    private val _studentRollNo = MutableStateFlow("")
+    val studentRollNo = _studentRollNo.asStateFlow()
+
+    fun setStudentRollNo(roll: String) {
+        _studentRollNo.tryEmit(roll)
+    }
+
+    private val _isChecked = MutableStateFlow(false)
+    val isChecked = _isChecked.asStateFlow()
+
+    fun setChecked(bool: Boolean) {
+        _isChecked.tryEmit(bool)
+    }
+
+    // Login logic to check if student exists in the database
+    fun loginStudent() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val studentName = _studentName.value
+            val studentRollNo = _studentRollNo.value
+
+            // Query the database for a student with matching name and roll number
+            val student = studentRepository.getStudentByNameAndRollNo(studentName, studentRollNo)
+
+            // Update login status based on result
+            if (student != null) {
+                _loginStatus.tryEmit("Login success")
+            } else {
+                _loginStatus.tryEmit("Please sign up")
+            }
+        }
+    }
 }

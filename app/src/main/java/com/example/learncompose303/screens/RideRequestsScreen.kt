@@ -1,6 +1,7 @@
 package com.example.learncompose303.screens
 
 import android.os.Build
+import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -22,7 +23,9 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -31,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -49,14 +53,26 @@ import com.example.learncompose303.app.CustomHeadingMedium
 import com.example.learncompose303.app.SalesmanInfoCard
 import com.example.learncompose303.app.SpacerHeight
 import com.example.learncompose303.data.Destinations
+import com.example.learncompose303.screens.auth.AuthState
+import com.example.learncompose303.screens.auth.AuthViewModel
 import com.example.learncompose303.viewmodels.InvoiceViewModel
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun RideRequestsScreen(
     navController: NavHostController,
-    viewModel: InvoiceViewModel = viewModel() // Ensure you get the ViewModel here
+    viewModel: InvoiceViewModel = viewModel()
 ) {
+
+    val authViewModel: AuthViewModel = viewModel()
+    val authState = authViewModel.authState.observeAsState()
+
+    LaunchedEffect(authState.value) {
+        when (authState.value) {
+            is AuthState.UnAuthenticated -> navController.navigate(Destinations.SignIn.route)
+            else -> Unit
+        }
+    }
 
     Column(
         modifier = Modifier

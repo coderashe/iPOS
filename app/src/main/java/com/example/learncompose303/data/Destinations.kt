@@ -3,7 +3,10 @@ package com.example.learncompose303.data
 sealed class Destinations(val route: String) {
     //    data object Rides : Destinations("Ride requests")
     data object Rides : Destinations("rides")
+    data object SignIn : Destinations("signIn")
+    data object SignUp : Destinations("signup")
     data object Invoice : Destinations("invoicing")
+    data object Login : Destinations("login")
     data object Order : Destinations("order")
     data object OrderReports : Destinations("orderReports")
     data object OrderReportDetail : Destinations("order_report/{id}") {

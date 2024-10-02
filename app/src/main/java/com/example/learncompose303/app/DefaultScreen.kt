@@ -1,5 +1,7 @@
 package com.example.learncompose303.app
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -52,11 +54,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material3.*
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.runtime.*
@@ -71,6 +73,7 @@ import com.example.learncompose303.screens.CustomerSelectionScreen
 import com.example.learncompose303.screens.InvoiceDetailScreen
 import com.example.learncompose303.screens.InvoicingScreen
 import com.example.learncompose303.screens.LoadStockScreen
+import com.example.learncompose303.screens.LoginScreen
 import com.example.learncompose303.screens.MyIncomeScreen
 import com.example.learncompose303.screens.OrderScreen
 import com.example.learncompose303.screens.OrdersReportsScreen
@@ -79,6 +82,9 @@ import com.example.learncompose303.screens.ProductSelectionScreen
 import com.example.learncompose303.screens.ReportsScreen
 import com.example.learncompose303.screens.RideRequestsScreen
 import com.example.learncompose303.screens.WalletScreen
+import com.example.learncompose303.screens.auth.AuthViewModel
+import com.example.learncompose303.screens.SignInPage
+import com.example.learncompose303.screens.SignUpPage
 import com.example.learncompose303.viewmodels.InvoiceViewModel
 
 
@@ -89,12 +95,14 @@ fun DefaultScreen() {
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun InDriveTopBottomNavigation() {
     val viewModel: InvoiceViewModel = viewModel()
+    val authViewModel: AuthViewModel = viewModel()
+    val navController = rememberNavController()
     val scaffoldState = rememberScaffoldState()
     val coroutineScope = rememberCoroutineScope()
-    val navController = rememberNavController() // Create NavController here
     var isChecked by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -136,9 +144,11 @@ fun InDriveTopBottomNavigation() {
 //        set your starting destination of the app
         NavHost(
             navController = navController,
-            startDestination = Destinations.Rides.route,
+            startDestination = Destinations.SignUp.route,
             modifier = Modifier.padding(paddingValues)
         ) {
+            composable(Destinations.SignUp.route) { SignUpPage(navController, authViewModel) }
+            composable(Destinations.SignIn.route) { SignInPage(navController, authViewModel) }
             composable(Destinations.Rides.route) { RideRequestsScreen(navController, viewModel) }
             composable(Destinations.Income.route) { MyIncomeScreen() }
             composable(Destinations.Priority.route) { PriorityScreen() }
@@ -203,6 +213,13 @@ fun InDriveTopBottomNavigation() {
                     )
 
                 }
+            }
+
+            composable(Destinations.Login.route) {
+                LoginScreen(
+                    viewModel = viewModel,
+                    navController
+                )
             }
 
 //            LoadStocks screen
@@ -357,6 +374,7 @@ fun IndriveDrawerHeader() {
 @Composable
 fun IndriveDrawerBody(navController: NavController, scaffoldState: ScaffoldState) {
     val coroutineScope = rememberCoroutineScope()
+    val authViewModel: AuthViewModel = viewModel()
 
     Column {
 
@@ -467,13 +485,14 @@ fun IndriveDrawerBody(navController: NavController, scaffoldState: ScaffoldState
                 .fillMaxWidth()
                 .padding(16.dp)
                 .clickable {
-                    navController.navigate(Destinations.Rides.route)
+                    authViewModel.signout()
+                    navController.navigate(Destinations.Login.route)
                     coroutineScope.launch { scaffoldState.drawerState.close() }
                 }
         ) {
-            Icon(Icons.Default.ThumbUp, contentDescription = null)
+            Icon(Icons.Default.Logout, contentDescription = null)
             Spacer(modifier = Modifier.width(20.dp))
-            Text(text = "Online Registration", color = Color.Black)
+            Text(text = "Signout", color = Color.Black)
         }
 //
     }

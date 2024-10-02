@@ -5,6 +5,10 @@ plugins {
     id("kotlin-kapt")
     id("kotlin-android")
     id("dagger.hilt.android.plugin")
+
+    id("com.google.gms.google-services")
+    id("com.google.firebase.crashlytics")
+    id("com.google.firebase.firebase-perf")
 }
 
 android {
@@ -68,6 +72,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.4")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
+    implementation("androidx.compose.material:material-android:1.7.2")
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
@@ -75,8 +80,6 @@ dependencies {
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
-
-    implementation("androidx.compose.material:material:1.6.8")
 
     //dagger hilt
     implementation("com.google.dagger:hilt-android:2.48")
@@ -111,13 +114,25 @@ dependencies {
     implementation("androidx.biometric:biometric:1.2.0-alpha05")
 
 //    icons
-    implementation ("androidx.compose.material:material-icons-extended:1.7.1")
+    implementation("androidx.compose.material:material-icons-extended:1.7.2")
 
 //    carousel
     val paging_version = "3.3.2"
 
     implementation("androidx.paging:paging-runtime:$paging_version")
 
+
+    //Firebase
+    implementation(platform("com.google.firebase:firebase-bom:32.5.0"))
+    implementation("com.google.firebase:firebase-analytics")
+    implementation("com.google.firebase:firebase-crashlytics")
+    implementation("com.google.firebase:firebase-auth")
+    implementation("com.google.firebase:firebase-firestore")
+    implementation("com.google.firebase:firebase-perf")
+    implementation("com.google.firebase:firebase-config")
+    implementation("com.google.firebase:firebase-messaging")
+
+    implementation("androidx.compose.runtime:runtime-livedata:1.7.2")
 
 
 }

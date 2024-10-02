@@ -42,6 +42,9 @@ import com.example.learncompose303.data.repositories.ProductRepository
 import com.example.learncompose303.data.repositories.ProductRepositoryImpl
 import com.example.learncompose303.data.repositories.RepositoryImpl
 import com.example.learncompose303.data.repositories.StudentRepository
+import com.google.firebase.Firebase
+import com.google.firebase.auth.auth
+import com.google.firebase.firestore.firestore
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

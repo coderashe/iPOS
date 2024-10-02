@@ -29,15 +29,19 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import com.example.learncompose303.app.CustomButton
 import com.example.learncompose303.app.CustomHeadingMedium
 import com.example.learncompose303.app.CustomTextField
 import com.example.learncompose303.app.SocialSignInButton
-import com.example.learncompose303.ui.theme.MyGray
-import com.example.learncompose303.viewmodels.HomeViewModel
+import com.example.learncompose303.data.Destinations
+import com.example.learncompose303.viewmodels.InvoiceViewModel
 
 @Composable
-fun LoginScreen(viewModel: HomeViewModel) {
+fun LoginScreen(
+    viewModel: InvoiceViewModel,
+    navController: NavController
+) {
     LaunchedEffect(Unit) {
         viewModel.getStudentDetails()
     }
@@ -48,8 +52,7 @@ fun LoginScreen(viewModel: HomeViewModel) {
 
     Box(
         modifier = Modifier
-            .fillMaxSize()
-            .background(MyGray),
+            .fillMaxSize(),
         contentAlignment = Alignment.Center // Center vertically and horizontally
     ) {
         Column(
@@ -80,7 +83,10 @@ fun LoginScreen(viewModel: HomeViewModel) {
 
             CustomButton(
                 text = "Login",
-                onClick = { viewModel.loginStudent() }
+                onClick = {
+                    viewModel.loginStudent()
+                    navController.navigate(Destinations.Rides.route)
+                }
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -119,58 +125,3 @@ fun LoginScreen(viewModel: HomeViewModel) {
         }
     }
 }
-
-//@Composable
-//fun SignUpScreen(viewModel: HomeViewModel) {
-//    val studentName by viewModel.studentName.collectAsState()
-//    val studentRollNo by viewModel.studentRollNo.collectAsState()
-//    val password by remember { mutableStateOf("") } // Add password state if needed
-//    val signUpStatus by remember { mutableStateOf("") }
-//
-//    Column(
-//        modifier = Modifier
-//            .fillMaxSize()
-//            .padding(24.dp)
-//            .verticalScroll(rememberScrollState()),
-//        horizontalAlignment = Alignment.CenterHorizontally
-//    ) {
-//        Text(
-//            text = "Sign Up",
-//            style = MaterialTheme.typography.h4,
-//            modifier = Modifier.padding(vertical = 16.dp),
-//            fontWeight = FontWeight.Bold
-//        )
-//
-//        CustomTextField(
-//            value = studentName,
-//            onValueChange = { viewModel.setStudentName(it) },
-//            label = "Student Name"
-//        )
-//
-//        CustomTextField(
-//            value = studentRollNo,
-//            onValueChange = { viewModel.setStudentRollNo(it) },
-//            label = "Student Roll Number"
-//        )
-//
-//        CustomTextField(
-//            value = password,
-//            onValueChange = { /* Handle password change */ },
-//            label = "Password",
-//            isPassword = true
-//        )
-//
-//        Spacer(modifier = Modifier.height(24.dp))
-//
-//        CustomButton(
-//            text = "Sign Up",
-//            onClick = { /* Handle sign-up logic */ }
-//        )
-//
-//        Spacer(modifier = Modifier.height(16.dp))
-//
-//        Text(text = signUpStatus, color = Color.Green, fontSize = 14.sp)
-//    }
-//}
-
-

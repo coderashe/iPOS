@@ -1,5 +1,7 @@
 package com.example.learncompose303.screens
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -43,6 +45,7 @@ import com.example.learncompose303.ui.theme.Green1
 import com.example.learncompose303.ui.theme.Green2
 import com.example.learncompose303.ui.theme.MyGray
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun ShopLandingScreen() {
     InDriveTopBottomNavigation()
@@ -143,11 +146,4 @@ fun SearchBarExample() {
             onQueryChanged = { query = it }
         )
     }
-}
-
-
-@Preview
-@Composable
-fun ShopPrev() {
-    ShopLandingScreen()
 }
