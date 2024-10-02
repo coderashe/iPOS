@@ -120,6 +120,7 @@ fun MyIncomeScreen(
     }
 }
 
+
 @Composable
 fun HistorySection(onClick: () -> Unit) {
     ThreeItemRow(
