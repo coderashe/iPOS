@@ -158,15 +158,14 @@ fun CartScreen(
 
                         val message = "*INVOICE RECEIPT:*\n\n" +
                                 "*CUSTOMER DETAILS*\n" +
-                                "${customer.name}\n" +
-                                "${customer.phone}\n\n" +
+                                "${customer.name}: ${customer.phone}\n\n" +
                                 "*PRODUCTS PURCHASED:*\n" +
                                 "$productDetails\n\n" +
                                 "*SALES TOTALS*\n" +
                                 "Total Amount: *$$totalPrice*\n" +
                                 "Amount Tendered: *$$amountTendered*\n" +
                                 "Change: *$${amountTendered.toDouble() - totalPrice}*\n\n" +
-                                "Thank you for your purchase!...\n              ISTARTK  \u00A9 2024"
+                                "THANK YOU!!!... powered by istartk \u00A92024"
 
                         val sendIntent = Intent(Intent.ACTION_SEND).apply {
                             type = "text/plain"
