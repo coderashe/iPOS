@@ -18,6 +18,10 @@ interface OrderDao {
     @Query("SELECT * FROM orders")
     fun getAllOrders(): Flow<List<Order>>
 
+    // Get the total count of orders
+    @Query("SELECT COUNT(*) FROM orders")
+    fun getOrderCount(): Flow<Int>
+
     // Get a specific order by ID
     @Query("SELECT * FROM orders WHERE id = :orderId")
     suspend fun getOrderById(orderId: Int): Order?

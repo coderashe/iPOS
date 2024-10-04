@@ -29,8 +29,10 @@ import com.example.learncompose303.data.repositories.OrderRepository
 import com.example.learncompose303.data.repositories.PriceListRepository
 import com.example.learncompose303.data.repositories.ProductRepository
 import com.example.learncompose303.data.repositories.StudentRepository
+import com.google.firebase.firestore.FirebaseFirestore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -61,7 +63,6 @@ class InvoiceViewModel @Inject constructor(
         MutableStateFlow<List<Triple<Product, Double, Int>>>(emptyList())
     val productWithPriceDetails: StateFlow<List<Triple<Product, Double, Int>>> =
         _productWithPriceDetails
-
 
     private val _priceList = MutableStateFlow(emptyList<PriceList>())
     val priceList = _priceList.asStateFlow()
@@ -564,6 +565,20 @@ class InvoiceViewModel @Inject constructor(
         }
     }
 
+    private val _orderCount = MutableStateFlow(0)
+    val orderCount: StateFlow<Int> = _orderCount
+
+    // Fetch total count of all orders
+
+    suspend fun getOrderCount1(): Flow<Int> = orderRepository.getOrderCount()
+
+    // Fetch total count of all orders
+    fun fetchOrderCount() = viewModelScope.launch {
+        orderRepository.getOrderCount().collectLatest { count ->
+            _orderCount.value = count
+        }
+    }
+
     // Get order by ID
     fun getOrderById(orderId: Int) = viewModelScope.launch {
         val order = orderRepository.getOrderById(orderId)
@@ -861,4 +876,51 @@ class InvoiceViewModel @Inject constructor(
             }
         }
     }
+
+//    fun syncFirestoreInvoicesWithRoom() {
+//        val firestore = FirebaseFirestore.getInstance()
+//
+//        firestore.collection("invoices")
+//            .addSnapshotListener { snapshots, e ->
+//                if (e != null) {
+//                    Log.w("FirestoreSync", "Listen failed", e)
+//                    return@addSnapshotListener
+//                }
+//
+//                if (snapshots != null && !snapshots.isEmpty) {
+//                    val invoices = snapshots.documents.mapNotNull { doc ->
+//                        val invoiceId = doc.getLong("invoiceId") ?: return@mapNotNull null
+//                        val customerId = doc.getLong("customerId") ?: return@mapNotNull null
+//                        val totalAmount = doc.getDouble("totalAmount") ?: return@mapNotNull null
+//                        val invoiceDate = doc.getLong("invoiceDate") ?: return@mapNotNull null
+//                        val dueDate = doc.getLong("dueDate")
+//                        val status = doc.getString("status") ?: return@mapNotNull null
+//                        val currencyCode = doc.getString("currencyCode") ?: return@mapNotNull null
+//                        val lastUpdated = doc.getLong("lastUpdated")
+//                        val isArchived = doc.getBoolean("isArchived") ?: false
+//
+//                        Invoice(
+//                            invoiceId = invoiceId,
+//                            customerId = customerId,
+//                            totalAmount = totalAmount,
+//                            invoiceDate = invoiceDate,
+//                            dueDate = dueDate,
+//                            status = status,
+//                            currencyCode = currencyCode,
+//                            lastUpdated = lastUpdated,
+//                            isArchived = isArchived
+//                        )
+//                    }
+//
+//                    // Sync the list of invoices with Room
+//
+//                    viewModelScope.launch(Dispatchers.IO) {
+//                        invoices.forEach { invoice ->
+//                            invoiceRepository.insertInvoice(invoice)
+//                        }
+//                    }
+//                }
+//            }
+//    }
+
 }

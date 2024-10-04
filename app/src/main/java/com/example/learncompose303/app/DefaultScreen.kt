@@ -55,6 +55,8 @@ import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Logout
+import androidx.compose.material.icons.filled.MonetizationOn
+import androidx.compose.material.icons.filled.ProductionQuantityLimits
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.ShoppingCart
@@ -78,12 +80,14 @@ import com.example.learncompose303.screens.OrderScreen
 import com.example.learncompose303.screens.OrdersReportsScreen
 import com.example.learncompose303.screens.PriorityScreen
 import com.example.learncompose303.screens.ProductSelectionScreen
+import com.example.learncompose303.screens.ProductsScreen
 import com.example.learncompose303.screens.ReportsScreen
 import com.example.learncompose303.screens.RideRequestsScreen
 import com.example.learncompose303.screens.WalletScreen
 import com.example.learncompose303.screens.auth.AuthViewModel
 import com.example.learncompose303.screens.SignInPage
 import com.example.learncompose303.screens.SignUpPage
+import com.example.learncompose303.ui.theme.MyBlueish
 import com.example.learncompose303.viewmodels.InvoiceViewModel
 
 
@@ -150,8 +154,9 @@ fun InDriveTopBottomNavigation() {
             composable(Destinations.SignIn.route) { SignInPage(navController, authViewModel) }
             composable(Destinations.Rides.route) { RideRequestsScreen(navController, viewModel) }
             composable(Destinations.Income.route) { MyIncomeScreen(viewModel, navController) }
-            composable(Destinations.Priority.route) { PriorityScreen() }
+            composable(Destinations.Priority.route) { PriorityScreen(viewModel) }
             composable(Destinations.Wallet.route) { WalletScreen() }
+            composable(Destinations.Products.route) { ProductsScreen(viewModel) }
 
             // Customer Selection Screen
             composable(Destinations.CustomerSelection.route) {
@@ -294,7 +299,8 @@ fun IndriveDrawerNav(navController: NavController, scaffoldState: ScaffoldState)
         IndriveDrawerBottom(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(8.dp)
+                .padding(8.dp),
+            navController
         )
     }
 }
@@ -387,7 +393,7 @@ fun IndriveDrawerBody(navController: NavController, scaffoldState: ScaffoldState
         ) {
             Icon(Icons.Default.Home, contentDescription = null)
             Spacer(modifier = Modifier.width(20.dp))
-            Text(text = "City", color = Color.Black)
+            Text(text = stringResource(id = R.string.home), color = Color.Black)
         }
 
         Row(
@@ -395,13 +401,13 @@ fun IndriveDrawerBody(navController: NavController, scaffoldState: ScaffoldState
                 .fillMaxWidth()
                 .padding(16.dp)
                 .clickable {
-                    navController.navigate(Destinations.Wallet.route)
+                    navController.navigate(Destinations.OrderReports.route)
                     coroutineScope.launch { scaffoldState.drawerState.close() }
                 }
         ) {
             Icon(Icons.Default.ShoppingCart, contentDescription = null)
             Spacer(modifier = Modifier.width(20.dp))
-            Text(text = "Wallet", color = Color.Black)
+            Text(text = stringResource(id = R.string.orders1), color = Color.Black)
         }
 
         Row(
@@ -409,13 +415,13 @@ fun IndriveDrawerBody(navController: NavController, scaffoldState: ScaffoldState
                 .fillMaxWidth()
                 .padding(16.dp)
                 .clickable {
-                    navController.navigate(Destinations.Priority.route)
+                    navController.navigate(Destinations.Reports.route)
                     coroutineScope.launch { scaffoldState.drawerState.close() }
                 }
         ) {
             Icon(Icons.Default.LocationOn, contentDescription = null)
             Spacer(modifier = Modifier.width(20.dp))
-            Text(text = "City to City", color = Color.Black)
+            Text(text = stringResource(id = R.string.reports1), color = Color.Black)
         }
 
         Row(
@@ -423,13 +429,43 @@ fun IndriveDrawerBody(navController: NavController, scaffoldState: ScaffoldState
                 .fillMaxWidth()
                 .padding(16.dp)
                 .clickable {
-                    navController.navigate(Destinations.Income.route)
+                    navController.navigate(Destinations.LoadStocks.route)
                     coroutineScope.launch { scaffoldState.drawerState.close() }
                 }
         ) {
             Icon(Icons.Default.Settings, contentDescription = null)
             Spacer(modifier = Modifier.width(20.dp))
-            Text(text = "Safety", color = Color.Black)
+            Text(text = stringResource(id = R.string.load_stocks1), color = Color.Black)
+        }
+//
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+                .clickable {
+                    navController.navigate(Destinations.CustomerSelection.route)
+                    coroutineScope.launch { scaffoldState.drawerState.close() }
+                }
+        ) {
+            Icon(Icons.Default.Settings, contentDescription = null)
+            Spacer(modifier = Modifier.width(20.dp))
+            Text(text = stringResource(id = R.string.customers), color = Color.Black)
+        }
+//
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+                .clickable {
+                    navController.navigate(Destinations.Products.route)
+                    coroutineScope.launch { scaffoldState.drawerState.close() }
+                }
+        ) {
+            Icon(Icons.Default.Search, contentDescription = null)
+            Spacer(modifier = Modifier.width(20.dp))
+            Text(text = stringResource(id = R.string.products), color = Color.Black)
         }
 //
 
@@ -442,39 +478,9 @@ fun IndriveDrawerBody(navController: NavController, scaffoldState: ScaffoldState
                     coroutineScope.launch { scaffoldState.drawerState.close() }
                 }
         ) {
-            Icon(Icons.Default.Settings, contentDescription = null)
-            Spacer(modifier = Modifier.width(20.dp))
-            Text(text = "Settings", color = Color.Black)
-        }
-//
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-                .clickable {
-                    navController.navigate(Destinations.Priority.route)
-                    coroutineScope.launch { scaffoldState.drawerState.close() }
-                }
-        ) {
-            Icon(Icons.Default.Search, contentDescription = null)
-            Spacer(modifier = Modifier.width(20.dp))
-            Text(text = "FAQ", color = Color.Black)
-        }
-//
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-                .clickable {
-                    navController.navigate(Destinations.Income.route)
-                    coroutineScope.launch { scaffoldState.drawerState.close() }
-                }
-        ) {
             Icon(Icons.Default.Face, contentDescription = null)
             Spacer(modifier = Modifier.width(20.dp))
-            Text(text = "Support", color = Color.Black)
+            Text(text = stringResource(R.string.faq), color = Color.Black)
         }
 //
 
@@ -490,14 +496,17 @@ fun IndriveDrawerBody(navController: NavController, scaffoldState: ScaffoldState
         ) {
             Icon(Icons.Default.Logout, contentDescription = null)
             Spacer(modifier = Modifier.width(20.dp))
-            Text(text = "Signout", color = Color.Black)
+            Text(text = stringResource(id = R.string.sign_out), color = Color.Black)
         }
 //
     }
 }
 
 @Composable
-fun IndriveDrawerBottom(modifier: Modifier) {
+fun IndriveDrawerBottom(modifier: Modifier, navController: NavController) {
+    val coroutineScope = rememberCoroutineScope()
+    val authViewModel: AuthViewModel = viewModel()
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -512,14 +521,17 @@ fun IndriveDrawerBottom(modifier: Modifier) {
 
 // Lime Green button for Passenger mode
         Button(
-            onClick = { /* Handle button click */ },
+            onClick = {
+                authViewModel.signout()
+                navController.navigate(Destinations.SignIn.route)
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(vertical = 8.dp),
-            colors = ButtonDefaults.buttonColors(Color(0xff66cc00)) // Lime Green color
+            colors = ButtonDefaults.buttonColors(MyBlueish) // Lime Green color
         ) {
             Text(
-                text = "Passenger mode",
+                text = "Sign out",
                 color = Color.Black,
                 fontWeight = FontWeight.Bold
             )
@@ -567,28 +579,28 @@ fun IndriveBottomNavigation(navController: NavHostController) {
             selected = currentDestination?.route == Destinations.Rides.route,
             onClick = { navController.navigate(Destinations.Rides.route) },
             icon = { Icon(Icons.Default.Home, contentDescription = null) },
-            label = { Text(text = Destinations.Rides.route, color = Color.Black) }
+            label = { Text(text = stringResource(id = R.string.navhome)) }
         )
 
         BottomNavigationItem(
             selected = currentDestination?.route == Destinations.Income.route,
             onClick = { navController.navigate(Destinations.Income.route) },
-            icon = { Icon(Icons.Default.Favorite, contentDescription = null) },
-            label = { Text(text = Destinations.Income.route, color = Color.Black) }
+            icon = { Icon(Icons.Default.MonetizationOn, contentDescription = null) },
+            label = { Text(text = stringResource(id = R.string.navincome)) }
         )
 
         BottomNavigationItem(
             selected = currentDestination?.route == Destinations.Priority.route,
             onClick = { navController.navigate(Destinations.Priority.route) },
             icon = { Icon(Icons.Default.Favorite, contentDescription = null) },
-            label = { Text(text = Destinations.Priority.route, color = Color.Black) }
+            label = { Text(text = stringResource(id = R.string.navpriority)) }
         )
 
         BottomNavigationItem(
-            selected = currentDestination?.route == Destinations.Wallet.route,
-            onClick = { navController.navigate(Destinations.Wallet.route) },
-            icon = { Icon(Icons.Default.Favorite, contentDescription = null) },
-            label = { Text(text = Destinations.Wallet.route, color = Color.Black) }
+            selected = currentDestination?.route == Destinations.Products.route,
+            onClick = { navController.navigate(Destinations.Products.route) },
+            icon = { Icon(Icons.Default.ProductionQuantityLimits, contentDescription = null) },
+            label = { Text(text = stringResource(id = R.string.navproducts)) }
         )
     }
 }

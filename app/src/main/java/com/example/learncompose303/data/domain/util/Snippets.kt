@@ -28,6 +28,25 @@ import com.example.learncompose303.data.entities.Customer
 import com.example.learncompose303.screens.CartScreen
 import com.example.learncompose303.viewmodels.InvoiceViewModel
 
+
+//        override suspend fun insertInvoice(invoice: Invoice): Long {
+//            return withContext(Dispatchers.IO) {
+//                invoiceDao.insertInvoice(invoice)
+//            }
+//        }
+
+//    override suspend fun updateInvoice(invoice: Invoice) {
+//        return withContext(Dispatchers.IO) {
+//            invoiceDao.updateInvoice(invoice)
+//        }
+//    }
+//
+//    override suspend fun deleteInvoice(invoice: Invoice) {
+//        return withContext(Dispatchers.IO) {
+//            invoiceDao.deleteInvoice(invoice)
+//        }
+//    }
+
 //
 //
 ////                    DefaultScreen()

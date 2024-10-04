@@ -86,10 +86,13 @@ fun SignUpPage(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        Button(onClick = {
-            authViewModel.signup(email, password)
-        }) {
-            Text(text = stringResource(id = R.string.sign_up))
+        Button(
+            onClick = {
+                authViewModel.signup(email, password)
+            },
+            enabled = authState.value != AuthState.Loading
+        ) {
+            Text(text = stringResource(id = R.string.create_account))
         }
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -99,6 +102,5 @@ fun SignUpPage(
         }) {
             Text(text = "Already have an account, Login")
         }
-
     }
 }

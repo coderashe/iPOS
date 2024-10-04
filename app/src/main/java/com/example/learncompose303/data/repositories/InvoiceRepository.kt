@@ -1,7 +1,11 @@
 package com.example.learncompose303.data.repositories
 
+import android.util.Log
+import androidx.compose.runtime.LaunchedEffect
 import com.example.learncompose303.data.data_source.InvoiceDao
 import com.example.learncompose303.data.entities.Invoice
+import com.example.learncompose303.data.entities.mapInvoiceToFirestore
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.Flow
@@ -13,6 +17,9 @@ interface InvoiceRepository {
     suspend fun getAllInvoices(): Flow<List<Invoice>>
     suspend fun updateInvoice(invoice: Invoice)
     suspend fun deleteInvoice(invoice: Invoice)
+
+//    for FireStore
+//    suspend fun syncInvoiceWithFirestore(invoice: Invoice)
 }
 
 class InvoiceRepositoryImpl @Inject constructor(
@@ -25,18 +32,6 @@ class InvoiceRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun getInvoiceById(id: Long): Invoice? {
-        return withContext(Dispatchers.IO) {
-            invoiceDao.getInvoiceById(id)
-        }
-    }
-
-    override suspend fun getAllInvoices(): Flow<List<Invoice>> {
-        return withContext(Dispatchers.IO) {
-            invoiceDao.getAllInvoices()
-        }
-    }
-
     override suspend fun updateInvoice(invoice: Invoice) {
         return withContext(Dispatchers.IO) {
             invoiceDao.updateInvoice(invoice)
@@ -46,6 +41,60 @@ class InvoiceRepositoryImpl @Inject constructor(
     override suspend fun deleteInvoice(invoice: Invoice) {
         return withContext(Dispatchers.IO) {
             invoiceDao.deleteInvoice(invoice)
+        }
+    }
+
+//    private val firestore = FirebaseFirestore.getInstance()
+//    override suspend fun insertInvoice(invoice: Invoice): Long {
+//        return withContext(Dispatchers.IO) {
+//            val id = invoiceDao.insertInvoice(invoice)
+//            // Sync with Firestore
+//            syncInvoiceWithFirestore(invoice)
+//            id
+//        }
+//    }
+//
+//    override suspend fun updateInvoice(invoice: Invoice) {
+//        return withContext(Dispatchers.IO) {
+//            invoiceDao.updateInvoice(invoice)
+//            // Sync updated invoice with Firestore
+//            syncInvoiceWithFirestore(invoice)
+//        }
+//    }
+//
+//    override suspend fun deleteInvoice(invoice: Invoice) {
+//        return withContext(Dispatchers.IO) {
+//            invoiceDao.deleteInvoice(invoice)
+//            // Remove from Firestore
+//            firestore.collection("invoices").document(invoice.invoiceId.toString())
+//                .delete()
+//        }
+//    }
+//    override suspend fun syncInvoiceWithFirestore(invoice: Invoice) {
+//        return withContext(Dispatchers.IO) {
+//            val invoiceData = mapInvoiceToFirestore(invoice)
+//            firestore.collection("invoices")
+//                .document(invoice.invoiceId.toString())
+//                .set(invoiceData)
+//                .addOnSuccessListener {
+//                    Log.d("FirestoreSync", "Invoice synced successfully")
+//                }
+//                .addOnFailureListener { e ->
+//                    Log.e("FirestoreSync", "Failed to sync invoice", e)
+//                }
+//        }
+//    }
+
+
+    override suspend fun getInvoiceById(id: Long): Invoice? {
+        return withContext(Dispatchers.IO) {
+            invoiceDao.getInvoiceById(id)
+        }
+    }
+
+    override suspend fun getAllInvoices(): Flow<List<Invoice>> {
+        return withContext(Dispatchers.IO) {
+            invoiceDao.getAllInvoices()
         }
     }
 

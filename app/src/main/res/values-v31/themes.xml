@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <!--    <style name="Theme.MySplashScreen" parent="Theme.LearnCompose303">-->
-    <!--        <item name="android:windowSplashScreenBackground">@color/green</item>-->
-    <!--        <item name="android:windowSplashScreenAnimatedIcon">@drawable/loc1</item>-->
-    <!--        <item name="postSplashScreenTheme">@style/Theme.LearnCompose303</item>-->
-    <!--    </style>-->
+    <!-- Base theme for devices running API 31 and above -->
+    <style name="Theme.LearnCompose303" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+    </style>
+
 </resources>

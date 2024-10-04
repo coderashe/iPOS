@@ -10,6 +10,7 @@ import javax.inject.Inject
 interface OrderRepository {
     suspend fun insertOrder(order: Order)
     suspend fun getAllOrders(): Flow<List<Order>>
+    suspend fun getOrderCount(): Flow<Int>
     suspend fun getOrderById(orderId: Int): Order?
     suspend fun deleteOrder(order: Order)
     suspend fun deleteAllOrders()
@@ -30,6 +31,13 @@ class OrderRepositoryImpl @Inject constructor(
     override suspend fun getAllOrders(): Flow<List<Order>> {
         return withContext(Dispatchers.IO) {
             orderDao.getAllOrders()
+        }
+    }
+
+    // Fetch count of all orders
+    override suspend fun getOrderCount(): Flow<Int> {
+        return withContext(Dispatchers.IO) {
+            orderDao.getOrderCount()
         }
     }
 

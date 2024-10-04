@@ -1,11 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <!--    <style name="Theme.MySplashScreen" parent="Theme.LearnCompose303">-->
-    <!--        <item name="android:windowSplashScreenBackground">@color/green</item>-->
-    <!--        <item name="android:windowSplashScreenAnimatedIcon">@drawable/loc1</item>-->
-    <!--        <item name="postSplashScreenTheme">@style/Theme.LearnCompose303</item>-->
-    <!--    </style>-->
+    <!-- Base theme for devices below API 31 -->
+    <style name="Theme.LearnCompose303" parent="Theme.MaterialComponents.Light.NoActionBar">
+        <!-- Primary branding color (for light theme) -->
+        <item name="colorPrimary">@color/green</item>
+        <!-- Background color in light mode -->
+        <item name="android:colorBackground">@color/white</item>
+        <!-- Status bar color -->
+        <item name="android:statusBarColor">@color/green</item>
+        <!-- Navigation bar color -->
+        <item name="android:navigationBarColor">@color/white</item>
+    </style>
 
-    <style name="Theme.LearnCompose303" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Theme.LearnCompose303.Dark" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
+        <!-- Primary branding color (for dark theme) -->
+        <item name="colorPrimary">@color/green</item>
+        <!-- Background color in dark mode -->
+        <item name="android:colorBackground">@color/black</item>
+        <!-- Status bar color -->
+        <item name="android:statusBarColor">@color/black</item>
+        <!-- Navigation bar color -->
+        <item name="android:navigationBarColor">@color/black</item>
+    </style>
+
 </resources>

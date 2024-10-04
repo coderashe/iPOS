@@ -84,9 +84,12 @@ fun SignInPage(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        Button(onClick = {
-            authViewModel.login(email, password)
-        }) {
+        Button(
+            onClick = {
+                authViewModel.login(email, password)
+            },
+            enabled = authState.value != AuthState.Loading
+        ) {
             Text(text = stringResource(id = R.string.login))
 
         }

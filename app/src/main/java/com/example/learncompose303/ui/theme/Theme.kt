@@ -18,22 +18,26 @@ import androidx.core.view.WindowCompat
 
 // Theme Colors
 private val DarkColorScheme = darkColorScheme(
-    primary = GreenColor,
-    secondary = MyPurple,
-    tertiary = Pink80,
-    onPrimary = Color.White, // White text for dark mode
-    surface = MyGray, // Button background for dark mode
-    onSurface = Color.White // Text on buttons in dark mode
+    primary = Color(0xFFBB86FC),
+    secondary = Color(0xFF03DAC6),
+    tertiary = Color(0xFF03DAC5),
+    onPrimary = Color.Black,
+    surface = Color(0xFF121212),
+    onSurface = Color.White,
+    background = Color(0xFF121212) // Dark background
 )
 
+// Light Theme Colors
 private val LightColorScheme = lightColorScheme(
-    primary = GreenColor,
-    secondary = TheGrey,
-    tertiary = Pink40,
-    onPrimary = Color.Black, // Black text for light mode
-    surface = Green1, // Button background for light mode
-    onSurface = Color.White // Text on buttons in light mode
+    primary = Color(0xFF6200EE),
+    secondary = Color(0xFF03DAC6),
+    tertiary = Color(0xFF018786),
+    onPrimary = Color.White,
+    surface = Color.White,
+    onSurface = Color.Black,
+    background = Color.White // Light background
 )
+
 
 @Composable
 fun LearnCompose303Theme(

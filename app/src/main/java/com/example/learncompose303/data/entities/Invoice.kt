@@ -5,13 +5,29 @@ import androidx.room.PrimaryKey
 
 @Entity(tableName = "invoice")
 data class Invoice(
-    @PrimaryKey(autoGenerate = true) val invoiceId: Long = 0,
+    @PrimaryKey(autoGenerate = true)
+    val invoiceId: Long = 0,
     val customerId: Long,
     val totalAmount: Double,
-    val invoiceDate: Long,  // Store as timestamp
+    val invoiceDate: Long,
     val dueDate: Long?,
-    val status: String, // e.g., "Paid", "Pending", "Overdue"
-    val currencyCode: String = "USD", // To support multi-currency
-    val lastUpdated: Long? = null, // Timestamp of last update for auditing
-    val isArchived: Boolean = false // To mark if the invoice is archived or not
+    val status: String,
+    val currencyCode: String = "USD",
+    val lastUpdated: Long? = null,
+    val isArchived: Boolean = false
 )
+
+fun mapInvoiceToFirestore(invoice: Invoice): Map<String, Any?> {
+    return hashMapOf(
+        "invoiceId" to invoice.invoiceId,
+        "customerId" to invoice.customerId,
+        "totalAmount" to invoice.totalAmount,
+        "invoiceDate" to invoice.invoiceDate,
+        "dueDate" to invoice.dueDate,
+        "status" to invoice.status,
+        "currencyCode" to invoice.currencyCode,
+        "lastUpdated" to invoice.lastUpdated,
+        "isArchived" to invoice.isArchived
+    )
+}
+

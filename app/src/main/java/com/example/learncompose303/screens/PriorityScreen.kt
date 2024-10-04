@@ -1,5 +1,7 @@
 package com.example.learncompose303.screens
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -26,6 +28,9 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -38,17 +43,28 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.learncompose303.R
 import com.example.learncompose303.ui.theme.GreenColor
 import com.example.learncompose303.ui.theme.MyBlueish
 import com.example.learncompose303.ui.theme.MyGray
 import com.example.learncompose303.ui.theme.TheGrey
+import com.example.learncompose303.viewmodels.InvoiceViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun PriorityScreen() {
+fun PriorityScreen(
+    viewModel: InvoiceViewModel = viewModel()
+) {
+
+    val (currentSalesTotal, numberOfTransactions) = viewModel.getMonthlySalesInfo()
+
+    // Observe the total count of all orders
+    val totalOrdersCount by viewModel.orderCount.collectAsState(initial = 0)
+
     Column(
         modifier = Modifier
             .background(MyGray)
@@ -242,15 +258,16 @@ fun PriorityScreen() {
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
 
+//                    get totalInvoices
                     Text(
-                        text = stringResource(id = R.string.number),
+                        text = numberOfTransactions.toString(),
                         color = MyBlueish,
                         fontSize = 32.sp,
                         fontWeight = FontWeight.Bold
                     )
 
                     Text(
-                        text = stringResource(id = R.string.ride),
+                        text = stringResource(id = R.string.navinvoices),
                         color = Color.Black,
                     )
                 }
@@ -264,14 +281,14 @@ fun PriorityScreen() {
                 ) {
 
                     Text(
-                        text = stringResource(id = R.string.number2),
+                        text = totalOrdersCount.toString(),
                         color = MyBlueish,
                         fontSize = 32.sp,
                         fontWeight = FontWeight.Bold
                     )
 
                     Text(
-                        text = stringResource(id = R.string.review),
+                        text = stringResource(id = R.string.navorders),
                         color = Color.Black,
                     )
                 }

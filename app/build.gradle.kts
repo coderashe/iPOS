@@ -134,5 +134,7 @@ dependencies {
 
     implementation("androidx.compose.runtime:runtime-livedata:1.7.2")
 
+    // Add Material Components library
+    implementation ("com.google.android.material:material:1.12.0")
 
 }

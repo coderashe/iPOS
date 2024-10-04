@@ -333,7 +333,27 @@ fun ProductCard(
             Spacer(modifier = Modifier.height(8.dp))
             Text("\$${price}", style = MaterialTheme.typography.headlineSmall)
             Spacer(modifier = Modifier.height(8.dp))
-            Text(product.productDescription, style = MaterialTheme.typography.bodySmall)
+            Row(
+                modifier = Modifier
+            ) {
+                Text(
+                    modifier = Modifier.weight(1f),
+                    text = product.productDescription,
+                    style = MaterialTheme.typography.bodySmall
+                )
+                Text(
+                    modifier = Modifier
+                        .background(
+                            color = Color.White,
+                            shape = RoundedCornerShape(8.dp)
+                        )
+                        .padding(2.dp),
+                    text = product.currentStockLevel.toString(),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = Color.Red,
+                    fontWeight = FontWeight.Bold
+                )
+            }
             Button(
                 modifier = Modifier.fillMaxWidth(),
                 onClick = {

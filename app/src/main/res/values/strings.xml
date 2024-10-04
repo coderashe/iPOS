@@ -15,10 +15,12 @@
     <string name="menu">Menu</string>
     <string name="notifications">Notifications</string>
     <string name="home">Home</string>
+    <string name="navhome">home</string>
     <string name="post">Post</string>
     <string name="game_name">TIC TAC TOE</string>
     <string name="rides">Searching for requests…</string>
     <string name="income">My Income</string>
+    <string name="navincome">income</string>
     <string name="low">Low</string>
     <string name="frequency">Frequency of operations: Very low</string>
     <string name="reputation">Reputation: Normal</string>
@@ -31,10 +33,12 @@
     <string name="number">61</string>
     <string name="number2">32</string>
     <string name="priority">Priority</string>
+    <string name="navpriority">priority</string>
     <string name="wallet">Wallet</string>
     <string name="posts">Posts</string>
     <string name="balance">Balance</string>
     <string name="cash">$ 52.65</string>
+    <string name="customers">Customers</string>
     <string name="item_detail">Item Detail Screen</string>
     <string name="nav_drawer">Navigation Drawer</string>
     <string name="followers">Followers</string>
@@ -46,11 +50,18 @@
     <string name="goto_request_history">Go to request history</string>
     <string name="achievements">Achievements</string>
     <string name="popular_products">POPULAR PRODUCTS</string>
+    <string name="products">Products</string>
+    <string name="navproducts">products</string>
     <string name="more">GET MORE</string>
     <string name="load_stocks">LOAD STOCKS</string>
+    <string name="load_stocks1">Load Stocks</string>
     <string name="invoicing">INVOICING</string>
+    <string name="navinvoices">invoices</string>
     <string name="reports">REPORTS</string>
+    <string name="reports1">Reports</string>
     <string name="orders">ORDERS</string>
+    <string name="orders1">Orders</string>
+    <string name="navorders">orders</string>
     <string name="uploadPricelists">UPLOAD PRICELIST</string>
     <string name="invoice_receipt">INVOICE RECEIPT</string>
     <string name="amount_tendered">Amount Tendered</string>
@@ -61,6 +72,7 @@
     <string name="no_internet">No internet</string>
     <string name="sign_in">Sign In</string>
     <string name="sign_up">Sign Up</string>
+    <string name="create_account">Create Account</string>
     <string name="sign_in_with_google">Sign in with Google</string>
     <string name="email">Email</string>
     <string name="invalid_email_format">Invalid email format</string>
@@ -115,6 +127,7 @@
     <string name="icons_by">Icons by\u00A0</string>
     <string name="sign_out">Sign out</string>
     <string name="login">LOGIN</string>
+    <string name="faq">Faq</string>
     //
 </resources>
 
