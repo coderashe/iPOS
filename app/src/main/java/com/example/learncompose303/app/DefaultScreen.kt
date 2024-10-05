@@ -64,6 +64,7 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -87,6 +88,7 @@ import com.example.learncompose303.screens.WalletScreen
 import com.example.learncompose303.screens.auth.AuthViewModel
 import com.example.learncompose303.screens.SignInPage
 import com.example.learncompose303.screens.SignUpPage
+import com.example.learncompose303.screens.auth.AuthState
 import com.example.learncompose303.ui.theme.MyBlueish
 import com.example.learncompose303.viewmodels.InvoiceViewModel
 
@@ -101,12 +103,29 @@ fun DefaultScreen() {
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun InDriveTopBottomNavigation() {
+    val authViewModel: AuthViewModel = viewModel() // Get AuthViewModel
     val viewModel: InvoiceViewModel = viewModel()
-    val authViewModel: AuthViewModel = viewModel()
     val navController = rememberNavController()
     val scaffoldState = rememberScaffoldState()
     val coroutineScope = rememberCoroutineScope()
     var isChecked by remember { mutableStateOf(false) }
+
+    // Observe auth state and navigate to sign-in page when unauthenticated
+    val authState by authViewModel.authState.observeAsState()
+
+    // Navigate to sign-in when user is unauthenticated
+    LaunchedEffect(authState) {
+        if (authState == AuthState.UnAuthenticated) {
+            navController.navigate(Destinations.SignIn.route) {
+                popUpTo(Destinations.SignIn.route) { inclusive = true }
+            }
+        }
+    }
+
+    // Determine if we are on SignInScreen or SignUpScreen
+    val currentDestination = navController.currentDestination?.route
+    val isSignInOrSignUpScreen =
+        currentDestination == Destinations.SignIn.route || currentDestination == Destinations.SignUp.route
 
     Scaffold(
         scaffoldState = scaffoldState,
@@ -114,7 +133,9 @@ fun InDriveTopBottomNavigation() {
             TopAppBar(
                 title = {
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { authViewModel.onUserInteraction() }, // Reset timer on user interaction
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center
                     ) {
@@ -125,157 +146,381 @@ fun InDriveTopBottomNavigation() {
                         )
                         Switch(
                             checked = isChecked,
-                            onCheckedChange = { isChecked = it }
+                            onCheckedChange = {
+                                isChecked = it
+                                authViewModel.onUserInteraction() // Reset timer on interaction
+                            }
                         )
                     }
                 },
                 backgroundColor = Color.White,
                 navigationIcon = {
-                    IconButton(onClick = { coroutineScope.launch { scaffoldState.drawerState.open() } }) {
-                        Icon(Icons.Default.Menu, contentDescription = null)
+                    if (isSignInOrSignUpScreen) { // Show Menu icon only if not on SignIn or SignUp screen
+                        IconButton(
+                            onClick = {
+                                coroutineScope.launch { scaffoldState.drawerState.open() }
+                                authViewModel.onUserInteraction() // Reset timer on interaction
+                            }
+                        ) {
+                            Icon(Icons.Default.Menu, contentDescription = null)
+                        }
                     }
                 }
             )
         },
         drawerContent = {
-            IndriveDrawerNav(navController = navController, scaffoldState)
+            if (isSignInOrSignUpScreen) { // Only show drawer content if not on SignIn or SignUp screen
+                IndriveDrawerNav(navController = navController, scaffoldState)
+            }
         },
         bottomBar = {
-            IndriveBottomNavigation(navController)
+            if (isSignInOrSignUpScreen) { // Only show bottom navigation if not on SignIn or SignUp screen
+                IndriveBottomNavigation(navController)
+            }
         },
     ) { paddingValues ->
-//        set your starting destination of the app
-        NavHost(
-            navController = navController,
-            startDestination = Destinations.SignIn.route,
-            modifier = Modifier.padding(paddingValues)
+        // Reset logout timer on interaction with main content
+        Box(modifier = Modifier
+            .fillMaxSize()
+            .clickable { authViewModel.onUserInteraction() } // Reset timer on interaction
         ) {
-            composable(Destinations.SignUp.route) { SignUpPage(navController, authViewModel) }
-            composable(Destinations.SignIn.route) { SignInPage(navController, authViewModel) }
-            composable(Destinations.Rides.route) { RideRequestsScreen(navController, viewModel) }
-            composable(Destinations.Income.route) { MyIncomeScreen(viewModel, navController) }
-            composable(Destinations.Priority.route) { PriorityScreen(viewModel) }
-            composable(Destinations.Wallet.route) { WalletScreen() }
-            composable(Destinations.Products.route) { ProductsScreen(viewModel) }
+            // Set the starting destination of the app
+            NavHost(
+                navController = navController,
+                startDestination = Destinations.SignIn.route,
+                modifier = Modifier.padding(paddingValues)
+            ) {
+                composable(Destinations.SignUp.route) {
+                    SignUpPage(navController, authViewModel)
+                }
+                composable(Destinations.SignIn.route) {
+                    SignInPage(navController, authViewModel)
+                }
+                composable(Destinations.Rides.route) {
+                    RideRequestsScreen(navController, viewModel)
+                }
+                composable(Destinations.Income.route) {
+                    MyIncomeScreen(viewModel, navController)
+                }
+                composable(Destinations.Priority.route) {
+                    PriorityScreen(viewModel)
+                }
+                composable(Destinations.Wallet.route) {
+                    WalletScreen()
+                }
+                composable(Destinations.Products.route) {
+                    ProductsScreen(viewModel)
+                }
 
-            // Customer Selection Screen
-            composable(Destinations.CustomerSelection.route) {
-                CustomerSelectionScreen(
-                    onCustomerSelected = { customer ->
-                        navController.navigate(Destinations.ProductSelection.route + "/${customer.customerId}")
-                    },
-                    onNewCustomerClicked = {
-                        // Handle new customer logic
-                    },
-                    navController = navController,
-                    viewModel = viewModel
-                )
-            }
-
-// Product Selection Screen
-            composable(Destinations.ProductSelection.route + "/{customerId}") { backStackEntry ->
-                val customerId =
-                    backStackEntry.arguments?.getString("customerId")?.toLong() ?: return@composable
-                val customer = viewModel.getCustomerById(customerId)
-
-                if (customer == null) {
-                    // Handle the case where the customer is not found
-                    Text("Customer not found")
-                } else {
-                    val productList by viewModel.productList.collectAsState()
-
-                    ProductSelectionScreen(
-                        customer = customer,
-                        onProceedToCart = {
-                            // Navigate to the Cart screen with the customer ID
-                            navController.navigate(Destinations.Cart.route + "/${customer.customerId}")
+                // Customer Selection Screen
+                composable(Destinations.CustomerSelection.route) {
+                    CustomerSelectionScreen(
+                        onCustomerSelected = { customer ->
+                            navController.navigate(Destinations.ProductSelection.route + "/${customer.customerId}")
+                        },
+                        onNewCustomerClicked = {
+                            // Handle new customer logic
                         },
                         navController = navController,
                         viewModel = viewModel
                     )
                 }
-            }
 
+                // Product Selection Screen
+                composable(Destinations.ProductSelection.route + "/{customerId}") { backStackEntry ->
+                    val customerId =
+                        backStackEntry.arguments?.getString("customerId")?.toLong()
+                            ?: return@composable
+                    val customer = viewModel.getCustomerById(customerId)
 
-// Cart Screen Selection
-            composable(Destinations.Cart.route + "/{customerId}") { backStackEntry ->
-                val customerId =
-                    backStackEntry.arguments?.getString("customerId")?.toLong() ?: return@composable
-                val customer = viewModel.getCustomerById(customerId) // Fetch customer logic
+                    if (customer == null) {
+                        // Handle the case where the customer is not found
+                        Text("Customer not found")
+                    } else {
+                        val productList by viewModel.productList.collectAsState()
 
-                // Ensure we fetch cart items if they are not already available
-                LaunchedEffect(customerId) {
-                    viewModel.refreshCartItems(customerId)
-                }
-
-                if (customer != null) {
-                    CartScreen(
-                        customer = customer,
-                        navController,
-                        viewModel
-                    )
-
-                }
-            }
-
-            composable(Destinations.Login.route) {
-                LoginScreen(
-                    viewModel = viewModel,
-                    navController
-                )
-            }
-
-//            LoadStocks screen
-            composable(Destinations.LoadStocks.route) {
-                LoadStockScreen(
-                    viewModel = viewModel,
-                    navController,
-                    {}
-                )
-            }
-//
-            composable(Destinations.Reports.route) {
-                ReportsScreen(
-                    viewModel = viewModel,
-                    onInvoiceClick = { invoiceLine ->
-                        navController.navigate(Destinations.InvoiceDetail.createRoute(invoiceLine.invoiceID))
+                        ProductSelectionScreen(
+                            customer = customer,
+                            onProceedToCart = {
+                                // Navigate to the Cart screen with the customer ID
+                                navController.navigate(Destinations.Cart.route + "/${customer.customerId}")
+                            },
+                            navController = navController,
+                            viewModel = viewModel
+                        )
                     }
-                )
-            }
-            // For Invoice Detail Screen
-            composable(
-                route = Destinations.InvoiceDetail.route,
-                arguments = listOf(navArgument("invoiceId") { type = NavType.LongType })
-            ) { backStackEntry ->
-                val invoiceId = backStackEntry.arguments?.getLong("invoiceId")
-                invoiceId?.let {
-                    // Show the InvoiceDetailScreen for the given invoiceId
-                    InvoiceDetailScreen(invoiceId = it, viewModel = viewModel)
+                }
+
+                // Cart Screen
+                composable(Destinations.Cart.route + "/{customerId}") { backStackEntry ->
+                    val customerId =
+                        backStackEntry.arguments?.getString("customerId")?.toLong()
+                            ?: return@composable
+                    val customer = viewModel.getCustomerById(customerId)
+
+                    LaunchedEffect(customerId) {
+                        viewModel.refreshCartItems(customerId)
+                    }
+
+                    if (customer != null) {
+                        CartScreen(
+                            customer = customer,
+                            navController,
+                            viewModel
+                        )
+                    }
+                }
+
+                composable(Destinations.Login.route) {
+                    LoginScreen(viewModel = viewModel, navController)
+                }
+
+                composable(Destinations.LoadStocks.route) {
+                    LoadStockScreen(viewModel = viewModel, navController) {}
+                }
+
+                composable(Destinations.Reports.route) {
+                    ReportsScreen(
+                        viewModel = viewModel,
+                        onInvoiceClick = { invoiceLine ->
+                            navController.navigate(
+                                Destinations.InvoiceDetail.createRoute(
+                                    invoiceLine.invoiceID
+                                )
+                            )
+                        }
+                    )
+                }
+
+                composable(Destinations.InvoiceDetail.route) { backStackEntry ->
+                    val invoiceId = backStackEntry.arguments?.getLong("invoiceId")
+                    invoiceId?.let {
+                        InvoiceDetailScreen(invoiceId = it, viewModel = viewModel)
+                    }
+                }
+
+                composable(Destinations.Order.route) {
+                    OrderScreen(onSubmit = { productName, quantity, dueDate, notes ->
+                        viewModel.submitOrder(productName, quantity, dueDate, notes)
+                        navController.popBackStack()
+                    })
+                }
+
+                composable(Destinations.OrderReports.route) {
+                    OrdersReportsScreen(viewModel = viewModel) {
+                        navController.navigate(Destinations.Order.route)
+                    }
                 }
             }
-
-            // Order Screen
-            composable(Destinations.Order.route) {
-                OrderScreen(onSubmit = { productName, quantity, dueDate, notes ->
-                    // Handle order submission logic
-                    viewModel.submitOrder(productName, quantity, dueDate, notes)
-                    // Navigate back or to another screen
-                    navController.popBackStack()
-                })
-            }
-
-            composable(Destinations.OrderReports.route) {
-                OrdersReportsScreen(
-                    viewModel = viewModel,
-                    onNewOrderClick = { navController.navigate(Destinations.Order.route) }
-                )
-            }
-//
-
         }
-
     }
 }
+
+
+//@RequiresApi(Build.VERSION_CODES.O)
+//@Composable
+//fun InDriveTopBottomNavigation() {
+//    val authViewModel: AuthViewModel = viewModel() // Get AuthViewModel
+//    val viewModel: InvoiceViewModel = viewModel()
+//    val navController = rememberNavController()
+//    val scaffoldState = rememberScaffoldState()
+//    val coroutineScope = rememberCoroutineScope()
+//    var isChecked by remember { mutableStateOf(false) }
+//
+//    // Observe auth state and navigate to sign-in page when unauthenticated
+//    val authState by authViewModel.authState.observeAsState()
+//
+//    // Navigate to sign-in when user is unauthenticated
+//    LaunchedEffect(authState) {
+//        if (authState == AuthState.UnAuthenticated) {
+//            navController.navigate(Destinations.SignIn.route) {
+//                popUpTo(Destinations.SignIn.route) { inclusive = true }
+//            }
+//        }
+//    }
+//
+//    Scaffold(
+//        scaffoldState = scaffoldState,
+//        topBar = {
+//            TopAppBar(
+//                title = {
+//                    Row(
+//                        modifier = Modifier
+//                            .fillMaxWidth()
+//                            .clickable { authViewModel.onUserInteraction() }, // Reset timer on user interaction
+//                        verticalAlignment = Alignment.CenterVertically,
+//                        horizontalArrangement = Arrangement.Center
+//                    ) {
+//                        Text(
+//                            text = if (isChecked) "Online" else "Offline",
+//                            modifier = Modifier.padding(end = 8.dp),
+//                            color = if (isChecked) Color.Green else Color.Red
+//                        )
+//                        Switch(
+//                            checked = isChecked,
+//                            onCheckedChange = {
+//                                isChecked = it
+//                                authViewModel.onUserInteraction() // Reset timer on interaction
+//                            }
+//                        )
+//                    }
+//                },
+//                backgroundColor = Color.White,
+//                navigationIcon = {
+//                    IconButton(
+//                        onClick = {
+//                            coroutineScope.launch { scaffoldState.drawerState.open() }
+//                            authViewModel.onUserInteraction() // Reset timer on interaction
+//                        }
+//                    ) {
+//                        Icon(Icons.Default.Menu, contentDescription = null)
+//                    }
+//                }
+//            )
+//        },
+//        drawerContent = {
+//            IndriveDrawerNav(navController = navController, scaffoldState)
+//        },
+//        bottomBar = {
+//            IndriveBottomNavigation(navController)
+//        },
+//    ) { paddingValues ->
+//        // Reset logout timer on interaction with main content
+//        Box(modifier = Modifier
+//            .fillMaxSize()
+//            .clickable { authViewModel.onUserInteraction() } // Reset timer on interaction
+//        ) {
+//            // Set the starting destination of the app
+//            NavHost(
+//                navController = navController,
+//                startDestination = Destinations.SignIn.route,
+//                modifier = Modifier.padding(paddingValues)
+//            ) {
+//                composable(Destinations.SignUp.route) {
+//                    SignUpPage(navController, authViewModel)
+//                }
+//                composable(Destinations.SignIn.route) {
+//                    SignInPage(navController, authViewModel)
+//                }
+//                composable(Destinations.Rides.route) {
+//                    RideRequestsScreen(navController, viewModel)
+//                }
+//                composable(Destinations.Income.route) {
+//                    MyIncomeScreen(viewModel, navController)
+//                }
+//                composable(Destinations.Priority.route) {
+//                    PriorityScreen(viewModel)
+//                }
+//                composable(Destinations.Wallet.route) {
+//                    WalletScreen()
+//                }
+//                composable(Destinations.Products.route) {
+//                    ProductsScreen(viewModel)
+//                }
+//
+//                // Customer Selection Screen
+//                composable(Destinations.CustomerSelection.route) {
+//                    CustomerSelectionScreen(
+//                        onCustomerSelected = { customer ->
+//                            navController.navigate(Destinations.ProductSelection.route + "/${customer.customerId}")
+//                        },
+//                        onNewCustomerClicked = {
+//                            // Handle new customer logic
+//                        },
+//                        navController = navController,
+//                        viewModel = viewModel
+//                    )
+//                }
+//
+//                // Product Selection Screen
+//                composable(Destinations.ProductSelection.route + "/{customerId}") { backStackEntry ->
+//                    val customerId =
+//                        backStackEntry.arguments?.getString("customerId")?.toLong()
+//                            ?: return@composable
+//                    val customer = viewModel.getCustomerById(customerId)
+//
+//                    if (customer == null) {
+//                        // Handle the case where the customer is not found
+//                        Text("Customer not found")
+//                    } else {
+//                        val productList by viewModel.productList.collectAsState()
+//
+//                        ProductSelectionScreen(
+//                            customer = customer,
+//                            onProceedToCart = {
+//                                // Navigate to the Cart screen with the customer ID
+//                                navController.navigate(Destinations.Cart.route + "/${customer.customerId}")
+//                            },
+//                            navController = navController,
+//                            viewModel = viewModel
+//                        )
+//                    }
+//                }
+//
+//                // Cart Screen
+//                composable(Destinations.Cart.route + "/{customerId}") { backStackEntry ->
+//                    val customerId =
+//                        backStackEntry.arguments?.getString("customerId")?.toLong()
+//                            ?: return@composable
+//                    val customer = viewModel.getCustomerById(customerId)
+//
+//                    LaunchedEffect(customerId) {
+//                        viewModel.refreshCartItems(customerId)
+//                    }
+//
+//                    if (customer != null) {
+//                        CartScreen(
+//                            customer = customer,
+//                            navController,
+//                            viewModel
+//                        )
+//                    }
+//                }
+//
+//                composable(Destinations.Login.route) {
+//                    LoginScreen(viewModel = viewModel, navController)
+//                }
+//
+//                composable(Destinations.LoadStocks.route) {
+//                    LoadStockScreen(viewModel = viewModel, navController) {}
+//                }
+//
+//                composable(Destinations.Reports.route) {
+//                    ReportsScreen(
+//                        viewModel = viewModel,
+//                        onInvoiceClick = { invoiceLine ->
+//                            navController.navigate(
+//                                Destinations.InvoiceDetail.createRoute(
+//                                    invoiceLine.invoiceID
+//                                )
+//                            )
+//                        }
+//                    )
+//                }
+//
+//                composable(Destinations.InvoiceDetail.route) { backStackEntry ->
+//                    val invoiceId = backStackEntry.arguments?.getLong("invoiceId")
+//                    invoiceId?.let {
+//                        InvoiceDetailScreen(invoiceId = it, viewModel = viewModel)
+//                    }
+//                }
+//
+//                composable(Destinations.Order.route) {
+//                    OrderScreen(onSubmit = { productName, quantity, dueDate, notes ->
+//                        viewModel.submitOrder(productName, quantity, dueDate, notes)
+//                        navController.popBackStack()
+//                    })
+//                }
+//
+//                composable(Destinations.OrderReports.route) {
+//                    OrdersReportsScreen(viewModel = viewModel) {
+//                        navController.navigate(Destinations.Order.route)
+//                    }
+//                }
+//            }
+//        }
+//    }
+//}
 
 @Composable
 fun IndriveDrawerNav(navController: NavController, scaffoldState: ScaffoldState) {

@@ -12,7 +12,6 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
 import com.example.learncompose303.screens.ShopLandingScreen
-import com.example.learncompose303.screens.auth.AuthViewModel
 import com.example.learncompose303.screens.SignUpPage
 import com.example.learncompose303.ui.theme.LearnCompose303Theme
 import com.example.learncompose303.viewmodels.InvoiceViewModel
