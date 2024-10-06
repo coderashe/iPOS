@@ -31,6 +31,48 @@ import com.example.learncompose303.viewmodels.InvoiceViewModel
 // was working navigation
 
 
+//@RequiresApi(Build.VERSION_CODES.O)
+//@Composable
+//fun RideRequestsScreen(
+//    navController: NavHostController,
+//    viewModel: InvoiceViewModel = viewModel()
+//) {
+//
+//    val authViewModel: AuthViewModel = viewModel()
+//    val authState = authViewModel.authState.observeAsState()
+//
+//    LaunchedEffect(authState.value) {
+//        when (authState.value) {
+//            is AuthState.UnAuthenticated -> navController.navigate(Destinations.SignIn.route)
+//            else -> Unit
+//        }
+//    }
+//
+//    Column(
+//        modifier = Modifier
+//            .fillMaxSize()
+//            .background(Color.Transparent)
+//            .padding(top = 4.dp)
+//            .verticalScroll(rememberScrollState())
+//    ) {
+//        SalesmanInfoCard(
+//            salesmanName = "Simba Start",
+//            shopName = "ISTART CAPITAL MRT",
+//            viewModel = viewModel // Pass the viewModel explicitly
+//        )
+//        SpacerHeight()
+////        SearchBarExample()
+//        CustomHeadingMedium(
+//            heading = stringResource(R.string.popular_products)
+//        )
+//        AutoSlidingCarousel()
+//        CustomHeadingMedium(
+//            heading = stringResource(R.string.more)
+//        )
+//        QuickAccessButtons(navController)
+//    }
+//}
+
 
 //    fun syncFirestoreInvoicesWithRoom() {
 //        val firestore = FirebaseFirestore.getInstance()
@@ -354,7 +396,6 @@ import com.example.learncompose303.viewmodels.InvoiceViewModel
 //
 //}
 // end of auth 00
-
 
 
 // end of auth 1

@@ -10,5 +10,5 @@ data class Order(
     val quantity: Int,
     val dueDate: String, // Store as a String for simplicity (format: "dd/MM/yyyy")
     val notes: String? = null,
-    val orderDate: Long? = null
+    val orderDate: Long
 )

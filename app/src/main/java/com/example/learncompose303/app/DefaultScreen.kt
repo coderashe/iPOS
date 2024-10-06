@@ -311,26 +311,6 @@ fun InDriveTopBottomNavigation() {
                     }
                 }
 
-//                composable(Destinations.InvoiceDetail.route) { backStackEntry ->
-//
-//                    Log.e(
-//                        "istartlogs",
-//                        "##### inside InvoiceDetailScreen with invoiceId: ${
-//                            backStackEntry.arguments?.getLong(
-//                                "invoiceId"
-//                            )
-//                        }"
-//                    )
-//                    val invoiceId = backStackEntry.arguments?.getLong("invoiceId")
-//                    Log.e(
-//                        "istartlogs",
-//                        "inside InvoiceDetailScreen with invoiceId: $invoiceId"
-//                    )
-//                    invoiceId?.let {
-//                        InvoiceDetailScreen(invoiceId = it, viewModel = viewModel)
-//                    }
-//                }
-
                 composable(Destinations.Order.route) {
                     OrderScreen(onSubmit = { productName, quantity, dueDate, notes ->
                         viewModel.submitOrder(productName, quantity, dueDate, notes)
@@ -348,18 +328,6 @@ fun InDriveTopBottomNavigation() {
     }
 }
 
-//composable(Destinations.Reports.route) {
-//                    ReportsScreen(
-//                        viewModel = viewModel,
-//                        onInvoiceClick = { invoiceLine ->
-//                            navController.navigate(
-//                                Destinations.InvoiceDetail.createRoute(
-//                                    invoiceLine.invoiceID
-//                                )
-//                            )
-//                        }
-//                    )
-//                }
 
 @Composable
 fun IndriveDrawerNav(navController: NavController, scaffoldState: ScaffoldState) {

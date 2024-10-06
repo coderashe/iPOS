@@ -116,7 +116,6 @@ fun MyIncomeScreen(
         HistorySection(onClick = {
             navController.navigate(Destinations.Reports.route)
         })
-        AchievementsSection()
     }
 }
 

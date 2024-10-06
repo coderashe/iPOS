@@ -38,6 +38,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import java.io.InputStream
 import java.time.DayOfWeek
@@ -434,6 +437,45 @@ class InvoiceViewModel @Inject constructor(
         _selectedProducts.value = updatedList
     }
 
+
+    // Function to return total invoices for today
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun getTotalOrdersForToday(): Int {
+        // Get today's date
+        val today = LocalDate.now()
+
+        // Log the current date for debugging
+        Log.d("InvoiceViewModel", "Today's Date: $today")
+
+        // Log the entire order list for debugging
+        Log.d("InvoiceViewModel", "Order List: ${_orderList.value}")
+
+        // Filter orders for today
+        val todayOrders = _orderList.value.filter { order ->
+            // Assuming `order.orderDate` is in milliseconds
+            val orderDate = LocalDate.ofEpochDay(order.orderDate / (24 * 60 * 60 * 1000))
+
+            // Log each order date being checked
+            Log.d(
+                "InvoiceViewModel",
+                "Order Date: ${order.orderDate}, LocalDate: $orderDate"
+            )
+
+            // Check if the order date matches today
+            orderDate == today
+        }
+
+        // Get the number of today's orders
+        val totalOrdersForToday = todayOrders.size
+
+        // Log the filtered orders and total for debugging
+        Log.d("InvoiceViewModel", "Today's Orders: $todayOrders")
+        Log.d("InvoiceViewModel", "Total Orders for Today: $totalOrdersForToday")
+
+        return totalOrdersForToday
+    }
+
+
     // Function to compute today's sales total and number of transactions
     @RequiresApi(Build.VERSION_CODES.O)
     fun getTodaySalesInfo(): Pair<Double, Int> {
@@ -567,7 +609,8 @@ class InvoiceViewModel @Inject constructor(
                 productName = productName,
                 quantity = quantity,
                 dueDate = dueDate,
-                notes = notes
+                notes = notes,
+                orderDate = System.currentTimeMillis()
             )
             orderRepository.insertOrder(newOrder)
             fetchAllOrders()

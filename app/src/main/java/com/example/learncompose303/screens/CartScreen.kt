@@ -149,7 +149,7 @@ fun CartScreen(
                             productQuantities // Pass the product quantities map here
                         )
 
-                        // Your code for sharing the invoice message...
+                        // Code for sharing the invoice message...
 
                         val message = "*INVOICE RECEIPT:*\n\n" +
                                 "*CUSTOMER DETAILS*\n" +

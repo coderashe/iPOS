@@ -71,8 +71,6 @@ fun OrdersReportsScreen(
         viewModel.fetchAllOrders() // Fetch orders when the screen is launched
     }
 
-    Log.d("TheOrders", "$orders") // Log the fetched orders to debug
-
     Box(modifier = Modifier.fillMaxSize()) {
         if (orders.isEmpty()) {
             // Display message when there are no orders
@@ -143,6 +141,12 @@ fun OrderReportCard(order: Order) {
             Text(
                 text = "Quantity: ${order.quantity}",
                 style = MaterialTheme.typography.bodySmall
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(
+                text = "${order.notes}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.primary
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
