@@ -5,8 +5,6 @@ import android.os.Build
 import android.util.Log
 import android.widget.Toast
 import androidx.annotation.RequiresApi
-import androidx.compose.runtime.mutableStateMapOf
-import androidx.compose.runtime.remember
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.learncompose303.R
@@ -14,22 +12,25 @@ import com.example.learncompose303.data.StudentEntity
 import com.example.learncompose303.data.entities.CartItem
 import com.example.learncompose303.data.entities.CsvParser
 import com.example.learncompose303.data.entities.Customer
+import com.example.learncompose303.data.entities.DayReports
 import com.example.learncompose303.data.entities.Invoice
 import com.example.learncompose303.data.entities.InvoiceItem
 import com.example.learncompose303.data.entities.InvoiceLine
 import com.example.learncompose303.data.entities.Order
 import com.example.learncompose303.data.entities.PriceList
 import com.example.learncompose303.data.entities.Product
+import com.example.learncompose303.data.entities.ProductDayReport
 import com.example.learncompose303.data.repositories.CartItemRepository
 import com.example.learncompose303.data.repositories.CustomerRepository
+import com.example.learncompose303.data.repositories.DayReportsRepository
 import com.example.learncompose303.data.repositories.InvoiceItemRepository
 import com.example.learncompose303.data.repositories.InvoiceLineRepository
 import com.example.learncompose303.data.repositories.InvoiceRepository
 import com.example.learncompose303.data.repositories.OrderRepository
 import com.example.learncompose303.data.repositories.PriceListRepository
+import com.example.learncompose303.data.repositories.ProductDayReportRepository
 import com.example.learncompose303.data.repositories.ProductRepository
 import com.example.learncompose303.data.repositories.StudentRepository
-import com.google.firebase.firestore.FirebaseFirestore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -37,11 +38,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import java.io.InputStream
 import java.time.DayOfWeek
 import java.time.LocalDate
+import java.util.Calendar
 import javax.inject.Inject
 
 @HiltViewModel
@@ -54,9 +55,14 @@ class InvoiceViewModel @Inject constructor(
     private val invoiceLineRepository: InvoiceLineRepository,
     private val orderRepository: OrderRepository,
     private val priceListRepository: PriceListRepository,
-    private val studentRepository: StudentRepository
+    private val studentRepository: StudentRepository,
+    private val dayReportRepository: DayReportsRepository,
+    private val productDayReportRepository: ProductDayReportRepository
 
 ) : ViewModel() {
+
+    private val _dayStarted = MutableStateFlow(false)
+    val dayStarted: StateFlow<Boolean> = _dayStarted.asStateFlow()
 
     // Use Triple to hold product, price, and quantity
     private val _productWithPriceDetails =
@@ -113,6 +119,7 @@ class InvoiceViewModel @Inject constructor(
 
     init {
 //      Essential db operations to load data
+        fetchAllInvoiceLines()
         fetchPriceList()
         loadInvoices()
         insertInitialProducts()
@@ -266,8 +273,16 @@ class InvoiceViewModel @Inject constructor(
 
     // Fetch invoiceLines by invoiceId from repository
     fun fetchInvoiceLinesByInvoiceId(invoiceId: Long) = viewModelScope.launch {
+        Log.e("istartlogs", "Fetching invoice lines for invoiceId: $invoiceId")
         val invoiceLineList = invoiceLineRepository.getInvoiceLinesByInvoiceId(invoiceId)
+        Log.e("istartlogs", "Fetched invoice lines: $invoiceLineList")
         _invoiceLines.value = invoiceLineList
+    }
+
+    fun fetchAllInvoiceLines() = viewModelScope.launch {
+        invoiceLineRepository.getAllInvoiceLines().collectLatest { invoiceLineList ->
+            _invoiceLineList.value = invoiceLineList
+        }
     }
 
     // Fetch customers from repository
@@ -527,7 +542,7 @@ class InvoiceViewModel @Inject constructor(
 
 
     fun getInvoiceLineById(invoiceID: Long?): InvoiceLine? {
-        return invoiceLineList.value.firstOrNull { it.invoiceID == invoiceID }
+        return invoiceLineList.value.firstOrNull { it.invoiceId == invoiceID }
     }
 
     private fun fetchInvoiceLines() = viewModelScope.launch {
@@ -781,7 +796,7 @@ class InvoiceViewModel @Inject constructor(
                     // Insert InvoiceLine records for the report
                     selectedProductsWithDetails.forEach { (product, finalPrice, quantitySold) ->
                         val invoiceLine = InvoiceLine(
-                            invoiceID = invoiceId,
+                            invoiceId = invoiceId,
                             invoiceStatus = invoice.status,
                             productID = product.productId,
                             productName = product.productDescription,
@@ -795,7 +810,10 @@ class InvoiceViewModel @Inject constructor(
                             changeBalance = change,
                             invoiceDate = System.currentTimeMillis()
                         )
+
+                        Log.d("Invoice", "Inserting this invoiceLine: $invoiceLine")
                         invoiceLineRepository.insertInvoiceLine(invoiceLine)
+                        Log.d("Invoice", "Succesfully Inserted this invoiceLine:")
                     }
 
                     // Clear the selected products list after invoice submission
@@ -811,6 +829,133 @@ class InvoiceViewModel @Inject constructor(
                 Log.e("InvoiceError", "Error during invoice submission: ${e.message}")
             }
         }
+
+//    start day logic
+
+    fun startDay() = viewModelScope.launch {
+        // Collect all products and record their opening stock
+        productRepository.getAllProducts().collect { products ->
+            products.forEach { product ->
+                // Create an entry for opening stock for each product
+                val productDayReport = ProductDayReport(
+                    productId = product.productId, // Ensure productId is properly mapped
+                    productName = product.productDescription,
+                    openingStock = product.currentStockLevel, // Current stock at the beginning of the day
+                    closingStock = product.currentStockLevel, // Will be updated at EndDay
+                    quantitySold = 0, // Initially 0, updated later during the day
+                    totalSales = 0.0, // Initially 0, calculated later based on sales
+                    totalCost = 0.0,  // Initially 0, sum of standard cost * quantity sold
+                    totalProfit = 0.0, // Initially 0, calculated as (selling price - standard cost) * quantity sold
+                    reportDate = System.currentTimeMillis() // Timestamp for the day
+                )
+                // Insert the product day report into the database
+                productDayReportRepository.insertProductDayReport(productDayReport)
+            }
+        }
+
+        // Create an initial DayReport for the day
+        val dayReport = DayReports(
+            totalInvoices = 0,
+            totalOrders = 0,
+            totalProductsSold = 0,
+            totalInvoiceSales = 0.0,
+            reportDate = System.currentTimeMillis(),
+            startTime = System.currentTimeMillis(),
+            endTime = 0L
+        )
+        dayReportRepository.insertDayReport(dayReport)
+
+        _dayStarted.value = true // Update the state to indicate the day has started
+    }
+
+    fun getTodayStartInMillis(): Long {
+        val calendar = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        return calendar.timeInMillis
+    }
+
+//    end day logic
+
+    fun endDay() = viewModelScope.launch {
+        // Fetch all invoices and orders from today
+        val todayStart = getTodayStartInMillis()
+
+        // Collect today's invoices
+        invoiceRepository.getInvoicesByDate(todayStart).collect { todayInvoices ->
+            // Collect today's orders
+            orderRepository.getOrderByDate(todayStart).collect { todayOrders ->
+
+                // Total products sold and total sales
+                var totalProductsSold = 0
+                var totalSales = 0.0
+
+                // Iterate through each invoice
+                todayInvoices.forEach { invoice ->
+                    totalSales += invoice.totalAmount
+
+                    // Collect invoice items for this invoice
+                    invoiceItemRepository.getInvoiceItemsByInvoiceId(invoice.invoiceId)
+                        .collect { invoiceItems ->
+                            invoiceItems.forEach { item ->
+                                totalProductsSold += item.quantity
+
+                                // Fetch the product details
+                                val product = productRepository.getProductById(item.productId)
+
+                                // Fetch the product day report to update it
+                                val productReport = product?.let {
+                                    productDayReportRepository.getProductDayReportById(
+                                        it.productId
+                                    )
+                                }
+
+                                if (productReport != null) {
+                                    // Calculate profit
+                                    val productProfit =
+                                        (item.price - (product.standardCost ?: 0.0)) * item.quantity
+
+                                    // Update product report details
+                                    val updatedReport = productReport.copy(
+                                        closingStock = product.currentStockLevel, // Now this line will work
+                                        quantitySold = productReport.quantitySold + item.quantity,
+                                        totalSales = productReport.totalSales + item.total,
+                                        totalCost = productReport.totalCost + (product.standardCost
+                                            ?: 0.0) * item.quantity,
+                                        totalProfit = productReport.totalProfit + productProfit
+                                    )
+
+                                    // Update the product day report in the database
+                                    productDayReportRepository.updateProductDayReport(updatedReport)
+                                }
+                            }
+                        }
+                }
+
+                // Create a final day report summary
+                val finalDayReport = DayReports(
+                    totalInvoices = todayInvoices.size,
+                    totalOrders = todayOrders.size,
+                    totalProductsSold = totalProductsSold,
+                    totalInvoiceSales = totalSales,
+                    reportDate = todayStart,
+                    startTime = todayStart,
+                    endTime = System.currentTimeMillis()
+                )
+
+                // Update the final day report in the database
+                dayReportRepository.updateDayReport(finalDayReport)
+            }
+        }
+
+        _dayStarted.value = false // Update the state to indicate the day has ended
+    }
+
+
+//    end of dayend reports
 
     private val _studentDetailsList = MutableStateFlow(emptyList<StudentEntity>())
     val studentDetailsList = _studentDetailsList.asStateFlow()
@@ -876,51 +1021,4 @@ class InvoiceViewModel @Inject constructor(
             }
         }
     }
-
-//    fun syncFirestoreInvoicesWithRoom() {
-//        val firestore = FirebaseFirestore.getInstance()
-//
-//        firestore.collection("invoices")
-//            .addSnapshotListener { snapshots, e ->
-//                if (e != null) {
-//                    Log.w("FirestoreSync", "Listen failed", e)
-//                    return@addSnapshotListener
-//                }
-//
-//                if (snapshots != null && !snapshots.isEmpty) {
-//                    val invoices = snapshots.documents.mapNotNull { doc ->
-//                        val invoiceId = doc.getLong("invoiceId") ?: return@mapNotNull null
-//                        val customerId = doc.getLong("customerId") ?: return@mapNotNull null
-//                        val totalAmount = doc.getDouble("totalAmount") ?: return@mapNotNull null
-//                        val invoiceDate = doc.getLong("invoiceDate") ?: return@mapNotNull null
-//                        val dueDate = doc.getLong("dueDate")
-//                        val status = doc.getString("status") ?: return@mapNotNull null
-//                        val currencyCode = doc.getString("currencyCode") ?: return@mapNotNull null
-//                        val lastUpdated = doc.getLong("lastUpdated")
-//                        val isArchived = doc.getBoolean("isArchived") ?: false
-//
-//                        Invoice(
-//                            invoiceId = invoiceId,
-//                            customerId = customerId,
-//                            totalAmount = totalAmount,
-//                            invoiceDate = invoiceDate,
-//                            dueDate = dueDate,
-//                            status = status,
-//                            currencyCode = currencyCode,
-//                            lastUpdated = lastUpdated,
-//                            isArchived = isArchived
-//                        )
-//                    }
-//
-//                    // Sync the list of invoices with Room
-//
-//                    viewModelScope.launch(Dispatchers.IO) {
-//                        invoices.forEach { invoice ->
-//                            invoiceRepository.insertInvoice(invoice)
-//                        }
-//                    }
-//                }
-//            }
-//    }
-
 }

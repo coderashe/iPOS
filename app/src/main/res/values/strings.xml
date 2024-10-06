@@ -62,7 +62,7 @@
     <string name="orders">ORDERS</string>
     <string name="orders1">Orders</string>
     <string name="navorders">orders</string>
-    <string name="uploadPricelists">UPLOAD PRICELIST</string>
+    <string name="uploadPricelists">Upload Pricelist</string>
     <string name="invoice_receipt">INVOICE RECEIPT</string>
     <string name="amount_tendered">Amount Tendered</string>
     <string name="quantity">Quantity</string>
@@ -128,6 +128,7 @@
     <string name="sign_out">Sign out</string>
     <string name="login">LOGIN</string>
     <string name="faq">Faq</string>
+    <string name="uploadProducts">Upload Products</string>
     //
 </resources>
 

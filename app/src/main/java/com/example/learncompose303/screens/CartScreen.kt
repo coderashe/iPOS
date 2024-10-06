@@ -63,14 +63,9 @@ fun CartScreen(
         "${product.productDescription}, $$price, Quantity: $quantity"
     }
 
-//    val productDetails = productWithPriceDetails.joinToString("\n") { (product, price) ->
-//        "${product.productDescription}, $$price, Quantity: 1"
-//    }
-
     // State to hold the total amount tendered by the customer
     var amountTendered by remember { mutableStateOf("") }
-    var quantitySold by remember { mutableStateOf(1) }
-    var newQuantitySold by remember { mutableStateOf(1) }
+
 
     // Map to hold quantities for each product
     val productQuantities = remember { mutableStateMapOf<Long, Int>() }

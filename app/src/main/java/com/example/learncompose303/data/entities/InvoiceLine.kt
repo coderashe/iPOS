@@ -7,7 +7,7 @@ import androidx.room.PrimaryKey
 data class InvoiceLine(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
-    val invoiceID: Long,
+    val invoiceId: Long,
     val invoiceStatus: String,
     val productID: Long,
     val productName: String,

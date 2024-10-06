@@ -18,6 +18,9 @@ interface InvoiceDao {
     @Query("SELECT * FROM invoice")
     fun getAllInvoices(): Flow<List<Invoice>>
 
+    @Query("SELECT * FROM invoice WHERE invoiceDate >= :startDate")
+    fun getInvoicesByDate(startDate: Long): Flow<List<Invoice>>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertInvoice(invoice: Invoice): Long
 

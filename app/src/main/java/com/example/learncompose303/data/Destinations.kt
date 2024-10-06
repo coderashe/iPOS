@@ -1,7 +1,13 @@
 package com.example.learncompose303.data
 
 sealed class Destinations(val route: String) {
-    //    data object Rides : Destinations("Ride requests")
+
+    data object Reports : Destinations("reports")
+
+    data object InvoiceDetail : Destinations("invoice_detail/{invoiceId}") {
+        fun createRoute(invoiceId: Long) = "invoice_detail/$invoiceId"
+    }
+
     data object Rides : Destinations("rides")
     data object SignIn : Destinations("signIn")
     data object Products : Destinations("products")
@@ -27,10 +33,6 @@ sealed class Destinations(val route: String) {
     data object Profile : Destinations("profile")
     data object Post : Destinations("post")
     data object TTTScreen : Destinations("game")
-    data object Reports : Destinations("reports")
-    data object InvoiceDetail : Destinations("invoice_detail/{invoiceId}") {
-        fun createRoute(invoiceId: Long) = "invoice_detail/$invoiceId"
-    }
 
     data object Detail : Destinations("detail/{itemId}") {
         fun createRoute(itemId: Int) = "detail/$itemId"

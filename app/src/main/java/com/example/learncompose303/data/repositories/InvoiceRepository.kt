@@ -17,9 +17,8 @@ interface InvoiceRepository {
     suspend fun getAllInvoices(): Flow<List<Invoice>>
     suspend fun updateInvoice(invoice: Invoice)
     suspend fun deleteInvoice(invoice: Invoice)
+    suspend fun getInvoicesByDate(startDate: Long): Flow<List<Invoice>>
 
-//    for FireStore
-//    suspend fun syncInvoiceWithFirestore(invoice: Invoice)
 }
 
 class InvoiceRepositoryImpl @Inject constructor(
@@ -38,11 +37,34 @@ class InvoiceRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun getInvoicesByDate(startDate: Long): Flow<List<Invoice>> {
+        return withContext(Dispatchers.IO) {
+            invoiceDao.getInvoicesByDate(startDate)
+        }
+    }
+
     override suspend fun deleteInvoice(invoice: Invoice) {
         return withContext(Dispatchers.IO) {
             invoiceDao.deleteInvoice(invoice)
         }
     }
+
+    override suspend fun getInvoiceById(id: Long): Invoice? {
+        return withContext(Dispatchers.IO) {
+            invoiceDao.getInvoiceById(id)
+        }
+    }
+
+    override suspend fun getAllInvoices(): Flow<List<Invoice>> {
+        return withContext(Dispatchers.IO) {
+            invoiceDao.getAllInvoices()
+        }
+    }
+
+}
+
+//    for FireStore
+//    suspend fun syncInvoiceWithFirestore(invoice: Invoice)
 
 //    private val firestore = FirebaseFirestore.getInstance()
 //    override suspend fun insertInvoice(invoice: Invoice): Long {
@@ -84,18 +106,3 @@ class InvoiceRepositoryImpl @Inject constructor(
 //                }
 //        }
 //    }
-
-
-    override suspend fun getInvoiceById(id: Long): Invoice? {
-        return withContext(Dispatchers.IO) {
-            invoiceDao.getInvoiceById(id)
-        }
-    }
-
-    override suspend fun getAllInvoices(): Flow<List<Invoice>> {
-        return withContext(Dispatchers.IO) {
-            invoiceDao.getAllInvoices()
-        }
-    }
-
-}

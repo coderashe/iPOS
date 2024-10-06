@@ -28,6 +28,263 @@ import com.example.learncompose303.data.entities.Customer
 import com.example.learncompose303.screens.CartScreen
 import com.example.learncompose303.viewmodels.InvoiceViewModel
 
+// was working navigation
+
+
+
+//    fun syncFirestoreInvoicesWithRoom() {
+//        val firestore = FirebaseFirestore.getInstance()
+//
+//        firestore.collection("invoices")
+//            .addSnapshotListener { snapshots, e ->
+//                if (e != null) {
+//                    Log.w("FirestoreSync", "Listen failed", e)
+//                    return@addSnapshotListener
+//                }
+//
+//                if (snapshots != null && !snapshots.isEmpty) {
+//                    val invoices = snapshots.documents.mapNotNull { doc ->
+//                        val invoiceId = doc.getLong("invoiceId") ?: return@mapNotNull null
+//                        val customerId = doc.getLong("customerId") ?: return@mapNotNull null
+//                        val totalAmount = doc.getDouble("totalAmount") ?: return@mapNotNull null
+//                        val invoiceDate = doc.getLong("invoiceDate") ?: return@mapNotNull null
+//                        val dueDate = doc.getLong("dueDate")
+//                        val status = doc.getString("status") ?: return@mapNotNull null
+//                        val currencyCode = doc.getString("currencyCode") ?: return@mapNotNull null
+//                        val lastUpdated = doc.getLong("lastUpdated")
+//                        val isArchived = doc.getBoolean("isArchived") ?: false
+//
+//                        Invoice(
+//                            invoiceId = invoiceId,
+//                            customerId = customerId,
+//                            totalAmount = totalAmount,
+//                            invoiceDate = invoiceDate,
+//                            dueDate = dueDate,
+//                            status = status,
+//                            currencyCode = currencyCode,
+//                            lastUpdated = lastUpdated,
+//                            isArchived = isArchived
+//                        )
+//                    }
+//
+//                    // Sync the list of invoices with Room
+//
+//                    viewModelScope.launch(Dispatchers.IO) {
+//                        invoices.forEach { invoice ->
+//                            invoiceRepository.insertInvoice(invoice)
+//                        }
+//                    }
+//                }
+//            }
+//    }
+
+
+//@RequiresApi(Build.VERSION_CODES.O)
+//@Composable
+//fun InDriveTopBottomNavigation() {
+//    val authViewModel: AuthViewModel = viewModel() // Get AuthViewModel
+//    val viewModel: InvoiceViewModel = viewModel()
+//    val navController = rememberNavController()
+//    val scaffoldState = rememberScaffoldState()
+//    val coroutineScope = rememberCoroutineScope()
+//    var isChecked by remember { mutableStateOf(false) }
+//
+//    // Observe auth state and navigate to sign-in page when unauthenticated
+//    val authState by authViewModel.authState.observeAsState()
+//
+//    // Navigate to sign-in when user is unauthenticated
+//    LaunchedEffect(authState) {
+//        if (authState == AuthState.UnAuthenticated) {
+//            navController.navigate(Destinations.SignIn.route) {
+//                popUpTo(Destinations.SignIn.route) { inclusive = true }
+//            }
+//        }
+//    }
+//
+//    Scaffold(
+//        scaffoldState = scaffoldState,
+//        topBar = {
+//            TopAppBar(
+//                title = {
+//                    Row(
+//                        modifier = Modifier
+//                            .fillMaxWidth()
+//                            .clickable { authViewModel.onUserInteraction() }, // Reset timer on user interaction
+//                        verticalAlignment = Alignment.CenterVertically,
+//                        horizontalArrangement = Arrangement.Center
+//                    ) {
+//                        Text(
+//                            text = if (isChecked) "Online" else "Offline",
+//                            modifier = Modifier.padding(end = 8.dp),
+//                            color = if (isChecked) Color.Green else Color.Red
+//                        )
+//                        Switch(
+//                            checked = isChecked,
+//                            onCheckedChange = {
+//                                isChecked = it
+//                                authViewModel.onUserInteraction() // Reset timer on interaction
+//                            }
+//                        )
+//                    }
+//                },
+//                backgroundColor = Color.White,
+//                navigationIcon = {
+//                    IconButton(
+//                        onClick = {
+//                            coroutineScope.launch { scaffoldState.drawerState.open() }
+//                            authViewModel.onUserInteraction() // Reset timer on interaction
+//                        }
+//                    ) {
+//                        Icon(Icons.Default.Menu, contentDescription = null)
+//                    }
+//                }
+//            )
+//        },
+//        drawerContent = {
+//            IndriveDrawerNav(navController = navController, scaffoldState)
+//        },
+//        bottomBar = {
+//            IndriveBottomNavigation(navController)
+//        },
+//    ) { paddingValues ->
+//        // Reset logout timer on interaction with main content
+//        Box(modifier = Modifier
+//            .fillMaxSize()
+//            .clickable { authViewModel.onUserInteraction() } // Reset timer on interaction
+//        ) {
+//            // Set the starting destination of the app
+//            NavHost(
+//                navController = navController,
+//                startDestination = Destinations.SignIn.route,
+//                modifier = Modifier.padding(paddingValues)
+//            ) {
+//                composable(Destinations.SignUp.route) {
+//                    SignUpPage(navController, authViewModel)
+//                }
+//                composable(Destinations.SignIn.route) {
+//                    SignInPage(navController, authViewModel)
+//                }
+//                composable(Destinations.Rides.route) {
+//                    RideRequestsScreen(navController, viewModel)
+//                }
+//                composable(Destinations.Income.route) {
+//                    MyIncomeScreen(viewModel, navController)
+//                }
+//                composable(Destinations.Priority.route) {
+//                    PriorityScreen(viewModel)
+//                }
+//                composable(Destinations.Wallet.route) {
+//                    WalletScreen()
+//                }
+//                composable(Destinations.Products.route) {
+//                    ProductsScreen(viewModel)
+//                }
+//
+//                // Customer Selection Screen
+//                composable(Destinations.CustomerSelection.route) {
+//                    CustomerSelectionScreen(
+//                        onCustomerSelected = { customer ->
+//                            navController.navigate(Destinations.ProductSelection.route + "/${customer.customerId}")
+//                        },
+//                        onNewCustomerClicked = {
+//                            // Handle new customer logic
+//                        },
+//                        navController = navController,
+//                        viewModel = viewModel
+//                    )
+//                }
+//
+//                // Product Selection Screen
+//                composable(Destinations.ProductSelection.route + "/{customerId}") { backStackEntry ->
+//                    val customerId =
+//                        backStackEntry.arguments?.getString("customerId")?.toLong()
+//                            ?: return@composable
+//                    val customer = viewModel.getCustomerById(customerId)
+//
+//                    if (customer == null) {
+//                        // Handle the case where the customer is not found
+//                        Text("Customer not found")
+//                    } else {
+//                        val productList by viewModel.productList.collectAsState()
+//
+//                        ProductSelectionScreen(
+//                            customer = customer,
+//                            onProceedToCart = {
+//                                // Navigate to the Cart screen with the customer ID
+//                                navController.navigate(Destinations.Cart.route + "/${customer.customerId}")
+//                            },
+//                            navController = navController,
+//                            viewModel = viewModel
+//                        )
+//                    }
+//                }
+//
+//                // Cart Screen
+//                composable(Destinations.Cart.route + "/{customerId}") { backStackEntry ->
+//                    val customerId =
+//                        backStackEntry.arguments?.getString("customerId")?.toLong()
+//                            ?: return@composable
+//                    val customer = viewModel.getCustomerById(customerId)
+//
+//                    LaunchedEffect(customerId) {
+//                        viewModel.refreshCartItems(customerId)
+//                    }
+//
+//                    if (customer != null) {
+//                        CartScreen(
+//                            customer = customer,
+//                            navController,
+//                            viewModel
+//                        )
+//                    }
+//                }
+//
+//                composable(Destinations.Login.route) {
+//                    LoginScreen(viewModel = viewModel, navController)
+//                }
+//
+//                composable(Destinations.LoadStocks.route) {
+//                    LoadStockScreen(viewModel = viewModel, navController) {}
+//                }
+//
+//                composable(Destinations.Reports.route) {
+//                    ReportsScreen(
+//                        viewModel = viewModel,
+//                        onInvoiceClick = { invoiceLine ->
+//                            navController.navigate(
+//                                Destinations.InvoiceDetail.createRoute(
+//                                    invoiceLine.invoiceID
+//                                )
+//                            )
+//                        }
+//                    )
+//                }
+//
+//                composable(Destinations.InvoiceDetail.route) { backStackEntry ->
+//                    val invoiceId = backStackEntry.arguments?.getLong("invoiceId")
+//                    invoiceId?.let {
+//                        InvoiceDetailScreen(invoiceId = it, viewModel = viewModel)
+//                    }
+//                }
+//
+//                composable(Destinations.Order.route) {
+//                    OrderScreen(onSubmit = { productName, quantity, dueDate, notes ->
+//                        viewModel.submitOrder(productName, quantity, dueDate, notes)
+//                        navController.popBackStack()
+//                    })
+//                }
+//
+//                composable(Destinations.OrderReports.route) {
+//                    OrdersReportsScreen(viewModel = viewModel) {
+//                        navController.navigate(Destinations.Order.route)
+//                    }
+//                }
+//            }
+//        }
+//    }
+//}
+//
+
 //working logic for authentication
 
 

@@ -5,6 +5,7 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import com.example.learncompose303.data.entities.Invoice
 import com.example.learncompose303.data.entities.Order
 import kotlinx.coroutines.flow.Flow
 
@@ -25,6 +26,9 @@ interface OrderDao {
     // Get a specific order by ID
     @Query("SELECT * FROM orders WHERE id = :orderId")
     suspend fun getOrderById(orderId: Int): Order?
+
+    @Query("SELECT * FROM orders WHERE orderDate >= :startDate")
+    fun getOrderByDate(startDate: Long): Flow<List<Order>>
 
     // Delete an order
     @Delete

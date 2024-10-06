@@ -150,7 +150,7 @@ fun QuickAccessButtons(navController: NavController) {
             .fillMaxWidth()
             .padding(top = 8.dp)
             .horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(16.dp) // Spacing between items
+        horizontalArrangement = Arrangement.spacedBy(8.dp) // Spacing between items
     ) {
         QuickAccessCard(
             label = stringResource(R.string.orders),
@@ -199,7 +199,7 @@ fun QuickAccessCard(
         modifier = Modifier
             .fillMaxWidth()
             .height(100.dp)
-            .width(135.dp)
+            .width(142.dp)
             .padding(start = 4.dp)
             .background(Color.Transparent, shape = RoundedCornerShape(12.dp))
             .clickable(onClick = onClick) // Make the card clickable,

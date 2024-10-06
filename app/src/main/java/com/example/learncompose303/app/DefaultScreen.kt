@@ -1,76 +1,81 @@
 package com.example.learncompose303.app
 
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.BottomNavigation
-import androidx.compose.material.BottomNavigationItem
-import androidx.compose.material.*
-import androidx.compose.material.IconButton
-import androidx.compose.material.TopAppBar
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.rememberScaffoldState
-import androidx.compose.material3.Icon
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.unit.dp
-import androidx.navigation.NavController
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.compose.rememberNavController
-import com.example.learncompose303.data.Destinations
-import com.example.learncompose303.ui.theme.MyGray
-import kotlinx.coroutines.launch
-import com.example.learncompose303.R
-import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.BottomNavigation
+import androidx.compose.material.BottomNavigationItem
+import androidx.compose.material.IconButton
+import androidx.compose.material.Scaffold
+import androidx.compose.material.ScaffoldState
+import androidx.compose.material.Switch
+import androidx.compose.material.TopAppBar
+import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Face
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Logout
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MonetizationOn
 import androidx.compose.material.icons.filled.ProductionQuantityLimits
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material3.*
+import androidx.compose.material.rememberScaffoldState
+import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.runtime.*
+import androidx.compose.material3.Divider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
+import androidx.navigation.NavHostController
 import androidx.navigation.NavType
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.learncompose303.R
+import com.example.learncompose303.data.Destinations
 import com.example.learncompose303.screens.CartScreen
 import com.example.learncompose303.screens.CustomerSelectionScreen
 import com.example.learncompose303.screens.InvoiceDetailScreen
@@ -84,13 +89,15 @@ import com.example.learncompose303.screens.ProductSelectionScreen
 import com.example.learncompose303.screens.ProductsScreen
 import com.example.learncompose303.screens.ReportsScreen
 import com.example.learncompose303.screens.RideRequestsScreen
-import com.example.learncompose303.screens.WalletScreen
-import com.example.learncompose303.screens.auth.AuthViewModel
 import com.example.learncompose303.screens.SignInPage
 import com.example.learncompose303.screens.SignUpPage
+import com.example.learncompose303.screens.WalletScreen
 import com.example.learncompose303.screens.auth.AuthState
+import com.example.learncompose303.screens.auth.AuthViewModel
 import com.example.learncompose303.ui.theme.MyBlueish
+import com.example.learncompose303.ui.theme.MyGray
 import com.example.learncompose303.viewmodels.InvoiceViewModel
+import kotlinx.coroutines.launch
 
 
 @Composable
@@ -122,11 +129,6 @@ fun InDriveTopBottomNavigation() {
         }
     }
 
-    // Determine if we are on SignInScreen or SignUpScreen
-    val currentDestination = navController.currentDestination?.route
-    val isSignInOrSignUpScreen =
-        currentDestination == Destinations.SignIn.route || currentDestination == Destinations.SignUp.route
-
     Scaffold(
         scaffoldState = scaffoldState,
         topBar = {
@@ -139,6 +141,10 @@ fun InDriveTopBottomNavigation() {
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center
                     ) {
+                        // Determine if the user is authenticated
+                        val isChecked =
+                            authState == AuthState.Authenticated // Set Switch state based on authState
+
                         Text(
                             text = if (isChecked) "Online" else "Offline",
                             modifier = Modifier.padding(end = 8.dp),
@@ -147,36 +153,31 @@ fun InDriveTopBottomNavigation() {
                         Switch(
                             checked = isChecked,
                             onCheckedChange = {
-                                isChecked = it
+                                // Do not change auth state through switch for now, if needed implement functionality.
                                 authViewModel.onUserInteraction() // Reset timer on interaction
                             }
                         )
+
                     }
                 },
                 backgroundColor = Color.White,
                 navigationIcon = {
-                    if (isSignInOrSignUpScreen) { // Show Menu icon only if not on SignIn or SignUp screen
-                        IconButton(
-                            onClick = {
-                                coroutineScope.launch { scaffoldState.drawerState.open() }
-                                authViewModel.onUserInteraction() // Reset timer on interaction
-                            }
-                        ) {
-                            Icon(Icons.Default.Menu, contentDescription = null)
+                    IconButton(
+                        onClick = {
+                            coroutineScope.launch { scaffoldState.drawerState.open() }
+                            authViewModel.onUserInteraction() // Reset timer on interaction
                         }
+                    ) {
+                        Icon(Icons.Default.Menu, contentDescription = null)
                     }
                 }
             )
         },
         drawerContent = {
-            if (isSignInOrSignUpScreen) { // Only show drawer content if not on SignIn or SignUp screen
-                IndriveDrawerNav(navController = navController, scaffoldState)
-            }
+            IndriveDrawerNav(navController = navController, scaffoldState)
         },
         bottomBar = {
-            if (isSignInOrSignUpScreen) { // Only show bottom navigation if not on SignIn or SignUp screen
-                IndriveBottomNavigation(navController)
-            }
+            IndriveBottomNavigation(navController)
         },
     ) { paddingValues ->
         // Reset logout timer on interaction with main content
@@ -279,25 +280,56 @@ fun InDriveTopBottomNavigation() {
                     LoadStockScreen(viewModel = viewModel, navController) {}
                 }
 
+                // Navigation for ReportsScreen composable
                 composable(Destinations.Reports.route) {
                     ReportsScreen(
                         viewModel = viewModel,
-                        onInvoiceClick = { invoiceLine ->
+                        onInvoiceClick = { invoiceId ->
+                            Log.e(
+                                "istartlogs",
+                                "Navigating to InvoiceDetailScreen with invoiceId: $invoiceId"
+                            ) // Log here to check
                             navController.navigate(
-                                Destinations.InvoiceDetail.createRoute(
-                                    invoiceLine.invoiceID
-                                )
+                                Destinations.InvoiceDetail.createRoute(invoiceId)  // Use invoiceId
                             )
                         }
                     )
                 }
 
-                composable(Destinations.InvoiceDetail.route) { backStackEntry ->
+                composable(
+                    route = Destinations.InvoiceDetail.route,
+                    arguments = listOf(navArgument("invoiceId") {
+                        type = NavType.LongType
+                    })  // Declare nav argument
+                ) { backStackEntry ->
+
                     val invoiceId = backStackEntry.arguments?.getLong("invoiceId")
+                    Log.e("istartlogs", "inside InvoiceDetailScreen with invoiceId: $invoiceId")
+
                     invoiceId?.let {
                         InvoiceDetailScreen(invoiceId = it, viewModel = viewModel)
                     }
                 }
+
+//                composable(Destinations.InvoiceDetail.route) { backStackEntry ->
+//
+//                    Log.e(
+//                        "istartlogs",
+//                        "##### inside InvoiceDetailScreen with invoiceId: ${
+//                            backStackEntry.arguments?.getLong(
+//                                "invoiceId"
+//                            )
+//                        }"
+//                    )
+//                    val invoiceId = backStackEntry.arguments?.getLong("invoiceId")
+//                    Log.e(
+//                        "istartlogs",
+//                        "inside InvoiceDetailScreen with invoiceId: $invoiceId"
+//                    )
+//                    invoiceId?.let {
+//                        InvoiceDetailScreen(invoiceId = it, viewModel = viewModel)
+//                    }
+//                }
 
                 composable(Destinations.Order.route) {
                     OrderScreen(onSubmit = { productName, quantity, dueDate, notes ->
@@ -316,176 +348,7 @@ fun InDriveTopBottomNavigation() {
     }
 }
 
-
-//@RequiresApi(Build.VERSION_CODES.O)
-//@Composable
-//fun InDriveTopBottomNavigation() {
-//    val authViewModel: AuthViewModel = viewModel() // Get AuthViewModel
-//    val viewModel: InvoiceViewModel = viewModel()
-//    val navController = rememberNavController()
-//    val scaffoldState = rememberScaffoldState()
-//    val coroutineScope = rememberCoroutineScope()
-//    var isChecked by remember { mutableStateOf(false) }
-//
-//    // Observe auth state and navigate to sign-in page when unauthenticated
-//    val authState by authViewModel.authState.observeAsState()
-//
-//    // Navigate to sign-in when user is unauthenticated
-//    LaunchedEffect(authState) {
-//        if (authState == AuthState.UnAuthenticated) {
-//            navController.navigate(Destinations.SignIn.route) {
-//                popUpTo(Destinations.SignIn.route) { inclusive = true }
-//            }
-//        }
-//    }
-//
-//    Scaffold(
-//        scaffoldState = scaffoldState,
-//        topBar = {
-//            TopAppBar(
-//                title = {
-//                    Row(
-//                        modifier = Modifier
-//                            .fillMaxWidth()
-//                            .clickable { authViewModel.onUserInteraction() }, // Reset timer on user interaction
-//                        verticalAlignment = Alignment.CenterVertically,
-//                        horizontalArrangement = Arrangement.Center
-//                    ) {
-//                        Text(
-//                            text = if (isChecked) "Online" else "Offline",
-//                            modifier = Modifier.padding(end = 8.dp),
-//                            color = if (isChecked) Color.Green else Color.Red
-//                        )
-//                        Switch(
-//                            checked = isChecked,
-//                            onCheckedChange = {
-//                                isChecked = it
-//                                authViewModel.onUserInteraction() // Reset timer on interaction
-//                            }
-//                        )
-//                    }
-//                },
-//                backgroundColor = Color.White,
-//                navigationIcon = {
-//                    IconButton(
-//                        onClick = {
-//                            coroutineScope.launch { scaffoldState.drawerState.open() }
-//                            authViewModel.onUserInteraction() // Reset timer on interaction
-//                        }
-//                    ) {
-//                        Icon(Icons.Default.Menu, contentDescription = null)
-//                    }
-//                }
-//            )
-//        },
-//        drawerContent = {
-//            IndriveDrawerNav(navController = navController, scaffoldState)
-//        },
-//        bottomBar = {
-//            IndriveBottomNavigation(navController)
-//        },
-//    ) { paddingValues ->
-//        // Reset logout timer on interaction with main content
-//        Box(modifier = Modifier
-//            .fillMaxSize()
-//            .clickable { authViewModel.onUserInteraction() } // Reset timer on interaction
-//        ) {
-//            // Set the starting destination of the app
-//            NavHost(
-//                navController = navController,
-//                startDestination = Destinations.SignIn.route,
-//                modifier = Modifier.padding(paddingValues)
-//            ) {
-//                composable(Destinations.SignUp.route) {
-//                    SignUpPage(navController, authViewModel)
-//                }
-//                composable(Destinations.SignIn.route) {
-//                    SignInPage(navController, authViewModel)
-//                }
-//                composable(Destinations.Rides.route) {
-//                    RideRequestsScreen(navController, viewModel)
-//                }
-//                composable(Destinations.Income.route) {
-//                    MyIncomeScreen(viewModel, navController)
-//                }
-//                composable(Destinations.Priority.route) {
-//                    PriorityScreen(viewModel)
-//                }
-//                composable(Destinations.Wallet.route) {
-//                    WalletScreen()
-//                }
-//                composable(Destinations.Products.route) {
-//                    ProductsScreen(viewModel)
-//                }
-//
-//                // Customer Selection Screen
-//                composable(Destinations.CustomerSelection.route) {
-//                    CustomerSelectionScreen(
-//                        onCustomerSelected = { customer ->
-//                            navController.navigate(Destinations.ProductSelection.route + "/${customer.customerId}")
-//                        },
-//                        onNewCustomerClicked = {
-//                            // Handle new customer logic
-//                        },
-//                        navController = navController,
-//                        viewModel = viewModel
-//                    )
-//                }
-//
-//                // Product Selection Screen
-//                composable(Destinations.ProductSelection.route + "/{customerId}") { backStackEntry ->
-//                    val customerId =
-//                        backStackEntry.arguments?.getString("customerId")?.toLong()
-//                            ?: return@composable
-//                    val customer = viewModel.getCustomerById(customerId)
-//
-//                    if (customer == null) {
-//                        // Handle the case where the customer is not found
-//                        Text("Customer not found")
-//                    } else {
-//                        val productList by viewModel.productList.collectAsState()
-//
-//                        ProductSelectionScreen(
-//                            customer = customer,
-//                            onProceedToCart = {
-//                                // Navigate to the Cart screen with the customer ID
-//                                navController.navigate(Destinations.Cart.route + "/${customer.customerId}")
-//                            },
-//                            navController = navController,
-//                            viewModel = viewModel
-//                        )
-//                    }
-//                }
-//
-//                // Cart Screen
-//                composable(Destinations.Cart.route + "/{customerId}") { backStackEntry ->
-//                    val customerId =
-//                        backStackEntry.arguments?.getString("customerId")?.toLong()
-//                            ?: return@composable
-//                    val customer = viewModel.getCustomerById(customerId)
-//
-//                    LaunchedEffect(customerId) {
-//                        viewModel.refreshCartItems(customerId)
-//                    }
-//
-//                    if (customer != null) {
-//                        CartScreen(
-//                            customer = customer,
-//                            navController,
-//                            viewModel
-//                        )
-//                    }
-//                }
-//
-//                composable(Destinations.Login.route) {
-//                    LoginScreen(viewModel = viewModel, navController)
-//                }
-//
-//                composable(Destinations.LoadStocks.route) {
-//                    LoadStockScreen(viewModel = viewModel, navController) {}
-//                }
-//
-//                composable(Destinations.Reports.route) {
+//composable(Destinations.Reports.route) {
 //                    ReportsScreen(
 //                        viewModel = viewModel,
 //                        onInvoiceClick = { invoiceLine ->
@@ -497,30 +360,6 @@ fun InDriveTopBottomNavigation() {
 //                        }
 //                    )
 //                }
-//
-//                composable(Destinations.InvoiceDetail.route) { backStackEntry ->
-//                    val invoiceId = backStackEntry.arguments?.getLong("invoiceId")
-//                    invoiceId?.let {
-//                        InvoiceDetailScreen(invoiceId = it, viewModel = viewModel)
-//                    }
-//                }
-//
-//                composable(Destinations.Order.route) {
-//                    OrderScreen(onSubmit = { productName, quantity, dueDate, notes ->
-//                        viewModel.submitOrder(productName, quantity, dueDate, notes)
-//                        navController.popBackStack()
-//                    })
-//                }
-//
-//                composable(Destinations.OrderReports.route) {
-//                    OrdersReportsScreen(viewModel = viewModel) {
-//                        navController.navigate(Destinations.Order.route)
-//                    }
-//                }
-//            }
-//        }
-//    }
-//}
 
 @Composable
 fun IndriveDrawerNav(navController: NavController, scaffoldState: ScaffoldState) {

@@ -56,11 +56,18 @@ import com.example.learncompose303.viewmodels.InvoiceViewModel
 import java.util.Date
 
 @Composable
+//fun ReportsScreen(
+//    viewModel: InvoiceViewModel = viewModel(),
+//    onInvoiceClick: (InvoiceLine) -> Unit
+//) {
+
 fun ReportsScreen(
     viewModel: InvoiceViewModel = viewModel(),
-    onInvoiceClick: (InvoiceLine) -> Unit
+    onInvoiceClick: (Long) -> Unit  // Change parameter to accept invoiceId
 ) {
     val invoices by viewModel.invoiceList.collectAsState()
+
+    Log.e("istartlogs", "checking invoices ***** : $invoices")
 
     LaunchedEffect(key1 = true) {
         viewModel.fetchAllInvoices()
@@ -88,12 +95,11 @@ fun ReportsScreen(
             ) {
                 items(invoices) { invoice ->
                     InvoiceCard(invoice = invoice, onClick = {
-                        val theInvoiceLine = viewModel.getInvoiceLineById(invoice.invoiceId)
-                        // Load invoice lines when the invoice is clicked
-                        if (theInvoiceLine != null) {
-                            onInvoiceClick(theInvoiceLine)
-                        }
-
+                        Log.e(
+                            "istartlogs",
+                            "Navigating with invoiceId: ${invoice.invoiceId}"
+                        ) // Log the invoiceId before navigation
+                        onInvoiceClick(invoice.invoiceId)  // Pass the correct invoiceId
                     })
                 }
             }
@@ -140,3 +146,13 @@ fun InvoiceCard(invoice: Invoice, onClick: () -> Unit) {
 
 
 //    val invoiceLines by viewModel.invoiceLineList.collectAsState()
+
+//                items(invoices) { invoice ->
+//                    InvoiceCard(invoice = invoice, onClick = {
+//                        val theInvoiceLine = viewModel.getInvoiceLineById(invoice.invoiceId)
+//                        // Load invoice lines when the invoice is clicked
+//                        if (theInvoiceLine != null) {
+//                            onInvoiceClick(theInvoiceLine)
+//                        }
+//
+//                    })

@@ -6,6 +6,7 @@ import com.example.learncompose303.daos.ItemDao
 import com.example.learncompose303.data.AppDatabase
 import com.example.learncompose303.data.data_source.CartItemDao
 import com.example.learncompose303.data.data_source.CustomerDao
+import com.example.learncompose303.data.data_source.DayReportsDao
 import com.example.learncompose303.data.data_source.InvoiceDao
 import com.example.learncompose303.data.data_source.InvoiceItemDao
 import com.example.learncompose303.data.data_source.InvoiceLineDao
@@ -14,6 +15,7 @@ import com.example.learncompose303.data.data_source.OrderDao
 import com.example.learncompose303.data.data_source.PaymentDao
 import com.example.learncompose303.data.data_source.PriceListDao
 import com.example.learncompose303.data.data_source.ProductDao
+import com.example.learncompose303.data.data_source.ProductDayReportDao
 import com.example.learncompose303.data.data_source.StudentDao
 import com.example.learncompose303.data.domain.repository.NoteRepository
 import com.example.learncompose303.data.domain.use_case.AddNoteuseCase
@@ -24,6 +26,8 @@ import com.example.learncompose303.data.repositories.CartItemRepository
 import com.example.learncompose303.data.repositories.CartItemRepositoryImpl
 import com.example.learncompose303.data.repositories.CustomerRepository
 import com.example.learncompose303.data.repositories.CustomerRepositoryImpl
+import com.example.learncompose303.data.repositories.DayReportsRepository
+import com.example.learncompose303.data.repositories.DayReportsRepositoryImpl
 import com.example.learncompose303.data.repositories.InvoiceItemRepository
 import com.example.learncompose303.data.repositories.InvoiceItemRepositoryImpl
 import com.example.learncompose303.data.repositories.InvoiceLineRepository
@@ -38,6 +42,8 @@ import com.example.learncompose303.data.repositories.PaymentRepository
 import com.example.learncompose303.data.repositories.PaymentRepositoryImpl
 import com.example.learncompose303.data.repositories.PriceListRepository
 import com.example.learncompose303.data.repositories.PriceListRepositoryImpl
+import com.example.learncompose303.data.repositories.ProductDayReportRepository
+import com.example.learncompose303.data.repositories.ProductDayReportRepositoryImpl
 import com.example.learncompose303.data.repositories.ProductRepository
 import com.example.learncompose303.data.repositories.ProductRepositoryImpl
 import com.example.learncompose303.data.repositories.RepositoryImpl
@@ -102,6 +108,24 @@ object AppModule {
     // Provide StudentDao from AppDatabase
     @Provides
     fun provideStudentDao(appDatabase: AppDatabase): StudentDao = appDatabase.studentDao()
+
+    fun provideProductDayReportDao(appDatabase: AppDatabase): ProductDayReportDao =
+        appDatabase.productDayReportDao()
+
+    @Provides
+    @Singleton
+    fun provideProductDayReportRepository(appDatabase: AppDatabase): ProductDayReportRepository {
+        return ProductDayReportRepositoryImpl(appDatabase.productDayReportDao())
+    }
+
+    fun provideDayReportsDao(appDatabase: AppDatabase): DayReportsDao =
+        appDatabase.dayReportsDao()
+
+    @Provides
+    @Singleton
+    fun provideDayReportsRepository(appDatabase: AppDatabase): DayReportsRepository {
+        return DayReportsRepositoryImpl(appDatabase.dayReportsDao())
+    }
 
     //    Provide repositories here
     @Provides

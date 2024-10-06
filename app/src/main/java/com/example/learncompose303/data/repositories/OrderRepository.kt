@@ -12,6 +12,7 @@ interface OrderRepository {
     suspend fun getAllOrders(): Flow<List<Order>>
     suspend fun getOrderCount(): Flow<Int>
     suspend fun getOrderById(orderId: Int): Order?
+    suspend fun getOrderByDate(startDate: Long): Flow<List<Order>>
     suspend fun deleteOrder(order: Order)
     suspend fun deleteAllOrders()
 }
@@ -45,6 +46,12 @@ class OrderRepositoryImpl @Inject constructor(
     override suspend fun getOrderById(orderId: Int): Order? {
         return withContext(Dispatchers.IO) {
             orderDao.getOrderById(orderId)
+        }
+    }
+
+    override suspend fun getOrderByDate(startDate: Long): Flow<List<Order>> {
+        return withContext(Dispatchers.IO) {
+            orderDao.getOrderByDate(startDate)
         }
     }
 

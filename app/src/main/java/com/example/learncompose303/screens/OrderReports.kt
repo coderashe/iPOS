@@ -65,7 +65,7 @@ fun OrdersReportsScreen(
     viewModel: InvoiceViewModel = viewModel(),
     onNewOrderClick: () -> Unit
 ) {
-    val orders by viewModel.orderList.collectAsState() // Assuming you have a state flow for orders
+    val orders by viewModel.orderList.collectAsState()
 
     LaunchedEffect(key1 = true) {
         viewModel.fetchAllOrders() // Fetch orders when the screen is launched

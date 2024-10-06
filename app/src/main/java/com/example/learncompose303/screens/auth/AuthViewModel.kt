@@ -107,7 +107,7 @@ class AuthViewModel : ViewModel() {
         val oneDayInMillis = 24 * 60 * 60 * 1000L // 24 hours in milliseconds
         val oneWeekInMillis = 168 * 60 * 60 * 1000L // 168 hours in milliseconds
         Log.d("AuthViewModel", "Starting logout timer for 1 minute.")
-        logoutHandler.postDelayed(logoutRunnable, fiveMinutesInMillis) // 1 minute delay
+        logoutHandler.postDelayed(logoutRunnable, oneDayInMillis) // 1 minute delay
     }
 
     // Stop the logout timer

@@ -4,12 +4,16 @@ import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.More
@@ -29,6 +33,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.learncompose303.R
+import com.example.learncompose303.app.CustomHeadingMedium
 import com.example.learncompose303.data.Destinations
 import com.example.learncompose303.data.entities.Product
 import com.example.learncompose303.viewmodels.InvoiceViewModel
@@ -41,6 +46,7 @@ fun LoadStockScreen(
 ) {
     var productName by remember { mutableStateOf("") }
     var productPrice by remember { mutableStateOf("") }
+    var currentStockLevel by remember { mutableStateOf("") }
     var imageResId by remember { mutableStateOf<Int?>(null) }
     val context = LocalContext.current
 
@@ -72,6 +78,35 @@ fun LoadStockScreen(
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp)
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            //        for productCsvUpload
+            QuickAccessCard(
+                label = stringResource(R.string.uploadProducts),
+                subTitle = "--",
+                icon = Icons.Default.More,
+                onClick = {
+                    productRequestFileLauncher.launch("*/*")
+                }
+            )
+//        for priceListCsvUpload
+            QuickAccessCard(
+                label = stringResource(R.string.uploadPricelists),
+                subTitle = "--",
+                icon = Icons.Default.More,
+                onClick = {
+                    pricelistRequestFileLauncher.launch("*/*")
+                }
+            )
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+        CustomHeadingMedium(heading = "___or___")
+        Spacer(modifier = Modifier.height(16.dp))
         // Product Name Input
         OutlinedTextField(
             value = productName,
@@ -93,30 +128,15 @@ fun LoadStockScreen(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        Button(
-            onClick = {
-                productRequestFileLauncher.launch("*/*")
-            },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Upload Products")
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-//        for priceListCsvUpload
-
-        QuickAccessCard(
-            label = stringResource(R.string.uploadPricelists),
-            subTitle = "--",
-            icon = Icons.Default.More,
-            onClick = {
-                pricelistRequestFileLauncher.launch("*/*")
-            }
+        // Product Stock Input
+        OutlinedTextField(
+            value = currentStockLevel,
+            onValueChange = { currentStockLevel = it },
+            label = { Text("Product Price") },
+            modifier = Modifier.fillMaxWidth(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
         )
-
         Spacer(modifier = Modifier.height(16.dp))
-
         // Button to Add Product
         Button(
             onClick = {
@@ -124,7 +144,7 @@ fun LoadStockScreen(
                 if (productName.isNotEmpty() && price != null) {
                     val newProduct = Product(
                         productDescription = productName,
-                        currentStockLevel = 100.00,
+                        currentStockLevel = 1000.00,
                         saleable = true,
                         purchasable = true,
                         averageCost = 8.0,
@@ -149,7 +169,6 @@ fun LoadStockScreen(
                         .show()
                 }
             },
-            modifier = Modifier.fillMaxWidth()
         ) {
             Text("Add Product")
         }

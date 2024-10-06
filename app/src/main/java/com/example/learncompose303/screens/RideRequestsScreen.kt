@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -64,9 +65,9 @@ fun RideRequestsScreen(
     navController: NavHostController,
     viewModel: InvoiceViewModel = viewModel()
 ) {
-
     val authViewModel: AuthViewModel = viewModel()
     val authState = authViewModel.authState.observeAsState()
+    val dayStarted by viewModel.dayStarted.collectAsState() // Observe the dayStarted state from the ViewModel
 
     LaunchedEffect(authState.value) {
         when (authState.value) {
@@ -88,7 +89,21 @@ fun RideRequestsScreen(
             viewModel = viewModel // Pass the viewModel explicitly
         )
         SpacerHeight()
-        SearchBarExample()
+
+        // Toggle Day Button
+        Button(
+            onClick = {
+                if (dayStarted) {
+                    viewModel.startDay()
+                } else {
+                    viewModel.endDay()
+                }
+            },
+            modifier = Modifier.padding(8.dp)
+        ) {
+            Text(if (dayStarted) "End Day" else "Start Day")
+        }
+
         CustomHeadingMedium(
             heading = stringResource(R.string.popular_products)
         )
@@ -99,3 +114,46 @@ fun RideRequestsScreen(
         QuickAccessButtons(navController)
     }
 }
+
+
+//@RequiresApi(Build.VERSION_CODES.O)
+//@Composable
+//fun RideRequestsScreen(
+//    navController: NavHostController,
+//    viewModel: InvoiceViewModel = viewModel()
+//) {
+//
+//    val authViewModel: AuthViewModel = viewModel()
+//    val authState = authViewModel.authState.observeAsState()
+//
+//    LaunchedEffect(authState.value) {
+//        when (authState.value) {
+//            is AuthState.UnAuthenticated -> navController.navigate(Destinations.SignIn.route)
+//            else -> Unit
+//        }
+//    }
+//
+//    Column(
+//        modifier = Modifier
+//            .fillMaxSize()
+//            .background(Color.Transparent)
+//            .padding(top = 4.dp)
+//            .verticalScroll(rememberScrollState())
+//    ) {
+//        SalesmanInfoCard(
+//            salesmanName = "Simba Start",
+//            shopName = "ISTART CAPITAL MRT",
+//            viewModel = viewModel // Pass the viewModel explicitly
+//        )
+//        SpacerHeight()
+////        SearchBarExample()
+//        CustomHeadingMedium(
+//            heading = stringResource(R.string.popular_products)
+//        )
+//        AutoSlidingCarousel()
+//        CustomHeadingMedium(
+//            heading = stringResource(R.string.more)
+//        )
+//        QuickAccessButtons(navController)
+//    }
+//}
