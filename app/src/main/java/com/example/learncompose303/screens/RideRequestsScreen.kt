@@ -20,7 +20,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -91,18 +93,33 @@ fun RideRequestsScreen(
         SpacerHeight()
 
         // Toggle Day Button
-        Button(
-            onClick = {
-                if (dayStarted) {
-                    viewModel.startDay()
-                } else {
-                    viewModel.endDay()
-                }
-            },
-            modifier = Modifier.padding(8.dp)
-        ) {
-            Text(if (dayStarted) "End Day" else "Start Day")
-        }
+//        Column(modifier = Modifier.padding(16.dp)) {
+//            Button(
+//                colors = ButtonDefaults.buttonColors(
+//                    if (dayStarted) Color.Gray else MaterialTheme.colorScheme.primary
+//                ),
+//                enabled = !dayStarted, // Disable this button if the day has already started
+//                onClick = {
+//                    viewModel.startDay()
+//                },
+//                modifier = Modifier.padding(8.dp)
+//            ) {
+//                Text("Start Day")
+//            }
+//
+//            Button(
+//                colors = ButtonDefaults.buttonColors(
+//                    if (dayStarted) Color.Red else MaterialTheme.colorScheme.primary
+//                ),
+//                enabled = dayStarted, // Disable this button if the day hasn't started yet
+//                onClick = {
+//                    viewModel.endDay()
+//                },
+//                modifier = Modifier.padding(8.dp)
+//            ) {
+//                Text("End Day")
+//            }
+//        }
 
         CustomHeadingMedium(
             heading = stringResource(R.string.popular_products)

@@ -631,28 +631,28 @@ fun IndriveBottomNavigation(navController: NavHostController) {
             selected = currentDestination?.route == Destinations.Rides.route,
             onClick = { navController.navigate(Destinations.Rides.route) },
             icon = { Icon(Icons.Default.Home, contentDescription = null) },
-            label = { Text(text = stringResource(id = R.string.navhome)) }
+            label = { Text(text = stringResource(id = R.string.navhome), color = Color.Black) }
         )
 
         BottomNavigationItem(
             selected = currentDestination?.route == Destinations.Income.route,
             onClick = { navController.navigate(Destinations.Income.route) },
             icon = { Icon(Icons.Default.MonetizationOn, contentDescription = null) },
-            label = { Text(text = stringResource(id = R.string.navincome)) }
+            label = { Text(text = stringResource(id = R.string.navincome), color = Color.Black) }
         )
 
         BottomNavigationItem(
-            selected = currentDestination?.route == Destinations.Priority.route,
-            onClick = { navController.navigate(Destinations.Priority.route) },
+            selected = currentDestination?.route == Destinations.OrderReports.route,
+            onClick = { navController.navigate(Destinations.OrderReports.route) },
             icon = { Icon(Icons.Default.Favorite, contentDescription = null) },
-            label = { Text(text = stringResource(id = R.string.navpriority)) }
+            label = { Text(text = stringResource(id = R.string.navorders), color = Color.Black) }
         )
 
         BottomNavigationItem(
             selected = currentDestination?.route == Destinations.Products.route,
             onClick = { navController.navigate(Destinations.Products.route) },
             icon = { Icon(Icons.Default.ProductionQuantityLimits, contentDescription = null) },
-            label = { Text(text = stringResource(id = R.string.navproducts)) }
+            label = { Text(text = stringResource(id = R.string.navproducts), color = Color.Black) }
         )
     }
 }

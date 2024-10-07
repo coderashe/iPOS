@@ -747,6 +747,126 @@ class InvoiceViewModel @Inject constructor(
         }
     }
 
+    fun startDay() = viewModelScope.launch {
+        // If the day has already started, return early and avoid re-running the logic
+        if (_dayStarted.value) return@launch
+
+        productRepository.getAllProducts().collect { products ->
+            products.forEach { product ->
+                // Set the opening stock at the start of the day
+                val productDayReport = ProductDayReport(
+                    productId = product.productId,
+                    productName = product.productDescription,
+                    openingStock = product.currentStockLevel, // Opening stock set at day start
+                    closingStock = 0.0,
+                    quantitySold = 0, // No sales at the start of the day
+                    totalSales = 0.0,
+                    totalCost = 0.0,
+                    totalProfit = 0.0,
+                    reportDate = System.currentTimeMillis()
+                )
+                productDayReportRepository.insertProductDayReport(productDayReport)
+            }
+
+            // Create a day report with initial values
+            val dayReport = DayReports(
+                totalInvoices = 0,
+                totalOrders = 0,
+                totalProductsSold = 0,
+                totalInvoiceSales = 0.0,
+                reportDate = System.currentTimeMillis(),
+                startTime = System.currentTimeMillis(),
+                endTime = 0L // This will be updated at the end of the day
+            )
+            dayReportRepository.insertDayReport(dayReport)
+
+            _dayStarted.value = true // Mark the day as started
+        }
+    }
+
+    fun getTodayStartInMillis(): Long {
+        val calendar = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        return calendar.timeInMillis
+    }
+
+    fun endDay() = viewModelScope.launch {
+        // Fetch all invoices and orders from today
+        val todayStart = getTodayStartInMillis()
+
+        // Collect today's invoices
+        invoiceRepository.getInvoicesByDate(todayStart).collect { todayInvoices ->
+            // Collect today's orders
+            orderRepository.getOrderByDate(todayStart).collect { todayOrders ->
+
+                // Total products sold and total sales
+                var totalProductsSold = 0
+                var totalSales = 0.0
+
+                // Iterate through each invoice
+                todayInvoices.forEach { invoice ->
+                    totalSales += invoice.totalAmount
+
+                    // Collect invoice items for this invoice
+                    invoiceItemRepository.getInvoiceItemsByInvoiceId(invoice.invoiceId)
+                        .collect { invoiceItems ->
+                            invoiceItems.forEach { item ->
+                                totalProductsSold += item.quantity
+
+                                // Fetch the product details
+                                val product = productRepository.getProductById(item.productId)
+
+                                // Fetch the product day report to update it
+                                val productReport = product?.let {
+                                    productDayReportRepository.getProductDayReportById(
+                                        it.productId
+                                    )
+                                }
+
+                                if (productReport != null) {
+                                    // Calculate profit
+                                    val productProfit =
+                                        (item.price - (product.standardCost ?: 0.0)) * item.quantity
+
+                                    // Update product report details
+                                    val updatedReport = productReport.copy(
+                                        closingStock = product.currentStockLevel, // Now this line will work
+                                        quantitySold = productReport.quantitySold + item.quantity,
+                                        totalSales = productReport.totalSales + item.total,
+                                        totalCost = productReport.totalCost + (product.standardCost
+                                            ?: 0.0) * item.quantity,
+                                        totalProfit = productReport.totalProfit + productProfit
+                                    )
+
+                                    // Update the product day report in the database
+                                    productDayReportRepository.updateProductDayReport(updatedReport)
+                                }
+                            }
+                        }
+                }
+
+                // Create a final day report summary
+                val finalDayReport = DayReports(
+                    totalInvoices = todayInvoices.size,
+                    totalOrders = todayOrders.size,
+                    totalProductsSold = totalProductsSold,
+                    totalInvoiceSales = totalSales,
+                    reportDate = todayStart,
+                    startTime = todayStart,
+                    endTime = System.currentTimeMillis()
+                )
+
+                // Update the final day report in the database
+                dayReportRepository.updateDayReport(finalDayReport)
+            }
+        }
+
+        _dayStarted.value = false // Update the state to indicate the day has ended
+    }
 
     //    new submit
     fun submitInvoice(customerId: Long, amountTendered: Double, productQuantities: Map<Long, Int>) =
@@ -872,133 +992,6 @@ class InvoiceViewModel @Inject constructor(
                 Log.e("InvoiceError", "Error during invoice submission: ${e.message}")
             }
         }
-
-//    start day logic
-
-    fun startDay() = viewModelScope.launch {
-        // Collect all products and record their opening stock
-        productRepository.getAllProducts().collect { products ->
-            products.forEach { product ->
-                // Create an entry for opening stock for each product
-                val productDayReport = ProductDayReport(
-                    productId = product.productId, // Ensure productId is properly mapped
-                    productName = product.productDescription,
-                    openingStock = product.currentStockLevel, // Current stock at the beginning of the day
-                    closingStock = product.currentStockLevel, // Will be updated at EndDay
-                    quantitySold = 0, // Initially 0, updated later during the day
-                    totalSales = 0.0, // Initially 0, calculated later based on sales
-                    totalCost = 0.0,  // Initially 0, sum of standard cost * quantity sold
-                    totalProfit = 0.0, // Initially 0, calculated as (selling price - standard cost) * quantity sold
-                    reportDate = System.currentTimeMillis() // Timestamp for the day
-                )
-                // Insert the product day report into the database
-                productDayReportRepository.insertProductDayReport(productDayReport)
-            }
-        }
-
-        // Create an initial DayReport for the day
-        val dayReport = DayReports(
-            totalInvoices = 0,
-            totalOrders = 0,
-            totalProductsSold = 0,
-            totalInvoiceSales = 0.0,
-            reportDate = System.currentTimeMillis(),
-            startTime = System.currentTimeMillis(),
-            endTime = 0L
-        )
-        dayReportRepository.insertDayReport(dayReport)
-
-        _dayStarted.value = true // Update the state to indicate the day has started
-    }
-
-    fun getTodayStartInMillis(): Long {
-        val calendar = Calendar.getInstance().apply {
-            set(Calendar.HOUR_OF_DAY, 0)
-            set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-        }
-        return calendar.timeInMillis
-    }
-
-//    end day logic
-
-    fun endDay() = viewModelScope.launch {
-        // Fetch all invoices and orders from today
-        val todayStart = getTodayStartInMillis()
-
-        // Collect today's invoices
-        invoiceRepository.getInvoicesByDate(todayStart).collect { todayInvoices ->
-            // Collect today's orders
-            orderRepository.getOrderByDate(todayStart).collect { todayOrders ->
-
-                // Total products sold and total sales
-                var totalProductsSold = 0
-                var totalSales = 0.0
-
-                // Iterate through each invoice
-                todayInvoices.forEach { invoice ->
-                    totalSales += invoice.totalAmount
-
-                    // Collect invoice items for this invoice
-                    invoiceItemRepository.getInvoiceItemsByInvoiceId(invoice.invoiceId)
-                        .collect { invoiceItems ->
-                            invoiceItems.forEach { item ->
-                                totalProductsSold += item.quantity
-
-                                // Fetch the product details
-                                val product = productRepository.getProductById(item.productId)
-
-                                // Fetch the product day report to update it
-                                val productReport = product?.let {
-                                    productDayReportRepository.getProductDayReportById(
-                                        it.productId
-                                    )
-                                }
-
-                                if (productReport != null) {
-                                    // Calculate profit
-                                    val productProfit =
-                                        (item.price - (product.standardCost ?: 0.0)) * item.quantity
-
-                                    // Update product report details
-                                    val updatedReport = productReport.copy(
-                                        closingStock = product.currentStockLevel, // Now this line will work
-                                        quantitySold = productReport.quantitySold + item.quantity,
-                                        totalSales = productReport.totalSales + item.total,
-                                        totalCost = productReport.totalCost + (product.standardCost
-                                            ?: 0.0) * item.quantity,
-                                        totalProfit = productReport.totalProfit + productProfit
-                                    )
-
-                                    // Update the product day report in the database
-                                    productDayReportRepository.updateProductDayReport(updatedReport)
-                                }
-                            }
-                        }
-                }
-
-                // Create a final day report summary
-                val finalDayReport = DayReports(
-                    totalInvoices = todayInvoices.size,
-                    totalOrders = todayOrders.size,
-                    totalProductsSold = totalProductsSold,
-                    totalInvoiceSales = totalSales,
-                    reportDate = todayStart,
-                    startTime = todayStart,
-                    endTime = System.currentTimeMillis()
-                )
-
-                // Update the final day report in the database
-                dayReportRepository.updateDayReport(finalDayReport)
-            }
-        }
-
-        _dayStarted.value = false // Update the state to indicate the day has ended
-    }
-
-
-//    end of dayend reports
 
     private val _studentDetailsList = MutableStateFlow(emptyList<StudentEntity>())
     val studentDetailsList = _studentDetailsList.asStateFlow()
