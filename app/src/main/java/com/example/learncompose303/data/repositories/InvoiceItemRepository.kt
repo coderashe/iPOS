@@ -11,11 +11,19 @@ interface InvoiceItemRepository {
     suspend fun getInvoiceItemsByInvoiceId(invoiceId: Long): Flow<List<InvoiceItem>> // Return a Flow
     suspend fun insertInvoiceItem(item: InvoiceItem): Long
     suspend fun deleteInvoiceItem(item: InvoiceItem)
+    suspend fun updateInvoiceItem(invoiceItem: InvoiceItem)
 }
 
 class InvoiceItemRepositoryImpl @Inject constructor(
     private val invoiceItemDao: InvoiceItemDao
 ) : InvoiceItemRepository {
+
+    override suspend fun updateInvoiceItem(invoiceItem: InvoiceItem) {
+        withContext(Dispatchers.IO) {
+            invoiceItemDao.updateInvoiceItem(invoiceItem)
+        }
+    }
+
     override suspend fun getInvoiceItemsByInvoiceId(invoiceId: Long): Flow<List<InvoiceItem>> {
         return invoiceItemDao.getItemsForInvoice(invoiceId) // Flow is returned directly
     }

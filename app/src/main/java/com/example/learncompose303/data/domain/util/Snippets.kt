@@ -39,6 +39,88 @@ import com.example.learncompose303.screens.CartScreen
 import com.example.learncompose303.screens.ProductCard
 import com.example.learncompose303.viewmodels.InvoiceViewModel
 
+// working creditNote
+//    fun reverseInvoice(invoiceId: Long) = viewModelScope.launch {
+//        try {
+//            // Fetch the invoice to be reversed
+//            val invoice = invoiceRepository.getInvoiceById(invoiceId)
+//            if (invoice == null) {
+//                Log.e("CreditNoteError", "Invoice not found with ID: $invoiceId")
+//                return@launch
+//            }
+//
+//            // Collect the Flow of InvoiceItems associated with the invoice, but limit it to one emission using `take(1)`
+//            invoiceItemRepository.getInvoiceItemsByInvoiceId(invoiceId)
+//                .take(1) // This ensures only one collection happens and then it stops
+//                .collect { invoiceItems ->
+//                    if (invoiceItems.isEmpty()) {
+//                        Log.e(
+//                            "CreditNoteError",
+//                            "No invoice items found for invoice ID: $invoiceId"
+//                        )
+//                        return@collect
+//                    }
+//
+//                    // Reverse each item, restock the quantity, and create a reverse transaction
+//                    invoiceItems.forEach { invoiceItem ->
+//                        // Restore product stock by adding back the sold quantity
+//                        addQuantityBackToStock(
+//                            invoiceItem.productId,
+//                            invoiceItem.quantity.toDouble()
+//                        )
+//
+//                        // Create a credit note (or mark the original InvoiceItem as reversed)
+//                        val creditNoteItem = InvoiceItem(
+//                            invoiceId = invoiceId,
+//                            productId = invoiceItem.productId,
+//                            customerId = invoice.customerId,
+//                            quantity = -invoiceItem.quantity, // Negative quantity to reverse
+//                            price = invoiceItem.price,
+//                            total = -invoiceItem.total // Negative total to reflect reversal
+//                        )
+//                        invoiceItemRepository.insertInvoiceItem(creditNoteItem)
+//                    }
+//
+//                    // Mark the original invoice as "Reversed" or "Credit Note"
+//                    val updatedInvoice = invoice.copy(
+//                        status = "Credit Note",
+//                        totalAmount = -invoice.totalAmount // Make the totalAmount negative
+//                    )
+//                    invoiceRepository.updateInvoice(updatedInvoice)
+//
+//                    // Fetch all InvoiceLines associated with the invoice
+//                    val invoiceLine = invoiceLineRepository.getInvoiceLineById(invoiceId)
+//
+//                    // Insert reversed InvoiceLine records for the credit note
+//                    invoiceLine?.let { line ->
+//                        val creditNoteLine = InvoiceLine(
+//                            invoiceId = invoiceId,
+//                            invoiceStatus = "Credit Note",
+//                            productID = line.productID,
+//                            productName = line.productName,
+//                            productPrice = line.productPrice,
+//                            productQtySold = -line.productQtySold, // Negative quantity for reversal
+//                            customerID = invoice.customerId,
+//                            customerName = line.customerName,
+//                            customerPhone = line.customerPhone,
+//                            totalAmount = -invoice.totalAmount, // Negative totalAmount for reversal
+//                            amountTendered = 0.0, // No money exchanged for a credit note
+//                            changeBalance = 0.0,  // No change for a credit note
+//                            invoiceDate = System.currentTimeMillis()
+//                        )
+//
+//                        Log.d("CreditNote", "Inserting credit note line: $creditNoteLine")
+//                        invoiceLineRepository.insertInvoiceLine(creditNoteLine)
+//                    }
+//
+//                    Log.d("CreditNote", "Successfully reversed invoice ID: $invoiceId")
+//                }
+//        } catch (e: Exception) {
+//            Log.e("CreditNoteError", "Error during credit note creation: ${e.message}")
+//        }
+//    }
+//
+
 
 //@Composable
 //fun ProductSelectionScreen(
@@ -1435,4 +1517,140 @@ import com.example.learncompose303.viewmodels.InvoiceViewModel
 //        navController,
 //        viewModel
 //    )
+//}
+
+//@Composable
+//fun InvoiceDetailScreen(
+//    invoiceId: Long,
+//    viewModel: InvoiceViewModel = viewModel(),
+//) {
+//
+//    // Trigger fetching invoiceLines based on the invoiceId
+//    LaunchedEffect(key1 = invoiceId) {
+//        viewModel.fetchAllInvoiceLines()
+//        viewModel.fetchInvoiceLinesByInvoiceId(invoiceId)
+//    }
+//    // Collect the filtered invoiceLines
+//    val invoiceLines by viewModel.invoiceLines.collectAsState()
+//    val invoiceLine = viewModel.getInvoiceLineById(invoiceId)
+//
+//    val context = LocalContext.current
+//    // Build the order details string
+//    val linesDetails = invoiceLines.joinToString("\n") { invoiceLine ->
+//        "${invoiceLine.productName},     Qty: ${invoiceLine.productQtySold},     $${invoiceLine.productPrice}\n${
+//            Date(
+//                invoiceLine.invoiceDate
+//            )
+//        }"
+//    }
+//
+//    Box(modifier = Modifier.fillMaxSize()) {
+//
+//        Card(
+//            modifier = Modifier
+//                .fillMaxSize()
+//                .padding(8.dp),
+//            elevation = CardDefaults.cardElevation(4.dp)
+//        ) {
+//
+//            Column(
+//                verticalArrangement = Arrangement.spacedBy(8.dp)
+//            ) {
+//                CustomHeadingMedium(
+//                    heading = "INVOICE RECEIPT",
+//                )
+//                Spacer(modifier = Modifier.height(8.dp))
+//
+//                if (invoiceLine != null) {
+//                    Row(
+//                        modifier = Modifier
+//                            .fillMaxWidth()
+//                            .padding(8.dp)
+//                    ) {
+//                        Text(
+//                            modifier = Modifier.weight(1f),
+//                            text = invoiceLine.customerName,
+//                            style = MaterialTheme.typography.bodySmall,
+//                            color = MaterialTheme.colorScheme.primary
+//                        )
+//                        Text(
+//                            modifier = Modifier.weight(1f),
+//                            text = "${invoiceLine.customerPhone}",
+//                            style = MaterialTheme.typography.bodySmall
+//                        )
+//                        Text(
+//                            text = "#${invoiceLine.invoiceId}",
+//                            style = MaterialTheme.typography.bodySmall
+//                        )
+//                    }
+//                    Text(
+//                        modifier = Modifier.padding(8.dp),
+//                        text = "${Date(invoiceLine.invoiceDate)}", // Formatting date can be customized
+//                        style = MaterialTheme.typography.bodySmall,
+//                        textAlign = TextAlign.End
+//                    )
+//                }
+//                Spacer(modifier = Modifier.height(4.dp))
+//
+//                if (invoiceLines.isNotEmpty()) {
+//                    // Display the invoice lines using LazyColumn
+//                    LazyColumn(
+//                        verticalArrangement = Arrangement.spacedBy(12.dp)
+//                    ) {
+//                        items(invoiceLines) { invoiceLine ->
+//                            TheInvoiceCard(invoiceLine = invoiceLine)
+//                        }
+//                    }
+//                } else {
+//                    Text(text = "No items found for this invoice.")
+//                }
+//            }
+//        }
+//
+//        // Floating Action Button
+//        FloatingActionButton(
+//            onClick = {
+//                // Code for sharing the invoice message...
+//
+//                val message = "*${Date(System.currentTimeMillis())} REPORT:*\n\n\n" +
+//                        "*INVOICE RECEIPT: ${invoiceLine?.invoiceId}*\n" +
+//                        "$linesDetails\n\n" +
+//                        "THANK YOU!!!... powered by istartk \u00A92024"
+//
+//                val sendIntent = Intent(Intent.ACTION_SEND).apply {
+//                    type = "text/plain"
+//                    putExtra(Intent.EXTRA_TEXT, message)
+//                }
+//
+//                try {
+//                    val chooserIntent = Intent.createChooser(
+//                        sendIntent,
+//                        "Send via WhatsApp or WhatsApp Business"
+//                    )
+//                    chooserIntent.resolveActivity(context.packageManager)?.let {
+//                        context.startActivity(chooserIntent)
+//                    } ?: run {
+//                        Toast.makeText(
+//                            context,
+//                            "No messaging app found",
+//                            Toast.LENGTH_SHORT
+//                        )
+//                            .show()
+//                    }
+//                } catch (e: Exception) {
+//                    Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT)
+//                        .show()
+//                }
+//            },
+//            modifier = Modifier
+//                .align(Alignment.BottomEnd)
+//                .padding(16.dp) // Add padding from edges
+//        ) {
+//            Icon(
+//                imageVector = Icons.Default.Send,
+//                contentDescription = "Send Report",
+//                tint = GreenColor
+//            )
+//        }
+//    }
 //}

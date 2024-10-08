@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Update
 import com.example.learncompose303.data.entities.Customer
 import com.example.learncompose303.data.entities.InvoiceLine
 import com.example.learncompose303.data.entities.Product
@@ -23,6 +24,9 @@ interface InvoiceLineDao {
 
     @Query("SELECT * FROM invoice_lines WHERE invoiceId = :invoiceId")
     suspend fun getInvoiceLinesByInvoiceId(invoiceId: Long): List<InvoiceLine>
+
+    @Update
+    suspend fun updateInvoiceLine(invoiceLine: InvoiceLine)
 
 }
 

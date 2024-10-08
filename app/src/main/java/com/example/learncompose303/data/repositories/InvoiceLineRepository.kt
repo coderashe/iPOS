@@ -19,11 +19,18 @@ interface InvoiceLineRepository {
     // Get invoice lines by invoice ID
     suspend fun getInvoiceLineById(id: Long): InvoiceLine?
     suspend fun getInvoiceLinesByInvoiceId(invoiceId: Long): List<InvoiceLine>
+    suspend fun updateInvoiceLine(invoiceLine: InvoiceLine)
 }
 
 class InvoiceLineRepositoryImp @Inject constructor(
     private val invoiceLineDao: InvoiceLineDao
 ) : InvoiceLineRepository {
+
+    override suspend fun updateInvoiceLine(invoiceLine: InvoiceLine) {
+        withContext(Dispatchers.IO) {
+            invoiceLineDao.updateInvoiceLine(invoiceLine)
+        }
+    }
 
     override suspend fun insertInvoiceLine(invoiceLine: InvoiceLine) {
         invoiceLineDao.insertInvoiceLine(invoiceLine) // Ensure you have this method in DAO

@@ -2,6 +2,7 @@ package com.example.learncompose303.screens
 
 import android.content.Intent
 import android.widget.Toast
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,6 +16,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.filled.Undo
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
@@ -26,8 +28,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -43,15 +49,16 @@ fun InvoiceDetailScreen(
     invoiceId: Long,
     viewModel: InvoiceViewModel = viewModel(),
 ) {
-
     // Trigger fetching invoiceLines based on the invoiceId
     LaunchedEffect(key1 = invoiceId) {
         viewModel.fetchAllInvoiceLines()
         viewModel.fetchInvoiceLinesByInvoiceId(invoiceId)
     }
+
     // Collect the filtered invoiceLines
     val invoiceLines by viewModel.invoiceLines.collectAsState()
     val invoiceLine = viewModel.getInvoiceLineById(invoiceId)
+    var isFabEnabled by remember { mutableStateOf(true) }
 
     val context = LocalContext.current
     // Build the order details string
@@ -126,7 +133,34 @@ fun InvoiceDetailScreen(
             }
         }
 
-        // Floating Action Button
+        // Reverse Invoice Button
+        // Check if the invoice line is not null and the status is not "Credit Note"
+        if (invoiceLine != null && invoiceLine.invoiceStatus != "Credit Note") {
+            // Show the FAB if the invoice status is not "Credit Note"
+            FloatingActionButton(
+                onClick = {
+                    if (isFabEnabled) {
+                        // Trigger the reverseInvoice function
+                        viewModel.reverseInvoice(invoiceId)
+                        Toast.makeText(context, "Invoice Reversed", Toast.LENGTH_SHORT).show()
+
+                        // Disable the FAB once clicked
+                        isFabEnabled = false
+                    }
+                },
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(16.dp) // Add padding from edges
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Undo,
+                    contentDescription = "Reverse Invoice",
+                    tint = Color.Red
+                )
+            }
+        }
+
+        // Floating Action Button for sending report
         FloatingActionButton(
             onClick = {
                 // Code for sharing the invoice message...
@@ -153,8 +187,7 @@ fun InvoiceDetailScreen(
                             context,
                             "No messaging app found",
                             Toast.LENGTH_SHORT
-                        )
-                            .show()
+                        ).show()
                     }
                 } catch (e: Exception) {
                     Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT)

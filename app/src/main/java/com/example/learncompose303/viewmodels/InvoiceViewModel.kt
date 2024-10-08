@@ -40,7 +40,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.forEach
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.launch
 import java.io.InputStream
 import java.time.DayOfWeek
@@ -992,6 +994,105 @@ class InvoiceViewModel @Inject constructor(
                 Log.e("InvoiceError", "Error during invoice submission: ${e.message}")
             }
         }
+
+    // CreditNote
+
+    // CreditNote
+    fun reverseInvoice(invoiceId: Long) = viewModelScope.launch {
+        try {
+            // Fetch the invoice to be reversed
+            val invoice = invoiceRepository.getInvoiceById(invoiceId)
+            if (invoice == null) {
+                Log.e("CreditNoteError", "Invoice not found with ID: $invoiceId")
+                return@launch
+            }
+
+            // Collect the Flow of InvoiceItems associated with the invoice, but limit it to one emission using `take(1)`
+            invoiceItemRepository.getInvoiceItemsByInvoiceId(invoiceId)
+                .take(1) // This ensures only one collection happens and then it stops
+                .collect { invoiceItems ->
+                    if (invoiceItems.isEmpty()) {
+                        Log.e(
+                            "CreditNoteError",
+                            "No invoice items found for invoice ID: $invoiceId"
+                        )
+                        return@collect
+                    }
+
+                    // Reverse each item by adjusting the existing record instead of creating a new one
+                    invoiceItems.forEach { invoiceItem ->
+                        // Restore product stock by adding back the sold quantity
+                        addQuantityBackToStock(
+                            invoiceItem.productId,
+                            invoiceItem.quantity.toDouble()
+                        )
+
+                        // Update the InvoiceItem (mark as reversed)
+                        val updatedInvoiceItem = invoiceItem.copy(
+                            quantity = -invoiceItem.quantity, // Negative quantity to reverse
+                            total = -invoiceItem.total // Negative total to reflect reversal
+                        )
+                        invoiceItemRepository.updateInvoiceItem(updatedInvoiceItem)
+                    }
+
+                    // Mark the original invoice as "Reversed" or "Credit Note"
+                    val updatedInvoice = invoice.copy(
+                        status = "Credit Note",
+                        totalAmount = -invoice.totalAmount // Make the totalAmount negative
+                    )
+                    invoiceRepository.updateInvoice(updatedInvoice)
+
+                    // Fetch and update InvoiceLine associated with the invoice
+                    val invoiceLine = invoiceLineRepository.getInvoiceLineById(invoiceId)
+
+                    invoiceLine?.let { line ->
+                        // Update the InvoiceLine instead of inserting a new one
+                        val updatedInvoiceLine = line.copy(
+                            invoiceStatus = "Credit Note",
+                            productQtySold = -line.productQtySold, // Negative quantity for reversal
+                            totalAmount = -invoice.totalAmount, // Negative totalAmount for reversal
+                            amountTendered = 0.0, // No money exchanged for a credit note
+                            changeBalance = 0.0,  // No change for a credit note
+                            invoiceDate = System.currentTimeMillis() // Update with the current timestamp
+                        )
+
+                        Log.d("CreditNote", "Updating credit note line: $updatedInvoiceLine")
+                        invoiceLineRepository.updateInvoiceLine(updatedInvoiceLine)
+                    }
+
+                    Log.d("CreditNote", "Successfully reversed invoice ID: $invoiceId")
+                }
+        } catch (e: Exception) {
+            Log.e("CreditNoteError", "Error during credit note creation: ${e.message}")
+        }
+    }
+
+    //
+    fun addQuantityBackToStock(productId: Long, quantity: Double) = viewModelScope.launch {
+        try {
+            // Fetch the product by productId
+            val product = productRepository.getProductById(productId)
+
+            if (product != null) {
+                // Update the stock level by adding the quantity back
+                val updatedStockLevel = product.currentStockLevel + quantity
+                val updatedProduct = product.copy(currentStockLevel = updatedStockLevel)
+
+                // Save the updated product back to the repository
+                productRepository.updateProduct(updatedProduct)
+
+                Log.d("StockUpdate", "Successfully added $quantity to product ID: $productId")
+            } else {
+                Log.e("StockUpdateError", "Product not found with ID: $productId")
+            }
+        } catch (e: Exception) {
+            Log.e(
+                "StockUpdateError",
+                "Error updating stock for product ID: $productId, ${e.message}"
+            )
+        }
+    }
+
 
     private val _studentDetailsList = MutableStateFlow(emptyList<StudentEntity>())
     val studentDetailsList = _studentDetailsList.asStateFlow()

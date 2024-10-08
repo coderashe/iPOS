@@ -21,4 +21,7 @@ interface InvoiceItemDao {
     @Delete
     suspend fun deleteInvoiceItem(item: InvoiceItem)
 
+    @Update
+    suspend fun updateInvoiceItem(invoiceItem: InvoiceItem)
+
 }
