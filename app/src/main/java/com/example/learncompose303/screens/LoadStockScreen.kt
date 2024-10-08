@@ -35,8 +35,10 @@ import androidx.navigation.NavController
 import com.example.learncompose303.R
 import com.example.learncompose303.app.CustomHeadingMedium
 import com.example.learncompose303.data.Destinations
+import com.example.learncompose303.data.entities.PriceList
 import com.example.learncompose303.data.entities.Product
 import com.example.learncompose303.viewmodels.InvoiceViewModel
+
 
 @Composable
 fun LoadStockScreen(
@@ -45,32 +47,10 @@ fun LoadStockScreen(
     onProductAdded: () -> Unit // Callback when a product is added
 ) {
     var productName by remember { mutableStateOf("") }
-    var productPrice by remember { mutableStateOf("") }
     var currentStockLevel by remember { mutableStateOf("") }
-    var imageResId by remember { mutableStateOf<Int?>(null) }
+    var unitCost by remember { mutableStateOf("") }
+    var sellingPrice by remember { mutableStateOf("") }
     val context = LocalContext.current
-
-    val productRequestFileLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        uri?.let {
-            val inputStream = context.contentResolver.openInputStream(it)
-            inputStream?.let {
-                viewModel.uploadProductsFromCsv(it, context)
-            }
-        }
-    }
-
-    val pricelistRequestFileLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        uri?.let {
-            val inputStream = context.contentResolver.openInputStream(it)
-            inputStream?.let {
-                viewModel.uploadPriceListsFromCsv(it, context)
-            }
-        }
-    }
 
     Column(
         modifier = Modifier
@@ -78,35 +58,6 @@ fun LoadStockScreen(
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 8.dp)
-                .horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            //        for productCsvUpload
-            QuickAccessCard(
-                label = stringResource(R.string.uploadProducts),
-                subTitle = "--",
-                icon = Icons.Default.More,
-                onClick = {
-                    productRequestFileLauncher.launch("*/*")
-                }
-            )
-//        for priceListCsvUpload
-            QuickAccessCard(
-                label = stringResource(R.string.uploadPricelists),
-                subTitle = "--",
-                icon = Icons.Default.More,
-                onClick = {
-                    pricelistRequestFileLauncher.launch("*/*")
-                }
-            )
-        }
-        Spacer(modifier = Modifier.height(16.dp))
-        CustomHeadingMedium(heading = "___or___")
-        Spacer(modifier = Modifier.height(16.dp))
         // Product Name Input
         OutlinedTextField(
             value = productName,
@@ -117,62 +68,124 @@ fun LoadStockScreen(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Product Price Input
+        // Current Stock Level Input
         OutlinedTextField(
-            value = productPrice,
-            onValueChange = { productPrice = it },
-            label = { Text("Product Price") },
+            value = currentStockLevel,
+            onValueChange = { currentStockLevel = it },
+            label = { Text("Current Stock Level") },
             modifier = Modifier.fillMaxWidth(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
         )
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Product Stock Input
+        // Unit Cost Input
         OutlinedTextField(
-            value = currentStockLevel,
-            onValueChange = { currentStockLevel = it },
-            label = { Text("Product Price") },
+            value = unitCost,
+            onValueChange = { unitCost = it },
+            label = { Text("Unit Cost") },
             modifier = Modifier.fillMaxWidth(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
         )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Selling Price Input
+        OutlinedTextField(
+            value = sellingPrice,
+            onValueChange = { sellingPrice = it },
+            label = { Text("Selling Price") },
+            modifier = Modifier.fillMaxWidth(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
+        )
+
         Spacer(modifier = Modifier.height(16.dp))
-        // Button to Add Product
+
+        // Button to Add Product and its Price
         Button(
             onClick = {
-                val price = productPrice.toDoubleOrNull()
-                if (productName.isNotEmpty() && price != null) {
+                val unitCostValue = unitCost.toDoubleOrNull()
+                val sellingPriceValue = sellingPrice.toDoubleOrNull()
+                val currentStockLevelValue = currentStockLevel.toDoubleOrNull()
+
+                // Ensure valid inputs before performing calculations
+                if (unitCostValue != null && currentStockLevelValue != null) {
+                    val totalCost = unitCostValue * currentStockLevelValue
+
+                    // Calculate gross profit percentage and markup percentage
+                    val grossProfitPercentage = if (sellingPriceValue != null) {
+                        viewModel.calculateGrossProfitPercentage(unitCostValue, sellingPriceValue)
+                    } else {
+                        0.0 // Default to 0 if selling price is not valid
+                    }
+
+                    val markupPercentage = if (sellingPriceValue != null) {
+                        viewModel.calculateMarkupPercentage(unitCostValue, sellingPriceValue)
+                    } else {
+                        0.0 // Default to 0 if selling price is not valid
+                    }
+
+
+                    // Calculate standard cost (e.g., as a weighted cost or an average cost)
+                    val standardCost =
+                        viewModel.calculateStandardCost(unitCostValue, currentStockLevelValue)
+
+                    // Create and insert Product
                     val newProduct = Product(
                         productDescription = productName,
-                        currentStockLevel = 1000.00,
+                        currentStockLevel = currentStockLevel.toDoubleOrNull() ?: 0.0,
                         saleable = true,
                         purchasable = true,
-                        averageCost = 8.0,
-                        standardCost = 10.0,
+                        averageCost = totalCost,
+                        standardCost = standardCost,
                         salesTaxCode = "VAT",
                         purchasableTaxCode = "VAT",
                         inclusiveTaxed = true,
                     )
 
-                    viewModel.insertProduct(newProduct) // Add product to database
-                    onProductAdded()
-                    Toast.makeText(context, "Product added!", Toast.LENGTH_SHORT).show()
+                    viewModel.insertTheProduct(newProduct) { productId ->
+                        // Create and insert PriceList entry
+                        val newPriceList = sellingPriceValue?.let {
+                            PriceList(
+                                productId = productId,
+                                productDescription = productName,
+                                unitCost = unitCostValue,
+                                sellingPrice = it,
+                                markupPercentage = markupPercentage,
+//                                viewModel.calculateMarkupPercentage(
+//                                    unitCostValue,
+//                                    sellingPriceValue
+//                                ),
+                                grossProfitPercentage = grossProfitPercentage
+//                                viewModel.calculateGrossProfitPercentage(
+//                                    unitCostValue, sellingPriceValue
+//                                )
+                            )
+                        }
+                        if (newPriceList != null) {
+                            viewModel.insertPriceList(newPriceList)
+                        }
 
-                    // Reset input fields after adding product
-                    productName = ""
-                    productPrice = ""
-                    imageResId = null
+                        onProductAdded()
+                        Toast.makeText(context, "Product and Price added!", Toast.LENGTH_SHORT)
+                            .show()
 
-                    navController.navigate(Destinations.Rides.route)
+                        // Reset input fields
+                        productName = ""
+                        unitCost = ""
+                        currentStockLevel = ""
+                        sellingPrice = ""
+
+                        navController.navigate(Destinations.Rides.route)
+                    }
+
                 } else {
                     Toast.makeText(context, "Please enter valid details", Toast.LENGTH_SHORT)
                         .show()
                 }
-            },
+            }
         ) {
             Text("Add Product")
         }
     }
 }
-
-

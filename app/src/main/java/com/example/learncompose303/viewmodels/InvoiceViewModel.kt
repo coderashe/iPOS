@@ -423,10 +423,48 @@ class InvoiceViewModel @Inject constructor(
         }
     }
 
+    fun insertTheProduct(product: Product, onProductInserted: (Long) -> Unit) =
+        viewModelScope.launch {
+            val productId = productRepository.insertProduct(product)
+            onProductInserted(productId)
+        }
+
+    fun insertPriceList(priceList: PriceList) = viewModelScope.launch {
+        priceListRepository.insertPriceList(priceList)
+    }
 
     fun insertProduct(product: Product) = viewModelScope.launch {
         productRepository.insertProduct(product)
     }
+
+    // Function to calculate gross profit percentage
+    fun calculateGrossProfitPercentage(unitCost: Double, sellingPrice: Double): Double {
+        return if (sellingPrice != 0.0) {
+            ((sellingPrice - unitCost) / sellingPrice) * 100
+        } else 0.0
+    }
+
+    // Function to calculate markup percentage
+    fun calculateMarkupPercentage(unitCost: Double, sellingPrice: Double): Double {
+        return if (unitCost != 0.0) {
+            ((sellingPrice - unitCost) / unitCost) * 100
+        } else 0.0
+    }
+
+    // Function to calculate standardCost
+    fun calculateStandardCost(unitCost: Double, currentStockLevel: Double): Double {
+        return unitCost * currentStockLevel
+    }
+
+    // Function to calculate averageCost
+    fun calculateAverageCost(currentStockLevel: Double, totalCost: Double): Double {
+        return if (currentStockLevel > 0) {
+            totalCost / currentStockLevel
+        } else {
+            0.0 // Avoid division by zero
+        }
+    }
+
 
     // Add a product to the cart (selected products list)
     fun addProductToCart(product: Product) {
@@ -511,7 +549,10 @@ class InvoiceViewModel @Inject constructor(
 
         // Log the filtered invoices for debugging
         Log.d("InvoiceViewModel", "Today's Invoices: $todayInvoices")
-        Log.d("InvoiceViewModel", "Total Sales: $totalSales, Transaction Count: $transactionCount")
+        Log.d(
+            "InvoiceViewModel",
+            "Total Sales: $totalSales, Transaction Count: $transactionCount"
+        )
 
         return totalSales to transactionCount
     }
@@ -527,7 +568,8 @@ class InvoiceViewModel @Inject constructor(
 
         // Filter invoices for the current week
         val weeklyInvoices = _invoiceList.value.filter { invoice ->
-            val invoiceDate = LocalDate.ofEpochDay(invoice.invoiceDate / (24 * 60 * 60 * 1000))
+            val invoiceDate =
+                LocalDate.ofEpochDay(invoice.invoiceDate / (24 * 60 * 60 * 1000))
 
             // Log each invoice date being checked
             Log.d("InvoiceViewModel", "Invoice Date: $invoiceDate")
@@ -545,7 +587,10 @@ class InvoiceViewModel @Inject constructor(
 
         // Log the filtered invoices for debugging
         Log.d("InvoiceViewModel", "Weekly Invoices: $weeklyInvoices")
-        Log.d("InvoiceViewModel", "Total Sales: $totalSales, Transaction Count: $transactionCount")
+        Log.d(
+            "InvoiceViewModel",
+            "Total Sales: $totalSales, Transaction Count: $transactionCount"
+        )
 
         return totalSales to transactionCount
     }
@@ -561,7 +606,8 @@ class InvoiceViewModel @Inject constructor(
 
         // Filter invoices for the current month
         val monthlyInvoices = _invoiceList.value.filter { invoice ->
-            val invoiceDate = LocalDate.ofEpochDay(invoice.invoiceDate / (24 * 60 * 60 * 1000))
+            val invoiceDate =
+                LocalDate.ofEpochDay(invoice.invoiceDate / (24 * 60 * 60 * 1000))
 
             // Log each invoice date being checked
             Log.d("InvoiceViewModel", "Invoice Date: $invoiceDate")
@@ -579,7 +625,10 @@ class InvoiceViewModel @Inject constructor(
 
         // Log the filtered invoices for debugging
         Log.d("InvoiceViewModel", "Monthly Invoices: $monthlyInvoices")
-        Log.d("InvoiceViewModel", "Total Sales: $totalSales, Transaction Count: $transactionCount")
+        Log.d(
+            "InvoiceViewModel",
+            "Total Sales: $totalSales, Transaction Count: $transactionCount"
+        )
 
         return totalSales to transactionCount
     }
@@ -713,7 +762,10 @@ class InvoiceViewModel @Inject constructor(
 
             // Check if the product is saleable
             if (!product.saleable) {
-                Log.e("StockUpdateError", "Product with productId: $productId is not saleable")
+                Log.e(
+                    "StockUpdateError",
+                    "Product with productId: $productId is not saleable"
+                )
                 return
             }
 
@@ -820,7 +872,8 @@ class InvoiceViewModel @Inject constructor(
                                 totalProductsSold += item.quantity
 
                                 // Fetch the product details
-                                val product = productRepository.getProductById(item.productId)
+                                val product =
+                                    productRepository.getProductById(item.productId)
 
                                 // Fetch the product day report to update it
                                 val productReport = product?.let {
@@ -832,7 +885,8 @@ class InvoiceViewModel @Inject constructor(
                                 if (productReport != null) {
                                     // Calculate profit
                                     val productProfit =
-                                        (item.price - (product.standardCost ?: 0.0)) * item.quantity
+                                        (item.price - (product.standardCost
+                                            ?: 0.0)) * item.quantity
 
                                     // Update product report details
                                     val updatedReport = productReport.copy(
@@ -845,7 +899,9 @@ class InvoiceViewModel @Inject constructor(
                                     )
 
                                     // Update the product day report in the database
-                                    productDayReportRepository.updateProductDayReport(updatedReport)
+                                    productDayReportRepository.updateProductDayReport(
+                                        updatedReport
+                                    )
                                 }
                             }
                         }
@@ -871,7 +927,11 @@ class InvoiceViewModel @Inject constructor(
     }
 
     //    new submit
-    fun submitInvoice(customerId: Long, amountTendered: Double, productQuantities: Map<Long, Int>) =
+    fun submitInvoice(
+        customerId: Long,
+        amountTendered: Double,
+        productQuantities: Map<Long, Int>
+    ) =
         viewModelScope.launch {
             try {
                 var totalAmount = 0.0
@@ -892,7 +952,8 @@ class InvoiceViewModel @Inject constructor(
                 val selectedProductsWithDetails = _selectedProducts.value.map { product ->
                     val quantitySold = productQuantities[product.productId] ?: 1
                     // Fetch the corresponding price from the PriceList entity
-                    val priceList = priceListRepository.getPriceListByProductId(product.productId)
+                    val priceList =
+                        priceListRepository.getPriceListByProductId(product.productId)
                     val basePrice = priceList?.sellingPrice ?: 0.0
                     val taxAmount = basePrice * taxPercentage
                     val discountAmount = basePrice * discountPercentage
@@ -1056,7 +1117,10 @@ class InvoiceViewModel @Inject constructor(
                             invoiceDate = System.currentTimeMillis() // Update with the current timestamp
                         )
 
-                        Log.d("CreditNote", "Updating credit note line: $updatedInvoiceLine")
+                        Log.d(
+                            "CreditNote",
+                            "Updating credit note line: $updatedInvoiceLine"
+                        )
                         invoiceLineRepository.updateInvoiceLine(updatedInvoiceLine)
                     }
 
@@ -1081,7 +1145,10 @@ class InvoiceViewModel @Inject constructor(
                 // Save the updated product back to the repository
                 productRepository.updateProduct(updatedProduct)
 
-                Log.d("StockUpdate", "Successfully added $quantity to product ID: $productId")
+                Log.d(
+                    "StockUpdate",
+                    "Successfully added $quantity to product ID: $productId"
+                )
             } else {
                 Log.e("StockUpdateError", "Product not found with ID: $productId")
             }
@@ -1148,7 +1215,8 @@ class InvoiceViewModel @Inject constructor(
             val studentRollNo = _studentRollNo.value
 
             // Query the database for a student with matching name and roll number
-            val student = studentRepository.getStudentByNameAndRollNo(studentName, studentRollNo)
+            val student =
+                studentRepository.getStudentByNameAndRollNo(studentName, studentRollNo)
 
             // Update login status based on result
             if (student != null) {
