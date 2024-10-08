@@ -307,7 +307,7 @@ fun InDriveTopBottomNavigation() {
                     Log.e("istartlogs", "inside InvoiceDetailScreen with invoiceId: $invoiceId")
 
                     invoiceId?.let {
-                        InvoiceDetailScreen(invoiceId = it, viewModel = viewModel)
+                        InvoiceDetailScreen(invoiceId = it, viewModel = viewModel, navController)
                     }
                 }
 

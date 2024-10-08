@@ -92,35 +92,6 @@ fun RideRequestsScreen(
         )
         SpacerHeight()
 
-        // Toggle Day Button
-//        Column(modifier = Modifier.padding(16.dp)) {
-//            Button(
-//                colors = ButtonDefaults.buttonColors(
-//                    if (dayStarted) Color.Gray else MaterialTheme.colorScheme.primary
-//                ),
-//                enabled = !dayStarted, // Disable this button if the day has already started
-//                onClick = {
-//                    viewModel.startDay()
-//                },
-//                modifier = Modifier.padding(8.dp)
-//            ) {
-//                Text("Start Day")
-//            }
-//
-//            Button(
-//                colors = ButtonDefaults.buttonColors(
-//                    if (dayStarted) Color.Red else MaterialTheme.colorScheme.primary
-//                ),
-//                enabled = dayStarted, // Disable this button if the day hasn't started yet
-//                onClick = {
-//                    viewModel.endDay()
-//                },
-//                modifier = Modifier.padding(8.dp)
-//            ) {
-//                Text("End Day")
-//            }
-//        }
-
         CustomHeadingMedium(
             heading = stringResource(R.string.popular_products)
         )

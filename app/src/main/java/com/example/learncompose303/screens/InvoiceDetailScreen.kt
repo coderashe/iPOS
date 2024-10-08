@@ -38,7 +38,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import com.example.learncompose303.app.CustomHeadingMedium
+import com.example.learncompose303.data.Destinations
 import com.example.learncompose303.data.entities.InvoiceLine
 import com.example.learncompose303.ui.theme.GreenColor
 import com.example.learncompose303.viewmodels.InvoiceViewModel
@@ -48,6 +50,7 @@ import java.util.Date
 fun InvoiceDetailScreen(
     invoiceId: Long,
     viewModel: InvoiceViewModel = viewModel(),
+    navController: NavController
 ) {
     // Trigger fetching invoiceLines based on the invoiceId
     LaunchedEffect(key1 = invoiceId) {
@@ -142,10 +145,11 @@ fun InvoiceDetailScreen(
                     if (isFabEnabled) {
                         // Trigger the reverseInvoice function
                         viewModel.reverseInvoice(invoiceId)
-                        Toast.makeText(context, "Invoice Reversed", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Credit Note Successful!", Toast.LENGTH_SHORT).show()
 
                         // Disable the FAB once clicked
                         isFabEnabled = false
+                        navController.navigate(Destinations.Reports.route)
                     }
                 },
                 modifier = Modifier
@@ -154,7 +158,7 @@ fun InvoiceDetailScreen(
             ) {
                 Icon(
                     imageVector = Icons.Default.Undo,
-                    contentDescription = "Reverse Invoice",
+                    contentDescription = "Credit Note",
                     tint = Color.Red
                 )
             }
