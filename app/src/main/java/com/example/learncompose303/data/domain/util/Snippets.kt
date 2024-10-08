@@ -1,15 +1,20 @@
 package com.example.learncompose303.data.domain.util
 
 import android.util.Log
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
@@ -17,16 +22,96 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.learncompose303.data.entities.Customer
 import com.example.learncompose303.screens.CartScreen
+import com.example.learncompose303.screens.ProductCard
 import com.example.learncompose303.viewmodels.InvoiceViewModel
+
+
+//@Composable
+//fun ProductSelectionScreen(
+//    customer: Customer,
+//    onProceedToCart: () -> Unit,
+//    navController: NavController,
+//    viewModel: InvoiceViewModel = viewModel()
+//) {
+//
+//    LaunchedEffect(key1 = true) {
+//        viewModel.getWalkinCustomer()
+//    }
+//    val products by viewModel.productList.collectAsState()
+//    val selectedProducts by viewModel.selectedProducts.collectAsState() // Get selected products
+//
+//    val defaultCustomer = viewModel.getWalkinCustomer()
+//
+//    Column(
+//        modifier = Modifier
+//            .fillMaxSize()
+//            .padding(16.dp)
+//    ) {
+//        Row {
+//            if (defaultCustomer != null) {
+//                Text(
+//                    text = "Customer: ${if (customer.name.isNullOrEmpty()) defaultCustomer.name else customer.name}",
+//                    fontWeight = FontWeight.Bold,
+//                    fontSize = 18.sp,
+//                    modifier = Modifier.weight(1f)
+//                )
+//            }
+//            Spacer(modifier = Modifier.width(16.dp))
+//            Button(
+//                onClick = onProceedToCart,
+//            ) {
+//                Text("Proceed to Cart")
+//            }
+//        }
+//        Spacer(modifier = Modifier.height(16.dp))
+//        LazyColumn {
+//            items(products.chunked(3)) { rowItems ->
+//                Row(
+//                    modifier = Modifier.fillMaxWidth(),
+//                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+//                ) {
+//                    for (product in rowItems) {
+//                        val isSelected = selectedProducts.contains(product)
+//                        val price = viewModel.getPricelistById(product.productId)
+//                        if (price != null) {
+//                            ProductCard(
+//                                product = product,
+//                                isSelected = isSelected,
+//                                onAddProduct = {
+//                                    viewModel.addProductToCart(product)
+//                                },
+//                                price = price.sellingPrice
+//                            )
+//                        } else {
+//                            Log.d(
+//                                "HazyLogs",
+//                                "No price found for product ID: ${product.productId}"
+//                            )
+//                        }
+//                    }
+//                    if (rowItems.size == 1) {
+//                        Spacer(modifier = Modifier.weight(1f)) // Fill the space for uneven row
+//                    }
+//                }
+//            }
+//        }
+//        Spacer(modifier = Modifier.height(16.dp))
+//    }
+//}
 
 // was working navigation
 
