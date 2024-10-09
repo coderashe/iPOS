@@ -78,6 +78,7 @@ import com.example.learncompose303.R
 import com.example.learncompose303.data.Destinations
 import com.example.learncompose303.screens.CartScreen
 import com.example.learncompose303.screens.CustomerSelectionScreen
+import com.example.learncompose303.screens.ExpenseReportScreen
 import com.example.learncompose303.screens.ExpensesScreen
 import com.example.learncompose303.screens.InvoiceDetailScreen
 import com.example.learncompose303.screens.LoadStockScreen
@@ -218,6 +219,10 @@ fun InDriveTopBottomNavigation() {
 
                 composable(Destinations.Expense.route) {
                     ExpensesScreen(navController = navController, viewModel = expenseViewModel)
+                }
+
+                composable(Destinations.ExpenseReport.route) {
+                    ExpenseReportScreen(viewModel = expenseViewModel, navController)
                 }
 
                 // Customer Selection Screen
@@ -649,8 +654,8 @@ fun IndriveBottomNavigation(navController: NavHostController) {
         )
 
         BottomNavigationItem(
-            selected = currentDestination?.route == Destinations.Expense.route,
-            onClick = { navController.navigate(Destinations.Expense.route) },
+            selected = currentDestination?.route == Destinations.ExpenseReport.route,
+            onClick = { navController.navigate(Destinations.ExpenseReport.route) },
             icon = { Icon(Icons.Default.Favorite, contentDescription = null) },
             label = { Text(text = stringResource(id = R.string.navexpenses), color = Color.Black) }
         )

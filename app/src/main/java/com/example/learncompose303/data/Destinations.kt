@@ -4,6 +4,7 @@ sealed class Destinations(val route: String) {
 
     data object Reports : Destinations("reports")
     data object Expense : Destinations("expense")
+    data object ExpenseReport : Destinations("expenseReport")
 
     data object InvoiceDetail : Destinations("invoice_detail/{invoiceId}") {
         fun createRoute(invoiceId: Long) = "invoice_detail/$invoiceId"
