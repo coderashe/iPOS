@@ -27,22 +27,30 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AddShoppingCart
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.More
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -62,6 +70,9 @@ import com.example.learncompose303.data.entities.Invoice
 import com.example.learncompose303.data.entities.InvoiceLine
 import com.example.learncompose303.ui.theme.GreenColor
 import com.example.learncompose303.viewmodels.InvoiceViewModel
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
 import java.util.Date
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -70,67 +81,76 @@ fun ReportsScreen(
     viewModel: InvoiceViewModel = viewModel(),
     onInvoiceClick: (Long) -> Unit,
 ) {
-    val orders by viewModel.orderList.collectAsState()
-    val totalOrders = viewModel.getTotalOrdersForToday()
+    // State for filter option
+    var filterOption by remember { mutableStateOf("Today") }
+
+    // Collect invoices from the ViewModel
     val invoices by viewModel.invoiceList.collectAsState()
+
+    // Filter invoices based on the selected filter option
+    val filteredInvoices = filterInvoicesByDate(invoices, filterOption)
+
     val context = LocalContext.current
     val (currentSalesTotal, numberOfTransactions) = viewModel.getTodaySalesInfo()
+    val orders by viewModel.orderList.collectAsState()
+
     // Build the order details string
     val orderDetails = orders.joinToString("\n") { order ->
         "Order: ${order.productName}   Qty: ${order.quantity} \n Notes: ${order.notes} \n Date: ${
-            Date(
-                order.orderDate
-            )
+            Date(order.orderDate)
         }"
     }
 
     LaunchedEffect(key1 = true) {
         viewModel.fetchAllInvoices()
     }
-    Box(modifier = Modifier.fillMaxSize()) {
 
-        if (invoices.isEmpty()) {
-            // Display message when there are no orders
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
+        // Dropdown for selecting the filter
+        ThreeDotMenu(
+            selectedOption = filterOption,
+            onOptionSelected = {
+                filterOption = it // Update filterOption when a new option is selected
+            }
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Display filtered invoices
+        if (filteredInvoices.isEmpty()) {
             Text(
-                text = "No Invoices yet!",
+                text = "No Invoices for $filterOption",
                 modifier = Modifier
-                    .align(Alignment.Center)
+                    .align(Alignment.CenterHorizontally)
                     .padding(16.dp),
                 style = MaterialTheme.typography.headlineSmall,
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colorScheme.error
             )
         } else {
-
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(8.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                items(invoices) { invoice ->
-                    InvoiceCard(invoice = invoice, onClick = {
-                        Log.e(
-                            "istartlogs",
-                            "Navigating with invoiceId: ${invoice.invoiceId}"
-                        ) // Log the invoiceId before navigation
-                        onInvoiceClick(invoice.invoiceId)  // Pass the correct invoiceId
-                    })
+                items(filteredInvoices) { invoice ->
+                    InvoiceCard(invoice = invoice, onClick = { onInvoiceClick(invoice.invoiceId) })
                 }
             }
         }
 
-        // Floating Action Button
+        // Floating Action Button for sending the report
         FloatingActionButton(
             onClick = {
-                // Code for sharing the invoice message...
-
-                val message = "*${Date(System.currentTimeMillis())} REPORT:*\n\n\n" +
+                val message = "*${Date(System.currentTimeMillis())} REPORT:*\n\n" +
                         "*INVOICES:*\n" +
                         "Total Sales: $$currentSalesTotal\n" +
                         "Total Invoices: $numberOfTransactions\n\n" +
                         "*ORDERS:*\n" +
-                        "Total Orders: $totalOrders\n" +
                         "$orderDetails\n\n" +
                         "THANK YOU!!!... powered by istartk \u00A92024"
 
@@ -139,32 +159,12 @@ fun ReportsScreen(
                     putExtra(Intent.EXTRA_TEXT, message)
                 }
 
-                try {
-                    val chooserIntent = Intent.createChooser(
-                        sendIntent,
-                        "Send via WhatsApp or WhatsApp Business"
-                    )
-                    chooserIntent.resolveActivity(context.packageManager)?.let {
-                        context.startActivity(chooserIntent)
-                    } ?: run {
-                        Toast.makeText(
-                            context,
-                            "No messaging app found",
-                            Toast.LENGTH_SHORT
-                        )
-                            .show()
-                    }
-                } catch (e: Exception) {
-                    Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT)
-                        .show()
-                }
-
-//
-
+                val chooserIntent = Intent.createChooser(sendIntent, "Send Report via Messaging")
+                context.startActivity(chooserIntent)
             },
             modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(16.dp) // Add padding from edges
+                .align(Alignment.End)
+                .padding(16.dp)
         ) {
             Icon(
                 imageVector = Icons.Default.Send,
@@ -174,6 +174,180 @@ fun ReportsScreen(
         }
     }
 }
+
+@Composable
+fun ThreeDotMenu(
+    selectedOption: String,
+    onOptionSelected: (String) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val options = listOf("Today", "This Week", "This Month", "All")
+
+    Box {
+        // Three-dot menu icon
+        IconButton(onClick = { expanded = true }) {
+            Icon(
+                imageVector = Icons.Default.MoreVert, // Three-dot icon
+                contentDescription = "Menu"
+            )
+        }
+
+        // Popup menu for options
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            options.forEach { option ->
+                DropdownMenuItem(
+                    onClick = {
+                        onOptionSelected(option)
+                        expanded = false
+                    },
+                    text = {
+                        Text(text = option) // Provide the text parameter correctly here
+                    }
+                )
+            }
+        }
+    }
+}
+
+
+// Filtering logic for invoices based on the selected time period
+@RequiresApi(Build.VERSION_CODES.O)
+fun filterInvoicesByDate(invoices: List<Invoice>, filterOption: String): List<Invoice> {
+    val currentDate = LocalDate.now()
+
+    // Function to convert Long (Unix timestamp) to LocalDate
+    fun Long.toLocalDate(): LocalDate {
+        return Instant.ofEpochMilli(this)
+            .atZone(ZoneId.systemDefault())
+            .toLocalDate()
+    }
+
+    return when (filterOption) {
+        "Today" -> invoices.filter { it.invoiceDate.toLocalDate() == currentDate }
+        "This Week" -> invoices.filter {
+            it.invoiceDate.toLocalDate().isAfter(currentDate.minusWeeks(1))
+        }
+
+        "This Month" -> invoices.filter { it.invoiceDate.toLocalDate().month == currentDate.month }
+        "All" -> invoices
+        else -> invoices
+    }
+}
+
+
+//@RequiresApi(Build.VERSION_CODES.O)
+//@Composable
+//fun ReportsScreen(
+//    viewModel: InvoiceViewModel = viewModel(),
+//    onInvoiceClick: (Long) -> Unit,
+//) {
+//    val orders by viewModel.orderList.collectAsState()
+//    val totalOrders = viewModel.getTotalOrdersForToday()
+//    val invoices by viewModel.invoiceList.collectAsState()
+//    val context = LocalContext.current
+//    val (currentSalesTotal, numberOfTransactions) = viewModel.getTodaySalesInfo()
+//    // Build the order details string
+//    val orderDetails = orders.joinToString("\n") { order ->
+//        "Order: ${order.productName}   Qty: ${order.quantity} \n Notes: ${order.notes} \n Date: ${
+//            Date(
+//                order.orderDate
+//            )
+//        }"
+//    }
+//
+//    LaunchedEffect(key1 = true) {
+//        viewModel.fetchAllInvoices()
+//    }
+//    Box(modifier = Modifier.fillMaxSize()) {
+//
+//        if (invoices.isEmpty()) {
+//            // Display message when there are no orders
+//            Text(
+//                text = "No Invoices yet!",
+//                modifier = Modifier
+//                    .align(Alignment.Center)
+//                    .padding(16.dp),
+//                style = MaterialTheme.typography.headlineSmall,
+//                textAlign = TextAlign.Center,
+//                color = MaterialTheme.colorScheme.error
+//            )
+//        } else {
+//
+//            LazyColumn(
+//                modifier = Modifier
+//                    .fillMaxSize()
+//                    .padding(8.dp),
+//                verticalArrangement = Arrangement.spacedBy(12.dp)
+//            ) {
+//                items(invoices) { invoice ->
+//                    InvoiceCard(invoice = invoice, onClick = {
+//                        Log.e(
+//                            "istartlogs",
+//                            "Navigating with invoiceId: ${invoice.invoiceId}"
+//                        ) // Log the invoiceId before navigation
+//                        onInvoiceClick(invoice.invoiceId)  // Pass the correct invoiceId
+//                    })
+//                }
+//            }
+//        }
+//
+//        // Floating Action Button
+//        FloatingActionButton(
+//            onClick = {
+//                // Code for sharing the invoice message...
+//
+//                val message = "*${Date(System.currentTimeMillis())} REPORT:*\n\n\n" +
+//                        "*INVOICES:*\n" +
+//                        "Total Sales: $$currentSalesTotal\n" +
+//                        "Total Invoices: $numberOfTransactions\n\n" +
+//                        "*ORDERS:*\n" +
+//                        "Total Orders: $totalOrders\n" +
+//                        "$orderDetails\n\n" +
+//                        "THANK YOU!!!... powered by istartk \u00A92024"
+//
+//                val sendIntent = Intent(Intent.ACTION_SEND).apply {
+//                    type = "text/plain"
+//                    putExtra(Intent.EXTRA_TEXT, message)
+//                }
+//
+//                try {
+//                    val chooserIntent = Intent.createChooser(
+//                        sendIntent,
+//                        "Send via WhatsApp or WhatsApp Business"
+//                    )
+//                    chooserIntent.resolveActivity(context.packageManager)?.let {
+//                        context.startActivity(chooserIntent)
+//                    } ?: run {
+//                        Toast.makeText(
+//                            context,
+//                            "No messaging app found",
+//                            Toast.LENGTH_SHORT
+//                        )
+//                            .show()
+//                    }
+//                } catch (e: Exception) {
+//                    Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT)
+//                        .show()
+//                }
+//
+////
+//
+//            },
+//            modifier = Modifier
+//                .align(Alignment.BottomEnd)
+//                .padding(16.dp) // Add padding from edges
+//        ) {
+//            Icon(
+//                imageVector = Icons.Default.Send,
+//                contentDescription = "Send Report",
+//                tint = GreenColor
+//            )
+//        }
+//    }
+//}
 
 
 @Composable
