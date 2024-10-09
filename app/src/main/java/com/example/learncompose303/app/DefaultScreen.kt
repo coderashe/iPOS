@@ -78,6 +78,7 @@ import com.example.learncompose303.R
 import com.example.learncompose303.data.Destinations
 import com.example.learncompose303.screens.CartScreen
 import com.example.learncompose303.screens.CustomerSelectionScreen
+import com.example.learncompose303.screens.ExpensesScreen
 import com.example.learncompose303.screens.InvoiceDetailScreen
 import com.example.learncompose303.screens.LoadStockScreen
 import com.example.learncompose303.screens.LoginScreen
@@ -94,6 +95,7 @@ import com.example.learncompose303.screens.SignUpPage
 import com.example.learncompose303.screens.WalletScreen
 import com.example.learncompose303.screens.auth.AuthState
 import com.example.learncompose303.screens.auth.AuthViewModel
+import com.example.learncompose303.screens.expenses.ExpenseViewModel
 import com.example.learncompose303.ui.theme.MyBlueish
 import com.example.learncompose303.ui.theme.MyGray
 import com.example.learncompose303.viewmodels.InvoiceViewModel
@@ -110,7 +112,8 @@ fun DefaultScreen() {
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun InDriveTopBottomNavigation() {
-    val authViewModel: AuthViewModel = viewModel() // Get AuthViewModel
+    val authViewModel: AuthViewModel = viewModel()
+    val expenseViewModel: ExpenseViewModel = viewModel()
     val viewModel: InvoiceViewModel = viewModel()
     val navController = rememberNavController()
     val scaffoldState = rememberScaffoldState()
@@ -211,6 +214,10 @@ fun InDriveTopBottomNavigation() {
                 }
                 composable(Destinations.Products.route) {
                     ProductsScreen(viewModel)
+                }
+
+                composable(Destinations.Expense.route) {
+                    ExpensesScreen(navController = navController, viewModel = expenseViewModel)
                 }
 
                 // Customer Selection Screen
@@ -642,10 +649,10 @@ fun IndriveBottomNavigation(navController: NavHostController) {
         )
 
         BottomNavigationItem(
-            selected = currentDestination?.route == Destinations.OrderReports.route,
-            onClick = { navController.navigate(Destinations.OrderReports.route) },
+            selected = currentDestination?.route == Destinations.Expense.route,
+            onClick = { navController.navigate(Destinations.Expense.route) },
             icon = { Icon(Icons.Default.Favorite, contentDescription = null) },
-            label = { Text(text = stringResource(id = R.string.navorders), color = Color.Black) }
+            label = { Text(text = stringResource(id = R.string.navexpenses), color = Color.Black) }
         )
 
         BottomNavigationItem(

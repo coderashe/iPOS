@@ -7,6 +7,7 @@ import com.example.learncompose303.data.AppDatabase
 import com.example.learncompose303.data.data_source.CartItemDao
 import com.example.learncompose303.data.data_source.CustomerDao
 import com.example.learncompose303.data.data_source.DayReportsDao
+import com.example.learncompose303.data.data_source.ExpenseDao
 import com.example.learncompose303.data.data_source.InvoiceDao
 import com.example.learncompose303.data.data_source.InvoiceItemDao
 import com.example.learncompose303.data.data_source.InvoiceLineDao
@@ -28,6 +29,8 @@ import com.example.learncompose303.data.repositories.CustomerRepository
 import com.example.learncompose303.data.repositories.CustomerRepositoryImpl
 import com.example.learncompose303.data.repositories.DayReportsRepository
 import com.example.learncompose303.data.repositories.DayReportsRepositoryImpl
+import com.example.learncompose303.data.repositories.ExpenseRepository
+import com.example.learncompose303.data.repositories.ExpenseRepositoryImpl
 import com.example.learncompose303.data.repositories.InvoiceItemRepository
 import com.example.learncompose303.data.repositories.InvoiceItemRepositoryImpl
 import com.example.learncompose303.data.repositories.InvoiceLineRepository
@@ -117,6 +120,17 @@ object AppModule {
     fun provideProductDayReportRepository(appDatabase: AppDatabase): ProductDayReportRepository {
         return ProductDayReportRepositoryImpl(appDatabase.productDayReportDao())
     }
+
+    //
+    fun provideExpenseDao(appDatabase: AppDatabase): ExpenseDao =
+        appDatabase.expenseDao()
+
+    @Provides
+    @Singleton
+    fun provideExpenseRepository(appDatabase: AppDatabase): ExpenseRepository {
+        return ExpenseRepositoryImpl(appDatabase.expenseDao())
+    }
+//
 
     fun provideDayReportsDao(appDatabase: AppDatabase): DayReportsDao =
         appDatabase.dayReportsDao()

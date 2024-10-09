@@ -62,6 +62,7 @@
     <string name="orders">ORDERS</string>
     <string name="orders1">Orders</string>
     <string name="navorders">orders</string>
+    <string name="navexpenses">expenses</string>
     <string name="uploadPricelists">Upload Pricelist</string>
     <string name="invoice_receipt">INVOICE RECEIPT</string>
     <string name="amount_tendered">Amount Tendered</string>

@@ -3,6 +3,7 @@ package com.example.learncompose303.data
 sealed class Destinations(val route: String) {
 
     data object Reports : Destinations("reports")
+    data object Expense : Destinations("expense")
 
     data object InvoiceDetail : Destinations("invoice_detail/{invoiceId}") {
         fun createRoute(invoiceId: Long) = "invoice_detail/$invoiceId"
