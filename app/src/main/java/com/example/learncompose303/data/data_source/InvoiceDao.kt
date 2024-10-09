@@ -7,6 +7,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import com.example.learncompose303.data.entities.Invoice
+import com.example.learncompose303.data.entities.MonthlySales
 
 import kotlinx.coroutines.flow.Flow
 
@@ -29,4 +30,12 @@ interface InvoiceDao {
 
     @Delete
     suspend fun deleteInvoice(invoice: Invoice)
+
+    @Query("SELECT SUM(totalAmount) FROM invoice")
+    fun getTotalSales(): Flow<Double>
+
+
+    @Query("SELECT strftime('%m', invoiceDate / 1000, 'unixepoch') AS month, SUM(totalAmount) AS totalSales FROM invoice GROUP BY month")
+    fun getSalesPerMonth(): Flow<List<MonthlySales>>
+
 }

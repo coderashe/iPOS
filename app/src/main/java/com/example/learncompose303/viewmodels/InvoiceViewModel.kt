@@ -1057,8 +1057,6 @@ class InvoiceViewModel @Inject constructor(
         }
 
     // CreditNote
-
-    // CreditNote
     fun reverseInvoice(invoiceId: Long) = viewModelScope.launch {
         try {
             // Fetch the invoice to be reversed
@@ -1091,7 +1089,7 @@ class InvoiceViewModel @Inject constructor(
                         // Update the InvoiceItem (mark as reversed)
                         val updatedInvoiceItem = invoiceItem.copy(
                             quantity = -invoiceItem.quantity, // Negative quantity to reverse
-                            total = -invoiceItem.total // Negative total to reflect reversal
+                            total = invoiceItem.total - invoiceItem.total // Negative total to reflect reversal
                         )
                         invoiceItemRepository.updateInvoiceItem(updatedInvoiceItem)
                     }
@@ -1099,7 +1097,7 @@ class InvoiceViewModel @Inject constructor(
                     // Mark the original invoice as "Reversed" or "Credit Note"
                     val updatedInvoice = invoice.copy(
                         status = "Credit Note",
-                        totalAmount = -invoice.totalAmount // Make the totalAmount negative
+                        totalAmount = invoice.totalAmount - invoice.totalAmount // Make the totalAmount negative
                     )
                     invoiceRepository.updateInvoice(updatedInvoice)
 
@@ -1111,7 +1109,7 @@ class InvoiceViewModel @Inject constructor(
                         val updatedInvoiceLine = line.copy(
                             invoiceStatus = "Credit Note",
                             productQtySold = -line.productQtySold, // Negative quantity for reversal
-                            totalAmount = -invoice.totalAmount, // Negative totalAmount for reversal
+                            totalAmount = invoice.totalAmount - invoice.totalAmount, // Negative totalAmount for reversal
                             amountTendered = 0.0, // No money exchanged for a credit note
                             changeBalance = 0.0,  // No change for a credit note
                             invoiceDate = System.currentTimeMillis() // Update with the current timestamp

@@ -23,6 +23,8 @@ import com.example.learncompose303.data.domain.use_case.AddNoteuseCase
 import com.example.learncompose303.data.domain.use_case.DeleteNoteUseCase
 import com.example.learncompose303.data.domain.use_case.GetNotesUseCase
 import com.example.learncompose303.data.domain.use_case.NoteUseCase
+import com.example.learncompose303.data.repositories.BusinessRepository
+import com.example.learncompose303.data.repositories.BusinessRepositoryImpl
 import com.example.learncompose303.data.repositories.CartItemRepository
 import com.example.learncompose303.data.repositories.CartItemRepositoryImpl
 import com.example.learncompose303.data.repositories.CustomerRepository
@@ -129,6 +131,17 @@ object AppModule {
     @Singleton
     fun provideExpenseRepository(appDatabase: AppDatabase): ExpenseRepository {
         return ExpenseRepositoryImpl(appDatabase.expenseDao())
+    }
+
+    //
+    @Provides
+    @Singleton
+    fun provideBusinessRepository(appDatabase: AppDatabase): BusinessRepository {
+        return BusinessRepositoryImpl(
+            appDatabase.expenseDao(),
+            appDatabase.invoiceDao(),
+            appDatabase.invoiceLineDao()
+        )
     }
 //
 

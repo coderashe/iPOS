@@ -105,44 +105,49 @@ fun ReportsScreen(
         viewModel.fetchAllInvoices()
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        // Dropdown for selecting the filter
-        ThreeDotMenu(
-            selectedOption = filterOption,
-            onOptionSelected = {
-                filterOption = it // Update filterOption when a new option is selected
-            }
-        )
-        Spacer(modifier = Modifier.height(8.dp))
+    Box(modifier = Modifier.fillMaxSize()) {
 
-        // Display filtered invoices
-        if (filteredInvoices.isEmpty()) {
-            Text(
-                text = "No Invoices for $filterOption",
-                modifier = Modifier
-                    .align(Alignment.CenterHorizontally)
-                    .padding(16.dp),
-                style = MaterialTheme.typography.headlineSmall,
-                textAlign = TextAlign.Center,
-                color = MaterialTheme.colorScheme.error
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+        ) {
+            // Dropdown for selecting the filter
+            ThreeDotMenu(
+                selectedOption = filterOption,
+                onOptionSelected = {
+                    filterOption = it // Update filterOption when a new option is selected
+                }
             )
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(8.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                items(filteredInvoices) { invoice ->
-                    InvoiceCard(invoice = invoice, onClick = { onInvoiceClick(invoice.invoiceId) })
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Display filtered invoices
+            if (filteredInvoices.isEmpty()) {
+                Text(
+                    text = "No Invoices for $filterOption",
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .padding(16.dp),
+                    style = MaterialTheme.typography.headlineSmall,
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.error
+                )
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(filteredInvoices) { invoice ->
+                        InvoiceCard(
+                            invoice = invoice,
+                            onClick = { onInvoiceClick(invoice.invoiceId) })
+                    }
                 }
             }
-        }
 
+        }
         // Floating Action Button for sending the report
         FloatingActionButton(
             onClick = {
@@ -159,11 +164,12 @@ fun ReportsScreen(
                     putExtra(Intent.EXTRA_TEXT, message)
                 }
 
-                val chooserIntent = Intent.createChooser(sendIntent, "Send Report via Messaging")
+                val chooserIntent =
+                    Intent.createChooser(sendIntent, "Send Report via Messaging")
                 context.startActivity(chooserIntent)
             },
             modifier = Modifier
-                .align(Alignment.End)
+                .align(Alignment.BottomEnd)
                 .padding(16.dp)
         ) {
             Icon(

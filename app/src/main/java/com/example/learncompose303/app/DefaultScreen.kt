@@ -76,6 +76,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.learncompose303.R
 import com.example.learncompose303.data.Destinations
+import com.example.learncompose303.screens.BusinessPerformanceScreen
 import com.example.learncompose303.screens.CartScreen
 import com.example.learncompose303.screens.CustomerSelectionScreen
 import com.example.learncompose303.screens.ExpenseReportScreen
@@ -97,6 +98,7 @@ import com.example.learncompose303.screens.WalletScreen
 import com.example.learncompose303.screens.auth.AuthState
 import com.example.learncompose303.screens.auth.AuthViewModel
 import com.example.learncompose303.screens.expenses.ExpenseViewModel
+import com.example.learncompose303.screens.performance.BusinessPerformanceViewModel
 import com.example.learncompose303.ui.theme.MyBlueish
 import com.example.learncompose303.ui.theme.MyGray
 import com.example.learncompose303.viewmodels.InvoiceViewModel
@@ -115,6 +117,7 @@ fun DefaultScreen() {
 fun InDriveTopBottomNavigation() {
     val authViewModel: AuthViewModel = viewModel()
     val expenseViewModel: ExpenseViewModel = viewModel()
+    val businessPerformanceViewModel: BusinessPerformanceViewModel = viewModel()
     val viewModel: InvoiceViewModel = viewModel()
     val navController = rememberNavController()
     val scaffoldState = rememberScaffoldState()
@@ -224,6 +227,11 @@ fun InDriveTopBottomNavigation() {
                 composable(Destinations.ExpenseReport.route) {
                     ExpenseReportScreen(viewModel = expenseViewModel, navController)
                 }
+
+                composable(Destinations.BusinessPerformance.route) {
+                    BusinessPerformanceScreen(viewModel = businessPerformanceViewModel)
+                }
+
 
                 // Customer Selection Screen
                 composable(Destinations.CustomerSelection.route) {

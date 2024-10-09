@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.compose.runtime.LaunchedEffect
 import com.example.learncompose303.data.data_source.InvoiceDao
 import com.example.learncompose303.data.entities.Invoice
+import com.example.learncompose303.data.entities.MonthlySales
 import com.example.learncompose303.data.entities.mapInvoiceToFirestore
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.Dispatchers
@@ -18,6 +19,7 @@ interface InvoiceRepository {
     suspend fun updateInvoice(invoice: Invoice)
     suspend fun deleteInvoice(invoice: Invoice)
     suspend fun getInvoicesByDate(startDate: Long): Flow<List<Invoice>>
+    suspend fun getSalesPerMonth(): Flow<List<MonthlySales>>
 
 }
 
@@ -28,6 +30,12 @@ class InvoiceRepositoryImpl @Inject constructor(
     override suspend fun insertInvoice(invoice: Invoice): Long {
         return withContext(Dispatchers.IO) {
             invoiceDao.insertInvoice(invoice)
+        }
+    }
+    
+    override suspend fun getSalesPerMonth(): Flow<List<MonthlySales>> {
+        return withContext(Dispatchers.IO) {
+            invoiceDao.getSalesPerMonth()
         }
     }
 

@@ -153,20 +153,6 @@ fun QuickAccessButtons(navController: NavController) {
         horizontalArrangement = Arrangement.spacedBy(8.dp) // Spacing between items
     ) {
         QuickAccessCard(
-            label = stringResource(R.string.orders),
-            subTitle = "--",
-            icon = Icons.Default.More,
-            onClick = { navController.navigate(Destinations.OrderReports.route)             /* Navigate to OrderReports Screen */ }
-        )
-        QuickAccessCard(
-            label = stringResource(R.string.load_stocks),
-            subTitle = "--",
-            icon = Icons.Default.AddShoppingCart,
-            onClick = {
-                navController.navigate(Destinations.LoadStocks.route) // Navigate to Stock Loading Screen
-            }
-        )
-        QuickAccessCard(
             label = stringResource(R.string.invoicing),
             subTitle = "--",
             icon = Icons.Default.Receipt,
@@ -175,11 +161,25 @@ fun QuickAccessButtons(navController: NavController) {
             }
         )
         QuickAccessCard(
+            label = stringResource(R.string.orders),
+            subTitle = "--",
+            icon = Icons.Default.More,
+            onClick = { navController.navigate(Destinations.OrderReports.route)             /* Navigate to OrderReports Screen */ }
+        )
+        QuickAccessCard(
             label = stringResource(R.string.reports),
             subTitle = "--",
             icon = Icons.Default.BarChart,
             onClick = {
                 navController.navigate(Destinations.Reports.route)  /* Navigate to Reports Screen */
+            }
+        )
+        QuickAccessCard(
+            label = stringResource(R.string.load_stocks),
+            subTitle = "--",
+            icon = Icons.Default.AddShoppingCart,
+            onClick = {
+                navController.navigate(Destinations.LoadStocks.route) // Navigate to Stock Loading Screen
             }
         )
 
