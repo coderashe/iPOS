@@ -1,5 +1,6 @@
 package com.example.learncompose303.data.entities
 
+import androidx.compose.ui.res.painterResource
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.example.learncompose303.R
@@ -16,5 +17,5 @@ data class Product(
     val salesTaxCode: String?, // Tax code for sales
     val purchasableTaxCode: String?, // Tax code for purchases
     val inclusiveTaxed: Boolean, // Whether the price is inclusive of tax
-    val imageResId: Int? = R.drawable.meat3
+    val imageUri: String? = null
 )

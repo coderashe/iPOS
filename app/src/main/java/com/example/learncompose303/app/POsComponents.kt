@@ -198,7 +198,7 @@ fun AutoSlidingCarousel(
                     headingText = "First Card",
                     taglineText = "This is the first tagline.",
                     buttonText = "Explore",
-                    imageResource = painterResource(id = R.drawable.meat3),
+                    imageResource = painterResource(id = R.drawable.cart),
                     onButtonClick = { /* TODO: Handle click */ }
                 )
 
@@ -214,7 +214,7 @@ fun AutoSlidingCarousel(
                     headingText = "Third Card",
                     taglineText = "This is the third tagline.",
                     buttonText = "Learn More",
-                    imageResource = painterResource(id = R.drawable.meat7),
+                    imageResource = painterResource(id = R.drawable.cart),
                     onButtonClick = { /* TODO: Handle click */ }
                 )
             }

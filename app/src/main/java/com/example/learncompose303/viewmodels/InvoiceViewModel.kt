@@ -1,6 +1,7 @@
 package com.example.learncompose303.viewmodels
 
 import android.content.Context
+import android.net.Uri
 import android.os.Build
 import android.util.Log
 import android.widget.Toast
@@ -33,17 +34,17 @@ import com.example.learncompose303.data.repositories.ProductRepository
 import com.example.learncompose303.data.repositories.StudentRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.emitAll
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.forEach
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.launch
+import java.io.File
+import java.io.FileOutputStream
+import java.io.IOException
 import java.io.InputStream
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -136,6 +137,8 @@ class InvoiceViewModel @Inject constructor(
     }
 
     // Logic for uploading products from CSV
+
+    // Logic for uploading products from CSV
     fun uploadProductsFromCsv(inputStream: InputStream, context: Context) {
         viewModelScope.launch {
             val parser = CsvParser()
@@ -156,6 +159,9 @@ class InvoiceViewModel @Inject constructor(
             for (productCsv in productsFromCsv) {
                 val productPair = Pair(productCsv.productDescription, productCsv.currentStockLevel)
                 if (!existingProductSet.contains(productPair)) {
+                    // Set default image URI if null
+                    val imageUri = productCsv.imageUri ?: getDefaultImageUri(context)
+
                     productList.add(
                         Product(
                             productDescription = productCsv.productDescription,
@@ -167,7 +173,7 @@ class InvoiceViewModel @Inject constructor(
                             salesTaxCode = productCsv.salesTaxCode,
                             purchasableTaxCode = productCsv.purchasableTaxCode,
                             inclusiveTaxed = productCsv.inclusiveTaxed,
-                            imageResId = productCsv.imageResId ?: R.drawable.meat3 // Default image
+                            imageUri = imageUri // Now using a String URI
                         )
                     )
                 } else {
@@ -191,6 +197,69 @@ class InvoiceViewModel @Inject constructor(
             }
         }
     }
+
+    // Function to get default image URI from drawable resources
+    fun getDefaultImageUri(context: Context): String {
+        val defaultImageResId = R.drawable.cart
+        return Uri.parse("android.resource://${context.packageName}/$defaultImageResId").toString()
+    }
+
+
+//    fun uploadProductsFromCsv(inputStream: InputStream, context: Context) {
+//        viewModelScope.launch {
+//            val parser = CsvParser()
+//            val productsFromCsv = parser.parseProductCsv(inputStream)
+//
+//            // Retrieve existing products from the database using the once method
+//            val existingProducts = productRepository.getAllProductsOnce()
+//
+//            // Create a set to track duplicates
+//            val existingProductSet = existingProducts.map {
+//                Pair(it.productDescription, it.currentStockLevel)
+//            }.toSet()
+//
+//            // Convert ProductCsvModel to Product entity, avoiding duplicates
+//            val productList = mutableListOf<Product>()
+//            var duplicateCount = 0
+//
+//            for (productCsv in productsFromCsv) {
+//                val productPair = Pair(productCsv.productDescription, productCsv.currentStockLevel)
+//                if (!existingProductSet.contains(productPair)) {
+//                    productList.add(
+//                        Product(
+//                            productDescription = productCsv.productDescription,
+//                            currentStockLevel = productCsv.currentStockLevel,
+//                            saleable = productCsv.saleable,
+//                            purchasable = productCsv.purchasable,
+//                            averageCost = productCsv.averageCost,
+//                            standardCost = productCsv.standardCost,
+//                            salesTaxCode = productCsv.salesTaxCode,
+//                            purchasableTaxCode = productCsv.purchasableTaxCode,
+//                            inclusiveTaxed = productCsv.inclusiveTaxed,
+//                            imageUri = painterResource(id = productCsv.imageResId ?: R.drawable.cart)
+//                        )
+//                    )
+//                } else {
+//                    duplicateCount++
+//                }
+//            }
+//
+//            // Insert non-duplicate products into the database
+//            productRepository.insertProducts(productList)
+//
+//            // Show toast notification
+//            if (duplicateCount > 0) {
+//                Toast.makeText(
+//                    context,
+//                    "$duplicateCount duplicate products were found and skipped.",
+//                    Toast.LENGTH_SHORT
+//                ).show()
+//            } else {
+//                Toast.makeText(context, "Products uploaded successfully.", Toast.LENGTH_SHORT)
+//                    .show()
+//            }
+//        }
+//    }
 
     fun uploadPriceListsFromCsv(inputStream: InputStream, context: Context) {
         viewModelScope.launch {
@@ -327,13 +396,13 @@ class InvoiceViewModel @Inject constructor(
     }
 
     // Fetch products from the database
-    private fun fetchProducts() = viewModelScope.launch {
+    fun fetchProducts() = viewModelScope.launch {
         productRepository.getAllProducts().collectLatest { productList ->
             _productList.value = productList
         }
     }
 
-    val defaultImage = R.drawable.meat3
+    val defaultImage = R.drawable.cart
 
     // Insert initial products into the database
     private fun insertInitialProducts() = viewModelScope.launch {
@@ -432,6 +501,25 @@ class InvoiceViewModel @Inject constructor(
     fun insertPriceList(priceList: PriceList) = viewModelScope.launch {
         priceListRepository.insertPriceList(priceList)
     }
+
+    fun insertCurrentPriceList(
+        price: Double,
+        productDescription: String,
+        productId: Long,
+        context: Context
+    ) =
+        viewModelScope.launch {
+            val rowsUpdated =
+                priceListRepository.insertCurrentPriceList(price, productDescription, productId)
+            if (rowsUpdated > 0) {
+                // Handle success (if necessary)
+                Toast.makeText(context, "Price updated successfully", Toast.LENGTH_SHORT).show()
+            } else {
+                // Handle failure (if necessary)
+                Toast.makeText(context, "Failed to update price", Toast.LENGTH_SHORT)
+                    .show()
+            }
+        }
 
     fun insertProduct(product: Product) = viewModelScope.launch {
         productRepository.insertProduct(product)
@@ -925,6 +1013,55 @@ class InvoiceViewModel @Inject constructor(
 
         _dayStarted.value = false // Update the state to indicate the day has ended
     }
+
+    // In your ViewModel or a helper function, add this logic to copy the file
+    fun saveImageToInternalStorage(context: Context, uri: Uri): String? {
+        try {
+            val inputStream = context.contentResolver.openInputStream(uri) ?: return null
+            val fileName = "product_image_${System.currentTimeMillis()}.jpg"
+            val file = File(context.filesDir, fileName)
+            val outputStream = FileOutputStream(file)
+
+            inputStream.use { input ->
+                outputStream.use { output ->
+                    input.copyTo(output)
+                }
+            }
+
+            return file.absolutePath // Return the file path
+        } catch (e: IOException) {
+            e.printStackTrace()
+            return null
+        }
+    }
+
+    // Update your onUpdateProductImage method in the ViewModel
+    fun onUpdateProductImage(product: Product, uri: Uri, context: Context) {
+        val imagePath = saveImageToInternalStorage(context, uri)
+        if (imagePath != null) {
+            // Update the product with the new image file path
+            val updatedProduct = product.copy(imageUri = imagePath)
+            // Update your database with the updated product
+            updateProduct(updatedProduct)
+        }
+    }
+
+    fun updateProduct(product: Product) {
+        viewModelScope.launch {
+            productRepository.updateProduct(product)
+            Log.d("ProductUpdate", "Product updated: $product")
+        }
+    }
+
+    fun updatePriceList(priceList: PriceList) = viewModelScope.launch {
+        try {
+            priceListRepository.updatePriceList(priceList)
+            Log.d("PriceListUpdate", "Price list updated successfully")
+        } catch (e: Exception) {
+            Log.e("PriceListUpdate", "Failed to update price list: ${e.message}")
+        }
+    }
+
 
     //    new submit
     fun submitInvoice(

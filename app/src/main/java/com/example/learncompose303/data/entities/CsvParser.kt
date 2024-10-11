@@ -27,7 +27,7 @@ class CsvParser {
                     val salesTaxCode = tokens[6].ifBlank { null }
                     val purchasableTaxCode = tokens[7].ifBlank { null }
                     val inclusiveTaxed = tokens[8].toBoolean()
-                    val imageResId = tokens[9].toIntOrNull()
+                    val imageUri = tokens[9].toString()
 
                     productList.add(
                         ProductCsvModel(
@@ -40,7 +40,7 @@ class CsvParser {
                             salesTaxCode,
                             purchasableTaxCode,
                             inclusiveTaxed,
-                            imageResId
+                            imageUri = imageUri
                         )
                     )
                 }

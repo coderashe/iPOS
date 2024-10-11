@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
 interface BusinessRepository {
-    fun getTotalExpenses(): Flow<Double>
+    fun getTotalExpenses(): Flow<Double?>
     fun getTotalSales(): Flow<Double>
     fun getTopPerformingProducts(): Flow<List<ProductPerformance>>
     fun getPeakHours(): Flow<List<HourPerformance>>
@@ -23,7 +23,7 @@ class BusinessRepositoryImpl @Inject constructor(
     private val invoiceLineDao: InvoiceLineDao
 ) : BusinessRepository {
 
-    override fun getTotalExpenses(): Flow<Double> {
+    override fun getTotalExpenses(): Flow<Double?> {
         return expenseDao.getTotalExpenses()
     }
 

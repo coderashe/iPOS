@@ -152,14 +152,7 @@ fun LoadStockScreen(
                                 unitCost = unitCostValue,
                                 sellingPrice = it,
                                 markupPercentage = markupPercentage,
-//                                viewModel.calculateMarkupPercentage(
-//                                    unitCostValue,
-//                                    sellingPriceValue
-//                                ),
                                 grossProfitPercentage = grossProfitPercentage
-//                                viewModel.calculateGrossProfitPercentage(
-//                                    unitCostValue, sellingPriceValue
-//                                )
                             )
                         }
                         if (newPriceList != null) {

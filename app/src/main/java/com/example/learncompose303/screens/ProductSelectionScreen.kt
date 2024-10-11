@@ -1,8 +1,10 @@
 package com.example.learncompose303.screens
 
-import android.R
+import android.net.Uri
 import android.util.Log
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -21,21 +23,16 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -44,18 +41,15 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.LineHeightStyle
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
+import coil.compose.rememberImagePainter
+import com.example.learncompose303.R
 import com.example.learncompose303.data.entities.Customer
-import com.example.learncompose303.data.entities.InvoiceItem
 import com.example.learncompose303.data.entities.Product
 import com.example.learncompose303.ui.theme.Blue1
-import com.example.learncompose303.ui.theme.MyGray
 import com.example.learncompose303.viewmodels.InvoiceViewModel
 
 @Composable
@@ -131,6 +125,14 @@ fun ProductCard(
     price: Double
 ) {
     val context = LocalContext.current
+    val imageUri = remember { mutableStateOf<Uri?>(null) }
+    val imagePicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent(),
+        onResult = { uri ->
+            imageUri.value = uri
+            launchHandlingActivity(context, uri)
+        }
+    )
 
     Card(
         shape = RoundedCornerShape(8.dp),
@@ -158,18 +160,16 @@ fun ProductCard(
                 .fillMaxSize()
                 .padding(2.dp),
         ) {
-            // Product Image
-            product.imageResId?.let { painterResource(id = it) }?.let {
-                Image(
-                    painter = it,
-                    contentDescription = product.productDescription,
-                    modifier = Modifier
-                        .size(100.dp)
-                        .clip(CircleShape)
-                        .align(Alignment.CenterHorizontally),
-                    contentScale = ContentScale.Crop
-                )
-            }
+            // Product Image using Coil to load image from URI or String
+            Image(
+                painter = rememberImagePainter(data = product.imageUri ?: R.drawable.cart),
+                contentDescription = product.productDescription,
+                modifier = Modifier
+                    .size(100.dp)
+                    .clip(CircleShape)
+                    .align(Alignment.CenterHorizontally),
+                contentScale = ContentScale.Crop
+            )
             Spacer(modifier = Modifier.height(8.dp))
             Text("\$${price}", style = MaterialTheme.typography.headlineSmall)
             Spacer(modifier = Modifier.height(8.dp))
@@ -221,84 +221,3 @@ fun ProductCard(
         }
     }
 }
-
-
-//
-//@Composable
-//fun ProductCard(
-//    product: Product,
-//    isSelected: Boolean,
-//    onAddProduct: (Product) -> Unit,
-//    price: Double
-//) {
-//
-//    Card(
-//        shape = RoundedCornerShape(8.dp),
-//        modifier = Modifier
-//            .width(175.dp)
-//            .padding(8.dp)
-//            .clickable {
-//                onAddProduct(product)
-//            },
-//        elevation = CardDefaults.cardElevation(4.dp)
-//    ) {
-//        Column(
-//            modifier = Modifier
-//                .fillMaxSize()
-//                .padding(2.dp),
-//        ) {
-//            // Product Image
-//            product.imageResId?.let { painterResource(id = it) }?.let {
-//                Image(
-//                    painter = it,
-//                    contentDescription = product.productDescription,
-//                    modifier = Modifier
-//                        .size(100.dp)
-//                        .clip(CircleShape)
-//                        .align(Alignment.CenterHorizontally),
-//                    contentScale = ContentScale.Crop
-//                )
-//            }
-//            Spacer(modifier = Modifier.height(8.dp))
-//            Text("\$${price}", style = MaterialTheme.typography.headlineSmall)
-//            Spacer(modifier = Modifier.height(8.dp))
-//            Row(
-//                modifier = Modifier
-//            ) {
-//                Text(
-//                    modifier = Modifier.weight(1f),
-//                    text = product.productDescription,
-//                    style = MaterialTheme.typography.bodySmall
-//                )
-//                Text(
-//                    modifier = Modifier
-//                        .background(
-//                            color = Color.White,
-//                            shape = RoundedCornerShape(8.dp)
-//                        )
-//                        .padding(2.dp),
-//                    text = product.currentStockLevel.toString(),
-//                    style = MaterialTheme.typography.titleSmall,
-//                    color = Color.Red,
-//                    fontWeight = FontWeight.Bold
-//                )
-//            }
-//            Button(
-//                modifier = Modifier.fillMaxWidth(),
-//                onClick = {
-//                    onAddProduct(product)
-//                },
-//                colors = ButtonDefaults.buttonColors(
-//                    if (isSelected) Color.Red else Blue1
-//                ),
-//                shape = RoundedCornerShape(8.dp)
-//            ) {
-//                Text(
-//                    text = if (isSelected) "Added" else "Add to Cart",
-//                    color = if (isSelected) Color.White else Color.Black
-//                )
-//            }
-//        }
-//    }
-//}
-

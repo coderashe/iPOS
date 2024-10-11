@@ -11,7 +11,7 @@ import javax.inject.Inject
 interface ExpenseRepository {
     suspend fun insertExpense(expense: Expense)
     fun getAllExpenses(): Flow<List<Expense>>
-    fun getTotalExpenses(): Flow<Double>
+    fun getTotalExpenses(): Flow<Double?>
     suspend fun deleteExpense(expense: Expense)
     suspend fun deleteAllExpenses()
 }
@@ -30,7 +30,7 @@ class ExpenseRepositoryImpl @Inject constructor(
         return expenseDao.getAllExpenses()
     }
 
-    override fun getTotalExpenses(): Flow<Double> {
+    override fun getTotalExpenses(): Flow<Double?> {
         return expenseDao.getTotalExpenses()
     }
 

@@ -40,7 +40,7 @@ import com.example.learncompose303.data.entities.ProductDayReport
         Order::class, PriceList::class,
         ProductDayReport::class, DayReports::class,
         Expense::class],
-    version = 22,
+    version = 24,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

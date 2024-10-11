@@ -91,14 +91,15 @@ fun RideRequestsScreen(
             viewModel = viewModel // Pass the viewModel explicitly
         )
         SpacerHeight()
-
+        QuickAccessButtons(navController)
+        SpacerHeight()
         CustomHeadingMedium(
             heading = stringResource(R.string.popular_products)
         )
         AutoSlidingCarousel()
-        CustomHeadingMedium(
-            heading = stringResource(R.string.more)
-        )
-        QuickAccessButtons(navController)
+        SpacerHeight()
+//        CustomHeadingMedium(
+//            heading = stringResource(R.string.more)
+//        )
     }
 }

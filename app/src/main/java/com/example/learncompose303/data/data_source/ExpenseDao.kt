@@ -18,7 +18,7 @@ interface ExpenseDao {
     fun getAllExpenses(): Flow<List<Expense>>
 
     @Query("SELECT SUM(amount) FROM expenses")
-    fun getTotalExpenses(): Flow<Double>
+    fun getTotalExpenses(): Flow<Double?>
 
     @Delete
     suspend fun deleteExpense(expense: Expense)

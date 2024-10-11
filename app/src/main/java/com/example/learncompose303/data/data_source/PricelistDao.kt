@@ -23,6 +23,13 @@ interface PriceListDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertPriceList(priceList: PriceList): Long
 
+    @Query("UPDATE price_list SET sellingPrice = :price, productDescription = :productDescription WHERE productId = :productId")
+    suspend fun insertCurrentPriceList(
+        price: Double,
+        productDescription: String,
+        productId: Long
+    ): Int
+
     // Insert multiple PriceList items
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertPriceLists(priceLists: List<PriceList>)

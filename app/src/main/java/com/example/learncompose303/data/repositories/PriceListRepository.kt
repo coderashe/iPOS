@@ -17,6 +17,11 @@ interface PriceListRepository {
     suspend fun insertPriceLists(priceLists: List<PriceList>)
     suspend fun updatePriceList(priceList: PriceList)
     suspend fun deletePriceList(priceList: PriceList)
+    suspend fun insertCurrentPriceList(
+        price: Double,
+        productDescription: String,
+        productId: Long
+    ): Int
 }
 
 class PriceListRepositoryImpl @Inject constructor(
@@ -32,6 +37,16 @@ class PriceListRepositoryImpl @Inject constructor(
     override suspend fun getPriceListByProductId(productId: Long): PriceList? {
         return withContext(Dispatchers.IO) {
             priceListDao.getPriceListByProductId(productId)
+        }
+    }
+
+    override suspend fun insertCurrentPriceList(
+        price: Double,
+        productDescription: String,
+        productId: Long
+    ): Int {
+        return withContext(Dispatchers.IO) {
+            priceListDao.insertCurrentPriceList(price, productDescription, productId)
         }
     }
 

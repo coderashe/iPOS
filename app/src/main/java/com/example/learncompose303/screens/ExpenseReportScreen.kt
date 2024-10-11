@@ -50,6 +50,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun ExpenseReportScreen(
@@ -58,7 +59,7 @@ fun ExpenseReportScreen(
 ) {
     // Collect expenses and total expenses from the ViewModel
     val expenses by viewModel.allExpenses.observeAsState(emptyList())
-    val totalExpenses by viewModel.totalExpenses.observeAsState(0.0)
+    val totalExpenses by viewModel.totalExpenses.observeAsState(0.0) // Ensure non-null value
 
     Box(modifier = Modifier.fillMaxSize()) {
 
@@ -69,7 +70,7 @@ fun ExpenseReportScreen(
         ) {
             // Display total expenses balance at the top
             Text(
-                text = "Total Expenses: $${"%.2f".format(totalExpenses)}",
+                text = "Total Expenses: $${"%.2f".format(totalExpenses)}", // Ensure default if totalExpenses is null
                 style = MaterialTheme.typography.headlineSmall,
                 modifier = Modifier.padding(bottom = 16.dp)
             )
@@ -97,9 +98,8 @@ fun ExpenseReportScreen(
                     }
                 }
             }
-
-//
         }
+
         FloatingActionButton(
             onClick = {
                 navController.navigate(Destinations.Expense.route)
@@ -115,6 +115,73 @@ fun ExpenseReportScreen(
         }
     }
 }
+
+
+//@RequiresApi(Build.VERSION_CODES.O)
+//@Composable
+//fun ExpenseReportScreen(
+//    viewModel: ExpenseViewModel = viewModel(),
+//    navController: NavController,
+//) {
+//    // Collect expenses and total expenses from the ViewModel
+//    val expenses by viewModel.allExpenses.observeAsState(emptyList())
+//    val totalExpenses by viewModel.totalExpenses.observeAsState(0.0)
+//
+//    Box(modifier = Modifier.fillMaxSize()) {
+//
+//        Column(
+//            modifier = Modifier
+//                .fillMaxSize()
+//                .padding(16.dp)
+//        ) {
+//            // Display total expenses balance at the top
+//            Text(
+//                text = "Total Expenses: $${"%.2f".format(totalExpenses ?: 0.0)}", // Ensure default if totalExpenses is null
+//                style = MaterialTheme.typography.headlineSmall,
+//                modifier = Modifier.padding(bottom = 16.dp)
+//            )
+//
+//            // Check if there are any expenses to display
+//            if (expenses.isEmpty()) {
+//                Text(
+//                    text = "No Expenses Found",
+//                    modifier = Modifier
+//                        .align(Alignment.CenterHorizontally)
+//                        .padding(16.dp),
+//                    style = MaterialTheme.typography.titleMedium,
+//                    textAlign = TextAlign.Center,
+//                    color = MaterialTheme.colorScheme.error
+//                )
+//            } else {
+//                LazyColumn(
+//                    modifier = Modifier
+//                        .fillMaxSize()
+//                        .padding(8.dp),
+//                    verticalArrangement = Arrangement.spacedBy(12.dp)
+//                ) {
+//                    items(expenses) { expense ->
+//                        ExpenseCard(expense = expense)
+//                    }
+//                }
+//            }
+//
+////
+//        }
+//        FloatingActionButton(
+//            onClick = {
+//                navController.navigate(Destinations.Expense.route)
+//            },
+//            modifier = Modifier
+//                .align(Alignment.BottomEnd)
+//                .padding(16.dp)
+//        ) {
+//            Icon(
+//                imageVector = Icons.Default.Add,
+//                contentDescription = "Add Expense"
+//            )
+//        }
+//    }
+//}
 
 
 @Composable

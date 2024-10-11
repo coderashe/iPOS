@@ -21,7 +21,11 @@ class BusinessPerformanceViewModel @Inject constructor(
     private val invoiceRepository: InvoiceRepository
 ) : ViewModel() {
 
-    val totalExpenses: LiveData<Double> = businessRepository.getTotalExpenses().asLiveData()
+    //    val totalExpenses: LiveData<Double> = businessRepository.getTotalExpenses().asLiveData()
+    val totalExpenses: LiveData<Double> = businessRepository.getTotalExpenses()
+        .map { it ?: 0.0 }  // Replace null with 0.0 or another default value
+        .asLiveData()
+
     val totalSales: LiveData<Double> = businessRepository.getTotalSales().asLiveData()
     val topPerformingProducts: LiveData<List<ProductPerformance>> =
         businessRepository.getTopPerformingProducts().asLiveData()

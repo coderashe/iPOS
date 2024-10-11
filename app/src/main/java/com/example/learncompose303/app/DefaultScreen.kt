@@ -28,6 +28,7 @@ import androidx.compose.material.ScaffoldState
 import androidx.compose.material.Switch
 import androidx.compose.material.TopAppBar
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AutoGraph
 import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
@@ -662,12 +663,19 @@ fun IndriveBottomNavigation(navController: NavHostController) {
         )
 
         BottomNavigationItem(
+            selected = currentDestination?.route == Destinations.BusinessPerformance.route,
+            onClick = { navController.navigate(Destinations.BusinessPerformance.route) },
+            icon = { Icon(Icons.Default.AutoGraph, contentDescription = null) },
+            label = { Text(text = stringResource(id = R.string.navbusiness), color = Color.Black) }
+        )
+
+        BottomNavigationItem(
             selected = currentDestination?.route == Destinations.ExpenseReport.route,
             onClick = { navController.navigate(Destinations.ExpenseReport.route) },
             icon = { Icon(Icons.Default.Favorite, contentDescription = null) },
             label = { Text(text = stringResource(id = R.string.navexpenses), color = Color.Black) }
         )
-
+        
         BottomNavigationItem(
             selected = currentDestination?.route == Destinations.Products.route,
             onClick = { navController.navigate(Destinations.Products.route) },
