@@ -30,8 +30,30 @@ data class HourPerformance(
     val hour: Long, // Timestamp in milliseconds
     val totalSales: Double
 )
-
 data class MonthlySales(
-    val month: String,
+    val monthNumber: String, // Store month number as a String
     val totalSales: Double
-)
+) {
+    val monthName: String
+        get() = when (monthNumber) {
+            "01" -> "January"
+            "02" -> "February"
+            "03" -> "March"
+            "04" -> "April"
+            "05" -> "May"
+            "06" -> "June"
+            "07" -> "July"
+            "08" -> "August"
+            "09" -> "September"
+            "10" -> "October"
+            "11" -> "November"
+            "12" -> "December"
+            else -> "Unknown"
+        }
+}
+
+
+//data class MonthlySales(
+//    val month: String,
+//    val totalSales: Double
+//)

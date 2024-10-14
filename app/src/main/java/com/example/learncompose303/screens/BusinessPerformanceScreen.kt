@@ -105,10 +105,17 @@ fun BusinessPerformanceScreen(viewModel: BusinessPerformanceViewModel = viewMode
 
         Spacer(modifier = Modifier.height(16.dp))
 
+//        // Display Sales Per Month
+//        Text(text = "Sales Per Month", style = MaterialTheme.typography.headlineSmall)
+//        salesPerMonth.forEach { (month, sales) ->
+//            Text(text = "$month: $${"%.2f".format(sales)}")
+//        }
+
         // Display Sales Per Month
         Text(text = "Sales Per Month", style = MaterialTheme.typography.headlineSmall)
         salesPerMonth.forEach { (month, sales) ->
             Text(text = "$month: $${"%.2f".format(sales)}")
         }
+
     }
 }

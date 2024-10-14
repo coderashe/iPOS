@@ -42,8 +42,9 @@ class BusinessRepositoryImpl @Inject constructor(
     override fun getSalesPerMonth(): Flow<Map<String, Double>> {
         return invoiceDao.getSalesPerMonth()
             .map { list ->
-                list.associate { it.month to it.totalSales }
+                list.associate { it.monthName to it.totalSales } // Use monthName instead of monthNumber
             }
     }
+
 
 }
