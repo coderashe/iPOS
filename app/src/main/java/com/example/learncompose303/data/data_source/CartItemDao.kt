@@ -1,8 +1,8 @@
 package com.example.learncompose303.data.data_source
 
 import androidx.room.*
-import com.example.learncompose303.data.entities.CartItem
 import kotlinx.coroutines.flow.Flow
+import com.example.learncompose303.data.entities.CartItem
 
 @Dao
 interface CartItemDao {

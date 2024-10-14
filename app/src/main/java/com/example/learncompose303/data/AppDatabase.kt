@@ -17,6 +17,7 @@ import com.example.learncompose303.data.data_source.PriceListDao
 import com.example.learncompose303.data.data_source.ProductDao
 import com.example.learncompose303.data.data_source.ProductDayReportDao
 import com.example.learncompose303.data.data_source.StudentDao
+import com.example.learncompose303.data.data_source.UserDao
 import com.example.learncompose303.data.domain.model.Note
 import com.example.learncompose303.data.entities.CartItem
 import com.example.learncompose303.data.entities.Customer
@@ -30,6 +31,7 @@ import com.example.learncompose303.data.entities.Payment
 import com.example.learncompose303.data.entities.PriceList
 import com.example.learncompose303.data.entities.Product
 import com.example.learncompose303.data.entities.ProductDayReport
+import com.example.learncompose303.data.entities.User
 
 @Database(
     entities = [Item::class, Note::class,
@@ -39,8 +41,9 @@ import com.example.learncompose303.data.entities.ProductDayReport
         CartItem::class,
         Order::class, PriceList::class,
         ProductDayReport::class, DayReports::class,
+        User::class,
         Expense::class],
-    version = 24,
+    version = 26,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -59,6 +62,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun productDayReportDao(): ProductDayReportDao
     abstract fun dayReportsDao(): DayReportsDao
     abstract fun expenseDao(): ExpenseDao
+    abstract fun userDao(): UserDao
 
     companion object {
         const val DATABASE_NAME = "ipos_db"

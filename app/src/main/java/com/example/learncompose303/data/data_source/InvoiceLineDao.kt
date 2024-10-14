@@ -30,38 +30,31 @@ interface InvoiceLineDao {
     @Update
     suspend fun updateInvoiceLine(invoiceLine: InvoiceLine)
 
-//    @Query("SELECT productID, productName, SUM(productQtySold) AS totalSold, SUM(totalAmount) AS totalRevenue FROM invoice_lines GROUP BY productID ORDER BY totalRevenue DESC LIMIT 5")
-//    fun getTopPerformingProducts(): Flow<List<ProductPerformance>>
-
-//    @Query(
-//        """
-//    SELECT productID AS productId,
-//           productName AS productDescription,
-//           SUM(productQtySold) AS totalSold,
-//           SUM(totalAmount) AS totalRevenue
-//    FROM invoice_lines
-//    GROUP BY productID
-//    ORDER BY totalRevenue DESC
-//    LIMIT 5
-//"""
-//    )
-//    fun getTopPerformingProducts(): Flow<List<ProductPerformance>>
-
     @Query(
         """
     SELECT productId AS productID, 
            productName AS productName, 
            SUM(productQtySold) AS totalSold, 
-           SUM(totalAmount) AS totalRevenue 
+           productPrice AS price 
     FROM invoice_lines 
     GROUP BY productId 
-    ORDER BY totalRevenue DESC 
+    ORDER BY totalSold DESC  -- Order by totalSold instead of totalRevenue
     LIMIT 5
-"""
+    """
     )
     fun getTopPerformingProducts(): Flow<List<ProductPerformance>>
 
-    @Query("SELECT strftime('%H', invoiceDate / 1000, 'unixepoch') AS hour, SUM(totalAmount) AS totalSales FROM invoice_lines GROUP BY hour ORDER BY totalSales DESC")
+
+    @Query(
+        """
+    SELECT (invoiceDate / 1000) AS hour, -- Return the raw timestamp in seconds
+           SUM(totalAmount) AS totalSales 
+    FROM invoice_lines 
+    GROUP BY hour 
+    ORDER BY totalSales DESC
+    """
+    )
     fun getPeakSalesHours(): Flow<List<HourPerformance>>
+
 
 }

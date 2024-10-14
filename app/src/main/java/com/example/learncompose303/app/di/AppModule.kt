@@ -18,11 +18,14 @@ import com.example.learncompose303.data.data_source.PriceListDao
 import com.example.learncompose303.data.data_source.ProductDao
 import com.example.learncompose303.data.data_source.ProductDayReportDao
 import com.example.learncompose303.data.data_source.StudentDao
+import com.example.learncompose303.data.data_source.UserDao
 import com.example.learncompose303.data.domain.repository.NoteRepository
 import com.example.learncompose303.data.domain.use_case.AddNoteuseCase
 import com.example.learncompose303.data.domain.use_case.DeleteNoteUseCase
 import com.example.learncompose303.data.domain.use_case.GetNotesUseCase
 import com.example.learncompose303.data.domain.use_case.NoteUseCase
+import com.example.learncompose303.data.repositories.AuthRepository
+import com.example.learncompose303.data.repositories.AuthRepositoryImpl
 import com.example.learncompose303.data.repositories.BusinessRepository
 import com.example.learncompose303.data.repositories.BusinessRepositoryImpl
 import com.example.learncompose303.data.repositories.CartItemRepository
@@ -121,6 +124,15 @@ object AppModule {
     @Singleton
     fun provideProductDayReportRepository(appDatabase: AppDatabase): ProductDayReportRepository {
         return ProductDayReportRepositoryImpl(appDatabase.productDayReportDao())
+    }
+
+    fun provideUserDao(appDatabase: AppDatabase): UserDao =
+        appDatabase.userDao()
+
+    @Provides
+    @Singleton
+    fun provideAuthRepository(appDatabase: AppDatabase): AuthRepository {
+        return AuthRepositoryImpl(appDatabase.userDao())
     }
 
     //

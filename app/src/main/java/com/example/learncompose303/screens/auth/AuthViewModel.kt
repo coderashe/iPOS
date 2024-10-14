@@ -7,8 +7,12 @@ import com.google.firebase.auth.FirebaseAuth
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import com.example.learncompose303.data.repositories.AuthRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 
-class AuthViewModel : ViewModel() {
+class AuthViewModel(
+) : ViewModel() {
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
     private val _authState = MutableLiveData<AuthState>()
     val authState: LiveData<AuthState> = _authState // Exposing it to UI

@@ -87,7 +87,7 @@ fun CustomerSelectionScreen(
                             }
                         },
                     ) {
-                        Text(text = "Cash Sale")
+                        Text(text = "WalkInCustomer")
                     }
                 }
                 Spacer(modifier = Modifier.height(16.dp))

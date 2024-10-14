@@ -47,15 +47,23 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.ui.platform.LocalContext
 import com.example.learncompose303.screens.performance.BusinessPerformanceViewModel
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 
 @Composable
 fun BusinessPerformanceScreen(viewModel: BusinessPerformanceViewModel = viewModel()) {
-    val totalExpenses by viewModel.totalExpenses.observeAsState(0.0)
+    val totalExpenses by viewModel.totalExpenses.observeAsState(0.0) // Ensure non-null value
     val totalSales by viewModel.totalSales.observeAsState(0.0)
     val topPerformingProducts by viewModel.topPerformingProducts.observeAsState(emptyList())
     val peakHours by viewModel.peakHours.observeAsState(emptyList())
     val salesPerMonth by viewModel.salesPerMonth.observeAsState(emptyMap())
+
+    val dateFormat = SimpleDateFormat(
+        "HH:mm",
+        Locale.getDefault()
+    )     // SimpleDateFormat for hour display (HH:mm)
 
     Column(
         modifier = Modifier
@@ -63,7 +71,9 @@ fun BusinessPerformanceScreen(viewModel: BusinessPerformanceViewModel = viewMode
             .padding(16.dp)
     ) {
         // Display Total Expenses and Sales
-        Text(text = "Total Expenses: $${"%.2f".format(totalExpenses)}")
+        Text(
+            text = "Total Expenses: $${"%.2f".format(totalExpenses)}", // Ensure default if totalExpenses is null
+        )
         Text(text = "Total Sales: $${"%.2f".format(totalSales)}")
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -82,10 +92,15 @@ fun BusinessPerformanceScreen(viewModel: BusinessPerformanceViewModel = viewMode
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Display Peak Hours for Sales
+        // Display Peak Sales Hours
         Text(text = "Peak Sales Hours", style = MaterialTheme.typography.headlineSmall)
-        peakHours.forEach { hour ->
-            Text(text = "Hour ${hour.hour}: Total Sales: $${"%.2f".format(hour.totalSales)}")
+        peakHours.forEach { hourPerformance ->
+            // Format the 'hour' field as 'HH:mm' using the SimpleDateFormat
+            val formattedHour = dateFormat.format(Date(hourPerformance.hour * 1000))
+            Text(
+                text = "Hour $formattedHour: Total Sales: $${"%.2f".format(hourPerformance.totalSales)}"
+            )
+
         }
 
         Spacer(modifier = Modifier.height(16.dp))
