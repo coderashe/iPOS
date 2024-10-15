@@ -26,7 +26,6 @@ class MainActivity : ComponentActivity() {
             LearnCompose303Theme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background // Use the background color from the theme
                 ) {
                     ShopLandingScreen()
                 }
@@ -34,4 +33,3 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
-

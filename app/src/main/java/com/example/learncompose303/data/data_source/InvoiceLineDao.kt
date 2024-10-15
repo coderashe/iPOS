@@ -35,7 +35,8 @@ interface InvoiceLineDao {
     SELECT productId AS productID, 
            productName AS productName, 
            SUM(productQtySold) AS totalSold, 
-           productPrice AS price 
+           currentStock AS currentStock, 
+           productPrice AS price
     FROM invoice_lines 
     GROUP BY productId 
     ORDER BY totalSold DESC  -- Order by totalSold instead of totalRevenue

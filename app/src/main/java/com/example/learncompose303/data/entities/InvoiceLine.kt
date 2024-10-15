@@ -20,8 +20,8 @@ data class InvoiceLine(
     val amountTendered: Double?,
     val changeBalance: Double?,
     val invoiceDate: Long,
-    val taxAmount: Double? = null, // Tax amount for this invoice line
-    val discountAmount: Double? = null, // Discount applied to the line item
-    val createdAt: Long = System.currentTimeMillis(), // Created timestamp for auditing
-    val updatedAt: Long? = null // Last update timestamp for auditing
+    val taxAmount: Double? = null,
+    val currentStock: Double,
+    val createdAt: Long = System.currentTimeMillis(),
+    val updatedAt: Long? = null
 )

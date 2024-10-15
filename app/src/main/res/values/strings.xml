@@ -46,8 +46,8 @@
     <string name="username">Google</string>
     <string name="profile_description">I like travelling\nLearning Android\nSleeping</string>
     <string name="profile_button">Edit Profile</string>
-    <string name="no_complete_orders">No complete orders</string>
-    <string name="goto_request_history">Go to request history</string>
+    <string name="no_complete_orders">powered by</string>
+    <string name="goto_request_history">Go to history</string>
     <string name="achievements">Achievements</string>
     <string name="popular_products">POPULAR PRODUCTS</string>
     <string name="products">Products</string>

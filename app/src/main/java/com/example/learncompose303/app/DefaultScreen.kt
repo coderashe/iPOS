@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.BottomNavigation
 import androidx.compose.material.BottomNavigationItem
@@ -43,10 +44,12 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.rememberScaffoldState
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -65,6 +68,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
@@ -113,6 +118,49 @@ fun DefaultScreen() {
     }
 }
 
+
+@Composable
+fun PINEntryDialog(
+    onPinEntered: (String) -> Unit,
+    onCancel: () -> Unit
+) {
+    var pin by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = { /* Do nothing when clicking outside */ },
+        title = { Text(text = "Enter PIN") },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = pin,
+                    onValueChange = { newPin -> pin = newPin },
+                    label = { Text(text = "PIN") },
+                    keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
+                    visualTransformation = PasswordVisualTransformation()
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    onPinEntered(pin) // Call the callback with the entered PIN
+                }
+            ) {
+                Text("Submit")
+            }
+        },
+        dismissButton = {
+            Button(
+                onClick = {
+                    onCancel() // Handle cancel action
+                }
+            ) {
+                Text("Cancel")
+            }
+        }
+    )
+}
+
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun InDriveTopBottomNavigation() {
@@ -124,6 +172,8 @@ fun InDriveTopBottomNavigation() {
     val scaffoldState = rememberScaffoldState()
     val coroutineScope = rememberCoroutineScope()
     var isChecked by remember { mutableStateOf(false) }
+    var showPinDialog by remember { mutableStateOf(true) } // Initially true to enforce PIN dialog
+    var isPinCorrect by remember { mutableStateOf(false) } // Track PIN correctness
 
     // Observe auth state and navigate to sign-in page when unauthenticated
     val authState by authViewModel.authState.observeAsState()
@@ -161,11 +211,9 @@ fun InDriveTopBottomNavigation() {
                         Switch(
                             checked = isChecked,
                             onCheckedChange = {
-                                // Do not change auth state through switch for now, if needed implement functionality.
                                 authViewModel.onUserInteraction() // Reset timer on interaction
                             }
                         )
-
                     }
                 },
                 backgroundColor = Color.White,
@@ -188,17 +236,38 @@ fun InDriveTopBottomNavigation() {
             IndriveBottomNavigation(navController)
         },
     ) { paddingValues ->
-        // Reset logout timer on interaction with main content
         Box(modifier = Modifier
             .fillMaxSize()
-            .clickable { authViewModel.onUserInteraction() } // Reset timer on interaction
-        ) {
+            .clickable { authViewModel.onUserInteraction() }) {
             // Set the starting destination of the app
             NavHost(
                 navController = navController,
                 startDestination = Destinations.SignIn.route,
                 modifier = Modifier.padding(paddingValues)
             ) {
+                composable(Destinations.BusinessPerformance.route) {
+                    // Show the PIN dialog if flag is true and PIN hasn't been correctly entered
+                    if (showPinDialog && !isPinCorrect) {
+                        PINEntryDialog(
+                            onPinEntered = { enteredPin ->
+                                if (enteredPin == "6167") {
+                                    isPinCorrect = true // Set flag to true on correct PIN
+                                    showPinDialog = false // Hide the dialog
+                                } else {
+                                    // Optionally show an error message or reset the input
+                                }
+                            },
+                            onCancel = {
+                                showPinDialog = false // Close the dialog
+                                navController.navigate(Destinations.Rides.route) // Navigate back to RidesScreen
+                            }
+                        )
+                    } else {
+                        // Only show BusinessPerformanceScreen if the PIN is correct
+                        BusinessPerformanceScreen(viewModel = businessPerformanceViewModel)
+                    }
+                }
+
                 composable(Destinations.SignUp.route) {
                     SignUpPage(navController, authViewModel)
                 }
@@ -227,10 +296,6 @@ fun InDriveTopBottomNavigation() {
 
                 composable(Destinations.ExpenseReport.route) {
                     ExpenseReportScreen(viewModel = expenseViewModel, navController)
-                }
-
-                composable(Destinations.BusinessPerformance.route) {
-                    BusinessPerformanceScreen(viewModel = businessPerformanceViewModel)
                 }
 
 
@@ -675,7 +740,7 @@ fun IndriveBottomNavigation(navController: NavHostController) {
             icon = { Icon(Icons.Default.Favorite, contentDescription = null) },
             label = { Text(text = stringResource(id = R.string.navexpenses), color = Color.Black) }
         )
-        
+
         BottomNavigationItem(
             selected = currentDestination?.route == Destinations.Products.route,
             onClick = { navController.navigate(Destinations.Products.route) },

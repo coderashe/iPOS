@@ -13,8 +13,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -45,20 +47,32 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import com.example.learncompose303.screens.performance.BusinessPerformanceViewModel
+import com.example.learncompose303.ui.theme.Green1
+import com.example.learncompose303.ui.theme.GreenColor
+import com.example.learncompose303.ui.theme.MyBlueish
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-
 @Composable
 fun BusinessPerformanceScreen(viewModel: BusinessPerformanceViewModel = viewModel()) {
-    val totalExpenses by viewModel.totalExpenses.observeAsState(0.0) // Ensure non-null value
-    val totalSales by viewModel.totalSales.observeAsState(0.0)
+    // Observe the states, and assign them to variables
+    val totalExpensesState = viewModel.totalExpenses.observeAsState(null)
+    val totalSalesState = viewModel.totalSales.observeAsState(null)
+
+    // Safely handle potential null values by using Elvis operator here
+    val totalExpenses = totalExpensesState.value ?: 0.0
+    val totalSales = totalSalesState.value ?: 0.0
+
     val topPerformingProducts by viewModel.topPerformingProducts.observeAsState(emptyList())
     val peakHours by viewModel.peakHours.observeAsState(emptyList())
     val salesPerMonth by viewModel.salesPerMonth.observeAsState(emptyMap())
+
+    // Calculate profitLoss safely
+    val profitLoss = (totalSales - totalExpenses)
 
     val dateFormat = SimpleDateFormat(
         "HH:mm",
@@ -69,20 +83,62 @@ fun BusinessPerformanceScreen(viewModel: BusinessPerformanceViewModel = viewMode
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
+            .verticalScroll(rememberScrollState())
     ) {
-        // Display Total Expenses and Sales
         Text(
-            text = "Total Expenses: $${"%.2f".format(totalExpenses)}", // Ensure default if totalExpenses is null
+            color = Color.Black,
+            text = "Business Position", style = MaterialTheme.typography.headlineSmall
         )
-        Text(text = "Total Sales: $${"%.2f".format(totalSales)}")
+
+        Row {
+            Text(
+                modifier = Modifier.weight(1f),
+                color = Color.Black,
+                text = "Total Expenses ", // Ensure default if totalExpenses is null
+            )
+            Text(
+                color = Color.Black,
+                text = "$${"%.2f".format(totalExpenses)}", // Ensure default if totalExpenses is null
+            )
+        }
+
+        Row {
+
+            Text(
+                modifier = Modifier.weight(1f),
+                color = Color.Black,
+                text = "Total Sales "
+            )
+            Text(
+                color = Color.Black,
+                text = "$${"%.2f".format(totalSales)}"
+            )
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        Row {
+            Text(
+                modifier = Modifier.weight(1f),
+                color = Color.Black,
+                text = "Profit / Loss "
+            )
+            Text(
+                color = if (profitLoss >= 0) Color.Black else Color.Red,
+                text = "$${"%.2f".format(profitLoss)}"
+            )
+        }
 
         Spacer(modifier = Modifier.height(16.dp))
 
         // Display Top Performing Products
-        Text(text = "Top Performing Products", style = MaterialTheme.typography.headlineSmall)
+        Text(
+            color = Color.Black,
+            text = "Top Performing Products", style = MaterialTheme.typography.headlineSmall
+        )
         topPerformingProducts.forEach { product ->
             Text(
-                text = "${product.productName}: ${product.totalSold} units, Revenue: $${
+                modifier = Modifier.fillMaxWidth(),
+                color = Color.Black,
+                text = "ProductName: ${product.productName}   Sold: ${product.totalSold} units    Left:   ${product.currentStock}   Total Sales: $${
                     "%.2f".format(
                         product.totalRevenue
                     )
@@ -93,11 +149,15 @@ fun BusinessPerformanceScreen(viewModel: BusinessPerformanceViewModel = viewMode
         Spacer(modifier = Modifier.height(16.dp))
 
         // Display Peak Sales Hours
-        Text(text = "Peak Sales Hours", style = MaterialTheme.typography.headlineSmall)
+        Text(
+            color = Color.Black,
+            text = "Peak Sales Hours", style = MaterialTheme.typography.headlineSmall
+        )
         peakHours.forEach { hourPerformance ->
             // Format the 'hour' field as 'HH:mm' using the SimpleDateFormat
             val formattedHour = dateFormat.format(Date(hourPerformance.hour * 1000))
             Text(
+                color = Color.Black,
                 text = "Hour $formattedHour: Total Sales: $${"%.2f".format(hourPerformance.totalSales)}"
             )
 
@@ -105,16 +165,16 @@ fun BusinessPerformanceScreen(viewModel: BusinessPerformanceViewModel = viewMode
 
         Spacer(modifier = Modifier.height(16.dp))
 
-//        // Display Sales Per Month
-//        Text(text = "Sales Per Month", style = MaterialTheme.typography.headlineSmall)
-//        salesPerMonth.forEach { (month, sales) ->
-//            Text(text = "$month: $${"%.2f".format(sales)}")
-//        }
-
         // Display Sales Per Month
-        Text(text = "Sales Per Month", style = MaterialTheme.typography.headlineSmall)
+        Text(
+            color = Color.Black,
+            text = "Sales Per Month", style = MaterialTheme.typography.headlineSmall
+        )
         salesPerMonth.forEach { (month, sales) ->
-            Text(text = "$month: $${"%.2f".format(sales)}")
+            Text(
+                color = Color.Black,
+                text = "$month: $${"%.2f".format(sales)}"
+            )
         }
 
     }

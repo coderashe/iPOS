@@ -8,17 +8,11 @@ data class BusinessPerformance(
     val salesPerMonth: Map<String, Double> // Sales aggregated by month (e.g., Jan, Feb, etc.)
 )
 
-//data class ProductPerformance(
-//    val productID: Long,  // Rename to match query
-//    val productName: String,  // Rename to match query
-//    val totalSold: Int,
-//    val totalRevenue: Double
-//)
-
 data class ProductPerformance(
     val productID: Long,
     val productName: String,
     val totalSold: Int,
+    val currentStock: Double,
     val price: Double,  // Add price field
 ) {
     val totalRevenue: Double
@@ -30,6 +24,7 @@ data class HourPerformance(
     val hour: Long, // Timestamp in milliseconds
     val totalSales: Double
 )
+
 data class MonthlySales(
     val monthNumber: String, // Store month number as a String
     val totalSales: Double

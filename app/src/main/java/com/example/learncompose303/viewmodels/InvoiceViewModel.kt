@@ -1171,6 +1171,7 @@ class InvoiceViewModel @Inject constructor(
                             totalAmount = totalAmount,
                             amountTendered = amountTendered,
                             changeBalance = change,
+                            currentStock = product.currentStockLevel.minus(quantitySold),
                             invoiceDate = System.currentTimeMillis()
                         )
 
@@ -1249,6 +1250,7 @@ class InvoiceViewModel @Inject constructor(
                             totalAmount = invoice.totalAmount - invoice.totalAmount, // Negative totalAmount for reversal
                             amountTendered = 0.0, // No money exchanged for a credit note
                             changeBalance = 0.0,  // No change for a credit note
+                            currentStock = line.currentStock.minus(line.productQtySold) ?: 0.0,
                             invoiceDate = System.currentTimeMillis() // Update with the current timestamp
                         )
 

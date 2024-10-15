@@ -52,12 +52,65 @@ fun LoadStockScreen(
     var sellingPrice by remember { mutableStateOf("") }
     val context = LocalContext.current
 
+
+    val productRequestFileLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let {
+            val inputStream = context.contentResolver.openInputStream(it)
+            inputStream?.let {
+                viewModel.uploadProductsFromCsv(it, context)
+            }
+        }
+    }
+
+    val pricelistRequestFileLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let {
+            val inputStream = context.contentResolver.openInputStream(it)
+            inputStream?.let {
+                viewModel.uploadPriceListsFromCsv(it, context)
+            }
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp)
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            //        for productCsvUpload
+            QuickAccessCard(
+                label = stringResource(R.string.uploadProducts),
+                subTitle = "--",
+                icon = Icons.Default.More,
+                onClick = {
+                    productRequestFileLauncher.launch("*/*")
+                }
+            )
+//        for priceListCsvUpload
+            QuickAccessCard(
+                label = stringResource(R.string.uploadPricelists),
+                subTitle = "--",
+                icon = Icons.Default.More,
+                onClick = {
+                    pricelistRequestFileLauncher.launch("*/*")
+                }
+            )
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+
+
         // Product Name Input
         OutlinedTextField(
             value = productName,
