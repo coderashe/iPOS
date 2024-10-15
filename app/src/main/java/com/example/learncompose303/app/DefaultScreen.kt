@@ -87,6 +87,7 @@ import com.example.learncompose303.screens.CartScreen
 import com.example.learncompose303.screens.CustomerSelectionScreen
 import com.example.learncompose303.screens.ExpenseReportScreen
 import com.example.learncompose303.screens.ExpensesScreen
+import com.example.learncompose303.screens.FAQScreen
 import com.example.learncompose303.screens.InvoiceDetailScreen
 import com.example.learncompose303.screens.LoadStockScreen
 import com.example.learncompose303.screens.LoginScreen
@@ -286,6 +287,9 @@ fun InDriveTopBottomNavigation() {
                 composable(Destinations.Wallet.route) {
                     WalletScreen()
                 }
+                composable(Destinations.Wallet.route) {
+                    WalletScreen()
+                }
                 composable(Destinations.Products.route) {
                     ProductsScreen(viewModel)
                 }
@@ -294,10 +298,9 @@ fun InDriveTopBottomNavigation() {
                     ExpensesScreen(navController = navController, viewModel = expenseViewModel)
                 }
 
-                composable(Destinations.ExpenseReport.route) {
-                    ExpenseReportScreen(viewModel = expenseViewModel, navController)
+                composable(Destinations.Faqs.route) {
+                    FAQScreen()
                 }
-
 
                 // Customer Selection Screen
                 composable(Destinations.CustomerSelection.route) {
@@ -612,7 +615,7 @@ fun IndriveDrawerBody(navController: NavController, scaffoldState: ScaffoldState
                 .fillMaxWidth()
                 .padding(16.dp)
                 .clickable {
-                    navController.navigate(Destinations.Rides.route)
+                    navController.navigate(Destinations.Faqs.route)
                     coroutineScope.launch { scaffoldState.drawerState.close() }
                 }
         ) {
