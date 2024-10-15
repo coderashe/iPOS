@@ -1,5 +1,6 @@
 package com.example.learncompose303.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -32,6 +33,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -209,23 +211,32 @@ fun QuickAccessCard(
                 .fillMaxSize()
                 .padding(2.dp)
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(6.dp),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.Start // Aligning contents to the start
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = label,
+            Row {
+                Column {
+                    Image(
+                        painter = painterResource(id = R.drawable.istartlogo),
+                        contentDescription = null
+                    )
+                }
+
+                Column(
                     modifier = Modifier
-                        .size(30.dp)
-                        .align(Alignment.Start),
-                )
-                Spacer(modifier = Modifier.height(6.dp))
-                Text(text = label, fontSize = 15.sp)
-                Text(text = subTitle)
+                        .fillMaxWidth()
+                        .padding(6.dp),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.Start // Aligning contents to the start
+                ) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = label,
+                        modifier = Modifier
+                            .size(30.dp)
+                            .align(Alignment.Start),
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(text = label, fontSize = 15.sp)
+                    Text(text = subTitle)
+                }
             }
 
         }

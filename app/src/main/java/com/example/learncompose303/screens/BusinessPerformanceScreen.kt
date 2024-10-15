@@ -49,6 +49,8 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import com.example.learncompose303.app.utils.exportDatabase
+import com.example.learncompose303.data.AppDatabase
 import com.example.learncompose303.screens.performance.BusinessPerformanceViewModel
 import com.example.learncompose303.ui.theme.Green1
 import com.example.learncompose303.ui.theme.GreenColor
@@ -175,6 +177,18 @@ fun BusinessPerformanceScreen(viewModel: BusinessPerformanceViewModel = viewMode
                 color = Color.Black,
                 text = "$month: $${"%.2f".format(sales)}"
             )
+        }
+        val context = LocalContext.current
+
+        Button(
+            onClick = {
+                exportDatabase(context, AppDatabase.DATABASE_NAME)
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Text(text = "Export Database")
         }
 
     }
