@@ -289,7 +289,7 @@ fun InDriveTopBottomNavigation() {
                     SignInPage(navController, authViewModel)
                 }
                 composable(Destinations.Rides.route) {
-                    RideRequestsScreen(navController, viewModel)
+                    RideRequestsScreen(navController, viewModel, authViewModel)
                 }
                 composable(Destinations.Income.route) {
                     MyIncomeScreen(viewModel, navController)

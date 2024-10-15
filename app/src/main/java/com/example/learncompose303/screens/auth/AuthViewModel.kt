@@ -7,11 +7,17 @@ import com.google.firebase.auth.FirebaseAuth
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import androidx.lifecycle.viewModelScope
+import com.example.learncompose303.data.entities.User
 import com.example.learncompose303.data.repositories.AuthRepository
+import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-class AuthViewModel(
+@HiltViewModel
+class AuthViewModel @Inject constructor(
+    private val authRepository: AuthRepository
 ) : ViewModel() {
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
     private val _authState = MutableLiveData<AuthState>()
@@ -64,24 +70,103 @@ class AuthViewModel(
     }
 
     // Signup method
-    fun signup(email: String, password: String) {
-        if (email.isEmpty() || password.isEmpty()) {
-            _authState.value = AuthState.Error("Email or password can't be empty")
+    fun signup(
+        fullName: String,
+        contact: String,
+        email: String,
+        password: String,
+        role: String,
+        storeID: String,
+        address: String?
+    ) {
+        if (email.isEmpty() || password.isEmpty() || fullName.isEmpty() || contact.isEmpty()) {
+            _authState.value = AuthState.Error("All fields must be filled")
             return
         }
 
         _authState.value = AuthState.Loading
-        auth.createUserWithEmailAndPassword(email, password)
-            .addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    _authState.value = AuthState.Authenticated
-                    resetLogoutState() // Reset manual logout flag and start timer
-                } else {
-                    _authState.value =
-                        AuthState.Error(task.exception?.message ?: "Something went wrong")
-                }
+
+        // Check if the email already exists in the local database
+        viewModelScope.launch {
+            val existingUser =
+                authRepository.getUserByEmail(email) // Query to check if email exists
+
+            if (existingUser != null) {
+                _authState.value =
+                    AuthState.Error("Email is already registered. Please use a different email.")
+            } else {
+                // If the email does not exist in the local DB, proceed with Firebase signup
+                auth.createUserWithEmailAndPassword(email, password)
+                    .addOnCompleteListener { task ->
+                        if (task.isSuccessful) {
+                            val newUser = User(
+                                userFullName = fullName,
+                                userContact = contact,
+                                userRole = role,
+                                userPassword = password,
+                                storeID = storeID,
+                                userEmail = email,
+                                userAddress = address
+                            )
+                            viewModelScope.launch {
+                                authRepository.signUpUser(newUser) // Save user to local DB
+                                _authState.value = AuthState.Authenticated
+                                resetLogoutState() // Reset manual logout flag and start timer
+                            }
+                        } else {
+                            // Check if Firebase returned an error due to email duplication
+                            if (task.exception is FirebaseAuthUserCollisionException) {
+                                _authState.value =
+                                    AuthState.Error("This email is already in use. Please try another email.")
+                            } else {
+                                _authState.value = AuthState.Error(
+                                    task.exception?.message ?: "Something went wrong"
+                                )
+                            }
+                        }
+                    }
             }
+        }
     }
+
+//    fun signup(
+//        fullName: String,
+//        contact: String,
+//        email: String,
+//        password: String,
+//        role: String,
+//        storeID: String,
+//        address: String?
+//    ) {
+//        if (email.isEmpty() || password.isEmpty() || fullName.isEmpty() || contact.isEmpty()) {
+//            _authState.value = AuthState.Error("All fields must be filled")
+//            return
+//        }
+//
+//        _authState.value = AuthState.Loading
+//        auth.createUserWithEmailAndPassword(email, password)
+//            .addOnCompleteListener { task ->
+//                if (task.isSuccessful) {
+//                    val newUser = User(
+//                        userFullName = fullName,
+//                        userContact = contact,
+//                        userRole = role,
+//                        userPassword = password,
+//                        storeID = storeID,
+//                        userEmail = email,
+//                        userAddress = address
+//                    )
+//                    viewModelScope.launch {
+//                        authRepository.signUpUser(newUser) // Save user to local DB
+//                        _authState.value = AuthState.Authenticated
+//                        resetLogoutState() // Reset manual logout flag and start timer
+//                    }
+//                } else {
+//                    _authState.value =
+//                        AuthState.Error(task.exception?.message ?: "Something went wrong")
+//                }
+//            }
+//    }
 
     // Manual Signout method
     fun signout() {

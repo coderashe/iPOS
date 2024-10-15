@@ -65,9 +65,10 @@ import com.example.learncompose303.viewmodels.InvoiceViewModel
 @Composable
 fun RideRequestsScreen(
     navController: NavHostController,
-    viewModel: InvoiceViewModel = viewModel()
+    viewModel: InvoiceViewModel = viewModel(),
+    authViewModel: AuthViewModel = viewModel()
 ) {
-    val authViewModel: AuthViewModel = viewModel()
+
     val authState = authViewModel.authState.observeAsState()
     val dayStarted by viewModel.dayStarted.collectAsState() // Observe the dayStarted state from the ViewModel
 

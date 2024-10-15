@@ -84,6 +84,12 @@ object AppModule {
             .fallbackToDestructiveMigration() // Handle destructive migrations
             .build()
 
+    @Provides
+    @Singleton
+    fun provideAuthRepository(appDatabase: AppDatabase): AuthRepository {
+        return AuthRepositoryImpl(appDatabase.userDao())
+    }
+
 //    Provide daoS here
 
     @Provides
@@ -128,12 +134,6 @@ object AppModule {
 
     fun provideUserDao(appDatabase: AppDatabase): UserDao =
         appDatabase.userDao()
-
-    @Provides
-    @Singleton
-    fun provideAuthRepository(appDatabase: AppDatabase): AuthRepository {
-        return AuthRepositoryImpl(appDatabase.userDao())
-    }
 
     //
     fun provideExpenseDao(appDatabase: AppDatabase): ExpenseDao =

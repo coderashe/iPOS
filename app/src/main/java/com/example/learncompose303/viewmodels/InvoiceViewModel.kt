@@ -64,7 +64,6 @@ class InvoiceViewModel @Inject constructor(
     private val studentRepository: StudentRepository,
     private val dayReportRepository: DayReportsRepository,
     private val productDayReportRepository: ProductDayReportRepository
-
 ) : ViewModel() {
 
     private val _dayStarted = MutableStateFlow(false)
