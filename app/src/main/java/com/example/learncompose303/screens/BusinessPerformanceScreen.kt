@@ -140,7 +140,7 @@ fun BusinessPerformanceScreen(viewModel: BusinessPerformanceViewModel = viewMode
             Text(
                 modifier = Modifier.fillMaxWidth(),
                 color = Color.Black,
-                text = "ProductName: ${product.productName}   Sold: ${product.totalSold} units    Left:   ${product.currentStock}   Total Sales: $${
+                text = "${product.productName}   Sold: ${product.totalSold} units        Left: ${product.currentStock.toInt()}   Total Sales: $${
                     "%.2f".format(
                         product.totalRevenue
                     )

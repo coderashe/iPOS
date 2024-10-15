@@ -15,11 +15,12 @@ import java.io.OutputStream
 fun exportDatabase(context: Context, dbName: String) {
     // Get the path to the Room database
     val dbPath = context.getDatabasePath(dbName)
+    val currentTime = System.currentTimeMillis()
 
     // For Android 10+ (Scoped Storage)
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
         val contentValues = ContentValues().apply {
-            put(MediaStore.MediaColumns.DISPLAY_NAME, "$dbName-backup.db")
+            put(MediaStore.MediaColumns.DISPLAY_NAME, "$dbName-backup_${currentTime}.db")
             put(MediaStore.MediaColumns.MIME_TYPE, "application/x-sqlite3")
             put(
                 MediaStore.MediaColumns.RELATIVE_PATH,
@@ -60,7 +61,7 @@ fun exportDatabase(context: Context, dbName: String) {
         // For Android 9 and below, use legacy storage methods (if needed)
         val externalStorageDir = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
         if (externalStorageDir != null) {
-            val backupFile = File(externalStorageDir, "$dbName-backup.db")
+            val backupFile = File(externalStorageDir, "$dbName-backup_${currentTime}.db")
             copyFile(FileInputStream(dbPath), FileOutputStream(backupFile))
             Toast.makeText(context, "Database exported successfully", Toast.LENGTH_SHORT).show()
         }
