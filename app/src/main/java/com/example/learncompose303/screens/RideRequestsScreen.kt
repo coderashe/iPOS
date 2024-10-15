@@ -96,7 +96,7 @@ fun RideRequestsScreen(
         CustomHeadingMedium(
             heading = stringResource(R.string.popular_products)
         )
-        AutoSlidingCarousel()
+        AutoSlidingCarousel(modifier = Modifier, navController, viewModel)
         SpacerHeight()
     }
 }

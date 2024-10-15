@@ -1190,7 +1190,7 @@ fun CustomHeadingMedium(heading: String) {
     Text(
         text = heading,
         style = MaterialTheme.typography.titleMedium,
-        modifier = Modifier.padding(start = 8.dp),
+        modifier = Modifier.padding(start = 12.dp),
 //        fontWeight = FontWeight.Bold
     )
 }
