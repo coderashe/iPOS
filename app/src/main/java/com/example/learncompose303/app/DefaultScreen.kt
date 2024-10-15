@@ -53,6 +53,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -173,8 +174,8 @@ fun InDriveTopBottomNavigation() {
     val scaffoldState = rememberScaffoldState()
     val coroutineScope = rememberCoroutineScope()
     var isChecked by remember { mutableStateOf(false) }
-    var showPinDialog by remember { mutableStateOf(true) } // Initially true to enforce PIN dialog
-    var isPinCorrect by remember { mutableStateOf(false) } // Track PIN correctness
+    var showPinDialog by remember { mutableStateOf(true) }
+    var isPinCorrect by remember { mutableStateOf(false) }
 
     // Observe auth state and navigate to sign-in page when unauthenticated
     val authState by authViewModel.authState.observeAsState()
@@ -246,6 +247,8 @@ fun InDriveTopBottomNavigation() {
                 startDestination = Destinations.SignIn.route,
                 modifier = Modifier.padding(paddingValues)
             ) {
+
+                // Navigation Composable for BusinessPerformanceScreen
                 composable(Destinations.BusinessPerformance.route) {
                     // Show the PIN dialog if flag is true and PIN hasn't been correctly entered
                     if (showPinDialog && !isPinCorrect) {
@@ -255,17 +258,27 @@ fun InDriveTopBottomNavigation() {
                                     isPinCorrect = true // Set flag to true on correct PIN
                                     showPinDialog = false // Hide the dialog
                                 } else {
+                                    isPinCorrect = false
                                     // Optionally show an error message or reset the input
                                 }
                             },
                             onCancel = {
                                 showPinDialog = false // Close the dialog
+                                isPinCorrect = false
                                 navController.navigate(Destinations.Rides.route) // Navigate back to RidesScreen
                             }
                         )
                     } else {
                         // Only show BusinessPerformanceScreen if the PIN is correct
                         BusinessPerformanceScreen(viewModel = businessPerformanceViewModel)
+
+                        // When leaving BusinessPerformanceScreen, reset the isPinCorrect flag
+                        DisposableEffect(Unit) {
+                            onDispose {
+                                isPinCorrect =
+                                    false // Reset the PIN requirement when leaving the screen
+                            }
+                        }
                     }
                 }
 
@@ -287,9 +300,6 @@ fun InDriveTopBottomNavigation() {
                 composable(Destinations.Wallet.route) {
                     WalletScreen()
                 }
-                composable(Destinations.Wallet.route) {
-                    WalletScreen()
-                }
                 composable(Destinations.Products.route) {
                     ProductsScreen(viewModel)
                 }
@@ -300,6 +310,12 @@ fun InDriveTopBottomNavigation() {
 
                 composable(Destinations.Faqs.route) {
                     FAQScreen()
+                }
+                composable(Destinations.ExpenseReport.route) {
+                    ExpenseReportScreen(
+                        viewModel = expenseViewModel,
+                        navController = navController
+                    )
                 }
 
                 // Customer Selection Screen
