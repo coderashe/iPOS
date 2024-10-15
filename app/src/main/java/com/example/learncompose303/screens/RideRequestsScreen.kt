@@ -98,8 +98,5 @@ fun RideRequestsScreen(
         )
         AutoSlidingCarousel()
         SpacerHeight()
-//        CustomHeadingMedium(
-//            heading = stringResource(R.string.more)
-//        )
     }
 }

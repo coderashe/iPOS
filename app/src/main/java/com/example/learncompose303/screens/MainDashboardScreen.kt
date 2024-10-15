@@ -31,10 +31,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -150,13 +152,21 @@ fun QuickAccessButtons(navController: NavController) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 8.dp)
+            .padding(top = 8.dp, start = 8.dp)
             .horizontalScroll(rememberScrollState()),
         horizontalArrangement = Arrangement.spacedBy(8.dp) // Spacing between items
     ) {
         QuickAccessCard(
+            label = stringResource(R.string.load_stocks),
+            subTitle = "---",
+            icon = Icons.Default.AddShoppingCart,
+            onClick = {
+                navController.navigate(Destinations.LoadStocks.route) // Navigate to Stock Loading Screen
+            }
+        )
+        QuickAccessCard(
             label = stringResource(R.string.invoicing),
-            subTitle = "--",
+            subTitle = "---",
             icon = Icons.Default.Receipt,
             onClick = {
                 navController.navigate(Destinations.CustomerSelection.route) // Navigate to InvoiceScreen
@@ -164,24 +174,16 @@ fun QuickAccessButtons(navController: NavController) {
         )
         QuickAccessCard(
             label = stringResource(R.string.orders),
-            subTitle = "--",
+            subTitle = "---",
             icon = Icons.Default.More,
             onClick = { navController.navigate(Destinations.OrderReports.route)             /* Navigate to OrderReports Screen */ }
         )
         QuickAccessCard(
             label = stringResource(R.string.reports),
-            subTitle = "--",
+            subTitle = "---",
             icon = Icons.Default.BarChart,
             onClick = {
                 navController.navigate(Destinations.Reports.route)  /* Navigate to Reports Screen */
-            }
-        )
-        QuickAccessCard(
-            label = stringResource(R.string.load_stocks),
-            subTitle = "--",
-            icon = Icons.Default.AddShoppingCart,
-            onClick = {
-                navController.navigate(Destinations.LoadStocks.route) // Navigate to Stock Loading Screen
             }
         )
 
@@ -196,52 +198,116 @@ fun QuickAccessCard(
     icon: ImageVector,
     onClick: () -> Unit
 ) {
-    Box(
-        contentAlignment = Alignment.CenterStart,
-        modifier = Modifier
+    Card(
+        modifier = modifier
             .fillMaxWidth()
             .height(100.dp)
-            .width(142.dp)
-            .padding(start = 4.dp)
-            .background(Color.Transparent, shape = RoundedCornerShape(12.dp))
-            .clickable(onClick = onClick) // Make the card clickable,
+            .clickable(onClick = onClick), // Make the card clickable
+        elevation = CardDefaults.cardElevation(4.dp), // Add a shadow for depth
+        shape = RoundedCornerShape(12.dp), // Rounded corners
     ) {
-        Card(
+        Row(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(2.dp)
+                .padding(8.dp),
+            verticalAlignment = Alignment.CenterVertically // Align items vertically in the center
         ) {
-            Row {
-                Column {
-                    Image(
-                        painter = painterResource(id = R.drawable.istartlogo),
-                        contentDescription = null
-                    )
-                }
+            // Left image
+            Image(
+                painter = painterResource(id = R.drawable.istartlogo),
+                contentDescription = null,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(12.dp)) // Rounded image corners
+            )
 
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(6.dp),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.Start // Aligning contents to the start
-                ) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = label,
-                        modifier = Modifier
-                            .size(30.dp)
-                            .align(Alignment.Start),
-                    )
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Text(text = label, fontSize = 15.sp)
-                    Text(text = subTitle)
-                }
+            Spacer(modifier = Modifier.width(6.dp)) // Space between image and text
+
+            // Right content
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.Start // Align items to the start
+            ) {
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.titleSmall, // Larger font for the label
+                    maxLines = 1, // Ensure text doesn't overflow
+                    overflow = TextOverflow.Ellipsis // Truncate if too long
+                )
+
+                Spacer(modifier = Modifier.height(4.dp)) // Space between label and subtitle
+
+                Text(
+                    text = subTitle,
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        color = MaterialTheme.colorScheme.onSurface.copy(
+                            alpha = 0.7f
+                        )
+                    ), // Subtle color for subtitle
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis // Truncate if too long
+                )
+
+                Spacer(modifier = Modifier.height(8.dp)) // Space between subtitle and icon
+
+                // Icon below the text
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurface, // Use primary color for icon
+                    modifier = Modifier.size(24.dp) // Icon size
+                )
             }
-
         }
     }
 }
+
+
+//@Composable
+//fun QuickAccessCard(
+//    modifier: Modifier = Modifier.padding(8.dp),
+//    label: String,
+//    subTitle: String,
+//    icon: ImageVector,
+//    onClick: () -> Unit
+//) {
+//    Box(
+//        contentAlignment = Alignment.CenterStart,
+//        modifier = Modifier
+//            .fillMaxWidth()
+//            .height(100.dp)
+//            .width(142.dp)
+//            .padding(start = 4.dp)
+//            .background(Color.Transparent, shape = RoundedCornerShape(12.dp))
+//            .clickable(onClick = onClick) // Make the card clickable,
+//    ) {
+//        Card(
+//            modifier = Modifier
+//                .fillMaxSize()
+//                .padding(2.dp)
+//        ) {
+//            Column(
+//                modifier = Modifier
+//                    .fillMaxWidth()
+//                    .padding(6.dp),
+//                verticalArrangement = Arrangement.Center,
+//                horizontalAlignment = Alignment.Start // Aligning contents to the start
+//            ) {
+//                Icon(
+//                    imageVector = icon,
+//                    contentDescription = label,
+//                    modifier = Modifier
+//                        .size(30.dp)
+//                        .align(Alignment.Start),
+//                )
+//                Spacer(modifier = Modifier.height(6.dp))
+//                Text(text = label, fontSize = 15.sp)
+//                Text(text = subTitle)
+//            }
+//
+//        }
+//    }
+//}
 
 @Composable
 fun QuickAccessButton(
