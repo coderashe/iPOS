@@ -115,7 +115,6 @@ fun FAQScreen(
         "Can I manage multiple users on iPOS?" to "Yes, iPOS supports multiple user roles such as Admin, Cashier, and Manager. You can manage user permissions in the Settings screen."
     )
 
-
     var expandedFaqIndex by remember { mutableStateOf(-1) }
 
     Column(
