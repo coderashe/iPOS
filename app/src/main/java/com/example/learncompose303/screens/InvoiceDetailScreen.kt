@@ -66,11 +66,7 @@ fun InvoiceDetailScreen(
     val context = LocalContext.current
     // Build the order details string
     val linesDetails = invoiceLines.joinToString("\n") { invoiceLine ->
-        "${invoiceLine.productName},     Qty: ${invoiceLine.productQtySold},     $${invoiceLine.productPrice}\n${
-            Date(
-                invoiceLine.invoiceDate
-            )
-        }"
+        "${invoiceLine.productName},     Qty: ${invoiceLine.productQtySold},     $${invoiceLine.productPrice}"
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -118,6 +114,13 @@ fun InvoiceDetailScreen(
                         style = MaterialTheme.typography.bodySmall,
                         textAlign = TextAlign.End
                     )
+                    Text(
+                        modifier = Modifier.padding(8.dp),
+                        text = "Cashier: ${invoiceLine.cashier}",
+                        style = MaterialTheme.typography.bodySmall,
+                        textAlign = TextAlign.End,
+                        color = MaterialTheme.colorScheme.primary
+                    )
                 }
                 Spacer(modifier = Modifier.height(4.dp))
 
@@ -145,7 +148,8 @@ fun InvoiceDetailScreen(
                     if (isFabEnabled) {
                         // Trigger the reverseInvoice function
                         viewModel.reverseInvoice(invoiceId)
-                        Toast.makeText(context, "Credit Note Successful!", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Credit Note Successful!", Toast.LENGTH_SHORT)
+                            .show()
 
                         // Disable the FAB once clicked
                         isFabEnabled = false
@@ -171,6 +175,7 @@ fun InvoiceDetailScreen(
 
                 val message = "*${Date(System.currentTimeMillis())} REPORT:*\n\n\n" +
                         "*INVOICE RECEIPT: ${invoiceLine?.invoiceId}*\n" +
+                        "Cashier: ${invoiceLine?.cashier}\n\n" +
                         "$linesDetails\n\n" +
                         "THANK YOU!!!... powered by istartk \u00A92024"
 

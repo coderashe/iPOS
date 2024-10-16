@@ -13,6 +13,7 @@ data class InvoiceLine(
     val productName: String,
     val productPrice: Double,
     val productQtySold: Int,
+    val cashier: String,
     val customerID: Long,
     val customerName: String,
     val customerPhone: String?,

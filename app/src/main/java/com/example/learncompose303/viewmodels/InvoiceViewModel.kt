@@ -6,8 +6,11 @@ import android.os.Build
 import android.util.Log
 import android.widget.Toast
 import androidx.annotation.RequiresApi
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.learncompose303.R
 import com.example.learncompose303.data.StudentEntity
 import com.example.learncompose303.data.entities.CartItem
@@ -32,6 +35,7 @@ import com.example.learncompose303.data.repositories.PriceListRepository
 import com.example.learncompose303.data.repositories.ProductDayReportRepository
 import com.example.learncompose303.data.repositories.ProductRepository
 import com.example.learncompose303.data.repositories.StudentRepository
+import com.example.learncompose303.screens.auth.AuthViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -63,7 +67,7 @@ class InvoiceViewModel @Inject constructor(
     private val priceListRepository: PriceListRepository,
     private val studentRepository: StudentRepository,
     private val dayReportRepository: DayReportsRepository,
-    private val productDayReportRepository: ProductDayReportRepository
+    private val productDayReportRepository: ProductDayReportRepository,
 ) : ViewModel() {
 
     private val _dayStarted = MutableStateFlow(false)
@@ -136,8 +140,6 @@ class InvoiceViewModel @Inject constructor(
     }
 
     // Logic for uploading products from CSV
-
-    // Logic for uploading products from CSV
     fun uploadProductsFromCsv(inputStream: InputStream, context: Context) {
         viewModelScope.launch {
             val parser = CsvParser()
@@ -199,66 +201,9 @@ class InvoiceViewModel @Inject constructor(
 
     // Function to get default image URI from drawable resources
     fun getDefaultImageUri(context: Context): String {
-        val defaultImageResId = R.drawable.cart
+        val defaultImageResId = R.drawable.food2
         return Uri.parse("android.resource://${context.packageName}/$defaultImageResId").toString()
     }
-
-
-//    fun uploadProductsFromCsv(inputStream: InputStream, context: Context) {
-//        viewModelScope.launch {
-//            val parser = CsvParser()
-//            val productsFromCsv = parser.parseProductCsv(inputStream)
-//
-//            // Retrieve existing products from the database using the once method
-//            val existingProducts = productRepository.getAllProductsOnce()
-//
-//            // Create a set to track duplicates
-//            val existingProductSet = existingProducts.map {
-//                Pair(it.productDescription, it.currentStockLevel)
-//            }.toSet()
-//
-//            // Convert ProductCsvModel to Product entity, avoiding duplicates
-//            val productList = mutableListOf<Product>()
-//            var duplicateCount = 0
-//
-//            for (productCsv in productsFromCsv) {
-//                val productPair = Pair(productCsv.productDescription, productCsv.currentStockLevel)
-//                if (!existingProductSet.contains(productPair)) {
-//                    productList.add(
-//                        Product(
-//                            productDescription = productCsv.productDescription,
-//                            currentStockLevel = productCsv.currentStockLevel,
-//                            saleable = productCsv.saleable,
-//                            purchasable = productCsv.purchasable,
-//                            averageCost = productCsv.averageCost,
-//                            standardCost = productCsv.standardCost,
-//                            salesTaxCode = productCsv.salesTaxCode,
-//                            purchasableTaxCode = productCsv.purchasableTaxCode,
-//                            inclusiveTaxed = productCsv.inclusiveTaxed,
-//                            imageUri = painterResource(id = productCsv.imageResId ?: R.drawable.cart)
-//                        )
-//                    )
-//                } else {
-//                    duplicateCount++
-//                }
-//            }
-//
-//            // Insert non-duplicate products into the database
-//            productRepository.insertProducts(productList)
-//
-//            // Show toast notification
-//            if (duplicateCount > 0) {
-//                Toast.makeText(
-//                    context,
-//                    "$duplicateCount duplicate products were found and skipped.",
-//                    Toast.LENGTH_SHORT
-//                ).show()
-//            } else {
-//                Toast.makeText(context, "Products uploaded successfully.", Toast.LENGTH_SHORT)
-//                    .show()
-//            }
-//        }
-//    }
 
     fun uploadPriceListsFromCsv(inputStream: InputStream, context: Context) {
         viewModelScope.launch {
@@ -401,7 +346,7 @@ class InvoiceViewModel @Inject constructor(
         }
     }
 
-    val defaultImage = R.drawable.cart
+//    val defaultImage = R.drawable.food2
 
     // Insert initial products into the database
     private fun insertInitialProducts() = viewModelScope.launch {
@@ -410,56 +355,56 @@ class InvoiceViewModel @Inject constructor(
         if (existingProducts.isEmpty()) {
             val initialProducts = listOf(
                 Product(
-                    productDescription = "Product 1",
-                    currentStockLevel = 100.00,
+                    productDescription = "Sadza & Beef",
+                    currentStockLevel = 10000.00,
                     saleable = true,
                     purchasable = true,
-                    averageCost = 8.0,
-                    standardCost = 10.0,
+                    averageCost = 1.50,
+                    standardCost = 2.00,
                     salesTaxCode = "VAT",
                     purchasableTaxCode = "VAT",
                     inclusiveTaxed = true,
                 ),
                 Product(
-                    productDescription = "Product 2",
-                    currentStockLevel = 150.00,
+                    productDescription = "Rice Chicken",
+                    currentStockLevel = 10000.00,
                     saleable = true,
                     purchasable = true,
-                    averageCost = 15.0,
-                    standardCost = 20.0,
+                    averageCost = 1.50,
+                    standardCost = 2.00,
                     salesTaxCode = "VAT",
                     purchasableTaxCode = "VAT",
                     inclusiveTaxed = true
                 ),
                 Product(
-                    productDescription = "Product 3",
-                    currentStockLevel = 200.00,
+                    productDescription = "Sadza Fish",
+                    currentStockLevel = 10000.00,
                     saleable = true,
                     purchasable = true,
-                    averageCost = 25.0,
-                    standardCost = 30.0,
+                    averageCost = 1.90,
+                    standardCost = 2.50,
                     salesTaxCode = "VAT",
                     purchasableTaxCode = "VAT",
                     inclusiveTaxed = true
                 ),
                 Product(
-                    productDescription = "Product 4",
-                    currentStockLevel = 250.00,
+                    productDescription = "1/4 Chicken & Chips",
+                    currentStockLevel = 10000.00,
                     saleable = true,
                     purchasable = true,
-                    averageCost = 35.0,
-                    standardCost = 40.0,
+                    averageCost = 2.50,
+                    standardCost = 3.00,
                     salesTaxCode = "VAT",
                     purchasableTaxCode = "VAT",
                     inclusiveTaxed = true
                 ),
                 Product(
-                    productDescription = "Product 5",
-                    currentStockLevel = 300.00,
+                    productDescription = "Burger",
+                    currentStockLevel = 10000.00,
                     saleable = true,
                     purchasable = true,
-                    averageCost = 45.0,
-                    standardCost = 50.0,
+                    averageCost = 0.80,
+                    standardCost = 1.0,
                     salesTaxCode = "VAT",
                     purchasableTaxCode = "VAT",
                     inclusiveTaxed = true
@@ -472,7 +417,8 @@ class InvoiceViewModel @Inject constructor(
             // After inserting products, insert into PriceList table
             productIds.forEachIndexed { index, productId ->
                 val product = initialProducts[index]
-                val sellingPrice = product.standardCost * 1.2 // Example of a 20% markup
+//                val sellingPrice = product.standardCost * 1.2 // Example of a 20% markup
+                val sellingPrice = product.standardCost * 1
                 val markupPercentage =
                     ((sellingPrice - product.standardCost) / product.standardCost) * 100
                 val grossProfitPercentage =
@@ -1062,11 +1008,11 @@ class InvoiceViewModel @Inject constructor(
     }
 
 
-    //    new submit
     fun submitInvoice(
         customerId: Long,
         amountTendered: Double,
-        productQuantities: Map<Long, Int>
+        productQuantities: Map<Long, Int>,
+        cashierEmail: String
     ) =
         viewModelScope.launch {
             try {
@@ -1164,6 +1110,7 @@ class InvoiceViewModel @Inject constructor(
                             productName = product.productDescription,
                             productPrice = finalPrice,
                             productQtySold = quantitySold,
+                            cashier = cashierEmail,
                             customerID = customerId,
                             customerName = customer.name,
                             customerPhone = customer.phone,

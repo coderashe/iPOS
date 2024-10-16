@@ -1,6 +1,7 @@
 package com.example.learncompose303.screens
 
 import android.os.Build
+import android.util.Log
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
@@ -77,6 +78,25 @@ fun RideRequestsScreen(
             is AuthState.UnAuthenticated -> navController.navigate(Destinations.SignIn.route)
             else -> Unit
         }
+
+    }
+
+    val currentUserEmail by authViewModel.userEmail.observeAsState()
+
+    // Trigger fetch when the email is available
+    currentUserEmail?.let {
+        LaunchedEffect(it) {
+            authViewModel.fetchUserByEmail(it)
+        }
+        Log.d("StartLogs", "current loggedin user is $currentUserEmail")
+    }
+
+    val currentUser by authViewModel.fetchedUser.observeAsState()
+    // Logging the fetched user once available
+    currentUser?.let {
+        Log.d("StartLogs", "Current logged-in user is ${it.userFullName}")
+    } ?: run {
+        Log.d("StartLogs", "No user found with this email.")
     }
 
     Column(
@@ -87,9 +107,9 @@ fun RideRequestsScreen(
             .verticalScroll(rememberScrollState())
     ) {
         SalesmanInfoCard(
-            salesmanName = "Simba Start",
-            shopName = "ISTART CAPITAL MRT",
-            viewModel = viewModel // Pass the viewModel explicitly
+            salesmanName = currentUser?.userFullName ?: "Simba Start",
+            shopName = currentUser?.storeID ?: "ISTART CAPITAL",
+            viewModel = viewModel
         )
         SpacerHeight()
         QuickAccessButtons(navController)

@@ -5,6 +5,7 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -157,7 +158,7 @@ fun TheProductCard(
         ) {
             // Product Image
             val currentImageUri = imageUri.value ?: product.imageUri?.let { Uri.parse(it) }
-            val painter = rememberImagePainter(data = currentImageUri ?: R.drawable.cart)
+            val painter = rememberImagePainter(data = currentImageUri ?: R.drawable.food2)
 
             Image(
                 painter = painter,
@@ -205,6 +206,12 @@ fun TheProductCard(
                         modifier = Modifier.weight(1f)
                     )
                     Text(
+                        modifier = Modifier
+                            .background(
+                                color = Color.White,
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                            .padding(2.dp),
                         text = product.currentStockLevel.toString(),
                         style = MaterialTheme.typography.titleSmall,
                         color = Color.Red,
@@ -276,217 +283,3 @@ fun TheProductCard(
         }
     }
 }
-
-
-//@Composable
-//fun TheProductCard(
-//    product: Product,
-//    price: Double,
-//    viewModel: InvoiceViewModel = viewModel()
-//) {
-//    val context = LocalContext.current
-//    val imageUri = remember { mutableStateOf(product.imageUri?.let { Uri.parse(it) }) }
-//    val isEditing = remember { mutableStateOf(false) } // Track edit state
-//    var editedProductDescription by remember { mutableStateOf(product.productDescription) }
-//    var editedPrice by remember { mutableStateOf(price.toString()) }
-//
-//    // Image picker launcher
-//    val imagePicker = rememberLauncherForActivityResult(
-//        contract = ActivityResultContracts.GetContent(),
-//        onResult = { uri ->
-//            imageUri.value = uri
-//            if (uri != null) {
-//                viewModel.onUpdateProductImage(product, uri, context)
-//            }
-//            viewModel.updateProduct(product)
-//        }
-//    )
-//
-//    Card(
-//        shape = RoundedCornerShape(8.dp),
-//        modifier = Modifier
-//            .width(175.dp)
-//            .padding(8.dp),
-//        elevation = CardDefaults.cardElevation(4.dp)
-//    ) {
-//        Column(
-//            modifier = Modifier
-//                .fillMaxSize()
-//                .padding(8.dp),
-//            horizontalAlignment = Alignment.CenterHorizontally
-//        ) {
-//            // Product Image
-//            val currentImageUri = imageUri.value ?: product.imageUri?.let { Uri.parse(it) }
-//            val painter = rememberImagePainter(data = currentImageUri ?: R.drawable.cart)
-//
-//            Image(
-//                painter = painter,
-//                contentDescription = product.productDescription,
-//                modifier = Modifier
-//                    .size(100.dp)
-//                    .clip(CircleShape)
-//                    .clickable { imagePicker.launch("image/*") },
-//                contentScale = ContentScale.Crop
-//            )
-//
-//            Spacer(modifier = Modifier.height(8.dp))
-//
-//            if (isEditing.value) {
-//                // Editable Price Field
-//                OutlinedTextField(
-//                    value = editedPrice,
-//                    onValueChange = { editedPrice = it },
-//                    label = { Text("Price") },
-//                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-//                )
-//            } else {
-//                // Display Price
-//                Text("\$${price}", style = MaterialTheme.typography.headlineSmall)
-//            }
-//
-//            Spacer(modifier = Modifier.height(8.dp))
-//
-//            // Product Description and Stock Level
-//            if (isEditing.value) {
-//                // Editable Product Description
-//                OutlinedTextField(
-//                    value = editedProductDescription,
-//                    onValueChange = { editedProductDescription = it },
-//                    label = { Text("Product Description") }
-//                )
-//            } else {
-//                Row(
-//                    modifier = Modifier.fillMaxWidth(),
-//                    verticalAlignment = Alignment.CenterVertically
-//                ) {
-//                    Text(
-//                        text = product.productDescription,
-//                        style = MaterialTheme.typography.bodySmall,
-//                        modifier = Modifier.weight(1f)
-//                    )
-//                    Text(
-//                        text = product.currentStockLevel.toString(),
-//                        style = MaterialTheme.typography.titleSmall,
-//                        color = Color.Red,
-//                        fontWeight = FontWeight.Bold
-//                    )
-//                }
-//            }
-//
-//            Spacer(modifier = Modifier.height(8.dp))
-//
-//            // Edit/Save Button
-//
-//            // Edit/Save Button
-//            Button(
-//                modifier = Modifier.fillMaxWidth(),
-//                onClick = {
-//                    if (isEditing.value) {
-//                        // Update product regardless of whether the description changed
-//                        val updatedProduct = product.copy(
-//                            productDescription = editedProductDescription
-//                        )
-//
-//                        // Insert/update the product and handle the product ID to update the price list
-//                        viewModel.insertTheProduct(updatedProduct) { productId ->
-//                            // Update the price list even if the product description is unchanged
-//                            val updatedPriceList = PriceList(
-//                                productId = productId, // Use the productId for updating PriceList
-//                                productDescription = updatedProduct.productDescription, // Ensure price list gets updated with description
-//                                unitCost = product.standardCost,
-//                                sellingPrice = editedPrice.toDouble(), // Always update the price
-//                                markupPercentage = viewModel.calculateMarkupPercentage(
-//                                    product.standardCost,
-//                                    editedPrice.toDouble()
-//                                ),
-//                                grossProfitPercentage = viewModel.calculateGrossProfitPercentage(
-//                                    product.standardCost,
-//                                    editedPrice.toDouble()
-//                                )
-//                            )
-//
-//                            // Insert/update the PriceList after updating the product
-//                            viewModel.insertCurrentPriceList(
-//                                updatedPriceList.sellingPrice, // Always update price
-//                                updatedPriceList.productDescription, // Always ensure description is updated
-//                                productId, // Use productId from updatedProduct
-//                                context
-//                            )
-//
-//                            Toast.makeText(
-//                                context,
-//                                "Product and PriceList updated!",
-//                                Toast.LENGTH_SHORT
-//                            ).show()
-//                        }
-//                    }
-//                    isEditing.value = !isEditing.value // Toggle between edit and view mode
-//                },
-//                colors = ButtonDefaults.buttonColors(
-//                    if (isEditing.value) Color.Green else Blue1
-//                ),
-//                shape = RoundedCornerShape(8.dp)
-//            ) {
-//                Text(
-//                    text = if (isEditing.value) "Save" else "Edit",
-//                    color = if (isEditing.value) Color.White else Color.Black
-//                )
-//            }
-//
-////            Button(
-////                modifier = Modifier.fillMaxWidth(),
-////                onClick = {
-////                    if (isEditing.value) {
-////                        // Update the product when saving
-////                        val updatedProduct = product.copy(
-////                            productDescription = editedProductDescription,
-////                        )
-////
-////                        // Insert the updated product and handle the product ID to update the price list
-////                        viewModel.insertTheProduct(updatedProduct) { productId ->
-////                            // Create and insert PriceList entry using the productId
-////                            val updatedPriceList = PriceList(
-////                                productId = productId, // Use the productId for updating PriceList
-////                                productDescription = editedProductDescription,
-////                                unitCost = product.standardCost,
-////                                sellingPrice = editedPrice.toDouble(),
-////                                markupPercentage = viewModel.calculateMarkupPercentage(
-////                                    product.standardCost,
-////                                    editedPrice.toDouble()
-////                                ),
-////                                grossProfitPercentage = viewModel.calculateGrossProfitPercentage(
-////                                    product.standardCost,
-////                                    editedPrice.toDouble()
-////                                )
-////                            )
-////                            // Insert the PriceList after getting the productId
-////                            viewModel.insertCurrentPriceList(
-////                                editedPrice.toDouble(),
-////                                editedProductDescription,
-////                                productId,
-////                                context
-////                            )
-////
-////                            Toast.makeText(
-////                                context,
-////                                "Product and PriceList updated!",
-////                                Toast.LENGTH_SHORT
-////                            ).show()
-////                        }
-////                    }
-////                    isEditing.value = !isEditing.value // Toggle between edit and view mode
-////                },
-////                colors = ButtonDefaults.buttonColors(
-////                    if (isEditing.value) Color.Green else Blue1
-////                ),
-////                shape = RoundedCornerShape(8.dp)
-////            ) {
-////                Text(
-////                    text = if (isEditing.value) "Save" else "Edit",
-////                    color = if (isEditing.value) Color.White else Color.Black
-////                )
-////            }
-//        }
-//    }
-//}
-

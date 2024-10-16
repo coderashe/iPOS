@@ -45,12 +45,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.ui.platform.LocalContext
+import com.example.learncompose303.screens.auth.AuthViewModel
 
 @Composable
 fun CartScreen(
     customer: Customer,
     navController: NavController,
-    viewModel: InvoiceViewModel = viewModel()
+    viewModel: InvoiceViewModel = viewModel(),
+    authViewModel: AuthViewModel = viewModel()
 ) {
     val context = LocalContext.current
 
@@ -88,6 +90,9 @@ fun CartScreen(
     } else {
         0.0
     }
+
+    // Get the cashierEmail from AuthViewModel
+    val cashierEmail = authViewModel.userEmail.value ?: "unknown"
 
     // Load price details for selected products when the screen is entered
     LaunchedEffect(selectedProducts) {
@@ -146,11 +151,11 @@ fun CartScreen(
                         viewModel.submitInvoice(
                             customer.customerId,
                             tenderedAmount,
-                            productQuantities // Pass the product quantities map here
+                            productQuantities,
+                            cashierEmail
                         )
 
                         // Code for sharing the invoice message...
-
                         val message = "*INVOICE RECEIPT:*\n\n" +
                                 "*CUSTOMER DETAILS*\n" +
                                 "${customer.name}: ${customer.phone}\n\n" +

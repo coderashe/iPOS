@@ -23,6 +23,26 @@ class AuthViewModel @Inject constructor(
     private val _authState = MutableLiveData<AuthState>()
     val authState: LiveData<AuthState> = _authState // Exposing it to UI
 
+    // LiveData for current user's email
+    private val _userEmail = MutableLiveData<String?>()
+    val userEmail: LiveData<String?> = _userEmail
+
+    // LiveData for fetched user
+    private val _fetchedUser = MutableLiveData<User?>()
+    val fetchedUser: LiveData<User?> = _fetchedUser
+
+    // LiveData for user role
+    private val _userRole = MutableLiveData<String?>()
+    val userRole: LiveData<String?> = _userRole
+
+    // Method to fetch the user's role by email
+    fun fetchUserRoleByEmail(email: String) {
+        viewModelScope.launch {
+            val user = authRepository.getUserByEmail(email)
+            _userRole.value = user?.userRole
+        }
+    }
+
     // Handler and Runnable for logout after inactivity
     private val logoutHandler = Handler(Looper.getMainLooper())
     private val logoutRunnable = Runnable {
@@ -35,21 +55,26 @@ class AuthViewModel @Inject constructor(
 
     init {
         checkAuthStatus() // Check auth status on ViewModel initialization
+        // Fetch the role when the user logs in
+        _userEmail.value?.let { fetchUserRoleByEmail(it) }
     }
 
     // Check user status
     fun checkAuthStatus() {
-        if (auth.currentUser == null) {
+        val currentUser = auth.currentUser
+        if (currentUser == null) {
             _authState.value = AuthState.UnAuthenticated
+            _userEmail.value = null
         } else {
             _authState.value = AuthState.Authenticated
+            _userEmail.value = currentUser.email // Store the user's email
             if (!isManuallyLoggedOut) {
-                startLogoutTimer() // Start timer only if not manually logged out
+                startLogoutTimer()
             }
         }
     }
 
-    // Login method
+    // Method to log in
     fun login(email: String, password: String) {
         if (email.isEmpty() || password.isEmpty()) {
             _authState.value = AuthState.Error("Email or password can't be empty")
@@ -61,7 +86,8 @@ class AuthViewModel @Inject constructor(
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
                     _authState.value = AuthState.Authenticated
-                    resetLogoutState() // Reset manual logout flag and start timer
+                    _userEmail.value = auth.currentUser?.email // Update email on successful login
+                    resetLogoutState()
                 } else {
                     _authState.value =
                         AuthState.Error(task.exception?.message ?: "Something went wrong")
@@ -129,44 +155,19 @@ class AuthViewModel @Inject constructor(
         }
     }
 
-//    fun signup(
-//        fullName: String,
-//        contact: String,
-//        email: String,
-//        password: String,
-//        role: String,
-//        storeID: String,
-//        address: String?
-//    ) {
-//        if (email.isEmpty() || password.isEmpty() || fullName.isEmpty() || contact.isEmpty()) {
-//            _authState.value = AuthState.Error("All fields must be filled")
-//            return
-//        }
-//
-//        _authState.value = AuthState.Loading
-//        auth.createUserWithEmailAndPassword(email, password)
-//            .addOnCompleteListener { task ->
-//                if (task.isSuccessful) {
-//                    val newUser = User(
-//                        userFullName = fullName,
-//                        userContact = contact,
-//                        userRole = role,
-//                        userPassword = password,
-//                        storeID = storeID,
-//                        userEmail = email,
-//                        userAddress = address
-//                    )
-//                    viewModelScope.launch {
-//                        authRepository.signUpUser(newUser) // Save user to local DB
-//                        _authState.value = AuthState.Authenticated
-//                        resetLogoutState() // Reset manual logout flag and start timer
-//                    }
-//                } else {
-//                    _authState.value =
-//                        AuthState.Error(task.exception?.message ?: "Something went wrong")
-//                }
-//            }
-//    }
+
+    // Function to fetch a user by email
+    fun fetchUserByEmail(email: String) {
+        viewModelScope.launch {
+            try {
+                val user = authRepository.getUserByEmail(email)
+                _fetchedUser.value = user
+            } catch (e: Exception) {
+                Log.e("AuthViewModel", "Error fetching user by email: ${e.message}")
+                _authState.value = AuthState.Error("Failed to fetch user.")
+            }
+        }
+    }
 
     // Manual Signout method
     fun signout() {

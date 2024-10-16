@@ -21,6 +21,7 @@
     <string name="rides">Searching for requests…</string>
     <string name="income">My Income</string>
     <string name="navincome">income</string>
+    <string name="navreports">reports</string>
     <string name="low">Low</string>
     <string name="frequency">Frequency of operations: Very low</string>
     <string name="reputation">Reputation: Normal</string>
@@ -56,6 +57,7 @@
     <string name="load_stocks">LOAD STOCKS</string>
     <string name="load_stocks1">Load Stocks</string>
     <string name="invoicing">INVOICING</string>
+    <string name="navinvoicing">invoicing</string>
     <string name="navinvoices">invoices</string>
     <string name="reports">REPORTS</string>
     <string name="reports1">Reports</string>

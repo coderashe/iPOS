@@ -179,6 +179,7 @@ fun InDriveTopBottomNavigation() {
 
     // Observe auth state and navigate to sign-in page when unauthenticated
     val authState by authViewModel.authState.observeAsState()
+    val userRole by authViewModel.userRole.observeAsState()
 
     // Navigate to sign-in when user is unauthenticated
     LaunchedEffect(authState) {
@@ -235,7 +236,7 @@ fun InDriveTopBottomNavigation() {
             IndriveDrawerNav(navController = navController, scaffoldState)
         },
         bottomBar = {
-            IndriveBottomNavigation(navController)
+            IndriveBottomNavigation(navController, authViewModel)
         },
     ) { paddingValues ->
         Box(modifier = Modifier
@@ -248,36 +249,76 @@ fun InDriveTopBottomNavigation() {
                 modifier = Modifier.padding(paddingValues)
             ) {
 
+//                // Navigation Composable for BusinessPerformanceScreen
+//                composable(Destinations.BusinessPerformance.route) {
+//                    // Show the PIN dialog if flag is true and PIN hasn't been correctly entered
+//                    if (showPinDialog && !isPinCorrect) {
+//                        PINEntryDialog(
+//                            onPinEntered = { enteredPin ->
+//                                if (enteredPin == "6167") {
+//                                    isPinCorrect = true // Set flag to true on correct PIN
+//                                    showPinDialog = false // Hide the dialog
+//                                } else {
+//                                    isPinCorrect = false
+//                                    // Optionally show an error message or reset the input
+//                                }
+//                            },
+//                            onCancel = {
+//                                showPinDialog = false // Close the dialog
+//                                isPinCorrect = false
+//                                navController.navigate(Destinations.Rides.route) // Navigate back to RidesScreen
+//                            }
+//                        )
+//                    } else {
+//                        // Only show BusinessPerformanceScreen if the PIN is correct
+//                        BusinessPerformanceScreen(viewModel = businessPerformanceViewModel)
+//
+//                        // When leaving BusinessPerformanceScreen, reset the isPinCorrect flag
+//                        DisposableEffect(Unit) {
+//                            onDispose {
+//                                isPinCorrect =
+//                                    false // Reset the PIN requirement when leaving the screen
+//                            }
+//                        }
+//                    }
+//                }
+
                 // Navigation Composable for BusinessPerformanceScreen
                 composable(Destinations.BusinessPerformance.route) {
-                    // Show the PIN dialog if flag is true and PIN hasn't been correctly entered
-                    if (showPinDialog && !isPinCorrect) {
-                        PINEntryDialog(
-                            onPinEntered = { enteredPin ->
-                                if (enteredPin == "6167") {
-                                    isPinCorrect = true // Set flag to true on correct PIN
-                                    showPinDialog = false // Hide the dialog
-                                } else {
-                                    isPinCorrect = false
-                                    // Optionally show an error message or reset the input
-                                }
-                            },
-                            onCancel = {
-                                showPinDialog = false // Close the dialog
-                                isPinCorrect = false
-                                navController.navigate(Destinations.Rides.route) // Navigate back to RidesScreen
-                            }
-                        )
-                    } else {
-                        // Only show BusinessPerformanceScreen if the PIN is correct
-                        BusinessPerformanceScreen(viewModel = businessPerformanceViewModel)
+                    // Observe user role here again to ensure correct handling
+                    val userRole by authViewModel.userRole.observeAsState()
 
-                        // When leaving BusinessPerformanceScreen, reset the isPinCorrect flag
-                        DisposableEffect(Unit) {
-                            onDispose {
-                                isPinCorrect =
-                                    false // Reset the PIN requirement when leaving the screen
+                    if (userRole == "admin") {
+                        // Show the PIN dialog if the user is admin
+                        if (showPinDialog && !isPinCorrect) {
+                            PINEntryDialog(
+                                onPinEntered = { enteredPin ->
+                                    if (enteredPin == "6167") {
+                                        isPinCorrect = true
+                                        showPinDialog = false
+                                    } else {
+                                        isPinCorrect = false
+                                    }
+                                },
+                                onCancel = {
+                                    showPinDialog = false
+                                    isPinCorrect = false
+                                    navController.navigate(Destinations.Rides.route)
+                                }
+                            )
+                        } else {
+                            // Show the BusinessPerformanceScreen if PIN is correct
+                            BusinessPerformanceScreen(viewModel = businessPerformanceViewModel)
+
+                            // Reset PIN check when leaving screen
+                            DisposableEffect(Unit) {
+                                onDispose { isPinCorrect = false }
                             }
+                        }
+                    } else {
+                        // If not admin, redirect to Rides screen
+                        navController.navigate(Destinations.Rides.route) {
+                            popUpTo(Destinations.Rides.route) { inclusive = true }
                         }
                     }
                 }
@@ -372,7 +413,8 @@ fun InDriveTopBottomNavigation() {
                         CartScreen(
                             customer = customer,
                             navController,
-                            viewModel
+                            viewModel,
+                            authViewModel
                         )
                     }
                 }
@@ -725,12 +767,24 @@ fun IndriveDrawerBottom(modifier: Modifier, navController: NavController) {
 }
 
 @Composable
-fun IndriveBottomNavigation(navController: NavHostController) {
+fun IndriveBottomNavigation(
+    navController: NavHostController,
+    authViewModel: AuthViewModel = viewModel()
+) {
     BottomNavigation(
         backgroundColor = Color.White
     ) {
         val navBackStackEntry by navController.currentBackStackEntryAsState()
         val currentDestination = navBackStackEntry?.destination
+
+        // Observe the user role from AuthViewModel
+        val userRole by authViewModel.userRole.observeAsState()
+
+        // Debug logging to verify userRole
+        Log.d("StartLogs", "User role: $userRole")
+
+        // Fallback if userRole is null or not "admin"
+        val isAdmin = userRole == "admin"
 
         BottomNavigationItem(
             selected = currentDestination?.route == Destinations.Rides.route,
@@ -743,15 +797,23 @@ fun IndriveBottomNavigation(navController: NavHostController) {
             selected = currentDestination?.route == Destinations.Income.route,
             onClick = { navController.navigate(Destinations.Income.route) },
             icon = { Icon(Icons.Default.MonetizationOn, contentDescription = null) },
-            label = { Text(text = stringResource(id = R.string.navincome), color = Color.Black) }
+            label = { Text(text = stringResource(id = R.string.navreports), color = Color.Black) }
         )
 
-        BottomNavigationItem(
-            selected = currentDestination?.route == Destinations.BusinessPerformance.route,
-            onClick = { navController.navigate(Destinations.BusinessPerformance.route) },
-            icon = { Icon(Icons.Default.AutoGraph, contentDescription = null) },
-            label = { Text(text = stringResource(id = R.string.navbusiness), color = Color.Black) }
-        )
+        // Only show BusinessPerformance navigation item if the user role is "admin"
+        if (isAdmin) {
+            BottomNavigationItem(
+                selected = currentDestination?.route == Destinations.BusinessPerformance.route,
+                onClick = { navController.navigate(Destinations.BusinessPerformance.route) },
+                icon = { Icon(Icons.Default.AutoGraph, contentDescription = null) },
+                label = {
+                    Text(
+                        text = stringResource(id = R.string.navbusiness),
+                        color = Color.Black
+                    )
+                }
+            )
+        }
 
         BottomNavigationItem(
             selected = currentDestination?.route == Destinations.ExpenseReport.route,
@@ -760,11 +822,26 @@ fun IndriveBottomNavigation(navController: NavHostController) {
             label = { Text(text = stringResource(id = R.string.navexpenses), color = Color.Black) }
         )
 
+        // Only show BusinessPerformance navigation item if the user role is "admin"
+        if (isAdmin) {
+            BottomNavigationItem(
+                selected = currentDestination?.route == Destinations.Products.route,
+                onClick = { navController.navigate(Destinations.Products.route) },
+                icon = { Icon(Icons.Default.ProductionQuantityLimits, contentDescription = null) },
+                label = {
+                    Text(
+                        text = stringResource(id = R.string.navproducts),
+                        color = Color.Black
+                    )
+                }
+            )
+        }
+
         BottomNavigationItem(
-            selected = currentDestination?.route == Destinations.Products.route,
-            onClick = { navController.navigate(Destinations.Products.route) },
+            selected = currentDestination?.route == Destinations.CustomerSelection.route,
+            onClick = { navController.navigate(Destinations.CustomerSelection.route) },
             icon = { Icon(Icons.Default.ProductionQuantityLimits, contentDescription = null) },
-            label = { Text(text = stringResource(id = R.string.navproducts), color = Color.Black) }
+            label = { Text(text = stringResource(id = R.string.navinvoicing), color = Color.Black) }
         )
     }
 }

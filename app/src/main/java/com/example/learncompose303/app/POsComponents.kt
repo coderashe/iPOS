@@ -214,7 +214,7 @@ fun AutoSlidingCarousel(
                     headingText = productDescriptions[page], // Use product description as heading
                     taglineText = "Explore our amazing products.",
                     buttonText = "View Product",
-                    imageResource = painterResource(id = R.drawable.cart), // Example image, can be dynamic
+                    imageResource = painterResource(id = R.drawable.sadza1), // Example image, can be dynamic
                     onButtonClick = {
                         navController.navigate(Destinations.CustomerSelection.route) // Navigate to a screen
                     }
@@ -249,104 +249,6 @@ fun AutoSlidingCarousel(
         }
     }
 }
-
-
-// old working
-
-//@Composable
-//fun AutoSlidingCarousel(
-//    modifier: Modifier = Modifier,
-//    navController: NavController
-//) {
-//    val coroutineScope = rememberCoroutineScope() // Coroutine scope to launch coroutines
-//
-//    val pagerState = rememberPagerState(pageCount = { 3 })
-//
-//    // Auto-slide functionality with LaunchedEffect and coroutine delay
-//    LaunchedEffect(pagerState) {
-//        while (true) {
-//            yield() // Yield ensures smooth continuation
-//            delay(5000L) // Delay of 5 seconds for auto slide
-//            val nextPage = (pagerState.currentPage + 1) % 3
-//            pagerState.animateScrollToPage(
-//                page = nextPage,
-//                animationSpec = tween(
-//                    durationMillis = 600, // Adjust the duration for smoother animation
-//                    easing = FastOutSlowInEasing // Easing function for smooth acceleration/deceleration
-//                )
-//            )
-//        }
-//    }
-//
-//    Column(
-//        modifier = Modifier
-//            .fillMaxWidth(),
-//        horizontalAlignment = Alignment.CenterHorizontally
-//    ) {
-//        HorizontalPager(
-//            state = pagerState,
-//            modifier = Modifier.fillMaxWidth()
-//        ) { page ->
-//            when (page) {
-//                0 -> CarouselCard(
-//                    headingText = "First Card",
-//                    taglineText = "This is the first tagline.",
-//                    buttonText = "Explore",
-//                    imageResource = painterResource(id = R.drawable.cart),
-//                    onButtonClick = {
-//                        navController.navigate(Destinations.CustomerSelection.route) // Navigate to InvoiceScreen
-//                    }
-//                )
-//
-//                1 -> CarouselCard(
-//                    headingText = "Second Card",
-//                    taglineText = "This is the second tagline.",
-//                    buttonText = "Discover",
-//                    imageResource = painterResource(id = R.drawable.chicken1),
-//                    onButtonClick = {
-//                        navController.navigate(Destinations.CustomerSelection.route) // Navigate to InvoiceScreen
-//                    }
-//                )
-//
-//                2 -> CarouselCard(
-//                    headingText = "Third Card",
-//                    taglineText = "This is the third tagline.",
-//                    buttonText = "Learn More",
-//                    imageResource = painterResource(id = R.drawable.cart),
-//                    onButtonClick = {
-//                        navController.navigate(Destinations.CustomerSelection.route) // Navigate to InvoiceScreen
-//                    }
-//                )
-//            }
-//        }
-//
-//        // Indicator dots below the carousel
-//        Spacer(modifier = Modifier.height(16.dp))
-//        Row(
-//            modifier = Modifier.fillMaxWidth(),
-//            horizontalArrangement = Arrangement.Center
-//        ) {
-//            repeat(3) { index ->
-//                Box(
-//                    modifier = Modifier
-//                        .size(10.dp)
-//                        .background(
-//                            if (pagerState.currentPage == index) Green1 else Color.Gray,
-//                            shape = RoundedCornerShape(50)
-//                        )
-//                        .padding(4.dp)
-//                        .clickable {
-//                            // Use coroutineScope to launch the scrollToPage call
-//                            coroutineScope.launch {
-//                                pagerState.scrollToPage(index)
-//                            }
-//                        }
-//                )
-//                Spacer(modifier = Modifier.width(8.dp))
-//            }
-//        }
-//    }
-//}
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
