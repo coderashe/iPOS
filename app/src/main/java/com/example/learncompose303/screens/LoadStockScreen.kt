@@ -98,18 +98,19 @@ fun LoadStockScreen(
                     productRequestFileLauncher.launch("*/*")
                 }
             )
-//        for priceListCsvUpload
-            QuickAccessCard(
-                label = stringResource(R.string.uploadPricelists),
-                subTitle = "--",
-                icon = Icons.Default.More,
-                onClick = {
-                    pricelistRequestFileLauncher.launch("*/*")
-                }
-            )
-        }
-        Spacer(modifier = Modifier.height(16.dp))
 
+//        for priceListCsvUpload
+//            QuickAccessCard(
+//                label = stringResource(R.string.uploadPricelists),
+//                subTitle = "--",
+//                icon = Icons.Default.More,
+//                onClick = {
+//                    pricelistRequestFileLauncher.launch("*/*")
+//                }
+//            )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
 
         // Product Name Input
         OutlinedTextField(
@@ -167,7 +168,10 @@ fun LoadStockScreen(
 
                     // Calculate gross profit percentage and markup percentage
                     val grossProfitPercentage = if (sellingPriceValue != null) {
-                        viewModel.calculateGrossProfitPercentage(unitCostValue, sellingPriceValue)
+                        viewModel.calculateGrossProfitPercentage(
+                            unitCostValue,
+                            sellingPriceValue
+                        )
                     } else {
                         0.0 // Default to 0 if selling price is not valid
                     }

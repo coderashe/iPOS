@@ -148,42 +148,93 @@ class InvoiceViewModel @Inject constructor(
             // Retrieve existing products from the database using the once method
             val existingProducts = productRepository.getAllProductsOnce()
 
-            // Create a set to track duplicates
-            val existingProductSet = existingProducts.map {
-                Pair(it.productDescription, it.currentStockLevel)
-            }.toSet()
+            // Create a map to track existing products by their description
+            val existingProductMap = existingProducts.associateBy { it.productDescription }
 
-            // Convert ProductCsvModel to Product entity, avoiding duplicates
-            val productList = mutableListOf<Product>()
-            var duplicateCount = 0
+            val duplicateCount = 0
 
             for (productCsv in productsFromCsv) {
-                val productPair = Pair(productCsv.productDescription, productCsv.currentStockLevel)
-                if (!existingProductSet.contains(productPair)) {
-                    // Set default image URI if null
-                    val imageUri = productCsv.imageUri ?: getDefaultImageUri(context)
+                val existingProduct = existingProductMap[productCsv.productDescription]
 
-                    productList.add(
-                        Product(
-                            productDescription = productCsv.productDescription,
-                            currentStockLevel = productCsv.currentStockLevel,
-                            saleable = productCsv.saleable,
-                            purchasable = productCsv.purchasable,
-                            averageCost = productCsv.averageCost,
-                            standardCost = productCsv.standardCost,
-                            salesTaxCode = productCsv.salesTaxCode,
-                            purchasableTaxCode = productCsv.purchasableTaxCode,
-                            inclusiveTaxed = productCsv.inclusiveTaxed,
-                            imageUri = imageUri // Now using a String URI
-                        )
+                // If the product exists, update its details
+                if (existingProduct != null) {
+                    // Update the existing product details
+                    val updatedProduct = existingProduct.copy(
+                        currentStockLevel = productCsv.currentStockLevel,
+                        saleable = productCsv.saleable,
+                        purchasable = productCsv.purchasable,
+                        averageCost = productCsv.averageCost,
+                        standardCost = productCsv.standardCost ?: existingProduct.standardCost,
+                        salesTaxCode = productCsv.salesTaxCode,
+                        purchasableTaxCode = productCsv.purchasableTaxCode,
+                        inclusiveTaxed = productCsv.inclusiveTaxed,
+                        imageUri = productCsv.imageUri
+                            ?: existingProduct.imageUri // Retain existing image URI if null
                     )
+
+                    // Update the product in the repository
+                    productRepository.updateProduct(updatedProduct)
+
+                    // Update the price list for the existing product
+                    val sellingPrice = updatedProduct.standardCost * 1 // Adjust as needed
+                    val markupPercentage =
+                        ((sellingPrice - updatedProduct.standardCost) / updatedProduct.standardCost) * 100
+                    val grossProfitPercentage =
+                        ((sellingPrice - updatedProduct.averageCost) / sellingPrice) * 100
+
+                    val priceList = PriceList(
+                        productId = updatedProduct.productId, // Use the existing productId
+                        productDescription = updatedProduct.productDescription,
+                        unitCost = updatedProduct.standardCost,
+                        sellingPrice = sellingPrice,
+                        markupPercentage = markupPercentage,
+                        grossProfitPercentage = grossProfitPercentage
+                    )
+
+                    // Update the price list in the repository
+                    priceListRepository.updatePriceList(priceList)
+
                 } else {
-                    duplicateCount++
+                    // Product does not exist, add it
+                    val imageUri = productCsv.imageUri ?: getDefaultImageUri(context)
+                    val standardCost = productCsv.standardCost ?: 0.0
+
+                    // Create a new product entity
+                    val newProduct = Product(
+                        productDescription = productCsv.productDescription,
+                        currentStockLevel = productCsv.currentStockLevel,
+                        saleable = productCsv.saleable,
+                        purchasable = productCsv.purchasable,
+                        averageCost = productCsv.averageCost,
+                        standardCost = standardCost,
+                        salesTaxCode = productCsv.salesTaxCode,
+                        purchasableTaxCode = productCsv.purchasableTaxCode,
+                        inclusiveTaxed = productCsv.inclusiveTaxed,
+                        imageUri = imageUri
+                    )
+
+                    // Insert new product into the repository
+                    val productId = productRepository.insertProduct(newProduct)
+
+                    // Insert into PriceList for the new product
+                    val sellingPrice = standardCost * 1 // Adjust as needed
+                    val markupPercentage = ((sellingPrice - standardCost) / standardCost) * 100
+                    val grossProfitPercentage =
+                        ((sellingPrice - productCsv.averageCost) / sellingPrice) * 100
+
+                    val priceList = PriceList(
+                        productId = productId, // Use the newly inserted productId
+                        productDescription = productCsv.productDescription,
+                        unitCost = standardCost,
+                        sellingPrice = sellingPrice,
+                        markupPercentage = markupPercentage,
+                        grossProfitPercentage = grossProfitPercentage
+                    )
+
+                    // Insert the price list for the new product
+                    priceListRepository.insertPriceList(priceList)
                 }
             }
-
-            // Insert non-duplicate products into the database
-            productRepository.insertProducts(productList)
 
             // Show toast notification
             if (duplicateCount > 0) {
@@ -198,6 +249,154 @@ class InvoiceViewModel @Inject constructor(
             }
         }
     }
+
+
+    // Logic for uploading products from CSV working but with duplicates
+//    fun uploadProductsFromCsv(inputStream: InputStream, context: Context) {
+//        viewModelScope.launch {
+//            val parser = CsvParser()
+//            val productsFromCsv = parser.parseProductCsv(inputStream)
+//
+//            // Retrieve existing products from the database using the once method
+//            val existingProducts = productRepository.getAllProductsOnce()
+//
+//            // Create a set to track duplicates
+//            val existingProductSet = existingProducts.map {
+//                Pair(it.productDescription, it.currentStockLevel)
+//            }.toSet()
+//
+//            // Convert ProductCsvModel to Product entity, avoiding duplicates
+//            val productList = mutableListOf<Product>()
+//            var duplicateCount = 0
+//
+//            for (productCsv in productsFromCsv) {
+//                val productPair = Pair(productCsv.productDescription, productCsv.currentStockLevel)
+//                if (!existingProductSet.contains(productPair)) {
+//                    // Set default image URI if null
+//                    val imageUri = productCsv.imageUri ?: getDefaultImageUri(context)
+//
+//                    // Calculate sellingPrice, markupPercentage, and grossProfitPercentage
+//                    val standardCost =
+//                        productCsv.standardCost ?: 0.0 // Ensure standardCost is not null
+//                    val sellingPrice =
+//                        standardCost * 1 // Example selling price calculation (adjust as needed)
+//                    val markupPercentage = ((sellingPrice - standardCost) / standardCost) * 100
+//                    val grossProfitPercentage =
+//                        ((sellingPrice - productCsv.averageCost) / sellingPrice) * 100
+//
+//                    // Create Product entity
+//                    val product = Product(
+//                        productDescription = productCsv.productDescription,
+//                        currentStockLevel = productCsv.currentStockLevel,
+//                        saleable = productCsv.saleable,
+//                        purchasable = productCsv.purchasable,
+//                        averageCost = productCsv.averageCost,
+//                        standardCost = standardCost,
+//                        salesTaxCode = productCsv.salesTaxCode,
+//                        purchasableTaxCode = productCsv.purchasableTaxCode,
+//                        inclusiveTaxed = productCsv.inclusiveTaxed,
+//                        imageUri = imageUri // Now using a String URI
+//                    )
+//
+//                    productList.add(product)
+//
+//                    // Insert into PriceList table
+//                    val priceList = PriceList(
+//                        productId = 0, // Placeholder, will be updated after insertion
+//                        productDescription = productCsv.productDescription,
+//                        unitCost = standardCost,
+//                        sellingPrice = sellingPrice,
+//                        markupPercentage = markupPercentage,
+//                        grossProfitPercentage = grossProfitPercentage
+//                    )
+//
+//                    // Insert product and retrieve the inserted productId
+//                    val productId = productRepository.insertProduct(product)
+//
+//                    // Update the productId in the PriceList
+//                    priceList.productId = productId
+//
+//                    // Insert the PriceList into the repository
+//                    priceListRepository.insertPriceList(priceList)
+//                } else {
+//                    duplicateCount++
+//                }
+//            }
+//
+//            // Show toast notification
+//            if (duplicateCount > 0) {
+//                Toast.makeText(
+//                    context,
+//                    "$duplicateCount duplicate products were found and skipped.",
+//                    Toast.LENGTH_SHORT
+//                ).show()
+//            } else {
+//                Toast.makeText(context, "Products uploaded successfully.", Toast.LENGTH_SHORT)
+//                    .show()
+//            }
+//        }
+//    }
+
+
+    // Logic for uploading products from CSV
+//    fun uploadProductsFromCsv(inputStream: InputStream, context: Context) {
+//        viewModelScope.launch {
+//            val parser = CsvParser()
+//            val productsFromCsv = parser.parseProductCsv(inputStream)
+//
+//            // Retrieve existing products from the database using the once method
+//            val existingProducts = productRepository.getAllProductsOnce()
+//
+//            // Create a set to track duplicates
+//            val existingProductSet = existingProducts.map {
+//                Pair(it.productDescription, it.currentStockLevel)
+//            }.toSet()
+//
+//            // Convert ProductCsvModel to Product entity, avoiding duplicates
+//            val productList = mutableListOf<Product>()
+//            var duplicateCount = 0
+//
+//            for (productCsv in productsFromCsv) {
+//                val productPair = Pair(productCsv.productDescription, productCsv.currentStockLevel)
+//                if (!existingProductSet.contains(productPair)) {
+//                    // Set default image URI if null
+//                    val imageUri = productCsv.imageUri ?: getDefaultImageUri(context)
+//
+//                    productList.add(
+//                        Product(
+//                            productDescription = productCsv.productDescription,
+//                            currentStockLevel = productCsv.currentStockLevel,
+//                            saleable = productCsv.saleable,
+//                            purchasable = productCsv.purchasable,
+//                            averageCost = productCsv.averageCost,
+//                            standardCost = productCsv.standardCost,
+//                            salesTaxCode = productCsv.salesTaxCode,
+//                            purchasableTaxCode = productCsv.purchasableTaxCode,
+//                            inclusiveTaxed = productCsv.inclusiveTaxed,
+//                            imageUri = imageUri // Now using a String URI
+//                        )
+//                    )
+//                } else {
+//                    duplicateCount++
+//                }
+//            }
+//
+//            // Insert non-duplicate products into the database
+//            productRepository.insertProducts(productList)
+//
+//            // Show toast notification
+//            if (duplicateCount > 0) {
+//                Toast.makeText(
+//                    context,
+//                    "$duplicateCount duplicate products were found and skipped.",
+//                    Toast.LENGTH_SHORT
+//                ).show()
+//            } else {
+//                Toast.makeText(context, "Products uploaded successfully.", Toast.LENGTH_SHORT)
+//                    .show()
+//            }
+//        }
+//    }
 
     // Function to get default image URI from drawable resources
     fun getDefaultImageUri(context: Context): String {

@@ -218,7 +218,6 @@ fun CartScreen(
             Text("Submit Invoice")
         }
 
-
         Spacer(modifier = Modifier.height(16.dp))
 
 // Display the list of selected products and their total cost
