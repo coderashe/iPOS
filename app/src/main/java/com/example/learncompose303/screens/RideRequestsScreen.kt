@@ -78,7 +78,6 @@ fun RideRequestsScreen(
             is AuthState.UnAuthenticated -> navController.navigate(Destinations.SignIn.route)
             else -> Unit
         }
-
     }
 
     val currentUserEmail by authViewModel.userEmail.observeAsState()

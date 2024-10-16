@@ -17,7 +17,6 @@ class AuthRepositoryImpl @Inject constructor(
 ) : AuthRepository {
 
     override suspend fun signUpUser(user: User): Long {
-        val userId = userDao.insertUser(user) // Save to local DB
         return userDao.insertUser(user)
     }
 

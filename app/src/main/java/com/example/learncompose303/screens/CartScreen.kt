@@ -192,8 +192,13 @@ fun CartScreen(
                                 .show()
                         }
 
-                        // Navigate to the receipt screen or another destination after submitting the invoice
-                        navController.navigate(Destinations.Rides.route)
+//                        navController.navigate(Destinations.Rides.route)
+                        navController.navigate(Destinations.Rides.route) {
+                            popUpTo(Destinations.Rides.route) {
+                                inclusive = true
+                            }
+                        }
+
                         Toast.makeText(context, "Invoice paid successfully", Toast.LENGTH_SHORT)
                             .show()
                     } else {

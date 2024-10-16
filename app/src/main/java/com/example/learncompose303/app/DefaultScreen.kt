@@ -2,6 +2,7 @@ package com.example.learncompose303.app
 
 import android.os.Build
 import android.util.Log
+import androidx.activity.compose.BackHandler
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -61,6 +62,7 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.autoSaver
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -233,7 +235,7 @@ fun InDriveTopBottomNavigation() {
             )
         },
         drawerContent = {
-            IndriveDrawerNav(navController = navController, scaffoldState)
+            IndriveDrawerNav(navController = navController, scaffoldState, authViewModel)
         },
         bottomBar = {
             IndriveBottomNavigation(navController, authViewModel)
@@ -248,40 +250,6 @@ fun InDriveTopBottomNavigation() {
                 startDestination = Destinations.SignIn.route,
                 modifier = Modifier.padding(paddingValues)
             ) {
-
-//                // Navigation Composable for BusinessPerformanceScreen
-//                composable(Destinations.BusinessPerformance.route) {
-//                    // Show the PIN dialog if flag is true and PIN hasn't been correctly entered
-//                    if (showPinDialog && !isPinCorrect) {
-//                        PINEntryDialog(
-//                            onPinEntered = { enteredPin ->
-//                                if (enteredPin == "6167") {
-//                                    isPinCorrect = true // Set flag to true on correct PIN
-//                                    showPinDialog = false // Hide the dialog
-//                                } else {
-//                                    isPinCorrect = false
-//                                    // Optionally show an error message or reset the input
-//                                }
-//                            },
-//                            onCancel = {
-//                                showPinDialog = false // Close the dialog
-//                                isPinCorrect = false
-//                                navController.navigate(Destinations.Rides.route) // Navigate back to RidesScreen
-//                            }
-//                        )
-//                    } else {
-//                        // Only show BusinessPerformanceScreen if the PIN is correct
-//                        BusinessPerformanceScreen(viewModel = businessPerformanceViewModel)
-//
-//                        // When leaving BusinessPerformanceScreen, reset the isPinCorrect flag
-//                        DisposableEffect(Unit) {
-//                            onDispose {
-//                                isPinCorrect =
-//                                    false // Reset the PIN requirement when leaving the screen
-//                            }
-//                        }
-//                    }
-//                }
 
                 // Navigation Composable for BusinessPerformanceScreen
                 composable(Destinations.BusinessPerformance.route) {
@@ -398,7 +366,7 @@ fun InDriveTopBottomNavigation() {
                     }
                 }
 
-                // Cart Screen
+// Cart Screen
                 composable(Destinations.Cart.route + "/{customerId}") { backStackEntry ->
                     val customerId =
                         backStackEntry.arguments?.getString("customerId")?.toLong()
@@ -410,6 +378,15 @@ fun InDriveTopBottomNavigation() {
                     }
 
                     if (customer != null) {
+                        // Handle back button press
+                        BackHandler {
+                            navController.navigate(Destinations.Rides.route) {
+                                popUpTo(Destinations.Cart.route) {
+                                    inclusive = true
+                                } // Remove CartScreen from the back stack
+                            }
+                        }
+
                         CartScreen(
                             customer = customer,
                             navController,
@@ -418,6 +395,27 @@ fun InDriveTopBottomNavigation() {
                         )
                     }
                 }
+
+                // Cart Screen
+//                composable(Destinations.Cart.route + "/{customerId}") { backStackEntry ->
+//                    val customerId =
+//                        backStackEntry.arguments?.getString("customerId")?.toLong()
+//                            ?: return@composable
+//                    val customer = viewModel.getCustomerById(customerId)
+//
+//                    LaunchedEffect(customerId) {
+//                        viewModel.refreshCartItems(customerId)
+//                    }
+//
+//                    if (customer != null) {
+//                        CartScreen(
+//                            customer = customer,
+//                            navController,
+//                            viewModel,
+//                            authViewModel
+//                        )
+//                    }
+//                }
 
                 composable(Destinations.Login.route) {
                     LoginScreen(viewModel = viewModel, navController)
@@ -477,7 +475,11 @@ fun InDriveTopBottomNavigation() {
 
 
 @Composable
-fun IndriveDrawerNav(navController: NavController, scaffoldState: ScaffoldState) {
+fun IndriveDrawerNav(
+    navController: NavController,
+    scaffoldState: ScaffoldState,
+    authViewModel: AuthViewModel = viewModel()
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -490,7 +492,7 @@ fun IndriveDrawerNav(navController: NavController, scaffoldState: ScaffoldState)
                 .verticalScroll(rememberScrollState())  // Makes it scrollable if content is large
                 .padding(8.dp)
         ) {
-            IndriveDrawerHeader()
+            IndriveDrawerHeader(authViewModel = authViewModel)
             IndriveDrawerBody(navController = navController, scaffoldState)
         }
 
@@ -505,8 +507,26 @@ fun IndriveDrawerNav(navController: NavController, scaffoldState: ScaffoldState)
 }
 
 @Composable
-fun IndriveDrawerHeader() {
+fun IndriveDrawerHeader(authViewModel: AuthViewModel = viewModel()) {
     val userImage = painterResource(id = R.drawable.user)
+    val currentUserEmail by authViewModel.userEmail.observeAsState()
+
+    // Trigger fetch when the email is available
+    currentUserEmail?.let {
+        LaunchedEffect(it) {
+            authViewModel.fetchUserByEmail(it)
+        }
+        Log.d("StartLogs", "current loggedin user is $currentUserEmail")
+    }
+
+    val currentUser by authViewModel.fetchedUser.observeAsState()
+    // Logging the fetched user once available
+    currentUser?.let {
+        Log.d("StartLogs", "Current logged-in user is ${it.userFullName}")
+    } ?: run {
+        Log.d("StartLogs", "No user found with this email.")
+    }
+
 
     Column(modifier = Modifier.background(MyGray)) {
         Row(
@@ -532,7 +552,8 @@ fun IndriveDrawerHeader() {
                     .weight(1f)
             ) {
                 Text(
-                    text = stringResource(id = R.string.myusername),
+                    text = currentUser?.userFullName ?: "Simba Start"
+                    ?: stringResource(id = R.string.myusername),
                     color = Color.Black
                 )
 

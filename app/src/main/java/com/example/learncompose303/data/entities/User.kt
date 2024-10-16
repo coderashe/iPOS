@@ -1,9 +1,10 @@
 package com.example.learncompose303.data.entities
 
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 
-@Entity(tableName = "user")
+@Entity(tableName = "user", indices = [Index(value = ["userEmail"], unique = true)])
 data class User(
     @PrimaryKey(autoGenerate = true) val userId: Long = 0,
     val userFullName: String,
@@ -11,6 +12,6 @@ data class User(
     val userRole: String,  // cashier/businessman/admin
     val userPassword: String,
     val storeID: String,
-    val userEmail: String,  // New field
-    val userAddress: String? // New field, optional
+    val userEmail: String,
+    val userAddress: String?
 )
