@@ -64,16 +64,16 @@ fun LoadStockScreen(
         }
     }
 
-    val pricelistRequestFileLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        uri?.let {
-            val inputStream = context.contentResolver.openInputStream(it)
-            inputStream?.let {
-                viewModel.uploadPriceListsFromCsv(it, context)
-            }
-        }
-    }
+//    val pricelistRequestFileLauncher = rememberLauncherForActivityResult(
+//        contract = ActivityResultContracts.GetContent()
+//    ) { uri: Uri? ->
+//        uri?.let {
+//            val inputStream = context.contentResolver.openInputStream(it)
+//            inputStream?.let {
+//                viewModel.uploadPriceListsFromCsv(it, context)
+//            }
+//        }
+//    }
 
     Column(
         modifier = Modifier

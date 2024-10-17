@@ -22,6 +22,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -53,15 +54,25 @@ import com.example.learncompose303.data.entities.Product
 import com.example.learncompose303.ui.theme.Blue1
 import com.example.learncompose303.viewmodels.InvoiceViewModel
 
+
 @Composable
 fun ProductsScreen(
     viewModel: InvoiceViewModel = viewModel()
 ) {
     val products by viewModel.productList.collectAsState()
     var searchQuery by remember { mutableStateOf("") } // State for the search query
+    var showLowStockWarning by remember { mutableStateOf(false) } // State for the popup
+    var lowStockProducts by remember { mutableStateOf(emptyList<Product>()) } // List to hold low stock products
 
     LaunchedEffect(key1 = true) {
         viewModel.fetchProducts() // Fetch products when the screen is launched
+
+        // Check for low stock products
+        val lowStock = products.filter { it.currentStockLevel < 10 }
+        if (lowStock.isNotEmpty()) {
+            lowStockProducts = lowStock // Save the low stock products
+            showLowStockWarning = true // Trigger the popup
+        }
     }
 
     // Filter products based on the search query
@@ -95,7 +106,6 @@ fun ProductsScreen(
                                     initialPrice = price.sellingPrice,
                                     viewModel
                                 )
-
                             }
                         }
                         if (rowItems.size == 1) {
@@ -113,8 +123,29 @@ fun ProductsScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
     }
-}
 
+    // Show a popup warning for low stock products
+    if (showLowStockWarning) {
+        AlertDialog(
+            onDismissRequest = { showLowStockWarning = false },
+            title = { Text("Low Stock Warning") },
+            text = {
+                Column {
+                    Text("The following products have low stock:")
+                    Spacer(modifier = Modifier.height(8.dp))
+                    lowStockProducts.forEach { product ->
+                        Text("- ${product.productDescription} (Stock: ${product.currentStockLevel})")
+                    }
+                }
+            },
+            confirmButton = {
+                Button(onClick = { showLowStockWarning = false }) {
+                    Text("OK")
+                }
+            }
+        )
+    }
+}
 
 @Composable
 fun TheProductCard(

@@ -39,6 +39,50 @@ import com.example.learncompose303.screens.CartScreen
 import com.example.learncompose303.screens.ProductCard
 import com.example.learncompose303.viewmodels.InvoiceViewModel
 
+//    fun uploadPriceListsFromCsv(inputStream: InputStream, context: Context) {
+//        viewModelScope.launch {
+//            val parser = CsvParser()
+//            val priceListsFromCsv = parser.parsePriceListCsv(inputStream)
+//
+//            // Fetch existing products for productId validation
+//            val existingProducts = productRepository.getAllProductsOnce()
+//
+//            // Create a set of existing product IDs for quick lookup
+//            val existingProductIds = existingProducts.map { it.productId }.toSet()
+//
+//            // Filter new price lists to only include those with valid productIds
+//            val newPriceLists = priceListsFromCsv.filter { priceList ->
+//                existingProductIds.contains(priceList.productId) // Include only if productId exists
+//            }.distinctBy { it.productId } // Ensure no duplicate productId in new price lists
+//
+//            // Convert PriceListCsvModel to PriceList entity
+//            val priceListEntities = newPriceLists.map {
+//                PriceList(
+//                    productId = it.productId,
+//                    productDescription = it.productDescription,
+//                    unitCost = it.unitCost,
+//                    sellingPrice = it.sellingPrice,
+//                    markupPercentage = it.markupPercentage,
+//                    grossProfitPercentage = it.grossProfitPercentage
+//                )
+//            }
+//
+//            // Insert price lists into the database
+//            if (priceListEntities.isNotEmpty()) {
+//                val insertedIds = priceListRepository.insertPriceListsAll(priceListEntities)
+//                // Notify user of successful upload
+//                Toast.makeText(
+//                    context,
+//                    "${insertedIds.size} price lists uploaded successfully.",
+//                    Toast.LENGTH_SHORT
+//                ).show()
+//            } else {
+//                Toast.makeText(context, "No valid price lists to upload.", Toast.LENGTH_SHORT)
+//                    .show()
+//            }
+//        }
+//    }
+
 // working creditNote
 //    fun reverseInvoice(invoiceId: Long) = viewModelScope.launch {
 //        try {
