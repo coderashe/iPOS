@@ -288,7 +288,7 @@ fun ButcherCartScreen(
                                 singleLine = true
                             )
                             Text(
-                                "Quantity (kg): $subQuantity", // Display the calculated quantity
+                                "Quantity (kg): ${"%.2f".format(subQuantity)}",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.primary
                             )

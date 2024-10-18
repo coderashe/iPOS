@@ -359,8 +359,8 @@ fun InDriveTopBottomNavigation() {
                             customer = customer,
                             onProceedToCart = {
                                 // Navigate to the Cart screen with the customer ID
-//                                navController.navigate(Destinations.Cart.route + "/${customer.customerId}")
-                                navController.navigate(Destinations.ButcherCart.route + "/${customer.customerId}")
+                                navController.navigate(Destinations.Cart.route + "/${customer.customerId}")
+//                                navController.navigate(Destinations.ButcherCart.route + "/${customer.customerId}")
                             },
                             navController = navController,
                             viewModel = viewModel

@@ -146,12 +146,19 @@ fun CartScreen(
                 val tenderedAmount = amountTendered.toDoubleOrNull()
 
                 if (amountTendered.isNotEmpty() && tenderedAmount != null && tenderedAmount > 0) {
+
                     if (tenderedAmount >= totalPrice) {
+                        // Use the actual quantities from productQuantities map
+                        val productQuantitiesMap: Map<Long, Int> =
+                            selectedProducts.associate { product ->
+                                product.productId to (productQuantities[product.productId] ?: 1)
+                            }
+
                         // Submit the invoice with individual product quantities
                         viewModel.submitInvoice(
                             customer.customerId,
                             tenderedAmount,
-                            productQuantities,
+                            productQuantitiesMap,
                             cashierEmail
                         )
 
@@ -184,15 +191,13 @@ fun CartScreen(
                                     context,
                                     "No messaging app found",
                                     Toast.LENGTH_SHORT
-                                )
-                                    .show()
+                                ).show()
                             }
                         } catch (e: Exception) {
                             Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT)
                                 .show()
                         }
 
-//                        navController.navigate(Destinations.Rides.route)
                         navController.navigate(Destinations.Rides.route) {
                             popUpTo(Destinations.Rides.route) {
                                 inclusive = true
@@ -217,6 +222,91 @@ fun CartScreen(
         ) {
             Text("Submit Invoice")
         }
+
+
+//        Button(
+//            onClick = {
+//                val tenderedAmount = amountTendered.toDoubleOrNull()
+//
+//                if (amountTendered.isNotEmpty() && tenderedAmount != null && tenderedAmount > 0) {
+//
+//                    if (tenderedAmount >= totalPrice) {
+//                        // Ensure that we are using the actual quantities from the selectedProducts list
+//                        val productQuantities: Map<Long, Int> =
+//                            selectedProducts.associate { product ->
+//                                product.productId to product.selectedQuantity // Replace with the actual quantity property
+//                            }
+//
+//                        // Submit the invoice with individual product quantities
+//                        viewModel.submitInvoice(
+//                            customer.customerId,
+//                            tenderedAmount,
+//                            productQuantities,
+//                            cashierEmail
+//                        )
+//
+//                        // Code for sharing the invoice message...
+//                        val message = "*INVOICE RECEIPT:*\n\n" +
+//                                "*CUSTOMER DETAILS*\n" +
+//                                "${customer.name}: ${customer.phone}\n\n" +
+//                                "*PRODUCTS PURCHASED:*\n" +
+//                                "$productDetails\n\n" +
+//                                "*SALES TOTALS*\n" +
+//                                "Total Amount: *$$totalPrice*\n" +
+//                                "Amount Tendered: *$$amountTendered*\n" +
+//                                "Change: *$${amountTendered.toDouble() - totalPrice}*\n\n" +
+//                                "THANK YOU!!!... powered by istartk \u00A92024"
+//
+//                        val sendIntent = Intent(Intent.ACTION_SEND).apply {
+//                            type = "text/plain"
+//                            putExtra(Intent.EXTRA_TEXT, message)
+//                        }
+//
+//                        try {
+//                            val chooserIntent = Intent.createChooser(
+//                                sendIntent,
+//                                "Send via WhatsApp or WhatsApp Business"
+//                            )
+//                            chooserIntent.resolveActivity(context.packageManager)?.let {
+//                                context.startActivity(chooserIntent)
+//                            } ?: run {
+//                                Toast.makeText(
+//                                    context,
+//                                    "No messaging app found",
+//                                    Toast.LENGTH_SHORT
+//                                )
+//                                    .show()
+//                            }
+//                        } catch (e: Exception) {
+//                            Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT)
+//                                .show()
+//                        }
+//
+////                        navController.navigate(Destinations.Rides.route)
+//                        navController.navigate(Destinations.Rides.route) {
+//                            popUpTo(Destinations.Rides.route) {
+//                                inclusive = true
+//                            }
+//                        }
+//
+//                        Toast.makeText(context, "Invoice paid successfully", Toast.LENGTH_SHORT)
+//                            .show()
+//                    } else {
+//                        Toast.makeText(
+//                            context,
+//                            "Amount tendered must be greater than or equal to total price",
+//                            Toast.LENGTH_SHORT
+//                        ).show()
+//                    }
+//                } else {
+//                    Toast.makeText(context, "Please enter valid details", Toast.LENGTH_SHORT)
+//                        .show()
+//                }
+//            },
+//            modifier = Modifier.fillMaxWidth(),
+//        ) {
+//            Text("Submit Invoice")
+//        }
 
         Spacer(modifier = Modifier.height(16.dp))
 

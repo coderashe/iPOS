@@ -217,7 +217,10 @@ fun TheProductCard(
                 )
             } else {
                 // Display Price - real-time updates using reactive price variable
-                Text("\$${price}", style = MaterialTheme.typography.headlineSmall)
+                Text(
+                    "\$${"%.2f".format(price)}",
+                    style = MaterialTheme.typography.headlineSmall
+                )
             }
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -247,7 +250,7 @@ fun TheProductCard(
                                 shape = RoundedCornerShape(8.dp)
                             )
                             .padding(2.dp),
-                        text = product.currentStockLevel.toString(),
+                        text = " ${"%.2f".format(product.currentStockLevel)}",
                         style = MaterialTheme.typography.titleSmall,
                         color = Color.Red,
                         fontWeight = FontWeight.Bold
