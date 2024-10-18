@@ -135,7 +135,7 @@ dependencies {
     implementation("androidx.compose.runtime:runtime-livedata:1.7.2")
 
     // Add Material Components library
-    implementation ("com.google.android.material:material:1.12.0")
+    implementation("com.google.android.material:material:1.12.0")
 
     val work_version = "2.9.1"
 
@@ -144,5 +144,8 @@ dependencies {
 
     // Kotlin + coroutines
     implementation("androidx.work:work-runtime-ktx:$work_version")
+
+//    swipe-refresh
+    implementation("com.google.accompanist:accompanist-swiperefresh:0.27.0")
 
 }

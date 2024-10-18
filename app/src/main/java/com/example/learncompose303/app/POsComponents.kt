@@ -6,6 +6,8 @@ import android.app.DatePickerDialog
 import android.app.Instrumentation
 import android.content.IntentSender
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -87,6 +89,7 @@ import androidx.navigation.NavController
 import com.example.learncompose303.R
 import com.example.learncompose303.data.Destinations
 import com.example.learncompose303.data.entities.Product
+import com.example.learncompose303.screens.ShopLandingScreen
 import com.example.learncompose303.screens.auth.AuthViewModel
 import com.example.learncompose303.ui.theme.Blue1
 import com.example.learncompose303.ui.theme.Gray1
@@ -95,11 +98,39 @@ import com.example.learncompose303.ui.theme.LightGray
 import com.example.learncompose303.ui.theme.LightGreen
 import com.example.learncompose303.ui.theme.MyGray
 import com.example.learncompose303.viewmodels.InvoiceViewModel
+import com.google.accompanist.swiperefresh.SwipeRefresh
+import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
 import java.util.Calendar
+
+
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun SwipeRefreshLayout() {
+    // State to manage the refresh status
+    var isRefreshing by remember { mutableStateOf(false) }
+
+    // SwipeRefresh composable from Accompanist
+    SwipeRefresh(
+        state = rememberSwipeRefreshState(isRefreshing),
+        onRefresh = {
+            // Perform refresh logic here
+            isRefreshing = true
+
+            // Simulate loading and recomposition
+            // You can add your actual refresh logic here (like fetching new data)
+            Handler(Looper.getMainLooper()).postDelayed({
+                isRefreshing = false  // Stop refreshing after some time
+            }, 1000)
+        }
+    ) {
+        // The content to be refreshed
+        ShopLandingScreen()
+    }
+}
 
 @Composable
 fun CarouselCard(
