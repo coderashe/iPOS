@@ -26,6 +26,7 @@ sealed class Destinations(val route: String) {
 
     data object LoadStocks : Destinations("loadStocks")
     data object Cart : Destinations("cartScreen")
+    data object ButcherCart : Destinations("butcherCartScreen")
     data object CustomerSelection : Destinations("customerSelection")
     data object ProductSelection : Destinations("productSelection")
     data object Income : Destinations("My income")

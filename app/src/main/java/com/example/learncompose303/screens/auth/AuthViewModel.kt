@@ -214,7 +214,7 @@ class AuthViewModel @Inject constructor(
 
         // Set the day of the week for the next Monday
         val nextLogoutDay = Calendar.getInstance().apply {
-            set(Calendar.DAY_OF_WEEK, Calendar.THURSDAY)
+            set(Calendar.DAY_OF_WEEK, Calendar.MONDAY)
 
             // If today is already Monday, and the current time has passed, set to next Monday
             if (currentTime.timeInMillis >= timeInMillis) {

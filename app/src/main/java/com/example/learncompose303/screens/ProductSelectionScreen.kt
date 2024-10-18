@@ -8,6 +8,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -20,6 +21,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
@@ -100,10 +102,12 @@ fun ProductSelectionScreen(
         }
         Spacer(modifier = Modifier.height(16.dp))
         LazyColumn {
-            items(products.chunked(4)) { rowItems ->
+            items(products.chunked(5)) { rowItems ->
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     for (product in rowItems) {
                         val isSelected = selectedProducts.contains(product)
@@ -155,72 +159,6 @@ fun ProductSelectionScreen(
         )
     }
 }
-
-
-//@Composable
-//fun ProductSelectionScreen(
-//    customer: Customer,
-//    onProceedToCart: () -> Unit,
-//    navController: NavController,
-//    viewModel: InvoiceViewModel = viewModel()
-//) {
-//    val products by viewModel.productList.collectAsState()
-//    val selectedProducts by viewModel.selectedProducts.collectAsState() // Get selected products
-//
-//    Column(
-//        modifier = Modifier
-//            .fillMaxSize()
-//            .padding(16.dp)
-//    ) {
-//        Row {
-//            Text(
-//                "Customer: ${customer.name}",
-//                fontWeight = FontWeight.Bold,
-//                fontSize = 18.sp,
-//                modifier = Modifier.weight(1f)
-//            )
-//            Spacer(modifier = Modifier.width(16.dp))
-//            Button(
-//                onClick = onProceedToCart,
-//            ) {
-//                Text("Proceed to Cart")
-//            }
-//        }
-//        Spacer(modifier = Modifier.height(16.dp))
-//        LazyColumn {
-//            items(products.chunked(5)) { rowItems ->
-//                Row(
-//                    modifier = Modifier.fillMaxWidth(),
-//                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-//                ) {
-//                    for (product in rowItems) {
-//                        val isSelected = selectedProducts.contains(product)
-//                        val price = viewModel.getPricelistById(product.productId)
-//                        if (price != null) {
-//                            ProductCard(
-//                                product = product,
-//                                isSelected = isSelected,
-//                                onAddProduct = {
-//                                    viewModel.addProductToCart(product)
-//                                },
-//                                price = price.sellingPrice
-//                            )
-//                        } else {
-//                            Log.d(
-//                                "HazyLogs",
-//                                "No price found for product ID: ${product.productId}"
-//                            )
-//                        }
-//                    }
-//                    if (rowItems.size == 1) {
-//                        Spacer(modifier = Modifier.weight(1f))
-//                    }
-//                }
-//            }
-//        }
-//        Spacer(modifier = Modifier.height(16.dp))
-//    }
-//}
 
 @Composable
 fun ProductCard(

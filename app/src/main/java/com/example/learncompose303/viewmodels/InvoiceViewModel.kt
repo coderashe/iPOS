@@ -54,6 +54,7 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 import java.util.Calendar
 import javax.inject.Inject
+import kotlin.time.times
 
 @HiltViewModel
 class InvoiceViewModel @Inject constructor(
@@ -269,7 +270,6 @@ class InvoiceViewModel @Inject constructor(
         return priceList.value.firstOrNull { it.productId == productId }
     }
 
-    // Modify to return a Triple with product, price, and quantity
     fun getPriceDetailsForSelectedProducts(
         selectedProducts: List<Product>,
         productQuantities: Map<Long, Int>
@@ -287,6 +287,34 @@ class InvoiceViewModel @Inject constructor(
                 ) // Return Triple with product, price, and quantity
             }
             _productWithPriceDetails.value = productDetailsWithPrices
+        }
+    }
+
+    // Use Triple to hold product, price, and quantity
+// In ViewModel
+    private val _butcherProductWithPriceDetails =
+        MutableStateFlow<List<Triple<Product, Double, Double>>>(emptyList())
+    val butcherProductWithPriceDetails: StateFlow<List<Triple<Product, Double, Double>>> =
+        _butcherProductWithPriceDetails
+
+    fun getPriceDetailsForButcherSelectedProducts(
+        selectedProducts: List<Product>,
+        productQuantities: Map<Long, Double>
+    ) {
+        viewModelScope.launch {
+            val butcherProductWithPriceDetails = selectedProducts.map { product ->
+                val priceList = priceListRepository.getPriceListByProductId(product.productId)
+                val pricePerKg = priceList?.sellingPrice ?: 0.0
+                val defaultAmountPaid = pricePerKg * (productQuantities[product.productId]
+                    ?: 1.0) // Default amount paid
+
+                Triple(
+                    product,
+                    pricePerKg,
+                    defaultAmountPaid
+                ) // Return Triple with product, price, and default amount paid
+            }
+            _butcherProductWithPriceDetails.value = butcherProductWithPriceDetails
         }
     }
 
@@ -790,6 +818,58 @@ class InvoiceViewModel @Inject constructor(
         return invoiceList.value.firstOrNull { it.invoiceId == invoiceId }
     }
 
+    suspend fun deductButcherQuantityAndUpdateStock(productId: Long, quantitySold: Double) {
+        try {
+            // Fetch the product from the repository
+            val product = productRepository.getProductById(productId)
+
+            // Check if the product exists
+            if (product == null) {
+                Log.e("StockUpdateError", "Product not found with productId: $productId")
+                return
+            }
+
+            // Check if the product is saleable
+            if (!product.saleable) {
+                Log.e(
+                    "StockUpdateError",
+                    "Product with productId: $productId is not saleable"
+                )
+                return
+            }
+
+            // Check if there is enough stock to sell the desired quantity
+            if (product.currentStockLevel < quantitySold) {
+                Log.e(
+                    "StockUpdateError",
+                    "Insufficient stock for product: ${product.productDescription}. " +
+                            "Available: ${product.currentStockLevel}, Required: $quantitySold"
+                )
+                return
+            }
+
+            // Deduct the quantity sold from the current stock level
+            val newStockLevel = product.currentStockLevel - quantitySold
+
+            // Create a new product object with the updated stock level
+            val updatedProduct = product.copy(currentStockLevel = newStockLevel)
+
+            // Update the product in the database
+            productRepository.updateProduct(updatedProduct)
+
+            Log.d(
+                "StockUpdate",
+                "Stock updated for product: ${product.productDescription}, New stock: $newStockLevel"
+            )
+
+        } catch (e: Exception) {
+            Log.e(
+                "StockUpdateError",
+                "Error while updating stock for productId: $productId: ${e.message}"
+            )
+        }
+    }
+
     suspend fun deductQuantityAndUpdateStock(productId: Long, quantitySold: Int) {
         try {
             // Fetch the product from the repository
@@ -1014,6 +1094,122 @@ class InvoiceViewModel @Inject constructor(
             Log.e("PriceListUpdate", "Failed to update price list: ${e.message}")
         }
     }
+
+
+    fun butcherSubmitInvoice(
+        customerId: Long,
+        amountTendered: Double,
+        productQuantities: Map<Long, Double>, // Ensure this is a Map<Long, Double>
+        cashierEmail: String
+    ) = viewModelScope.launch {
+        try {
+            var totalAmount = 0.0
+            val taxPercentage = 0.15 // Example tax percentage
+            val discountPercentage = 0.0 // Example discount percentage
+
+            Log.d("Invoice", "Starting invoice submission for customerId: $customerId")
+
+            val customer = customerRepository.getCustomerById(customerId)
+            if (customer == null) {
+                Log.e("InvoiceError", "Customer not found for customerId: $customerId")
+                return@launch
+            }
+
+            val selectedProductsWithDetails = _selectedProducts.value.map { product ->
+                val quantitySold =
+                    productQuantities[product.productId] ?: 1.0 // Ensure this is treated as Double
+                val priceList = priceListRepository.getPriceListByProductId(product.productId)
+                val basePrice = priceList?.sellingPrice ?: 0.0
+                val taxAmount = basePrice * taxPercentage
+                val discountAmount = basePrice * discountPercentage
+
+                val finalPrice = basePrice // Adjust this based on tax and discounts if needed
+                totalAmount += finalPrice * quantitySold // Ensure quantitySold is treated as Double
+
+                Triple(
+                    product,
+                    finalPrice,
+                    quantitySold
+                ) // Return a Triple of product, final price, and quantity
+            }
+
+            val change = amountTendered - totalAmount
+            if (change < 0) {
+                Log.e("InvoiceError", "Amount tendered is less than total amount!")
+                return@launch
+            }
+
+            if (selectedProductsWithDetails.isNotEmpty() && totalAmount > 0) {
+                val invoice = Invoice(
+                    customerId = customerId,
+                    totalAmount = totalAmount,
+                    invoiceDate = System.currentTimeMillis(),
+                    dueDate = null,
+                    status = "Paid"
+                )
+
+                val invoiceId = invoiceRepository.insertInvoice(invoice)
+
+                Log.d("Invoice", "Inserted Invoice with id: $invoiceId")
+
+                selectedProductsWithDetails.forEach { (product, finalPrice, quantitySold) ->
+                    deductButcherQuantityAndUpdateStock(product.productId, quantitySold)
+
+                    val cartItem = CartItem(
+                        customerId = customerId,
+                        productId = product.productId,
+                        invoiceId = invoiceId,
+                        totalAmount = finalPrice * quantitySold,
+                        totalAmountTendered = amountTendered,
+                        change = change
+                    )
+                    cartItemRepository.insertCartItem(cartItem)
+
+                    val invoiceItem = InvoiceItem(
+                        invoiceId = invoiceId,
+                        productId = product.productId,
+                        customerId = customerId,
+                        quantity = quantitySold.toInt(),
+                        price = finalPrice,
+                        total = finalPrice * quantitySold
+                    )
+                    invoiceItemRepository.insertInvoiceItem(invoiceItem)
+                }
+
+                selectedProductsWithDetails.forEach { (product, finalPrice, quantitySold) ->
+                    val invoiceLine = InvoiceLine(
+                        invoiceId = invoiceId,
+                        invoiceStatus = invoice.status,
+                        productID = product.productId,
+                        productName = product.productDescription,
+                        productPrice = finalPrice,
+                        productQtySold = quantitySold.toInt(),
+                        cashier = cashierEmail,
+                        customerID = customerId,
+                        customerName = customer.name,
+                        customerPhone = customer.phone,
+                        totalAmount = totalAmount,
+                        amountTendered = amountTendered,
+                        changeBalance = change,
+                        currentStock = product.currentStockLevel - quantitySold, // Adjust as necessary
+                        invoiceDate = System.currentTimeMillis()
+                    )
+
+                    Log.d("Invoice", "Inserting this invoiceLine: $invoiceLine")
+                    invoiceLineRepository.insertInvoiceLine(invoiceLine)
+                    Log.d("Invoice", "Successfully Inserted this invoiceLine:")
+                }
+
+                _selectedProducts.value = emptyList()
+                Log.d("Invoice", "Cleared selected products for customer: $customerId")
+            } else {
+                Log.e("InvoiceError", "No valid selected products to invoice or total amount is 0")
+            }
+        } catch (e: Exception) {
+            Log.e("InvoiceError", "Error during invoice submission: ${e.message}")
+        }
+    }
+
 
     fun submitInvoice(
         customerId: Long,

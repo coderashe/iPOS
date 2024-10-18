@@ -86,6 +86,7 @@ import androidx.navigation.navArgument
 import com.example.learncompose303.R
 import com.example.learncompose303.data.Destinations
 import com.example.learncompose303.screens.BusinessPerformanceScreen
+import com.example.learncompose303.screens.ButcherCartScreen
 import com.example.learncompose303.screens.CartScreen
 import com.example.learncompose303.screens.CustomerSelectionScreen
 import com.example.learncompose303.screens.ExpenseReportScreen
@@ -358,7 +359,8 @@ fun InDriveTopBottomNavigation() {
                             customer = customer,
                             onProceedToCart = {
                                 // Navigate to the Cart screen with the customer ID
-                                navController.navigate(Destinations.Cart.route + "/${customer.customerId}")
+//                                navController.navigate(Destinations.Cart.route + "/${customer.customerId}")
+                                navController.navigate(Destinations.ButcherCart.route + "/${customer.customerId}")
                             },
                             navController = navController,
                             viewModel = viewModel
@@ -396,26 +398,39 @@ fun InDriveTopBottomNavigation() {
                     }
                 }
 
-                // Cart Screen
-//                composable(Destinations.Cart.route + "/{customerId}") { backStackEntry ->
-//                    val customerId =
-//                        backStackEntry.arguments?.getString("customerId")?.toLong()
-//                            ?: return@composable
-//                    val customer = viewModel.getCustomerById(customerId)
-//
-//                    LaunchedEffect(customerId) {
-//                        viewModel.refreshCartItems(customerId)
-//                    }
-//
-//                    if (customer != null) {
-//                        CartScreen(
-//                            customer = customer,
-//                            navController,
-//                            viewModel,
-//                            authViewModel
-//                        )
-//                    }
-//                }
+//                ButcherCart
+
+                composable(Destinations.ButcherCart.route + "/{customerId}") { backStackEntry ->
+                    val customerId =
+                        backStackEntry.arguments?.getString("customerId")?.toLong()
+                            ?: return@composable
+                    val customer = viewModel.getCustomerById(customerId)
+
+                    LaunchedEffect(customerId) {
+                        viewModel.refreshCartItems(customerId)
+                    }
+
+                    if (customer != null) {
+                        // Handle back button press
+                        BackHandler {
+                            navController.navigate(Destinations.Rides.route) {
+                                popUpTo(Destinations.ButcherCart.route) {
+                                    inclusive = true
+                                } // Remove CartScreen from the back stack
+                            }
+                        }
+
+                        ButcherCartScreen(
+                            customer = customer,
+                            navController,
+                            viewModel,
+                            authViewModel
+                        )
+                    }
+                }
+
+//                end of ButcherCart
+
 
                 composable(Destinations.Login.route) {
                     LoginScreen(viewModel = viewModel, navController)
