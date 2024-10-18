@@ -16,7 +16,7 @@ interface InvoiceDao {
     @Query("SELECT * FROM invoice WHERE invoiceId = :id")
     suspend fun getInvoiceById(id: Long): Invoice?
 
-    @Query("SELECT * FROM invoice")
+    @Query("SELECT * FROM invoice ORDER BY invoiceId DESC")
     fun getAllInvoices(): Flow<List<Invoice>>
 
     @Query("SELECT * FROM invoice WHERE invoiceDate >= :startDate")

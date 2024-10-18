@@ -23,24 +23,6 @@ import dagger.hilt.android.AndroidEntryPoint
 import android.Manifest
 
 
-//@AndroidEntryPoint
-//class MainActivity : ComponentActivity() {
-//    @RequiresApi(Build.VERSION_CODES.O)
-//    override fun onCreate(savedInstanceState: Bundle?) {
-//        super.onCreate(savedInstanceState)
-//        setContent {
-//            LearnCompose303Theme {
-//                Surface(
-//                    modifier = Modifier.fillMaxSize(),
-//                ) {
-//                    ShopLandingScreen()
-//                }
-//            }
-//        }
-//    }
-//}
-
-
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
