@@ -254,7 +254,7 @@ class InvoiceViewModel @Inject constructor(
 
     // Function to get default image URI from drawable resources
     fun getDefaultImageUri(context: Context): String {
-        val defaultImageResId = R.drawable.food2
+        val defaultImageResId = R.drawable.meat7
         return Uri.parse("android.resource://${context.packageName}/$defaultImageResId").toString()
     }
 

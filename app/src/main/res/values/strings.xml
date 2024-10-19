@@ -133,6 +133,9 @@
     <string name="login">LOGIN</string>
     <string name="faq">Faq</string>
     <string name="uploadProducts">Upload Products</string>
+    <string name="business_position">BUSINESS POSITION</string>
+    <string name="top_performing_products">TOP PERFORMING PRODUCTS</string>
+    <string name="peak_sales_hour">PEAK SALES HOUR</string>
     //
 </resources>
 

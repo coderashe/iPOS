@@ -245,7 +245,7 @@ fun AutoSlidingCarousel(
                     headingText = productDescriptions[page], // Use product description as heading
                     taglineText = "Explore our amazing products.",
                     buttonText = "View Product",
-                    imageResource = painterResource(id = R.drawable.sadza1), // Example image, can be dynamic
+                    imageResource = painterResource(id = R.drawable.meat7), // Example image, can be dynamic
                     onButtonClick = {
                         navController.navigate(Destinations.CustomerSelection.route) // Navigate to a screen
                     }

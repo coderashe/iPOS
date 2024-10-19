@@ -329,7 +329,7 @@ fun ProductCard(
         ) {
             // Product Image using Coil to load image from URI or String
             Image(
-                painter = rememberImagePainter(data = product.imageUri ?: R.drawable.food2),
+                painter = rememberImagePainter(data = product.imageUri ?: R.drawable.meat7),
                 contentDescription = product.productDescription,
                 modifier = Modifier
                     .size(100.dp)

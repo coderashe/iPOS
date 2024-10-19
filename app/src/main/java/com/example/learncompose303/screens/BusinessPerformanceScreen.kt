@@ -3,6 +3,7 @@ package com.example.learncompose303.screens
 import android.content.Intent
 import android.util.Log
 import android.widget.Toast
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -49,11 +50,15 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
+import com.example.learncompose303.R
 import com.example.learncompose303.app.utils.exportDatabase
 import com.example.learncompose303.data.AppDatabase
 import com.example.learncompose303.screens.performance.BusinessPerformanceViewModel
 import com.example.learncompose303.ui.theme.Green1
 import com.example.learncompose303.ui.theme.GreenColor
+import com.example.learncompose303.ui.theme.LightGreen
 import com.example.learncompose303.ui.theme.MyBlueish
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -89,80 +94,146 @@ fun BusinessPerformanceScreen(viewModel: BusinessPerformanceViewModel = viewMode
     ) {
         Text(
             color = Color.Black,
-            text = "Business Position", style = MaterialTheme.typography.headlineSmall
+            text = stringResource(R.string.business_position),
+            style = MaterialTheme.typography.headlineMedium
         )
-
+        Spacer(modifier = Modifier.height(2.dp))
         Row {
             Text(
                 modifier = Modifier.weight(1f),
                 color = Color.Black,
-                text = "Total Expenses ", // Ensure default if totalExpenses is null
+                text = "Total Expenses ",
+                style = MaterialTheme.typography.titleSmall
             )
             Text(
                 color = Color.Black,
-                text = "$${"%.2f".format(totalExpenses)}", // Ensure default if totalExpenses is null
+                text = "$${"%.2f".format(totalExpenses)}",
+                style = MaterialTheme.typography.titleSmall
             )
         }
+        Divider(color = Color.Gray)
 
         Row {
 
             Text(
                 modifier = Modifier.weight(1f),
                 color = Color.Black,
-                text = "Total Sales "
+                text = "Total Sales ",
+                style = MaterialTheme.typography.titleSmall
             )
             Text(
                 color = Color.Black,
-                text = "$${"%.2f".format(totalSales)}"
+                text = "$${"%.2f".format(totalSales)}",
+                style = MaterialTheme.typography.titleSmall
             )
         }
+        Divider(color = Color.Gray)
         Spacer(modifier = Modifier.height(8.dp))
         Row {
             Text(
                 modifier = Modifier.weight(1f),
                 color = Color.Black,
-                text = "Profit / Loss "
+                text = "Profit / Loss ",
+                style = MaterialTheme.typography.titleSmall
             )
             Text(
-                color = if (profitLoss >= 0) Color.Black else Color.Red,
-                text = "$${"%.2f".format(profitLoss)}"
+                color = if (profitLoss >= 0) LightGreen else Color.Red,
+                text = "$${"%.2f".format(profitLoss)}",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
             )
         }
+        Divider(color = Color.Gray)
 
         Spacer(modifier = Modifier.height(16.dp))
 
         // Display Top Performing Products
         Text(
             color = Color.Black,
-            text = "Top Performing Products", style = MaterialTheme.typography.headlineSmall
+            text = stringResource(R.string.top_performing_products),
+            style = MaterialTheme.typography.headlineSmall
         )
+
+        Spacer(modifier = Modifier.height(2.dp))
         topPerformingProducts.forEach { product ->
-            Text(
-                modifier = Modifier.fillMaxWidth(),
-                color = Color.Black,
-                text = "${product.productName}   Sold: ${product.totalSold} units        Left: ${product.currentStock.toInt()}   Total Sales: $${
-                    "%.2f".format(
-                        product.totalRevenue
-                    )
-                }"
-            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp), // Add some vertical padding between rows
+                horizontalArrangement = Arrangement.SpaceBetween // Spread out items evenly
+            ) {
+                Text(
+                    modifier = Modifier.weight(1f),
+                    color = Color.Black,
+                    text = product.productName,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+
+                Text(
+                    modifier = Modifier.weight(0.5f),
+                    color = Color.Black,
+                    text = "Sold: ${product.totalSold} units",
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center
+                )
+
+                Text(
+                    modifier = Modifier.weight(0.5f),
+                    color = Color.Black,
+                    text = "Left: ${product.currentStock.toInt()}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center
+                )
+
+                Text(
+                    modifier = Modifier.weight(1f),
+                    color = Color.Black,
+                    text = "Total Sales: $${"%.2f".format(product.totalRevenue)}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.End
+                )
+            }
+            Divider(color = Color.Gray)
         }
+
 
         Spacer(modifier = Modifier.height(16.dp))
 
         // Display Peak Sales Hours
         Text(
             color = Color.Black,
-            text = "Peak Sales Hours", style = MaterialTheme.typography.headlineSmall
+            text = stringResource(R.string.peak_sales_hour),
+            style = MaterialTheme.typography.headlineSmall
         )
+
+        Spacer(modifier = Modifier.height(2.dp)) // Add some space before the list
+
         peakHours.forEach { hourPerformance ->
             // Format the 'hour' field as 'HH:mm' using the SimpleDateFormat
             val formattedHour = dateFormat.format(Date(hourPerformance.hour * 1000))
-            Text(
-                color = Color.Black,
-                text = "Hour $formattedHour: Total Sales: $${"%.2f".format(hourPerformance.totalSales)}"
-            )
 
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp), // Add vertical padding between rows
+                horizontalArrangement = Arrangement.SpaceBetween // Spread out items evenly
+            ) {
+                Text(
+                    modifier = Modifier.weight(1f),
+                    color = Color.Black,
+                    text = "Hour $formattedHour",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+
+                Text(
+                    modifier = Modifier.weight(1f),
+                    color = Color.Black,
+                    text = "Total Sales: $${"%.2f".format(hourPerformance.totalSales)}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.End
+                )
+            }
+            Divider(color = Color.Gray) // Optional: To separate each hour's performance visually
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -170,12 +241,13 @@ fun BusinessPerformanceScreen(viewModel: BusinessPerformanceViewModel = viewMode
         // Display Sales Per Month
         Text(
             color = Color.Black,
-            text = "Sales Per Month", style = MaterialTheme.typography.headlineSmall
+            text = "TOTAL FOR THE MONTH",
+            style = MaterialTheme.typography.headlineSmall
         )
         salesPerMonth.forEach { (month, sales) ->
             Text(
                 color = Color.Black,
-                text = "$month: $${"%.2f".format(sales)}"
+                text = "$month:   $${"%.2f".format(sales)}"
             )
         }
         val context = LocalContext.current

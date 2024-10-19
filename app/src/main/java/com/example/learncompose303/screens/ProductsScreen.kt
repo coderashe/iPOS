@@ -193,7 +193,7 @@ fun TheProductCard(
         ) {
             // Product Image
             val currentImageUri = imageUri.value ?: product.imageUri?.let { Uri.parse(it) }
-            val painter = rememberImagePainter(data = currentImageUri ?: R.drawable.food2)
+            val painter = rememberImagePainter(data = currentImageUri ?: R.drawable.meat7)
 
             Image(
                 painter = painter,
