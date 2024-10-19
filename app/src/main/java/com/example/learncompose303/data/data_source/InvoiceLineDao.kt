@@ -53,9 +53,9 @@ interface InvoiceLineDao {
     FROM invoice_lines 
     GROUP BY hour 
     ORDER BY totalSales DESC
+    LIMIT 5
     """
     )
     fun getPeakSalesHours(): Flow<List<HourPerformance>>
-
 
 }

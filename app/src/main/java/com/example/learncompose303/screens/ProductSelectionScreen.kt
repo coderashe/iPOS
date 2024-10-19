@@ -69,6 +69,7 @@ fun ProductSelectionScreen(
     val selectedProducts by viewModel.selectedProducts.collectAsState() // Get selected products
     var showLowStockWarning by remember { mutableStateOf(false) } // State for the popup
     var lowStockProducts by remember { mutableStateOf(emptyList<Product>()) } // List to hold low stock products
+    var showNoSelectionWarning by remember { mutableStateOf(false) } // State for no product selected warning
 
     LaunchedEffect(key1 = true) {
         viewModel.fetchProducts() // Fetch products when the screen is launched
@@ -95,7 +96,13 @@ fun ProductSelectionScreen(
             )
             Spacer(modifier = Modifier.width(16.dp))
             Button(
-                onClick = onProceedToCart,
+                onClick = {
+                    if (selectedProducts.isNotEmpty()) {
+                        onProceedToCart() // Proceed if products are selected
+                    } else {
+                        showNoSelectionWarning = true // Show warning if no products selected
+                    }
+                }
             ) {
                 Text("Proceed to Cart")
             }
@@ -158,7 +165,124 @@ fun ProductSelectionScreen(
             }
         )
     }
+
+    // Show a warning if no products are selected
+    if (showNoSelectionWarning) {
+        AlertDialog(
+            onDismissRequest = { showNoSelectionWarning = false },
+            title = { Text("No Products Selected") },
+            text = { Text("Please select at least one product before proceeding to the cart.") },
+            confirmButton = {
+                Button(onClick = { showNoSelectionWarning = false }) {
+                    Text("OK")
+                }
+            }
+        )
+    }
 }
+
+
+//@Composable
+//fun ProductSelectionScreen(
+//    customer: Customer,
+//    onProceedToCart: () -> Unit,
+//    navController: NavController,
+//    viewModel: InvoiceViewModel = viewModel()
+//) {
+//    val products by viewModel.productList.collectAsState()
+//    val selectedProducts by viewModel.selectedProducts.collectAsState() // Get selected products
+//    var showLowStockWarning by remember { mutableStateOf(false) } // State for the popup
+//    var lowStockProducts by remember { mutableStateOf(emptyList<Product>()) } // List to hold low stock products
+//
+//    LaunchedEffect(key1 = true) {
+//        viewModel.fetchProducts() // Fetch products when the screen is launched
+//
+//        // Check for low stock products
+//        val lowStock = products.filter { it.currentStockLevel < 10 }
+//        if (lowStock.isNotEmpty()) {
+//            lowStockProducts = lowStock // Save the low stock products
+//            showLowStockWarning = true // Trigger the popup
+//        }
+//    }
+//
+//    Column(
+//        modifier = Modifier
+//            .fillMaxSize()
+//            .padding(16.dp)
+//    ) {
+//        Row {
+//            Text(
+//                "Customer: ${customer.name}",
+//                fontWeight = FontWeight.Bold,
+//                fontSize = 18.sp,
+//                modifier = Modifier.weight(1f)
+//            )
+//            Spacer(modifier = Modifier.width(16.dp))
+//            Button(
+//                onClick = onProceedToCart,
+//            ) {
+//                Text("Proceed to Cart")
+//            }
+//        }
+//        Spacer(modifier = Modifier.height(16.dp))
+//        LazyColumn {
+//            items(products.chunked(5)) { rowItems ->
+//                Row(
+//                    modifier = Modifier
+//                        .fillMaxWidth()
+//                        .horizontalScroll(rememberScrollState()),
+//                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+//                ) {
+//                    for (product in rowItems) {
+//                        val isSelected = selectedProducts.contains(product)
+//                        val price = viewModel.getPricelistById(product.productId)
+//                        if (price != null) {
+//                            ProductCard(
+//                                product = product,
+//                                isSelected = isSelected,
+//                                onAddProduct = {
+//                                    viewModel.addProductToCart(product)
+//                                },
+//                                price = price.sellingPrice
+//                            )
+//                        } else {
+//                            Log.d(
+//                                "HazyLogs",
+//                                "No price found for product ID: ${product.productId}"
+//                            )
+//                        }
+//                    }
+//                    if (rowItems.size == 1) {
+//                        Spacer(modifier = Modifier.weight(1f))
+//                    }
+//                }
+//            }
+//        }
+//        Spacer(modifier = Modifier.height(16.dp))
+//    }
+//
+//    // Show a popup warning for low stock products
+//    if (showLowStockWarning) {
+//        AlertDialog(
+//            onDismissRequest = { showLowStockWarning = false },
+//            title = { Text("Low Stock Warning") },
+//            text = {
+//                Column {
+//                    Text("The following products have low stock:")
+//                    Spacer(modifier = Modifier.height(8.dp))
+//                    lowStockProducts.forEach { product ->
+//                        Text("- ${product.productDescription} (Stock: ${product.currentStockLevel})")
+//                    }
+//                }
+//            },
+//            confirmButton = {
+//                Button(onClick = { showLowStockWarning = false }) {
+//                    Text("OK")
+//                }
+//            }
+//        )
+//    }
+//}
 
 @Composable
 fun ProductCard(
