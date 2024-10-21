@@ -2,6 +2,7 @@ package com.example.learncompose303.app
 
 import android.os.Build
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
@@ -50,6 +51,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -68,6 +70,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -111,6 +114,7 @@ import com.example.learncompose303.screens.auth.AuthState
 import com.example.learncompose303.screens.auth.AuthViewModel
 import com.example.learncompose303.screens.expenses.ExpenseViewModel
 import com.example.learncompose303.screens.performance.BusinessPerformanceViewModel
+import com.example.learncompose303.ui.theme.Green2
 import com.example.learncompose303.ui.theme.MyBlueish
 import com.example.learncompose303.ui.theme.MyGray
 import com.example.learncompose303.viewmodels.InvoiceViewModel
@@ -497,36 +501,47 @@ fun InDriveTopBottomNavigation() {
     }
 }
 
-
 @Composable
 fun IndriveDrawerNav(
     navController: NavController,
     scaffoldState: ScaffoldState,
     authViewModel: AuthViewModel = viewModel()
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MyGray)
-    ) {
-        // Make the header and body scrollable and take up remaining space
+
+    // Get the current back stack entry (current route)
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentDestination = navBackStackEntry?.destination
+
+    // Check if the current route is the SignIn route
+    val isSignInRoute = currentDestination?.route == Destinations.SignIn.route
+    val isSignUpRoute = currentDestination?.route == Destinations.SignUp.route
+
+    // Only show bottom navigation if not on the SignInPage or SignUpPage
+    if (currentDestination != null && !isSignInRoute && !isSignUpRoute) {
         Column(
             modifier = Modifier
-                .weight(1f)  // Ensures the drawer content takes all available space
-                .verticalScroll(rememberScrollState())  // Makes it scrollable if content is large
-                .padding(8.dp)
+                .fillMaxSize()
+                .background(MyGray)
         ) {
-            IndriveDrawerHeader(authViewModel = authViewModel)
-            IndriveDrawerBody(navController = navController, scaffoldState)
-        }
+            // Make the header and body scrollable and take up remaining space
+            Column(
+                modifier = Modifier
+                    .weight(1f)  // Ensures the drawer content takes all available space
+                    .verticalScroll(rememberScrollState())  // Makes it scrollable if content is large
+                    .padding(8.dp)
+            ) {
+                IndriveDrawerHeader(authViewModel = authViewModel)
+                IndriveDrawerBody(navController = navController, scaffoldState)
+            }
 
-        // IndriveDrawerBottom is at the bottom, outside the scrollable area
-        IndriveDrawerBottom(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp),
-            navController
-        )
+            // IndriveDrawerBottom is at the bottom, outside the scrollable area
+            IndriveDrawerBottom(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp),
+                navController
+            )
+        }
     }
 }
 
@@ -623,6 +638,7 @@ fun IndriveDrawerHeader(authViewModel: AuthViewModel = viewModel()) {
 fun IndriveDrawerBody(navController: NavController, scaffoldState: ScaffoldState) {
     val coroutineScope = rememberCoroutineScope()
     val authViewModel: AuthViewModel = viewModel()
+    val context = LocalContext.current
 
     Column {
 
@@ -736,6 +752,9 @@ fun IndriveDrawerBody(navController: NavController, scaffoldState: ScaffoldState
                     authViewModel.signout()
                     navController.navigate(Destinations.SignIn.route)
                     coroutineScope.launch { scaffoldState.drawerState.close() }
+                    Toast
+                        .makeText(context, "Sign out successful", Toast.LENGTH_SHORT)
+                        .show()
                 }
         ) {
             Icon(Icons.Default.Logout, contentDescription = null)
@@ -766,21 +785,19 @@ fun IndriveDrawerBottom(modifier: Modifier, navController: NavController) {
 // Lime Green button for Passenger mode
         Button(
             onClick = {
-                authViewModel.signout()
-                navController.navigate(Destinations.SignIn.route)
+//                authViewModel.signout()
+//                navController.navigate(Destinations.SignIn.route)
             },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(vertical = 8.dp),
-            colors = ButtonDefaults.buttonColors(MyBlueish) // Lime Green color
+            colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.primary)
         ) {
             Text(
-                text = "Sign out",
-                color = Color.Black,
+                text = stringResource(R.string.connecting_you_me),
                 fontWeight = FontWeight.Bold
             )
         }
-
 
         // Row with Facebook and Instagram icons
         Row(
@@ -816,77 +833,97 @@ fun IndriveBottomNavigation(
     navController: NavHostController,
     authViewModel: AuthViewModel = viewModel()
 ) {
-    BottomNavigation(
-        backgroundColor = Color.White
-    ) {
-        val navBackStackEntry by navController.currentBackStackEntryAsState()
-        val currentDestination = navBackStackEntry?.destination
+    // Get the current back stack entry (current route)
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentDestination = navBackStackEntry?.destination
 
-        // Observe the user role from AuthViewModel
-        val userRole by authViewModel.userRole.observeAsState()
+    // Check if the current route is the SignIn route
+    val isSignInRoute = currentDestination?.route == Destinations.SignIn.route
+    val isSignUpRoute = currentDestination?.route == Destinations.SignUp.route
 
-        // Debug logging to verify userRole
-        Log.d("StartLogs", "User role: $userRole")
+    // Only show bottom navigation if not on the SignInPage or SignUpPage
+    if (currentDestination != null && !isSignInRoute && !isSignUpRoute) {
+        BottomNavigation(
+            backgroundColor = Color.White
+        ) {
+            val userRole by authViewModel.userRole.observeAsState()
+            val isAdmin = userRole == "admin"
 
-        // Fallback if userRole is null or not "admin"
-        val isAdmin = userRole == "admin"
-
-        BottomNavigationItem(
-            selected = currentDestination?.route == Destinations.Rides.route,
-            onClick = { navController.navigate(Destinations.Rides.route) },
-            icon = { Icon(Icons.Default.Home, contentDescription = null) },
-            label = { Text(text = stringResource(id = R.string.navhome), color = Color.Black) }
-        )
-
-        BottomNavigationItem(
-            selected = currentDestination?.route == Destinations.Income.route,
-            onClick = { navController.navigate(Destinations.Income.route) },
-            icon = { Icon(Icons.Default.MonetizationOn, contentDescription = null) },
-            label = { Text(text = stringResource(id = R.string.navreports), color = Color.Black) }
-        )
-
-        // Only show BusinessPerformance navigation item if the user role is "admin"
-        if (isAdmin) {
             BottomNavigationItem(
-                selected = currentDestination?.route == Destinations.BusinessPerformance.route,
-                onClick = { navController.navigate(Destinations.BusinessPerformance.route) },
-                icon = { Icon(Icons.Default.AutoGraph, contentDescription = null) },
+                selected = currentDestination?.route == Destinations.Rides.route,
+                onClick = { navController.navigate(Destinations.Rides.route) },
+                icon = { Icon(Icons.Default.Home, contentDescription = null) },
+                label = { Text(text = stringResource(id = R.string.navhome), color = Color.Black) }
+            )
+
+            BottomNavigationItem(
+                selected = currentDestination?.route == Destinations.Income.route,
+                onClick = { navController.navigate(Destinations.Income.route) },
+                icon = { Icon(Icons.Default.MonetizationOn, contentDescription = null) },
                 label = {
                     Text(
-                        text = stringResource(id = R.string.navbusiness),
+                        text = stringResource(id = R.string.navreports),
                         color = Color.Black
                     )
                 }
             )
-        }
 
-        BottomNavigationItem(
-            selected = currentDestination?.route == Destinations.ExpenseReport.route,
-            onClick = { navController.navigate(Destinations.ExpenseReport.route) },
-            icon = { Icon(Icons.Default.Favorite, contentDescription = null) },
-            label = { Text(text = stringResource(id = R.string.navexpenses), color = Color.Black) }
-        )
+            if (isAdmin) {
+                BottomNavigationItem(
+                    selected = currentDestination?.route == Destinations.BusinessPerformance.route,
+                    onClick = { navController.navigate(Destinations.BusinessPerformance.route) },
+                    icon = { Icon(Icons.Default.AutoGraph, contentDescription = null) },
+                    label = {
+                        Text(
+                            text = stringResource(id = R.string.navbusiness),
+                            color = Color.Black
+                        )
+                    }
+                )
+            }
 
-        // Only show BusinessPerformance navigation item if the user role is "admin"
-        if (isAdmin) {
             BottomNavigationItem(
-                selected = currentDestination?.route == Destinations.Products.route,
-                onClick = { navController.navigate(Destinations.Products.route) },
+                selected = currentDestination?.route == Destinations.ExpenseReport.route,
+                onClick = { navController.navigate(Destinations.ExpenseReport.route) },
+                icon = { Icon(Icons.Default.Favorite, contentDescription = null) },
+                label = {
+                    Text(
+                        text = stringResource(id = R.string.navexpenses),
+                        color = Color.Black
+                    )
+                }
+            )
+
+            if (isAdmin) {
+                BottomNavigationItem(
+                    selected = currentDestination?.route == Destinations.Products.route,
+                    onClick = { navController.navigate(Destinations.Products.route) },
+                    icon = {
+                        Icon(
+                            Icons.Default.ProductionQuantityLimits,
+                            contentDescription = null
+                        )
+                    },
+                    label = {
+                        Text(
+                            text = stringResource(id = R.string.navproducts),
+                            color = Color.Black
+                        )
+                    }
+                )
+            }
+
+            BottomNavigationItem(
+                selected = currentDestination?.route == Destinations.CustomerSelection.route,
+                onClick = { navController.navigate(Destinations.CustomerSelection.route) },
                 icon = { Icon(Icons.Default.ProductionQuantityLimits, contentDescription = null) },
                 label = {
                     Text(
-                        text = stringResource(id = R.string.navproducts),
+                        text = stringResource(id = R.string.navinvoicing),
                         color = Color.Black
                     )
                 }
             )
         }
-
-        BottomNavigationItem(
-            selected = currentDestination?.route == Destinations.CustomerSelection.route,
-            onClick = { navController.navigate(Destinations.CustomerSelection.route) },
-            icon = { Icon(Icons.Default.ProductionQuantityLimits, contentDescription = null) },
-            label = { Text(text = stringResource(id = R.string.navinvoicing), color = Color.Black) }
-        )
     }
 }
