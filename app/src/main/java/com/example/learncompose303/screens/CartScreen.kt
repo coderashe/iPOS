@@ -355,26 +355,52 @@ fun CartScreen(
                         }
                         Spacer(modifier = Modifier.width(16.dp))
 
+//                        Column(horizontalAlignment = Alignment.End) {
+//
+//                            // Input for quantity with better handling
+//                            OutlinedTextField(
+//                                value = if (quantitySold == 0) "" else quantitySold.toString(),
+//                                onValueChange = { newValue ->
+//                                    val newQuantity = newValue.toIntOrNull()?.takeIf { it > 0 } ?: 1
+//                                    productQuantities[product.productId] = newQuantity
+//                                },
+//                                label = { Text("Quantity") },
+//                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+//                                shape = RoundedCornerShape(8.dp)
+//                            )
+//
+//                            Text(
+//                                text = "SubTotal: \$${productTotalPrice}",
+//                                color = MaterialTheme.colorScheme.primary,
+//                                style = MaterialTheme.typography.titleSmall
+//                            )
+//                        }
+
                         Column(horizontalAlignment = Alignment.End) {
 
                             // Input for quantity with better handling
                             OutlinedTextField(
-                                value = if (quantitySold == 0) "" else quantitySold.toString(),
+                                value = if (quantitySold == 0) "" else quantitySold.toString(), // Show empty if quantity is 0
                                 onValueChange = { newValue ->
-                                    val newQuantity = newValue.toIntOrNull()?.takeIf { it > 0 } ?: 1
+                                    // Handle empty input and valid integers
+                                    val newQuantity =
+                                        newValue.toIntOrNull()?.takeIf { it >= 0 } ?: 0
                                     productQuantities[product.productId] = newQuantity
                                 },
                                 label = { Text("Quantity") },
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                shape = RoundedCornerShape(8.dp)
+                                shape = RoundedCornerShape(8.dp),
+                                singleLine = true
                             )
 
+                            // Display SubTotal
                             Text(
-                                text = "SubTotal: \$${productTotalPrice}",
+                                text = "SubTotal: \$${"%.2f".format(productTotalPrice)}", // Ensure proper formatting of price
                                 color = MaterialTheme.colorScheme.primary,
                                 style = MaterialTheme.typography.titleSmall
                             )
                         }
+
                     }
                 }
             }

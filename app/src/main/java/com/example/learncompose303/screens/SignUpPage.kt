@@ -66,9 +66,14 @@ fun SignUpPage(
     // Handle authentication state changes
     LaunchedEffect(authState.value) {
         when (authState.value) {
-            is AuthState.Authenticated -> {
-                // Navigate to the Rides screen after successful sign-up
-                navController.navigate(Destinations.Rides.route)
+
+            is AuthState.SignUpSuccess -> {
+                // Navigate to Login screen after sign-up success
+                navController.navigate(Destinations.SignIn.route) {
+                    popUpTo(Destinations.SignUp.route) {
+                        inclusive = true
+                    } // Optionally pop the signup screen from backstack
+                }
             }
 
             is AuthState.Error -> {

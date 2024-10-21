@@ -82,6 +82,27 @@ class AuthViewModel @Inject constructor(
     }
 
     // Method to log in
+//    fun login(email: String, password: String) {
+//        if (email.isEmpty() || password.isEmpty()) {
+//            _authState.value = AuthState.Error("Email or password can't be empty")
+//            return
+//        }
+//
+//        _authState.value = AuthState.Loading
+//        auth.signInWithEmailAndPassword(email, password)
+//            .addOnCompleteListener { task ->
+//                if (task.isSuccessful) {
+//                    _authState.value = AuthState.Authenticated
+//                    _userEmail.value = auth.currentUser?.email // Update email on successful login
+//                    resetLogoutState()
+//                } else {
+//                    _authState.value =
+//                        AuthState.Error(task.exception?.message ?: "Something went wrong")
+//                }
+//            }
+//    }
+
+    // Method to log in
     fun login(email: String, password: String) {
         if (email.isEmpty() || password.isEmpty()) {
             _authState.value = AuthState.Error("Email or password can't be empty")
@@ -94,6 +115,12 @@ class AuthViewModel @Inject constructor(
                 if (task.isSuccessful) {
                     _authState.value = AuthState.Authenticated
                     _userEmail.value = auth.currentUser?.email // Update email on successful login
+
+                    // Fetch the user role immediately after login
+                    auth.currentUser?.email?.let { email ->
+                        fetchUserRoleByEmail(email)
+                    }
+
                     resetLogoutState()
                 } else {
                     _authState.value =
@@ -101,6 +128,78 @@ class AuthViewModel @Inject constructor(
                 }
             }
     }
+
+    // Signup method
+//    fun signup(
+//        fullName: String,
+//        contact: String,
+//        email: String,
+//        password: String,
+//        role: String,
+//        storeID: String,
+//        address: String?
+//    ) {
+//        if (email.isEmpty() || password.isEmpty() || fullName.isEmpty() || contact.isEmpty()) {
+//            _authState.value = AuthState.Error("All fields must be filled")
+//            return
+//        }
+//
+//        _authState.value = AuthState.Loading
+//
+//        // Check if the email already exists in the local database
+//        viewModelScope.launch {
+//            val existingUser =
+//                authRepository.getUserByEmail(email) // Query to check if email exists
+//
+//            if (existingUser != null) {
+//                _authState.value =
+//                    AuthState.Error("Email is already registered. Please use a different email.")
+//            } else {
+//                // If the email does not exist in the local DB, proceed with Firebase signup
+//                auth.createUserWithEmailAndPassword(email, password)
+//                    .addOnCompleteListener { task ->
+//                        if (task.isSuccessful) {
+//                            val firebaseUser = task.result?.user
+//
+//                            // Perform a final check before saving the user to the local DB
+//                            viewModelScope.launch {
+//                                val finalCheckUser = authRepository.getUserByEmail(email)
+//                                if (finalCheckUser != null) {
+//                                    _authState.value =
+//                                        AuthState.Error("This email is already registered in the local database.")
+//                                } else {
+//                                    // Proceed with saving the user to local DB
+//                                    val newUser = User(
+//                                        userFullName = fullName,
+//                                        userContact = contact,
+//                                        userRole = role,
+//                                        userPassword = password, // Consider hashing the password
+//                                        storeID = storeID,
+//                                        userEmail = email,
+//                                        userAddress = address
+//                                    )
+//
+//                                    authRepository.signUpUser(newUser) // Save user to local DB
+//                                    _authState.value = AuthState.Authenticated
+//                                    resetLogoutState() // Reset manual logout flag and start timer
+//                                }
+//                            }
+//                        } else {
+//                            // Check if Firebase returned an error due to email duplication
+//                            if (task.exception is FirebaseAuthUserCollisionException) {
+//                                _authState.value =
+//                                    AuthState.Error("This email is already in use. Please try another email.")
+//                            } else {
+//                                _authState.value = AuthState.Error(
+//                                    task.exception?.message ?: "Something went wrong"
+//                                )
+//                            }
+//                        }
+//                    }
+//            }
+//        }
+//    }
+
 
     // Signup method
     fun signup(
@@ -153,8 +252,8 @@ class AuthViewModel @Inject constructor(
                                     )
 
                                     authRepository.signUpUser(newUser) // Save user to local DB
-                                    _authState.value = AuthState.Authenticated
-                                    resetLogoutState() // Reset manual logout flag and start timer
+                                    _authState.value =
+                                        AuthState.SignUpSuccess // Set the state to SignUpSuccess instead of Authenticated
                                 }
                             }
                         } else {
@@ -214,7 +313,7 @@ class AuthViewModel @Inject constructor(
 
         // Set the day of the week for the next Monday
         val nextLogoutDay = Calendar.getInstance().apply {
-            set(Calendar.DAY_OF_WEEK, Calendar.MONDAY)
+            set(Calendar.DAY_OF_WEEK, Calendar.TUESDAY)
 
             // If today is already Monday, and the current time has passed, set to next Monday
             if (currentTime.timeInMillis >= timeInMillis) {

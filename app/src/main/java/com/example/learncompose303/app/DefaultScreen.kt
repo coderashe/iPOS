@@ -92,6 +92,7 @@ import com.example.learncompose303.screens.CustomerSelectionScreen
 import com.example.learncompose303.screens.ExpenseReportScreen
 import com.example.learncompose303.screens.ExpensesScreen
 import com.example.learncompose303.screens.FAQScreen
+import com.example.learncompose303.screens.IncomeStatementScreen
 import com.example.learncompose303.screens.InvoiceDetailScreen
 import com.example.learncompose303.screens.LoadStockScreen
 import com.example.learncompose303.screens.LoginScreen
@@ -277,7 +278,10 @@ fun InDriveTopBottomNavigation() {
                             )
                         } else {
                             // Show the BusinessPerformanceScreen if PIN is correct
-                            BusinessPerformanceScreen(viewModel = businessPerformanceViewModel)
+                            BusinessPerformanceScreen(
+                                viewModel = businessPerformanceViewModel,
+                                navController = navController
+                            )
 
                             // Reset PIN check when leaving screen
                             DisposableEffect(Unit) {
@@ -295,6 +299,11 @@ fun InDriveTopBottomNavigation() {
                 composable(Destinations.SignUp.route) {
                     SignUpPage(navController, authViewModel)
                 }
+
+                composable(Destinations.IncomeStatement.route) {
+                    IncomeStatementScreen(businessPerformanceViewModel)
+                }
+
                 composable(Destinations.SignIn.route) {
                     SignInPage(navController, authViewModel)
                 }
@@ -359,8 +368,8 @@ fun InDriveTopBottomNavigation() {
                             customer = customer,
                             onProceedToCart = {
                                 // Navigate to the Cart screen with the customer ID
-                                navController.navigate(Destinations.Cart.route + "/${customer.customerId}")
-//                                navController.navigate(Destinations.ButcherCart.route + "/${customer.customerId}")
+//                                navController.navigate(Destinations.Cart.route + "/${customer.customerId}")
+                                navController.navigate(Destinations.ButcherCart.route + "/${customer.customerId}")
                             },
                             navController = navController,
                             viewModel = viewModel

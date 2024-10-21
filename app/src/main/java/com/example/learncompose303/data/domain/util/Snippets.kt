@@ -39,6 +39,17 @@ import com.example.learncompose303.screens.CartScreen
 import com.example.learncompose303.screens.ProductCard
 import com.example.learncompose303.viewmodels.InvoiceViewModel
 
+//    val pricelistRequestFileLauncher = rememberLauncherForActivityResult(
+//        contract = ActivityResultContracts.GetContent()
+//    ) { uri: Uri? ->
+//        uri?.let {
+//            val inputStream = context.contentResolver.openInputStream(it)
+//            inputStream?.let {
+//                viewModel.uploadPriceListsFromCsv(it, context)
+//            }
+//        }
+//    }
+
 //    fun uploadPriceListsFromCsv(inputStream: InputStream, context: Context) {
 //        viewModelScope.launch {
 //            val parser = CsvParser()

@@ -3,6 +3,7 @@ package com.example.learncompose303.screens
 import android.content.Intent
 import android.util.Log
 import android.widget.Toast
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,6 +19,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.More
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -65,7 +68,10 @@ import java.util.Date
 import java.util.Locale
 
 @Composable
-fun BusinessPerformanceScreen(viewModel: BusinessPerformanceViewModel = viewModel()) {
+fun BusinessPerformanceScreen(
+    viewModel: BusinessPerformanceViewModel = viewModel(),
+    navController: NavController
+) {
     // Observe the states, and assign them to variables
     val totalExpensesState = viewModel.totalExpenses.observeAsState(null)
     val totalSalesState = viewModel.totalSales.observeAsState(null)
@@ -98,6 +104,24 @@ fun BusinessPerformanceScreen(viewModel: BusinessPerformanceViewModel = viewMode
             style = MaterialTheme.typography.headlineMedium
         )
         Spacer(modifier = Modifier.height(2.dp))
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp)
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            //        for productCsvUpload
+            QuickAccessCard(
+                label = stringResource(R.string.income_statement),
+                subTitle = "--",
+                icon = Icons.Default.More,
+                onClick = {
+                    navController.navigate(Destinations.IncomeStatement.route)
+                }
+            )
+        }
         Row {
             Text(
                 modifier = Modifier.weight(1f),

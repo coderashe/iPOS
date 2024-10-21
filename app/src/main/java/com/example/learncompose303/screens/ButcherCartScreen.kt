@@ -225,7 +225,7 @@ fun ButcherCartScreen(
             },
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Text("Submit Butcher Invoice")
+            Text("Submit Invoice")
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -276,10 +276,10 @@ fun ButcherCartScreen(
 
                         Column {
                             OutlinedTextField(
-                                value = amountPaid.toString(),
+                                value = if (amountPaid == 0.0) "" else amountPaid.toString(), // Show empty if value is 0
                                 onValueChange = { newValue ->
-                                    val newAmountPaid =
-                                        newValue.toDoubleOrNull()?.takeIf { it >= 0 } ?: 0.0
+                                    // Check if the input is empty and allow it to be cleared
+                                    val newAmountPaid = newValue.toDoubleOrNull() ?: 0.0
                                     productAmountPaid[product.productId] = newAmountPaid
                                 },
                                 label = { Text("Amount Paid (\$)") },
@@ -293,6 +293,8 @@ fun ButcherCartScreen(
                                 color = MaterialTheme.colorScheme.primary
                             )
                         }
+
+
                     }
                 }
                 Spacer(modifier = Modifier.height(20.dp))
