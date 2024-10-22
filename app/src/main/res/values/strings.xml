@@ -137,6 +137,8 @@
     <string name="top_performing_products">TOP PERFORMING PRODUCTS</string>
     <string name="peak_sales_hour">PEAK SALES HOUR</string>
     <string name="connecting_you_me"><![CDATA[Connecting You & Me]]></string>
+    <string name="addToCart">" Add "</string>
+    <string name="added">Added</string>
 
 </resources>
 

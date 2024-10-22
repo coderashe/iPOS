@@ -103,39 +103,23 @@ fun BusinessPerformanceScreen(
             text = stringResource(R.string.business_position),
             style = MaterialTheme.typography.headlineMedium
         )
-        Spacer(modifier = Modifier.height(2.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 8.dp)
-                .horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            //        for productCsvUpload
-            QuickAccessCard(
-                label = stringResource(R.string.income_statement),
-                subTitle = "--",
-                icon = Icons.Default.More,
-                onClick = {
-                    navController.navigate(Destinations.IncomeStatement.route)
-                }
-            )
-        }
+        Text(
+            text = "INCOME STATEMENT",
+            style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.align(Alignment.CenterHorizontally)
+        )
+
         Row {
+            // Revenue (Total Sales)
             Text(
-                modifier = Modifier.weight(1f),
-                color = Color.Black,
-                text = "Total Expenses ",
-                style = MaterialTheme.typography.titleSmall
+                text = "Revenue (Total Sales)",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary
             )
-            Text(
-                color = Color.Black,
-                text = "$${"%.2f".format(totalExpenses)}",
-                style = MaterialTheme.typography.titleSmall
-            )
+
         }
-        Divider(color = Color.Gray)
 
         Row {
 
@@ -152,16 +136,39 @@ fun BusinessPerformanceScreen(
             )
         }
         Divider(color = Color.Gray)
-        Spacer(modifier = Modifier.height(8.dp))
+
+        Row {
+            // Expenses Section
+            Text(
+                text = "Expenses (Direct + Indirect Expenses)",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
         Row {
             Text(
                 modifier = Modifier.weight(1f),
                 color = Color.Black,
-                text = "Profit / Loss ",
+                text = "Total Expenses ",
                 style = MaterialTheme.typography.titleSmall
             )
             Text(
-                color = if (profitLoss >= 0) LightGreen else Color.Red,
+                color = Color.Black,
+                text = "$${"%.2f".format(totalExpenses)}",
+                style = MaterialTheme.typography.titleSmall
+            )
+        }
+        Divider(color = Color.Gray)
+        Spacer(modifier = Modifier.height(8.dp))
+        Row {
+            Text(
+                modifier = Modifier.weight(1f),
+                color = if (profitLoss >= 0) MaterialTheme.colorScheme.primary else Color.Red,
+                text = "Profit / Loss ",
+                style = MaterialTheme.typography.titleMedium
+            )
+            Text(
+                color = if (profitLoss >= 0) MaterialTheme.colorScheme.primary else Color.Red,
                 text = "$${"%.2f".format(profitLoss)}",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold

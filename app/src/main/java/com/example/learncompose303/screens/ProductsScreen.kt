@@ -1,5 +1,6 @@
 package com.example.learncompose303.screens
 
+import android.content.res.Configuration
 import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -9,6 +10,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -44,6 +46,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -82,6 +85,11 @@ fun ProductsScreen(
         product.productDescription.contains(searchQuery, ignoreCase = true)
     }
 
+    val configuration = LocalConfiguration.current
+    val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
+    val chunkSize = if (isPortrait) 5 else 9  // Set chunk size based on orientation
+
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -95,7 +103,7 @@ fun ProductsScreen(
 
         if (filteredProducts.isNotEmpty()) {
             LazyColumn {
-                items(filteredProducts.chunked(5)) { rowItems ->
+                items(filteredProducts.chunked(chunkSize)) { rowItems ->
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -154,19 +162,16 @@ fun ProductsScreen(
 @Composable
 fun TheProductCard(
     inventory: Inventory,
-    initialPrice: Double, // Use 'initialPrice' to avoid confusion with state variable
+    initialPrice: Double,
     viewModel: InvoiceViewModel = viewModel()
 ) {
     val context = LocalContext.current
     val imageUri = remember { mutableStateOf(inventory.imageUri?.let { Uri.parse(it) }) }
-    val isEditing = remember { mutableStateOf(false) } // Track edit state
+    val isEditing = remember { mutableStateOf(false) }
     var editedProductDescription by remember { mutableStateOf(inventory.productDescription) }
     var editedPrice by remember { mutableStateOf(initialPrice.toString()) }
-
-    // Make price a state variable to trigger recompositions
     var price by remember { mutableStateOf(initialPrice) }
 
-    // Image picker launcher
     val imagePicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent(),
         onResult = { uri ->
@@ -181,103 +186,98 @@ fun TheProductCard(
     Card(
         shape = RoundedCornerShape(8.dp),
         modifier = Modifier
-            .width(175.dp)
-            .padding(8.dp),
-        elevation = CardDefaults.cardElevation(4.dp)
+            .padding(4.dp),
+        elevation = CardDefaults.cardElevation(1.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(8.dp),
+                .padding(4.dp), // Adjusted padding
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Product Image
-            val currentImageUri = imageUri.value ?: inventory.imageUri?.let { Uri.parse(it) }
-            val painter = rememberImagePainter(data = currentImageUri ?: R.drawable.meat7)
 
-            Image(
-                painter = painter,
-                contentDescription = inventory.productDescription,
-                modifier = Modifier
-                    .size(100.dp)
-                    .clip(CircleShape)
-                    .clickable { imagePicker.launch("image/*") },
-                contentScale = ContentScale.Crop
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
+            // Product Description
             if (isEditing.value) {
-                // Editable Price Field
+                OutlinedTextField(
+                    value = editedProductDescription,
+                    onValueChange = { editedProductDescription = it },
+                    label = { Text("Product Description") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            } else {
+                Text(
+                    text = inventory.productDescription,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+            Spacer(modifier = Modifier.height(4.dp)) // Reduced spacing
+
+            // Box to overlay the stock level on the product image
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+            ) {
+                // Product Image
+                val currentImageUri = imageUri.value ?: inventory.imageUri?.let { Uri.parse(it) }
+                val painter = rememberImagePainter(data = currentImageUri ?: R.drawable.meat7)
+
+                Image(
+                    painter = painter,
+                    contentDescription = inventory.productDescription,
+                    modifier = Modifier
+                        .size(90.dp)
+                        .fillMaxWidth()
+                        .clip(CircleShape)
+                        .clickable { imagePicker.launch("image/*") },
+                    contentScale = ContentScale.Crop
+                )
+
+                // Stock Level Overlay
+                Text(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd) // Align to the top end of the box
+                        .background(Color.White, shape = RoundedCornerShape(8.dp))
+                        .padding(2.dp),
+                    text = "${"%.1f".format(inventory.currentStockLevel)}", // Reduced decimal points
+                    style = MaterialTheme.typography.bodySmall, // Smaller text style
+                    color = Color.Red,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            // Price Display or Edit Field
+            if (isEditing.value) {
                 OutlinedTextField(
                     value = editedPrice,
                     onValueChange = { editedPrice = it },
                     label = { Text("Price") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth() // Full width for better usability
                 )
             } else {
-                // Display Price - real-time updates using reactive price variable
                 Text(
                     "\$${"%.2f".format(price)}",
-                    style = MaterialTheme.typography.headlineSmall
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Bold
                 )
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Product Description and Stock Level
-            if (isEditing.value) {
-                // Editable Product Description
-                OutlinedTextField(
-                    value = editedProductDescription,
-                    onValueChange = { editedProductDescription = it },
-                    label = { Text("Product Description") }
-                )
-            } else {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = inventory.productDescription,
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.weight(1f)
-                    )
-                    Text(
-                        modifier = Modifier
-                            .background(
-                                color = Color.White,
-                                shape = RoundedCornerShape(8.dp)
-                            )
-                            .padding(2.dp),
-                        text = " ${"%.2f".format(inventory.currentStockLevel)}",
-                        style = MaterialTheme.typography.titleSmall,
-                        color = Color.Red,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
+            Spacer(modifier = Modifier.height(4.dp)) // Reduced spacing
             // Edit/Save Button
             Button(
                 modifier = Modifier.fillMaxWidth(),
                 onClick = {
                     if (isEditing.value) {
-                        // Update product regardless of whether the description changed
                         val updatedProduct = inventory.copy(
                             productDescription = editedProductDescription
                         )
-
-                        // Insert/update the product and handle the product ID to update the price list
                         viewModel.insertTheProduct(updatedProduct) { productId ->
-                            // Update the price list even if the product description is unchanged
                             val updatedPriceList = PriceList(
-                                productId = productId, // Use the productId for updating PriceList
-                                productDescription = updatedProduct.productDescription, // Ensure price list gets updated with description
+                                productId = productId,
+                                productDescription = updatedProduct.productDescription,
                                 unitCost = inventory.standardCost,
-                                sellingPrice = editedPrice.toDouble(), // Always update the price
+                                sellingPrice = editedPrice.toDouble(),
                                 markupPercentage = viewModel.calculateMarkupPercentage(
                                     inventory.standardCost,
                                     editedPrice.toDouble()
@@ -287,16 +287,12 @@ fun TheProductCard(
                                     editedPrice.toDouble()
                                 )
                             )
-
-                            // Insert/update the PriceList after updating the product
                             viewModel.insertCurrentPriceList(
-                                updatedPriceList.sellingPrice, // Always update price
-                                updatedPriceList.productDescription, // Always ensure description is updated
-                                productId, // Use productId from updatedProduct
+                                updatedPriceList.sellingPrice,
+                                updatedPriceList.productDescription,
+                                productId,
                                 context
                             )
-
-                            // Update the price state to trigger UI recomposition
                             price = updatedPriceList.sellingPrice
 
                             Toast.makeText(
@@ -306,7 +302,7 @@ fun TheProductCard(
                             ).show()
                         }
                     }
-                    isEditing.value = !isEditing.value // Toggle between edit and view mode
+                    isEditing.value = !isEditing.value
                 },
                 colors = ButtonDefaults.buttonColors(
                     if (isEditing.value) Color.Green else Blue1

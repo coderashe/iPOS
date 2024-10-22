@@ -1,5 +1,6 @@
 package com.example.learncompose303.screens
 
+import android.content.res.Configuration
 import android.net.Uri
 import android.util.Log
 import android.widget.Toast
@@ -10,6 +11,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -43,7 +45,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -70,6 +74,8 @@ fun ProductSelectionScreen(
     var lowStockInventories by remember { mutableStateOf(emptyList<Inventory>()) } // List to hold low stock products
     var showNoSelectionWarning by remember { mutableStateOf(false) } // State for no product selected warning
 
+    var searchQuery by remember { mutableStateOf("") } // State for the search query
+
     LaunchedEffect(key1 = true) {
         viewModel.fetchProducts() // Fetch products when the screen is launched
 
@@ -80,6 +86,16 @@ fun ProductSelectionScreen(
             showLowStockWarning = true // Trigger the popup
         }
     }
+
+    // Filter products based on the search query
+    val filteredProducts = products.filter { product ->
+        product.productDescription.contains(searchQuery, ignoreCase = true)
+    }
+    val configuration = LocalConfiguration.current
+    val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
+
+    val chunkSize = if (isPortrait) 5 else 9  // Set chunk size based on orientation
+
 
     Column(
         modifier = Modifier
@@ -107,39 +123,57 @@ fun ProductSelectionScreen(
             }
         }
         Spacer(modifier = Modifier.height(16.dp))
-        LazyColumn {
-            items(products.chunked(5)) { rowItems ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    for (product in rowItems) {
-                        val isSelected = selectedProducts.contains(product)
-                        val price = viewModel.getPricelistById(product.productId)
-                        if (price != null) {
-                            ProductCard(
-                                inventory = product,
-                                isSelected = isSelected,
-                                onAddProduct = {
-                                    viewModel.addProductToCart(product)
-                                },
-                                price = price.sellingPrice
-                            )
-                        } else {
-                            Log.d(
-                                "HazyLogs",
-                                "No price found for product ID: ${product.productId}"
-                            )
+        SearchBar(
+            query = searchQuery,
+            onQueryChanged = { searchQuery = it } // Update the search query
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+
+
+        if (filteredProducts.isNotEmpty()) {
+            LazyColumn {
+                items(filteredProducts.chunked(chunkSize)) { rowItems ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        for (product in rowItems) {
+                            val isSelected = selectedProducts.contains(product)
+                            val price = viewModel.getPricelistById(product.productId)
+                            if (price != null) {
+                                ProductCard(
+                                    inventory = product,
+                                    isSelected = isSelected,
+                                    onAddProduct = {
+                                        viewModel.addProductToCart(product)
+                                    },
+                                    price = price.sellingPrice
+                                )
+                            } else {
+                                Log.d(
+                                    "HazyLogs",
+                                    "No price found for product ID: ${product.productId}"
+                                )
+                            }
                         }
-                    }
-                    if (rowItems.size == 1) {
-                        Spacer(modifier = Modifier.weight(1f))
+
+                        // To align remaining products if rowItems is less than the chunk size
+                        if (rowItems.size == 1) {
+                            Spacer(modifier = Modifier.weight(1f))
+                        }
                     }
                 }
             }
+        } else {
+            Text(
+                text = "No products found",
+                modifier = Modifier.align(Alignment.CenterHorizontally)
+            )
         }
+
+
         Spacer(modifier = Modifier.height(16.dp))
     }
 
@@ -180,109 +214,6 @@ fun ProductSelectionScreen(
     }
 }
 
-
-//@Composable
-//fun ProductSelectionScreen(
-//    customer: Customer,
-//    onProceedToCart: () -> Unit,
-//    navController: NavController,
-//    viewModel: InvoiceViewModel = viewModel()
-//) {
-//    val products by viewModel.productList.collectAsState()
-//    val selectedProducts by viewModel.selectedProducts.collectAsState() // Get selected products
-//    var showLowStockWarning by remember { mutableStateOf(false) } // State for the popup
-//    var lowStockProducts by remember { mutableStateOf(emptyList<Product>()) } // List to hold low stock products
-//
-//    LaunchedEffect(key1 = true) {
-//        viewModel.fetchProducts() // Fetch products when the screen is launched
-//
-//        // Check for low stock products
-//        val lowStock = products.filter { it.currentStockLevel < 10 }
-//        if (lowStock.isNotEmpty()) {
-//            lowStockProducts = lowStock // Save the low stock products
-//            showLowStockWarning = true // Trigger the popup
-//        }
-//    }
-//
-//    Column(
-//        modifier = Modifier
-//            .fillMaxSize()
-//            .padding(16.dp)
-//    ) {
-//        Row {
-//            Text(
-//                "Customer: ${customer.name}",
-//                fontWeight = FontWeight.Bold,
-//                fontSize = 18.sp,
-//                modifier = Modifier.weight(1f)
-//            )
-//            Spacer(modifier = Modifier.width(16.dp))
-//            Button(
-//                onClick = onProceedToCart,
-//            ) {
-//                Text("Proceed to Cart")
-//            }
-//        }
-//        Spacer(modifier = Modifier.height(16.dp))
-//        LazyColumn {
-//            items(products.chunked(5)) { rowItems ->
-//                Row(
-//                    modifier = Modifier
-//                        .fillMaxWidth()
-//                        .horizontalScroll(rememberScrollState()),
-//                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-//                ) {
-//                    for (product in rowItems) {
-//                        val isSelected = selectedProducts.contains(product)
-//                        val price = viewModel.getPricelistById(product.productId)
-//                        if (price != null) {
-//                            ProductCard(
-//                                product = product,
-//                                isSelected = isSelected,
-//                                onAddProduct = {
-//                                    viewModel.addProductToCart(product)
-//                                },
-//                                price = price.sellingPrice
-//                            )
-//                        } else {
-//                            Log.d(
-//                                "HazyLogs",
-//                                "No price found for product ID: ${product.productId}"
-//                            )
-//                        }
-//                    }
-//                    if (rowItems.size == 1) {
-//                        Spacer(modifier = Modifier.weight(1f))
-//                    }
-//                }
-//            }
-//        }
-//        Spacer(modifier = Modifier.height(16.dp))
-//    }
-//
-//    // Show a popup warning for low stock products
-//    if (showLowStockWarning) {
-//        AlertDialog(
-//            onDismissRequest = { showLowStockWarning = false },
-//            title = { Text("Low Stock Warning") },
-//            text = {
-//                Column {
-//                    Text("The following products have low stock:")
-//                    Spacer(modifier = Modifier.height(8.dp))
-//                    lowStockProducts.forEach { product ->
-//                        Text("- ${product.productDescription} (Stock: ${product.currentStockLevel})")
-//                    }
-//                }
-//            },
-//            confirmButton = {
-//                Button(onClick = { showLowStockWarning = false }) {
-//                    Text("OK")
-//                }
-//            }
-//        )
-//    }
-//}
-
 @Composable
 fun ProductCard(
     inventory: Inventory,
@@ -303,8 +234,7 @@ fun ProductCard(
     Card(
         shape = RoundedCornerShape(8.dp),
         modifier = Modifier
-            .width(175.dp)
-            .padding(8.dp)
+            .padding(4.dp)
             .clickable {
                 // Check if the product is in stock before adding
                 if (inventory.currentStockLevel > 0) {
@@ -319,52 +249,61 @@ fun ProductCard(
                         .show()
                 }
             },
-        elevation = CardDefaults.cardElevation(4.dp)
+        elevation = CardDefaults.cardElevation(2.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(2.dp),
+                .padding(2.dp), // Adjusted padding
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Product Image using Coil to load image from URI or String
-            Image(
-                painter = rememberImagePainter(data = inventory.imageUri ?: R.drawable.meat7),
-                contentDescription = inventory.productDescription,
-                modifier = Modifier
-                    .size(100.dp)
-                    .clip(CircleShape)
-                    .align(Alignment.CenterHorizontally),
-                contentScale = ContentScale.Crop
-            )
-            Spacer(modifier = Modifier.height(8.dp))
+
             Text(
-                "\$${"%.2f".format(price)}",
-                style = MaterialTheme.typography.headlineSmall
+                modifier = Modifier.fillMaxWidth(),
+                text = inventory.productDescription,
+                style = MaterialTheme.typography.bodyMedium
             )
             Spacer(modifier = Modifier.height(8.dp))
-            Row(
+            // Product Image using Coil to load image from URI or String
+            Box(
                 modifier = Modifier
+                    .fillMaxWidth()
             ) {
-                Text(
-                    modifier = Modifier.weight(1f),
-                    text = inventory.productDescription,
-                    style = MaterialTheme.typography.bodySmall
+                // Product Image
+                val currentImageUri = imageUri.value ?: inventory.imageUri?.let { Uri.parse(it) }
+                val painter = rememberImagePainter(data = currentImageUri ?: R.drawable.meat7)
+
+                Image(
+                    painter = painter,
+                    contentDescription = inventory.productDescription,
+                    modifier = Modifier
+                        .size(90.dp)
+                        .fillMaxWidth()
+                        .clip(CircleShape),
+                    contentScale = ContentScale.Crop
                 )
+
+                // Stock Level Overlay
                 Text(
                     modifier = Modifier
-                        .background(
-                            color = Color.White,
-                            shape = RoundedCornerShape(8.dp)
-                        )
+                        .align(Alignment.TopEnd) // Align to the top end of the box
+                        .background(Color.White, shape = RoundedCornerShape(8.dp))
                         .padding(2.dp),
-                    text = " ${"%.2f".format(inventory.currentStockLevel)}",
-                    style = MaterialTheme.typography.titleSmall,
+                    text = "${"%.1f".format(inventory.currentStockLevel)}", // Reduced decimal points
+                    style = MaterialTheme.typography.bodySmall, // Smaller text style
                     color = Color.Red,
                     fontWeight = FontWeight.Bold
                 )
             }
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                "\$${"%.2f".format(price)}",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+
             Button(
-                modifier = Modifier.fillMaxWidth(),
                 onClick = {
                     // Check stock before adding
                     if (inventory.currentStockLevel > 0) {
@@ -383,10 +322,11 @@ fun ProductCard(
                 shape = RoundedCornerShape(8.dp)
             ) {
                 Text(
-                    text = if (isSelected) "Added" else "Add to Cart",
+                    text = if (isSelected) stringResource(R.string.added) else stringResource(R.string.addToCart),
                     color = if (isSelected) Color.White else Color.Black
                 )
             }
+
         }
     }
 }

@@ -39,6 +39,25 @@ import com.example.learncompose303.screens.CartScreen
 import com.example.learncompose303.screens.ProductCard
 import com.example.learncompose303.viewmodels.InvoiceViewModel
 
+
+//        Row(
+//            modifier = Modifier
+//                .fillMaxWidth()
+//                .padding(top = 8.dp)
+//                .horizontalScroll(rememberScrollState()),
+//            horizontalArrangement = Arrangement.spacedBy(16.dp)
+//        ) {
+//            //        for productCsvUpload
+//            QuickAccessCard(
+//                label = stringResource(R.string.income_statement),
+//                subTitle = "--",
+//                icon = Icons.Default.More,
+//                onClick = {
+//                    navController.navigate(Destinations.IncomeStatement.route)
+//                }
+//            )
+//        }
+
 //    val pricelistRequestFileLauncher = rememberLauncherForActivityResult(
 //        contract = ActivityResultContracts.GetContent()
 //    ) { uri: Uri? ->
