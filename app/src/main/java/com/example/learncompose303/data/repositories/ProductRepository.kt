@@ -1,64 +1,63 @@
 package com.example.learncompose303.data.repositories
 
 import com.example.learncompose303.data.data_source.ProductDao
-import com.example.learncompose303.data.entities.Customer
-import com.example.learncompose303.data.entities.Product
+import com.example.learncompose303.data.entities.Inventory
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
 interface ProductRepository {
-    suspend fun getProductById(id: Long): Product?
-    suspend fun getAllProducts(): Flow<List<Product>>
-    suspend fun insertProduct(product: Product): Long
-    suspend fun updateProduct(product: Product)
-    suspend fun deleteProduct(product: Product)
-    suspend fun insertProducts(products: List<Product>): List<Long> // Return list of inserted product IDs
-    suspend fun getAllProductsOnce(): List<Product>
+    suspend fun getProductById(id: Long): Inventory?
+    suspend fun getAllProducts(): Flow<List<Inventory>>
+    suspend fun insertProduct(inventory: Inventory): Long
+    suspend fun updateProduct(inventory: Inventory)
+    suspend fun deleteProduct(inventory: Inventory)
+    suspend fun insertProducts(inventories: List<Inventory>): List<Long> // Return list of inserted product IDs
+    suspend fun getAllProductsOnce(): List<Inventory>
 }
 
 class ProductRepositoryImpl @Inject constructor(
     private val productDao: ProductDao
 ) : ProductRepository {
 
-    override suspend fun getProductById(id: Long): Product? {
+    override suspend fun getProductById(id: Long): Inventory? {
         return withContext(Dispatchers.IO) {
             productDao.getProductById(id)
         }
     }
 
-    override suspend fun getAllProducts(): Flow<List<Product>> {
+    override suspend fun getAllProducts(): Flow<List<Inventory>> {
         return withContext(Dispatchers.IO) {
             productDao.getAllProducts()
         }
     }
 
-    override suspend fun insertProduct(product: Product): Long {
+    override suspend fun insertProduct(inventory: Inventory): Long {
         return withContext(Dispatchers.IO) {
-            productDao.insertProduct(product)
+            productDao.insertProduct(inventory)
         }
     }
 
-    override suspend fun updateProduct(product: Product) {
+    override suspend fun updateProduct(inventory: Inventory) {
         return withContext(Dispatchers.IO) {
-            productDao.updateProduct(product)
+            productDao.updateProduct(inventory)
         }
     }
 
-    override suspend fun deleteProduct(product: Product) {
+    override suspend fun deleteProduct(inventory: Inventory) {
         return withContext(Dispatchers.IO) {
-            productDao.deleteProduct(product)
+            productDao.deleteProduct(inventory)
         }
     }
 
-    override suspend fun insertProducts(products: List<Product>): List<Long> {
+    override suspend fun insertProducts(inventories: List<Inventory>): List<Long> {
         return withContext(Dispatchers.IO) {
-            productDao.insertProducts(products)
+            productDao.insertProducts(inventories)
         }
     }
 
-    override suspend fun getAllProductsOnce(): List<Product> {
+    override suspend fun getAllProductsOnce(): List<Inventory> {
         return withContext(Dispatchers.IO) {
             productDao.getAllProductsOnce()
         }

@@ -5,7 +5,15 @@ import androidx.room.PrimaryKey
 
 @Entity(tableName = "suppliers")
 data class Supplier(
-    @PrimaryKey(autoGenerate = true) val vendorId: Long = 0,
-    val description: String,
-    val productGroupId: Long // Link to product groups
+    @PrimaryKey(autoGenerate = true)
+    val supplierId: Long,
+    val name: String,
+    val location: String,
+    val phoneNumber: String,
+    val email: String?,
+    val productIdsSupplied: List<Long>, // List of products supplied
+    val rating: Int?, // Optional rating out of 5
+    val comment: String?,
+    val offerDiscount: Boolean,
+    val offerCredit: Boolean
 )

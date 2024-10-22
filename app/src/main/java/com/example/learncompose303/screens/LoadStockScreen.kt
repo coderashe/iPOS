@@ -33,10 +33,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.learncompose303.R
-import com.example.learncompose303.app.CustomHeadingMedium
 import com.example.learncompose303.data.Destinations
 import com.example.learncompose303.data.entities.PriceList
-import com.example.learncompose303.data.entities.Product
+import com.example.learncompose303.data.entities.Inventory
 import com.example.learncompose303.viewmodels.InvoiceViewModel
 
 
@@ -177,7 +176,7 @@ fun LoadStockScreen(
                         viewModel.calculateStandardCost(unitCostValue, currentStockLevelValue)
 
                     // Create and insert Product
-                    val newProduct = Product(
+                    val newInventory = Inventory(
                         productDescription = productName,
                         currentStockLevel = currentStockLevel.toDoubleOrNull() ?: 0.0,
                         saleable = true,
@@ -189,7 +188,7 @@ fun LoadStockScreen(
                         inclusiveTaxed = true,
                     )
 
-                    viewModel.insertTheProduct(newProduct) { productId ->
+                    viewModel.insertTheProduct(newInventory) { productId ->
                         // Create and insert PriceList entry
                         val newPriceList = sellingPriceValue?.let {
                             PriceList(

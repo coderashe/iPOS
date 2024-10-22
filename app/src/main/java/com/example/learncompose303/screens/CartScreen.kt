@@ -1,7 +1,6 @@
 package com.example.learncompose303.screens
 
 import android.content.Intent
-import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -32,12 +31,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.compose.rememberNavController
 import com.example.learncompose303.data.Destinations
 import com.example.learncompose303.data.entities.Customer
 import com.example.learncompose303.viewmodels.InvoiceViewModel
@@ -60,7 +57,7 @@ fun CartScreen(
     val selectedProducts by viewModel.selectedProducts.collectAsState()
 
     // Collect product price details
-    val productWithPriceDetails by viewModel.productWithPriceDetails.collectAsState(initial = emptyList())
+    val productWithPriceDetails by viewModel.inventoryWithPriceDetails.collectAsState(initial = emptyList())
     val productDetails = productWithPriceDetails.joinToString("\n") { (product, price, quantity) ->
         "${product.productDescription}, $$price, Quantity: $quantity"
     }

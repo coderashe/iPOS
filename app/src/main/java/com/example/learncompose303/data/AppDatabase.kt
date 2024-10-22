@@ -1,11 +1,17 @@
 package com.example.learncompose303.data
 
+import android.content.Context
 import androidx.room.Database
+import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.learncompose303.daos.ItemDao
 import com.example.learncompose303.data.data_source.CartItemDao
+import com.example.learncompose303.data.data_source.CashFlowDao
 import com.example.learncompose303.data.data_source.CustomerDao
 import com.example.learncompose303.data.data_source.DayReportsDao
+import com.example.learncompose303.data.data_source.DiscountsReceivedDao
 import com.example.learncompose303.data.data_source.ExpenseDao
 import com.example.learncompose303.data.data_source.InvoiceDao
 import com.example.learncompose303.data.data_source.InvoiceItemDao
@@ -17,11 +23,14 @@ import com.example.learncompose303.data.data_source.PriceListDao
 import com.example.learncompose303.data.data_source.ProductDao
 import com.example.learncompose303.data.data_source.ProductDayReportDao
 import com.example.learncompose303.data.data_source.StudentDao
+import com.example.learncompose303.data.data_source.TradeReceivablesDao
 import com.example.learncompose303.data.data_source.UserDao
 import com.example.learncompose303.data.domain.model.Note
 import com.example.learncompose303.data.entities.CartItem
+import com.example.learncompose303.data.entities.CashFlow
 import com.example.learncompose303.data.entities.Customer
 import com.example.learncompose303.data.entities.DayReports
+import com.example.learncompose303.data.entities.DiscountsReceived
 import com.example.learncompose303.data.entities.Expense
 import com.example.learncompose303.data.entities.Invoice
 import com.example.learncompose303.data.entities.InvoiceItem
@@ -29,24 +38,64 @@ import com.example.learncompose303.data.entities.InvoiceLine
 import com.example.learncompose303.data.entities.Order
 import com.example.learncompose303.data.entities.Payment
 import com.example.learncompose303.data.entities.PriceList
-import com.example.learncompose303.data.entities.Product
+import com.example.learncompose303.data.entities.Inventory
 import com.example.learncompose303.data.entities.ProductDayReport
+import com.example.learncompose303.data.entities.TradeReceivables
 import com.example.learncompose303.data.entities.User
 
+//@Database(
+//    entities = [Item::class, Note::class,
+//        StudentEntity::class, Customer::class,
+//        Invoice::class, InvoiceItem::class, InvoiceLine::class,
+//        Payment::class, Inventory::class,
+//        CartItem::class,
+//        Order::class, PriceList::class,
+//        ProductDayReport::class, DayReports::class,
+//        User::class,
+//        Expense::class],
+//    version = 35,
+//    exportSchema = false
+//)
+//
+//abstract class AppDatabase : RoomDatabase() {
+//    abstract fun itemDao(): ItemDao
+//    abstract fun noteDao(): NoteDao
+//    abstract fun studentDao(): StudentDao
+//    abstract fun invoiceDao(): InvoiceDao
+//    abstract fun customerDao(): CustomerDao
+//    abstract fun invoiceItemDao(): InvoiceItemDao
+//    abstract fun paymentDao(): PaymentDao
+//    abstract fun productDao(): ProductDao
+//    abstract fun cartItemDao(): CartItemDao
+//    abstract fun invoiceLineDao(): InvoiceLineDao
+//    abstract fun orderDao(): OrderDao
+//    abstract fun pricelistDao(): PriceListDao
+//    abstract fun productDayReportDao(): ProductDayReportDao
+//    abstract fun dayReportsDao(): DayReportsDao
+//    abstract fun expenseDao(): ExpenseDao
+//    abstract fun userDao(): UserDao
+//
+//    companion object {
+//        const val DATABASE_NAME = "ipos_db"
+//    }
+//}
+
 @Database(
-    entities = [Item::class, Note::class,
+    entities = [
+        Item::class, Note::class,
         StudentEntity::class, Customer::class,
         Invoice::class, InvoiceItem::class, InvoiceLine::class,
-        Payment::class, Product::class,
-        CartItem::class,
-        Order::class, PriceList::class,
-        ProductDayReport::class, DayReports::class,
-        User::class,
-        Expense::class],
-    version = 34,
+        Payment::class, Inventory::class, CartItem::class,
+        Order::class, PriceList::class, ProductDayReport::class, DayReports::class,
+        User::class, Expense::class,
+        TradeReceivables::class, DiscountsReceived::class, CashFlow::class // New entities
+    ],
+    version = 35,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
+
+    // DAOs
     abstract fun itemDao(): ItemDao
     abstract fun noteDao(): NoteDao
     abstract fun studentDao(): StudentDao
@@ -64,7 +113,60 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun expenseDao(): ExpenseDao
     abstract fun userDao(): UserDao
 
+    // New DAOs
+    abstract fun tradeReceivablesDao(): TradeReceivablesDao
+    abstract fun discountsReceivedDao(): DiscountsReceivedDao
+    abstract fun cashFlowDao(): CashFlowDao
+
     companion object {
         const val DATABASE_NAME = "ipos_db"
     }
 }
+
+val MIGRATION_34_35 = object : Migration(34, 35) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        // Create the TradeReceivables table
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS `tradereceivables` (
+                `receivableId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                `orderId` INTEGER NOT NULL,
+                `totalAmount` REAL NOT NULL,
+                `amountPaid` REAL NOT NULL,
+                `creditPeriod` INTEGER NOT NULL,
+                `dueDate` INTEGER NOT NULL,
+                `paymentStatus` TEXT NOT NULL,
+                `dateCreated` INTEGER NOT NULL
+            )
+            """.trimIndent()
+        )
+
+        // Create the DiscountsReceived table
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS `discountsreceived` (
+                `discountId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                `orderId` INTEGER NOT NULL,
+                `discountAmount` REAL NOT NULL,
+                `dateReceived` INTEGER NOT NULL
+            )
+            """.trimIndent()
+        )
+
+        // Create the CashFlow table
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS `cashflow` (
+                `cashFlowId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                `orderId` INTEGER NOT NULL,
+                `amount` REAL NOT NULL,
+                `cashOutflow` INTEGER NOT NULL,
+                `transactionDate` INTEGER NOT NULL,
+                `description` TEXT
+            )
+            """.trimIndent()
+        )
+    }
+}
+
+

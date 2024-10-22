@@ -6,11 +6,8 @@ import android.os.Build
 import android.util.Log
 import android.widget.Toast
 import androidx.annotation.RequiresApi
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.learncompose303.R
 import com.example.learncompose303.data.StudentEntity
 import com.example.learncompose303.data.entities.CartItem
@@ -22,7 +19,7 @@ import com.example.learncompose303.data.entities.InvoiceItem
 import com.example.learncompose303.data.entities.InvoiceLine
 import com.example.learncompose303.data.entities.Order
 import com.example.learncompose303.data.entities.PriceList
-import com.example.learncompose303.data.entities.Product
+import com.example.learncompose303.data.entities.Inventory
 import com.example.learncompose303.data.entities.ProductDayReport
 import com.example.learncompose303.data.repositories.CartItemRepository
 import com.example.learncompose303.data.repositories.CustomerRepository
@@ -35,10 +32,8 @@ import com.example.learncompose303.data.repositories.PriceListRepository
 import com.example.learncompose303.data.repositories.ProductDayReportRepository
 import com.example.learncompose303.data.repositories.ProductRepository
 import com.example.learncompose303.data.repositories.StudentRepository
-import com.example.learncompose303.screens.auth.AuthViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -54,7 +49,6 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 import java.util.Calendar
 import javax.inject.Inject
-import kotlin.time.times
 
 @HiltViewModel
 class InvoiceViewModel @Inject constructor(
@@ -75,10 +69,10 @@ class InvoiceViewModel @Inject constructor(
     val dayStarted: StateFlow<Boolean> = _dayStarted.asStateFlow()
 
     // Use Triple to hold product, price, and quantity
-    private val _productWithPriceDetails =
-        MutableStateFlow<List<Triple<Product, Double, Int>>>(emptyList())
-    val productWithPriceDetails: StateFlow<List<Triple<Product, Double, Int>>> =
-        _productWithPriceDetails
+    private val _inventoryWithPriceDetails =
+        MutableStateFlow<List<Triple<Inventory, Double, Int>>>(emptyList())
+    val inventoryWithPriceDetails: StateFlow<List<Triple<Inventory, Double, Int>>> =
+        _inventoryWithPriceDetails
 
     private val _priceList = MutableStateFlow(emptyList<PriceList>())
     val priceList = _priceList.asStateFlow()
@@ -101,15 +95,15 @@ class InvoiceViewModel @Inject constructor(
     val customerList = _customerList.asStateFlow()
 
     // Product list
-    private val _productList = MutableStateFlow(emptyList<Product>())
-    val productList = _productList.asStateFlow()
+    private val _inventoryList = MutableStateFlow(emptyList<Inventory>())
+    val productList = _inventoryList.asStateFlow()
 
     private val _invoiceLineList = MutableStateFlow(emptyList<InvoiceLine>())
     val invoiceLineList = _invoiceLineList.asStateFlow()
 
     // List to store selected products for the cart
-    private val _selectedProducts = MutableStateFlow<List<Product>>(emptyList())
-    val selectedProducts: StateFlow<List<Product>> = _selectedProducts
+    private val _selectedProducts = MutableStateFlow<List<Inventory>>(emptyList())
+    val selectedProducts: StateFlow<List<Inventory>> = _selectedProducts
 
     // Invoice items (InvoiceItem)
     private val _invoiceItems = MutableStateFlow(mutableListOf<InvoiceItem>())
@@ -201,7 +195,7 @@ class InvoiceViewModel @Inject constructor(
                     val standardCost = productCsv.standardCost ?: 0.0
 
                     // Create a new product entity
-                    val newProduct = Product(
+                    val newInventory = Inventory(
                         productDescription = productCsv.productDescription,
                         currentStockLevel = productCsv.currentStockLevel,
                         saleable = productCsv.saleable,
@@ -215,7 +209,7 @@ class InvoiceViewModel @Inject constructor(
                     )
 
                     // Insert new product into the repository
-                    val productId = productRepository.insertProduct(newProduct)
+                    val productId = productRepository.insertProduct(newInventory)
 
                     // Insert into PriceList for the new product
                     val sellingPrice = standardCost * 1 // Adjust as needed
@@ -271,11 +265,11 @@ class InvoiceViewModel @Inject constructor(
     }
 
     fun getPriceDetailsForSelectedProducts(
-        selectedProducts: List<Product>,
+        selectedInventories: List<Inventory>,
         productQuantities: Map<Long, Int>
     ) {
         viewModelScope.launch {
-            val productDetailsWithPrices = selectedProducts.map { product ->
+            val productDetailsWithPrices = selectedInventories.map { product ->
                 val priceList = priceListRepository.getPriceListByProductId(product.productId)
                 val productPrice = priceList?.sellingPrice ?: 0.0
                 val quantitySold = productQuantities[product.productId]
@@ -286,23 +280,23 @@ class InvoiceViewModel @Inject constructor(
                     quantitySold
                 ) // Return Triple with product, price, and quantity
             }
-            _productWithPriceDetails.value = productDetailsWithPrices
+            _inventoryWithPriceDetails.value = productDetailsWithPrices
         }
     }
 
     // Use Triple to hold product, price, and quantity
 // In ViewModel
-    private val _butcherProductWithPriceDetails =
-        MutableStateFlow<List<Triple<Product, Double, Double>>>(emptyList())
-    val butcherProductWithPriceDetails: StateFlow<List<Triple<Product, Double, Double>>> =
-        _butcherProductWithPriceDetails
+    private val _butcherInventoryWithPriceDetails =
+        MutableStateFlow<List<Triple<Inventory, Double, Double>>>(emptyList())
+    val butcherInventoryWithPriceDetails: StateFlow<List<Triple<Inventory, Double, Double>>> =
+        _butcherInventoryWithPriceDetails
 
     fun getPriceDetailsForButcherSelectedProducts(
-        selectedProducts: List<Product>,
+        selectedInventories: List<Inventory>,
         productQuantities: Map<Long, Double>
     ) {
         viewModelScope.launch {
-            val butcherProductWithPriceDetails = selectedProducts.map { product ->
+            val butcherProductWithPriceDetails = selectedInventories.map { product ->
                 val priceList = priceListRepository.getPriceListByProductId(product.productId)
                 val pricePerKg = priceList?.sellingPrice ?: 0.0
                 val defaultAmountPaid = pricePerKg * (productQuantities[product.productId]
@@ -314,7 +308,7 @@ class InvoiceViewModel @Inject constructor(
                     defaultAmountPaid
                 ) // Return Triple with product, price, and default amount paid
             }
-            _butcherProductWithPriceDetails.value = butcherProductWithPriceDetails
+            _butcherInventoryWithPriceDetails.value = butcherProductWithPriceDetails
         }
     }
 
@@ -378,7 +372,7 @@ class InvoiceViewModel @Inject constructor(
     // Fetch products from the database
     fun fetchProducts() = viewModelScope.launch {
         productRepository.getAllProducts().collectLatest { productList ->
-            _productList.value = productList
+            _inventoryList.value = productList
         }
     }
 
@@ -389,8 +383,8 @@ class InvoiceViewModel @Inject constructor(
         val existingProducts = productRepository.getAllProductsOnce()
 
         if (existingProducts.isEmpty()) {
-            val initialProducts = listOf(
-                Product(
+            val initialInventories = listOf(
+                Inventory(
                     productDescription = "Beef",
                     currentStockLevel = 10000.00,
                     saleable = true,
@@ -401,7 +395,7 @@ class InvoiceViewModel @Inject constructor(
                     purchasableTaxCode = "VAT",
                     inclusiveTaxed = true,
                 ),
-                Product(
+                Inventory(
                     productDescription = "Pork",
                     currentStockLevel = 10000.00,
                     saleable = true,
@@ -412,7 +406,7 @@ class InvoiceViewModel @Inject constructor(
                     purchasableTaxCode = "VAT",
                     inclusiveTaxed = true
                 ),
-                Product(
+                Inventory(
                     productDescription = "Chicken",
                     currentStockLevel = 10000.00,
                     saleable = true,
@@ -423,7 +417,7 @@ class InvoiceViewModel @Inject constructor(
                     purchasableTaxCode = "VAT",
                     inclusiveTaxed = true
                 ),
-                Product(
+                Inventory(
                     productDescription = "Sausage",
                     currentStockLevel = 10000.00,
                     saleable = true,
@@ -434,7 +428,7 @@ class InvoiceViewModel @Inject constructor(
                     purchasableTaxCode = "VAT",
                     inclusiveTaxed = true
                 ),
-                Product(
+                Inventory(
                     productDescription = "Offals",
                     currentStockLevel = 10000.00,
                     saleable = true,
@@ -448,11 +442,11 @@ class InvoiceViewModel @Inject constructor(
             )
 
             // Insert initial products and get the inserted IDs
-            val productIds = productRepository.insertProducts(initialProducts)
+            val productIds = productRepository.insertProducts(initialInventories)
 
             // After inserting products, insert into PriceList table
             productIds.forEachIndexed { index, productId ->
-                val product = initialProducts[index]
+                val product = initialInventories[index]
 //                val sellingPrice = product.standardCost * 1.2 // Example of a 20% markup
                 val sellingPrice = product.standardCost * 1
                 val markupPercentage =
@@ -473,9 +467,9 @@ class InvoiceViewModel @Inject constructor(
         }
     }
 
-    fun insertTheProduct(product: Product, onProductInserted: (Long) -> Unit) =
+    fun insertTheProduct(inventory: Inventory, onProductInserted: (Long) -> Unit) =
         viewModelScope.launch {
-            val productId = productRepository.insertProduct(product)
+            val productId = productRepository.insertProduct(inventory)
             onProductInserted(productId)
         }
 
@@ -502,8 +496,8 @@ class InvoiceViewModel @Inject constructor(
             }
         }
 
-    fun insertProduct(product: Product) = viewModelScope.launch {
-        productRepository.insertProduct(product)
+    fun insertProduct(inventory: Inventory) = viewModelScope.launch {
+        productRepository.insertProduct(inventory)
     }
 
     // Function to calculate gross profit percentage
@@ -536,12 +530,12 @@ class InvoiceViewModel @Inject constructor(
 
 
     // Add a product to the cart (selected products list)
-    fun addProductToCart(product: Product) {
+    fun addProductToCart(inventory: Inventory) {
         val updatedList = _selectedProducts.value.toMutableList()
-        if (updatedList.contains(product)) {
-            updatedList.remove(product) // Deselect if already added
+        if (updatedList.contains(inventory)) {
+            updatedList.remove(inventory) // Deselect if already added
         } else {
-            updatedList.add(product) // Add if not already selected
+            updatedList.add(inventory) // Add if not already selected
         }
         _selectedProducts.value = updatedList
     }
@@ -1069,20 +1063,20 @@ class InvoiceViewModel @Inject constructor(
     }
 
     // Update your onUpdateProductImage method in the ViewModel
-    fun onUpdateProductImage(product: Product, uri: Uri, context: Context) {
+    fun onUpdateProductImage(inventory: Inventory, uri: Uri, context: Context) {
         val imagePath = saveImageToInternalStorage(context, uri)
         if (imagePath != null) {
             // Update the product with the new image file path
-            val updatedProduct = product.copy(imageUri = imagePath)
+            val updatedProduct = inventory.copy(imageUri = imagePath)
             // Update your database with the updated product
             updateProduct(updatedProduct)
         }
     }
 
-    fun updateProduct(product: Product) {
+    fun updateProduct(inventory: Inventory) {
         viewModelScope.launch {
-            productRepository.updateProduct(product)
-            Log.d("ProductUpdate", "Product updated: $product")
+            productRepository.updateProduct(inventory)
+            Log.d("ProductUpdate", "Product updated: $inventory")
         }
     }
 

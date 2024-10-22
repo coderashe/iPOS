@@ -52,7 +52,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.rememberImagePainter
 import com.example.learncompose303.R
 import com.example.learncompose303.data.entities.PriceList
-import com.example.learncompose303.data.entities.Product
+import com.example.learncompose303.data.entities.Inventory
 import com.example.learncompose303.ui.theme.Blue1
 import com.example.learncompose303.viewmodels.InvoiceViewModel
 
@@ -64,7 +64,7 @@ fun ProductsScreen(
     val products by viewModel.productList.collectAsState()
     var searchQuery by remember { mutableStateOf("") } // State for the search query
     var showLowStockWarning by remember { mutableStateOf(false) } // State for the popup
-    var lowStockProducts by remember { mutableStateOf(emptyList<Product>()) } // List to hold low stock products
+    var lowStockInventories by remember { mutableStateOf(emptyList<Inventory>()) } // List to hold low stock products
 
     LaunchedEffect(key1 = true) {
         viewModel.fetchProducts() // Fetch products when the screen is launched
@@ -72,7 +72,7 @@ fun ProductsScreen(
         // Check for low stock products
         val lowStock = products.filter { it.currentStockLevel < 10 }
         if (lowStock.isNotEmpty()) {
-            lowStockProducts = lowStock // Save the low stock products
+            lowStockInventories = lowStock // Save the low stock products
             showLowStockWarning = true // Trigger the popup
         }
     }
@@ -106,7 +106,7 @@ fun ProductsScreen(
                             val price = viewModel.getPricelistById(product.productId)
                             if (price != null) {
                                 TheProductCard(
-                                    product = product,
+                                    inventory = product,
                                     initialPrice = price.sellingPrice,
                                     viewModel
                                 )
@@ -137,7 +137,7 @@ fun ProductsScreen(
                 Column {
                     Text("The following products have low stock:")
                     Spacer(modifier = Modifier.height(8.dp))
-                    lowStockProducts.forEach { product ->
+                    lowStockInventories.forEach { product ->
                         Text("- ${product.productDescription} (Stock: ${product.currentStockLevel})")
                     }
                 }
@@ -153,14 +153,14 @@ fun ProductsScreen(
 
 @Composable
 fun TheProductCard(
-    product: Product,
+    inventory: Inventory,
     initialPrice: Double, // Use 'initialPrice' to avoid confusion with state variable
     viewModel: InvoiceViewModel = viewModel()
 ) {
     val context = LocalContext.current
-    val imageUri = remember { mutableStateOf(product.imageUri?.let { Uri.parse(it) }) }
+    val imageUri = remember { mutableStateOf(inventory.imageUri?.let { Uri.parse(it) }) }
     val isEditing = remember { mutableStateOf(false) } // Track edit state
-    var editedProductDescription by remember { mutableStateOf(product.productDescription) }
+    var editedProductDescription by remember { mutableStateOf(inventory.productDescription) }
     var editedPrice by remember { mutableStateOf(initialPrice.toString()) }
 
     // Make price a state variable to trigger recompositions
@@ -172,9 +172,9 @@ fun TheProductCard(
         onResult = { uri ->
             imageUri.value = uri
             if (uri != null) {
-                viewModel.onUpdateProductImage(product, uri, context)
+                viewModel.onUpdateProductImage(inventory, uri, context)
             }
-            viewModel.updateProduct(product)
+            viewModel.updateProduct(inventory)
         }
     )
 
@@ -192,12 +192,12 @@ fun TheProductCard(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Product Image
-            val currentImageUri = imageUri.value ?: product.imageUri?.let { Uri.parse(it) }
+            val currentImageUri = imageUri.value ?: inventory.imageUri?.let { Uri.parse(it) }
             val painter = rememberImagePainter(data = currentImageUri ?: R.drawable.meat7)
 
             Image(
                 painter = painter,
-                contentDescription = product.productDescription,
+                contentDescription = inventory.productDescription,
                 modifier = Modifier
                     .size(100.dp)
                     .clip(CircleShape)
@@ -239,7 +239,7 @@ fun TheProductCard(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = product.productDescription,
+                        text = inventory.productDescription,
                         style = MaterialTheme.typography.bodySmall,
                         modifier = Modifier.weight(1f)
                     )
@@ -250,7 +250,7 @@ fun TheProductCard(
                                 shape = RoundedCornerShape(8.dp)
                             )
                             .padding(2.dp),
-                        text = " ${"%.2f".format(product.currentStockLevel)}",
+                        text = " ${"%.2f".format(inventory.currentStockLevel)}",
                         style = MaterialTheme.typography.titleSmall,
                         color = Color.Red,
                         fontWeight = FontWeight.Bold
@@ -266,7 +266,7 @@ fun TheProductCard(
                 onClick = {
                     if (isEditing.value) {
                         // Update product regardless of whether the description changed
-                        val updatedProduct = product.copy(
+                        val updatedProduct = inventory.copy(
                             productDescription = editedProductDescription
                         )
 
@@ -276,14 +276,14 @@ fun TheProductCard(
                             val updatedPriceList = PriceList(
                                 productId = productId, // Use the productId for updating PriceList
                                 productDescription = updatedProduct.productDescription, // Ensure price list gets updated with description
-                                unitCost = product.standardCost,
+                                unitCost = inventory.standardCost,
                                 sellingPrice = editedPrice.toDouble(), // Always update the price
                                 markupPercentage = viewModel.calculateMarkupPercentage(
-                                    product.standardCost,
+                                    inventory.standardCost,
                                     editedPrice.toDouble()
                                 ),
                                 grossProfitPercentage = viewModel.calculateGrossProfitPercentage(
-                                    product.standardCost,
+                                    inventory.standardCost,
                                     editedPrice.toDouble()
                                 )
                             )

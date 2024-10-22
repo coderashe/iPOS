@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import com.example.learncompose303.daos.ItemDao
 import com.example.learncompose303.data.AppDatabase
+import com.example.learncompose303.data.MIGRATION_34_35
 import com.example.learncompose303.data.data_source.CartItemDao
 import com.example.learncompose303.data.data_source.CustomerDao
 import com.example.learncompose303.data.data_source.DayReportsDao
@@ -75,14 +76,15 @@ object AppModule {
     // Provide the AppDatabase instance as a Singleton
     @Provides
     @Singleton
-    fun provideAppDatabase(@ApplicationContext context: Context): AppDatabase =
-        Room.databaseBuilder(
+    fun provideAppDatabase(@ApplicationContext context: Context): AppDatabase {
+        return Room.databaseBuilder(
             context,
             AppDatabase::class.java,
             AppDatabase.DATABASE_NAME
         )
-            .fallbackToDestructiveMigration() // Handle destructive migrations
+            .addMigrations(MIGRATION_34_35) // Add your migrations here
             .build()
+    }
 
     @Provides
     @Singleton

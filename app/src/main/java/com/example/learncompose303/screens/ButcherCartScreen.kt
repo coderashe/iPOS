@@ -1,7 +1,6 @@
 package com.example.learncompose303.screens
 
 import android.content.Intent
-import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -28,16 +27,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.compose.rememberNavController
 import com.example.learncompose303.data.Destinations
 import com.example.learncompose303.data.entities.Customer
 import com.example.learncompose303.viewmodels.InvoiceViewModel
@@ -60,7 +56,7 @@ fun ButcherCartScreen(
     val selectedProducts by viewModel.selectedProducts.collectAsState()
 
     // Collect butcher product price details
-    val productWithPriceDetails by viewModel.butcherProductWithPriceDetails.collectAsState(initial = emptyList())
+    val productWithPriceDetails by viewModel.butcherInventoryWithPriceDetails.collectAsState(initial = emptyList())
 
     // Map to hold amount paid for each product
     val productAmountPaid = remember { mutableStateMapOf<Long, Double>() }

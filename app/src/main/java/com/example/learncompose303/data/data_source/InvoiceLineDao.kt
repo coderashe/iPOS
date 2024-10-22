@@ -5,10 +5,8 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
-import com.example.learncompose303.data.entities.Customer
 import com.example.learncompose303.data.entities.HourPerformance
 import com.example.learncompose303.data.entities.InvoiceLine
-import com.example.learncompose303.data.entities.Product
 import com.example.learncompose303.data.entities.ProductPerformance
 import kotlinx.coroutines.flow.Flow
 
