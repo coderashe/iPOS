@@ -1,7 +1,9 @@
 package com.example.learncompose303.screens
 
 import android.widget.Toast
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -11,11 +13,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
@@ -43,7 +48,6 @@ import com.example.learncompose303.data.Destinations
 import com.example.learncompose303.screens.auth.AuthState
 import com.example.learncompose303.screens.auth.AuthViewModel
 
-
 @Composable
 fun SignUpPage(
     navController: NavController,
@@ -54,10 +58,14 @@ fun SignUpPage(
     var contact by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var role by remember { mutableStateOf("") }
+    var role by remember { mutableStateOf("cashier") } // Default role to "admin"
     var storeID by remember { mutableStateOf("") }
     var address by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
+
+    // Role Dropdown Menu state
+    var expanded by remember { mutableStateOf(false) }
+    val roles = listOf("admin", "cashier", "owner")
 
     // Observing the authentication state
     val authState = authViewModel.authState.observeAsState()
@@ -66,13 +74,12 @@ fun SignUpPage(
     // Handle authentication state changes
     LaunchedEffect(authState.value) {
         when (authState.value) {
-
             is AuthState.SignUpSuccess -> {
                 // Navigate to Login screen after sign-up success
                 navController.navigate(Destinations.SignIn.route) {
                     popUpTo(Destinations.SignUp.route) {
                         inclusive = true
-                    } // Optionally pop the signup screen from backstack
+                    }
                 }
             }
 
@@ -107,7 +114,6 @@ fun SignUpPage(
             onValueChange = { fullName = it },
             label = { Text("Full Name") },
             singleLine = true,
-            modifier = Modifier.fillMaxWidth()
         )
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -119,7 +125,6 @@ fun SignUpPage(
             label = { Text("Contact") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
             singleLine = true,
-            modifier = Modifier.fillMaxWidth()
         )
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -131,7 +136,6 @@ fun SignUpPage(
             label = { Text("Email") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
             singleLine = true,
-            modifier = Modifier.fillMaxWidth()
         )
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -153,19 +157,50 @@ fun SignUpPage(
                     Icon(imageVector = image, contentDescription = null)
                 }
             },
-            modifier = Modifier.fillMaxWidth()
         )
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Role input field
-        OutlinedTextField(
-            value = role,
-            onValueChange = { role = it },
-            label = { Text("Role") },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth()
-        )
+        // Role Dropdown Menu
+
+        Box(
+            modifier = Modifier
+                .align(Alignment.CenterHorizontally)
+        ) {
+            // Anchor for the dropdown
+            OutlinedTextField(
+                value = role,
+                onValueChange = { },
+                label = { Text("Role") },
+                readOnly = true,
+                modifier = Modifier
+                    .clickable { expanded = true },
+                trailingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.ArrowDropDown,
+                        contentDescription = null,
+                        modifier = Modifier.clickable {
+                            expanded = !expanded
+                        } // Also toggle using the icon
+                    )
+                }
+            )
+
+            // DropdownMenu should be anchored to the TextField
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+            ) {
+                roles.forEach { selectedRole ->
+                    DropdownMenuItem(onClick = {
+                        role = selectedRole
+                        expanded = false
+                    }) {
+                        Text(text = selectedRole)
+                    }
+                }
+            }
+        }
 
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -175,7 +210,6 @@ fun SignUpPage(
             onValueChange = { storeID = it },
             label = { Text("Store ID") },
             singleLine = true,
-            modifier = Modifier.fillMaxWidth()
         )
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -186,7 +220,6 @@ fun SignUpPage(
             onValueChange = { address = it },
             label = { Text("Address (Optional)") },
             singleLine = true,
-            modifier = Modifier.fillMaxWidth()
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -200,13 +233,13 @@ fun SignUpPage(
                     contact = contact,
                     email = email,
                     password = password,
-                    role = role,
+                    role = role,  // Pass the selected role
                     storeID = storeID,
                     address = address
                 )
+                Toast.makeText(context, "SignUp successful", Toast.LENGTH_SHORT).show()
             },
             enabled = authState.value != AuthState.Loading, // Disable button when loading
-            modifier = Modifier.fillMaxWidth()
         ) {
             Text(text = stringResource(id = R.string.create_account))
         }
