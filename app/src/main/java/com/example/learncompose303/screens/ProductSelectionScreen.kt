@@ -289,7 +289,7 @@ fun ProductCard(
                         .align(Alignment.TopEnd) // Align to the top end of the box
                         .background(Color.White, shape = RoundedCornerShape(8.dp))
                         .padding(2.dp),
-                    text = "${"%.1f".format(inventory.currentStockLevel)}", // Reduced decimal points
+                    text = "%.1f".format(inventory.currentStockLevel), // Reduced decimal points
                     style = MaterialTheme.typography.bodySmall, // Smaller text style
                     color = Color.Red,
                     fontWeight = FontWeight.Bold

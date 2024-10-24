@@ -38,6 +38,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -56,13 +57,15 @@ import coil.compose.rememberImagePainter
 import com.example.learncompose303.R
 import com.example.learncompose303.data.entities.PriceList
 import com.example.learncompose303.data.entities.Inventory
+import com.example.learncompose303.screens.auth.AuthViewModel
 import com.example.learncompose303.ui.theme.Blue1
 import com.example.learncompose303.viewmodels.InvoiceViewModel
 
 
 @Composable
 fun ProductsScreen(
-    viewModel: InvoiceViewModel = viewModel()
+    viewModel: InvoiceViewModel = viewModel(),
+    authViewModel: AuthViewModel = viewModel()
 ) {
     val products by viewModel.productList.collectAsState()
     var searchQuery by remember { mutableStateOf("") } // State for the search query
@@ -116,7 +119,8 @@ fun ProductsScreen(
                                 TheProductCard(
                                     inventory = product,
                                     initialPrice = price.sellingPrice,
-                                    viewModel
+                                    viewModel,
+                                    authViewModel
                                 )
                             }
                         }
@@ -163,7 +167,8 @@ fun ProductsScreen(
 fun TheProductCard(
     inventory: Inventory,
     initialPrice: Double,
-    viewModel: InvoiceViewModel = viewModel()
+    viewModel: InvoiceViewModel = viewModel(),
+    authViewModel: AuthViewModel = viewModel()
 ) {
     val context = LocalContext.current
     val imageUri = remember { mutableStateOf(inventory.imageUri?.let { Uri.parse(it) }) }
@@ -264,46 +269,59 @@ fun TheProductCard(
             }
 
             Spacer(modifier = Modifier.height(4.dp)) // Reduced spacing
-            // Edit/Save Button
+
+            val userRole by authViewModel.userRole.observeAsState()
+            val isAdmin = userRole == "admin"
+
             Button(
                 modifier = Modifier.fillMaxWidth(),
                 onClick = {
-                    if (isEditing.value) {
-                        val updatedProduct = inventory.copy(
-                            productDescription = editedProductDescription
-                        )
-                        viewModel.insertTheProduct(updatedProduct) { productId ->
-                            val updatedPriceList = PriceList(
-                                productId = productId,
-                                productDescription = updatedProduct.productDescription,
-                                unitCost = inventory.standardCost,
-                                sellingPrice = editedPrice.toDouble(),
-                                markupPercentage = viewModel.calculateMarkupPercentage(
-                                    inventory.standardCost,
-                                    editedPrice.toDouble()
-                                ),
-                                grossProfitPercentage = viewModel.calculateGrossProfitPercentage(
-                                    inventory.standardCost,
-                                    editedPrice.toDouble()
+                    if (isAdmin) {  // Only allow if the user is an admin
+                        if (isEditing.value) {
+                            val updatedProduct = inventory.copy(
+                                productDescription = editedProductDescription
+                            )
+                            viewModel.insertTheProduct(updatedProduct) { productId ->
+                                val updatedPriceList = PriceList(
+                                    productId = productId,
+                                    productDescription = updatedProduct.productDescription,
+                                    unitCost = inventory.standardCost,
+                                    sellingPrice = editedPrice.toDouble(),
+                                    markupPercentage = viewModel.calculateMarkupPercentage(
+                                        inventory.standardCost,
+                                        editedPrice.toDouble()
+                                    ),
+                                    grossProfitPercentage = viewModel.calculateGrossProfitPercentage(
+                                        inventory.standardCost,
+                                        editedPrice.toDouble()
+                                    )
                                 )
-                            )
-                            viewModel.insertCurrentPriceList(
-                                updatedPriceList.sellingPrice,
-                                updatedPriceList.productDescription,
-                                productId,
-                                context
-                            )
-                            price = updatedPriceList.sellingPrice
+                                viewModel.insertCurrentPriceList(
+                                    updatedPriceList.sellingPrice,
+                                    updatedPriceList.productDescription,
+                                    productId,
+                                    context
+                                )
+                                price = updatedPriceList.sellingPrice
 
-                            Toast.makeText(
-                                context,
-                                "Product and PriceList updated!",
-                                Toast.LENGTH_SHORT
-                            ).show()
+                                Toast.makeText(
+                                    context,
+                                    "Product and PriceList updated!",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
                         }
+                        isEditing.value = !isEditing.value
+                    } else {
+                        // Show a message or prevent action for non-admins
+                        Toast.makeText(
+                            context,
+                            "Only admins can edit stock.",
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
-                    isEditing.value = !isEditing.value
                 },
+                enabled = isAdmin,  // Disable the button for non-admin users
                 colors = ButtonDefaults.buttonColors(
                     if (isEditing.value) Color.Green else Blue1
                 ),

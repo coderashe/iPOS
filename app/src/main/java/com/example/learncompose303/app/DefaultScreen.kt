@@ -324,7 +324,7 @@ fun InDriveTopBottomNavigation() {
                     WalletScreen()
                 }
                 composable(Destinations.Products.route) {
-                    ProductsScreen(viewModel)
+                    ProductsScreen(viewModel, authViewModel)
                 }
 
                 composable(Destinations.Expense.route) {
@@ -372,8 +372,8 @@ fun InDriveTopBottomNavigation() {
                             customer = customer,
                             onProceedToCart = {
                                 // Navigate to the Cart screen with the customer ID
-//                                navController.navigate(Destinations.Cart.route + "/${customer.customerId}")
-                                navController.navigate(Destinations.ButcherCart.route + "/${customer.customerId}")
+                                navController.navigate(Destinations.Cart.route + "/${customer.customerId}")
+//                                navController.navigate(Destinations.ButcherCart.route + "/${customer.customerId}")
                             },
                             navController = navController,
                             viewModel = viewModel
@@ -751,17 +751,17 @@ fun IndriveDrawerBody(navController: NavController, scaffoldState: ScaffoldState
                 .clickable {
                     authViewModel.signout()
                     navController.navigate(Destinations.SignIn.route)
-                    coroutineScope.launch { scaffoldState.drawerState.close() }
                     Toast
                         .makeText(context, "Sign out successful", Toast.LENGTH_SHORT)
                         .show()
+                    coroutineScope.launch { scaffoldState.drawerState.close() }
                 }
         ) {
             Icon(Icons.Default.Logout, contentDescription = null)
             Spacer(modifier = Modifier.width(20.dp))
             Text(text = stringResource(id = R.string.sign_out), color = Color.Black)
         }
-//
+
     }
 }
 
