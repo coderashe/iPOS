@@ -8,6 +8,7 @@ import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -119,6 +120,8 @@ import com.example.learncompose303.ui.theme.MyBlueish
 import com.example.learncompose303.ui.theme.MyGray
 import com.example.learncompose303.viewmodels.InvoiceViewModel
 import kotlinx.coroutines.launch
+import android.content.Intent
+import android.net.Uri
 
 
 @Composable
@@ -769,6 +772,7 @@ fun IndriveDrawerBody(navController: NavController, scaffoldState: ScaffoldState
 fun IndriveDrawerBottom(modifier: Modifier, navController: NavController) {
     val coroutineScope = rememberCoroutineScope()
     val authViewModel: AuthViewModel = viewModel()
+    val context = LocalContext.current
 
     Column(
         modifier = Modifier
@@ -782,11 +786,12 @@ fun IndriveDrawerBottom(modifier: Modifier, navController: NavController) {
             modifier = Modifier.fillMaxWidth()
         )
 
-// Lime Green button for Passenger mode
         Button(
             onClick = {
-//                authViewModel.signout()
-//                navController.navigate(Destinations.SignIn.route)
+                val intent = Intent(Intent.ACTION_DIAL).apply {
+                    data = Uri.parse("tel:+263776815030")
+                }
+                context.startActivity(intent)
             },
             modifier = Modifier
                 .fillMaxWidth()
@@ -794,10 +799,11 @@ fun IndriveDrawerBottom(modifier: Modifier, navController: NavController) {
             colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.primary)
         ) {
             Text(
-                text = stringResource(R.string.connecting_you_me),
+                text = stringResource(R.string.getInTouch),
                 fontWeight = FontWeight.Bold
             )
         }
+
 
         // Row with Facebook and Instagram icons
         Row(
@@ -827,6 +833,7 @@ fun IndriveDrawerBottom(modifier: Modifier, navController: NavController) {
         }
     }
 }
+
 
 @Composable
 fun IndriveBottomNavigation(

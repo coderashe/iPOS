@@ -117,7 +117,7 @@ fun CartScreen(
                 )
 
                 Text(
-                    text = "Change: \$${changeBalance}",
+                    text = "Change: \$${"%.2f".format(changeBalance)}",
                     style = MaterialTheme.typography.bodySmall,
                     fontSize = 16.sp
                 )
@@ -351,27 +351,6 @@ fun CartScreen(
                             )
                         }
                         Spacer(modifier = Modifier.width(16.dp))
-
-//                        Column(horizontalAlignment = Alignment.End) {
-//
-//                            // Input for quantity with better handling
-//                            OutlinedTextField(
-//                                value = if (quantitySold == 0) "" else quantitySold.toString(),
-//                                onValueChange = { newValue ->
-//                                    val newQuantity = newValue.toIntOrNull()?.takeIf { it > 0 } ?: 1
-//                                    productQuantities[product.productId] = newQuantity
-//                                },
-//                                label = { Text("Quantity") },
-//                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-//                                shape = RoundedCornerShape(8.dp)
-//                            )
-//
-//                            Text(
-//                                text = "SubTotal: \$${productTotalPrice}",
-//                                color = MaterialTheme.colorScheme.primary,
-//                                style = MaterialTheme.typography.titleSmall
-//                            )
-//                        }
 
                         Column(horizontalAlignment = Alignment.End) {
 

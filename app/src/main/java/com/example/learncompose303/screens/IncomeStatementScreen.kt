@@ -58,7 +58,6 @@ import com.example.learncompose303.data.AppDatabase
 import com.example.learncompose303.screens.performance.BusinessPerformanceViewModel
 import com.example.learncompose303.ui.theme.Green1
 import com.example.learncompose303.ui.theme.GreenColor
-import com.example.learncompose303.ui.theme.LightGreen
 import com.example.learncompose303.ui.theme.MyBlueish
 import java.text.SimpleDateFormat
 import java.util.Date

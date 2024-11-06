@@ -237,7 +237,6 @@ fun SignUpPage(
                     storeID = storeID,
                     address = address
                 )
-                Toast.makeText(context, "SignUp successful", Toast.LENGTH_SHORT).show()
             },
             enabled = authState.value != AuthState.Loading, // Disable button when loading
         ) {

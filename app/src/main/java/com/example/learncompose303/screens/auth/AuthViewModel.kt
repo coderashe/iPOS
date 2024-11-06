@@ -130,78 +130,6 @@ class AuthViewModel @Inject constructor(
     }
 
     // Signup method
-//    fun signup(
-//        fullName: String,
-//        contact: String,
-//        email: String,
-//        password: String,
-//        role: String,
-//        storeID: String,
-//        address: String?
-//    ) {
-//        if (email.isEmpty() || password.isEmpty() || fullName.isEmpty() || contact.isEmpty()) {
-//            _authState.value = AuthState.Error("All fields must be filled")
-//            return
-//        }
-//
-//        _authState.value = AuthState.Loading
-//
-//        // Check if the email already exists in the local database
-//        viewModelScope.launch {
-//            val existingUser =
-//                authRepository.getUserByEmail(email) // Query to check if email exists
-//
-//            if (existingUser != null) {
-//                _authState.value =
-//                    AuthState.Error("Email is already registered. Please use a different email.")
-//            } else {
-//                // If the email does not exist in the local DB, proceed with Firebase signup
-//                auth.createUserWithEmailAndPassword(email, password)
-//                    .addOnCompleteListener { task ->
-//                        if (task.isSuccessful) {
-//                            val firebaseUser = task.result?.user
-//
-//                            // Perform a final check before saving the user to the local DB
-//                            viewModelScope.launch {
-//                                val finalCheckUser = authRepository.getUserByEmail(email)
-//                                if (finalCheckUser != null) {
-//                                    _authState.value =
-//                                        AuthState.Error("This email is already registered in the local database.")
-//                                } else {
-//                                    // Proceed with saving the user to local DB
-//                                    val newUser = User(
-//                                        userFullName = fullName,
-//                                        userContact = contact,
-//                                        userRole = role,
-//                                        userPassword = password, // Consider hashing the password
-//                                        storeID = storeID,
-//                                        userEmail = email,
-//                                        userAddress = address
-//                                    )
-//
-//                                    authRepository.signUpUser(newUser) // Save user to local DB
-//                                    _authState.value = AuthState.Authenticated
-//                                    resetLogoutState() // Reset manual logout flag and start timer
-//                                }
-//                            }
-//                        } else {
-//                            // Check if Firebase returned an error due to email duplication
-//                            if (task.exception is FirebaseAuthUserCollisionException) {
-//                                _authState.value =
-//                                    AuthState.Error("This email is already in use. Please try another email.")
-//                            } else {
-//                                _authState.value = AuthState.Error(
-//                                    task.exception?.message ?: "Something went wrong"
-//                                )
-//                            }
-//                        }
-//                    }
-//            }
-//        }
-//    }
-
-
-    // Signup method
     fun signup(
         fullName: String,
         contact: String,
@@ -354,13 +282,3 @@ class AuthViewModel @Inject constructor(
         stopLogoutTimer() // Stop the timer when ViewModel is destroyed
     }
 }
-
-// Start the logout timer (1 minute or 60,000 milliseconds)
-//    private fun startLogoutTimer() {
-//        val oneMinuteInMillis = 60 * 1000L // 1 minute in milliseconds
-//        val fiveMinutesInMillis = 5 * 60 * 1000L // 5 minutes in milliseconds
-//        val oneDayInMillis = 24 * 60 * 60 * 1000L // 24 hours in milliseconds
-//        val oneWeekInMillis = 168 * 60 * 60 * 1000L // 168 hours in milliseconds
-//        Log.d("AuthViewModel", "Starting logout timer for 1 minute.")
-//        logoutHandler.postDelayed(logoutRunnable, oneDayInMillis) // 1 minute delay
-//    }

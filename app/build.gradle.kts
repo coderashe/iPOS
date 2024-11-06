@@ -40,6 +40,7 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
+        isCoreLibraryDesugaringEnabled = true
     }
     kotlinOptions {
         jvmTarget = "1.8"
@@ -58,7 +59,7 @@ android {
 }
 
 dependencies {
-
+    // Coil for image loading
     implementation("io.coil-kt:coil:2.7.0")
     implementation("io.coil-kt:coil-compose:2.1.0")
     implementation("androidx.core:core-ktx:1.13.1")
@@ -73,6 +74,7 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-android:1.7.2")
+
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
@@ -81,48 +83,30 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 
-    //dagger hilt
+    // Dagger Hilt
     implementation("com.google.dagger:hilt-android:2.48")
     kapt("com.google.dagger:hilt-compiler:2.48")
 
     val room_version = "2.6.1"
-
     implementation("androidx.room:room-runtime:$room_version")
-    annotationProcessor("androidx.room:room-compiler:$room_version")
-
-    // To use Kotlin annotation processing tool (kapt)
     kapt("androidx.room:room-compiler:$room_version")
-
-    // optional - Kotlin Extensions and Coroutines support for Room
     implementation("androidx.room:room-ktx:$room_version")
 
-    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.4")
-    implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.8.4")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.4")
-
-    // ViewModel
-    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.4")
-    // LiveData
-    implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.8.4")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.4")
-
-    //    Serialization :
+    // Serialization
     implementation(kotlin("stdlib"))
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.1")
 
-//    biometrics
+    // Biometric authentication
     implementation("androidx.biometric:biometric:1.2.0-alpha05")
 
-//    icons
+    // Icons
     implementation("androidx.compose.material:material-icons-extended:1.7.2")
 
-//    carousel
+    // Paging
     val paging_version = "3.3.2"
-
     implementation("androidx.paging:paging-runtime:$paging_version")
 
-
-    //Firebase
+    // Firebase
     implementation(platform("com.google.firebase:firebase-bom:32.5.0"))
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-crashlytics")
@@ -133,19 +117,15 @@ dependencies {
     implementation("com.google.firebase:firebase-messaging")
 
     implementation("androidx.compose.runtime:runtime-livedata:1.7.2")
-
-    // Add Material Components library
     implementation("com.google.android.material:material:1.12.0")
 
     val work_version = "2.9.1"
-
-    // (Java only)
     implementation("androidx.work:work-runtime:$work_version")
-
-    // Kotlin + coroutines
     implementation("androidx.work:work-runtime-ktx:$work_version")
 
-//    swipe-refresh
+    // Swipe Refresh
     implementation("com.google.accompanist:accompanist-swiperefresh:0.27.0")
 
+    // Add desugaring library
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.2")
 }

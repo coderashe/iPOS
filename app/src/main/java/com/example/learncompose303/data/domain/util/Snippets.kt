@@ -39,6 +39,255 @@ import com.example.learncompose303.screens.CartScreen
 import com.example.learncompose303.screens.ProductCard
 import com.example.learncompose303.viewmodels.InvoiceViewModel
 
+//        Button(
+//            onClick = {
+//
+//            },
+//            modifier = Modifier
+//                .fillMaxWidth()
+//                .padding(vertical = 8.dp),
+//            colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.primary)
+//        ) {
+//            Text(
+//                text = stringResource(R.string.connecting_you_me),
+//                fontWeight = FontWeight.Bold
+//            )
+//        }
+
+
+//plugins {
+//    id("com.android.application")
+//    id("org.jetbrains.kotlin.android")
+//
+//    id("kotlin-kapt")
+//    id("kotlin-android")
+//    id("dagger.hilt.android.plugin")
+//
+//    id("com.google.gms.google-services")
+//    id("com.google.firebase.crashlytics")
+//    id("com.google.firebase.firebase-perf")
+//}
+//
+//android {
+//    namespace = "com.example.learncompose303"
+//    compileSdk = 34
+//
+//    defaultConfig {
+//        applicationId = "com.example.learncompose303"
+//        minSdk = 21
+//        targetSdk = 34
+//        versionCode = 1
+//        versionName = "1.0"
+//
+//        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+//        vectorDrawables {
+//            useSupportLibrary = true
+//        }
+//    }
+//
+//    buildTypes {
+//        release {
+//            isMinifyEnabled = false
+//            proguardFiles(
+//                getDefaultProguardFile("proguard-android-optimize.txt"),
+//                "proguard-rules.pro"
+//            )
+//        }
+//    }
+//    compileOptions {
+//        sourceCompatibility = JavaVersion.VERSION_1_8
+//        targetCompatibility = JavaVersion.VERSION_1_8
+//    }
+//    kotlinOptions {
+//        jvmTarget = "1.8"
+//    }
+//    buildFeatures {
+//        compose = true
+//    }
+//    composeOptions {
+//        kotlinCompilerExtensionVersion = "1.5.1"
+//    }
+//    packaging {
+//        resources {
+//            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+//        }
+//    }
+//}
+//
+//dependencies {
+//
+//    implementation("io.coil-kt:coil:2.7.0")
+//    implementation("io.coil-kt:coil-compose:2.1.0")
+//    implementation("androidx.core:core-ktx:1.13.1")
+//    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.4")
+//    implementation("androidx.activity:activity-compose:1.9.1")
+//    implementation(platform("androidx.compose:compose-bom:2023.08.00"))
+//    implementation("androidx.compose.ui:ui")
+//    implementation("androidx.compose.ui:ui-graphics")
+//    implementation("androidx.navigation:navigation-compose:2.7.7")
+//    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.4")
+//    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.4")
+//    implementation("androidx.compose.ui:ui-tooling-preview")
+//    implementation("androidx.compose.material3:material3")
+//    implementation("androidx.compose.material:material-android:1.7.2")
+//    testImplementation("junit:junit:4.13.2")
+//    androidTestImplementation("androidx.test.ext:junit:1.2.1")
+//    androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
+//    androidTestImplementation(platform("androidx.compose:compose-bom:2023.08.00"))
+//    androidTestImplementation("androidx.compose.ui:ui-test-junit4")
+//    debugImplementation("androidx.compose.ui:ui-tooling")
+//    debugImplementation("androidx.compose.ui:ui-test-manifest")
+//
+//    //dagger hilt
+//    implementation("com.google.dagger:hilt-android:2.48")
+//    kapt("com.google.dagger:hilt-compiler:2.48")
+//
+//    val room_version = "2.6.1"
+//
+//    implementation("androidx.room:room-runtime:$room_version")
+//    annotationProcessor("androidx.room:room-compiler:$room_version")
+//
+//    // To use Kotlin annotation processing tool (kapt)
+//    kapt("androidx.room:room-compiler:$room_version")
+//
+//    // optional - Kotlin Extensions and Coroutines support for Room
+//    implementation("androidx.room:room-ktx:$room_version")
+//
+//    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.4")
+//    implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.8.4")
+//    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.4")
+//
+//    // ViewModel
+//    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.4")
+//    // LiveData
+//    implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.8.4")
+//    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.4")
+//
+//    //    Serialization :
+//    implementation(kotlin("stdlib"))
+//    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.1")
+//
+////    biometrics
+//    implementation("androidx.biometric:biometric:1.2.0-alpha05")
+//
+////    icons
+//    implementation("androidx.compose.material:material-icons-extended:1.7.2")
+//
+////    carousel
+//    val paging_version = "3.3.2"
+//
+//    implementation("androidx.paging:paging-runtime:$paging_version")
+//
+//
+//    //Firebase
+//    implementation(platform("com.google.firebase:firebase-bom:32.5.0"))
+//    implementation("com.google.firebase:firebase-analytics")
+//    implementation("com.google.firebase:firebase-crashlytics")
+//    implementation("com.google.firebase:firebase-auth")
+//    implementation("com.google.firebase:firebase-firestore")
+//    implementation("com.google.firebase:firebase-perf")
+//    implementation("com.google.firebase:firebase-config")
+//    implementation("com.google.firebase:firebase-messaging")
+//
+//    implementation("androidx.compose.runtime:runtime-livedata:1.7.2")
+//
+//    // Add Material Components library
+//    implementation("com.google.android.material:material:1.12.0")
+//
+//    val work_version = "2.9.1"
+//
+//    // (Java only)
+//    implementation("androidx.work:work-runtime:$work_version")
+//
+//    // Kotlin + coroutines
+//    implementation("androidx.work:work-runtime-ktx:$work_version")
+//
+////    swipe-refresh
+//    implementation("com.google.accompanist:accompanist-swiperefresh:0.27.0")
+//
+//}
+
+// Start the logout timer (1 minute or 60,000 milliseconds)
+//    private fun startLogoutTimer() {
+//        val oneMinuteInMillis = 60 * 1000L // 1 minute in milliseconds
+//        val fiveMinutesInMillis = 5 * 60 * 1000L // 5 minutes in milliseconds
+//        val oneDayInMillis = 24 * 60 * 60 * 1000L // 24 hours in milliseconds
+//        val oneWeekInMillis = 168 * 60 * 60 * 1000L // 168 hours in milliseconds
+//        Log.d("AuthViewModel", "Starting logout timer for 1 minute.")
+//        logoutHandler.postDelayed(logoutRunnable, oneDayInMillis) // 1 minute delay
+//    }
+
+// Signup method
+//    fun signup(
+//        fullName: String,
+//        contact: String,
+//        email: String,
+//        password: String,
+//        role: String,
+//        storeID: String,
+//        address: String?
+//    ) {
+//        if (email.isEmpty() || password.isEmpty() || fullName.isEmpty() || contact.isEmpty()) {
+//            _authState.value = AuthState.Error("All fields must be filled")
+//            return
+//        }
+//
+//        _authState.value = AuthState.Loading
+//
+//        // Check if the email already exists in the local database
+//        viewModelScope.launch {
+//            val existingUser =
+//                authRepository.getUserByEmail(email) // Query to check if email exists
+//
+//            if (existingUser != null) {
+//                _authState.value =
+//                    AuthState.Error("Email is already registered. Please use a different email.")
+//            } else {
+//                // If the email does not exist in the local DB, proceed with Firebase signup
+//                auth.createUserWithEmailAndPassword(email, password)
+//                    .addOnCompleteListener { task ->
+//                        if (task.isSuccessful) {
+//                            val firebaseUser = task.result?.user
+//
+//                            // Perform a final check before saving the user to the local DB
+//                            viewModelScope.launch {
+//                                val finalCheckUser = authRepository.getUserByEmail(email)
+//                                if (finalCheckUser != null) {
+//                                    _authState.value =
+//                                        AuthState.Error("This email is already registered in the local database.")
+//                                } else {
+//                                    // Proceed with saving the user to local DB
+//                                    val newUser = User(
+//                                        userFullName = fullName,
+//                                        userContact = contact,
+//                                        userRole = role,
+//                                        userPassword = password, // Consider hashing the password
+//                                        storeID = storeID,
+//                                        userEmail = email,
+//                                        userAddress = address
+//                                    )
+//
+//                                    authRepository.signUpUser(newUser) // Save user to local DB
+//                                    _authState.value = AuthState.Authenticated
+//                                    resetLogoutState() // Reset manual logout flag and start timer
+//                                }
+//                            }
+//                        } else {
+//                            // Check if Firebase returned an error due to email duplication
+//                            if (task.exception is FirebaseAuthUserCollisionException) {
+//                                _authState.value =
+//                                    AuthState.Error("This email is already in use. Please try another email.")
+//                            } else {
+//                                _authState.value = AuthState.Error(
+//                                    task.exception?.message ?: "Something went wrong"
+//                                )
+//                            }
+//                        }
+//                    }
+//            }
+//        }
+//    }
+
 
 //        Row(
 //            modifier = Modifier

@@ -396,7 +396,7 @@ class InvoiceViewModel @Inject constructor(
                     inclusiveTaxed = true,
                 ),
                 Inventory(
-                    productDescription = "Pork",
+                    productDescription = "Coke",
                     currentStockLevel = 10000.00,
                     saleable = true,
                     purchasable = true,
@@ -407,7 +407,7 @@ class InvoiceViewModel @Inject constructor(
                     inclusiveTaxed = true
                 ),
                 Inventory(
-                    productDescription = "Chicken",
+                    productDescription = "Chips",
                     currentStockLevel = 10000.00,
                     saleable = true,
                     purchasable = true,
@@ -418,7 +418,7 @@ class InvoiceViewModel @Inject constructor(
                     inclusiveTaxed = true
                 ),
                 Inventory(
-                    productDescription = "Sausage",
+                    productDescription = "iPhone",
                     currentStockLevel = 10000.00,
                     saleable = true,
                     purchasable = true,
@@ -429,7 +429,7 @@ class InvoiceViewModel @Inject constructor(
                     inclusiveTaxed = true
                 ),
                 Inventory(
-                    productDescription = "Offals",
+                    productDescription = "Jersey",
                     currentStockLevel = 10000.00,
                     saleable = true,
                     purchasable = true,

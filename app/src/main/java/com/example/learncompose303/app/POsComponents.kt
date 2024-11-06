@@ -57,12 +57,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import coil.compose.rememberAsyncImagePainter
 import com.example.learncompose303.R
 import com.example.learncompose303.data.Destinations
 import com.example.learncompose303.screens.ShopLandingScreen
 import com.example.learncompose303.ui.theme.Gray1
 import com.example.learncompose303.ui.theme.Green1
-import com.example.learncompose303.ui.theme.LightGreen
 import com.example.learncompose303.viewmodels.InvoiceViewModel
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
@@ -70,6 +70,13 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.yield
 import java.util.Calendar
+import coil.compose.rememberAsyncImagePainter
+import coil.size.Size
+import coil.request.ImageRequest
+import kotlinx.coroutines.coroutineScope
+import coil.compose.AsyncImage
+import coil.size.Scale
+import com.example.learncompose303.ui.theme.MediumGreen
 
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -97,12 +104,91 @@ fun SwipeRefreshLayout() {
     }
 }
 
+//@Composable
+//fun AutoSlidingCarousel(
+//    modifier: Modifier = Modifier,
+//    navController: NavController,
+//    viewModel: InvoiceViewModel = viewModel()
+//) {
+//    val products by viewModel.productList.collectAsState(initial = emptyList())
+//    val productDescriptions = products.take(3).map { it.productDescription }
+//    val productImages = products.take(3).map { it.imageUri } // Get image URIs as Strings
+//    val pageCount = if (productDescriptions.isNotEmpty()) productDescriptions.size else 1
+//    val coroutineScope = rememberCoroutineScope()
+//    val pagerState = rememberPagerState(pageCount = { pageCount })
+//
+//    if (pageCount > 1) {
+//        LaunchedEffect(pagerState) {
+//            while (true) {
+//                yield()
+//                delay(5000L)
+//                val nextPage = (pagerState.currentPage + 1) % pageCount
+//                pagerState.animateScrollToPage(
+//                    page = nextPage,
+//                    animationSpec = tween(
+//                        durationMillis = 600,
+//                        easing = FastOutSlowInEasing
+//                    )
+//                )
+//            }
+//        }
+//    }
+//
+//    Column(
+//        modifier = Modifier.fillMaxWidth(),
+//        horizontalAlignment = Alignment.CenterHorizontally
+//    ) {
+//        HorizontalPager(
+//            state = pagerState,
+//            modifier = Modifier.fillMaxWidth()
+//        ) { page ->
+//            if (productDescriptions.isNotEmpty()) {
+//                CarouselCard(
+//                    headingText = productDescriptions[page],
+//                    taglineText = "Explore our amazing products.",
+//                    buttonText = "View Product",
+//                    imageUrl = productImages[page], // Pass String? URI here
+//                    onButtonClick = {
+//                        navController.navigate(Destinations.CustomerSelection.route)
+//                    }
+//                )
+//            }
+//        }
+//
+//        Spacer(modifier = Modifier.height(16.dp))
+//        Row(
+//            modifier = Modifier.fillMaxWidth(),
+//            horizontalArrangement = Arrangement.Center
+//        ) {
+//            repeat(pageCount) { index ->
+//                Box(
+//                    modifier = Modifier
+//                        .size(10.dp)
+//                        .background(
+//                            if (pagerState.currentPage == index) Green1 else Color.Gray,
+//                            shape = RoundedCornerShape(50)
+//                        )
+//                        .padding(4.dp)
+//                        .clickable {
+//                            coroutineScope.launch {
+//                                pagerState.scrollToPage(index)
+//                            }
+//                        }
+//                )
+//                Spacer(modifier = Modifier.width(8.dp))
+//            }
+//        }
+//    }
+//}
+
+
+//working working but large image loading error
 @Composable
 fun CarouselCard(
     headingText: String,
     taglineText: String,
     buttonText: String,
-    imageResource: Painter, // Use painter for images
+    imageUrl: String?,
     onButtonClick: () -> Unit
 ) {
     Card(
@@ -148,8 +234,12 @@ fun CarouselCard(
 
             // Column for image content
             Image(
-                painter = imageResource,
-                contentDescription = "Carousel Image",
+                painter = rememberAsyncImagePainter(
+                    model = imageUrl,
+                    placeholder = painterResource(R.drawable.f13_gooseberry), // Add a placeholder image
+                    error = painterResource(R.drawable.f13_gooseberry) // Add an error fallback image
+                ),
+                contentDescription = null,
                 modifier = Modifier
                     .weight(1f),
                 contentScale = ContentScale.Crop
@@ -157,6 +247,7 @@ fun CarouselCard(
         }
     }
 }
+
 
 @Composable
 fun AutoSlidingCarousel(
@@ -166,13 +257,11 @@ fun AutoSlidingCarousel(
 ) {
     // Collect products from the ViewModel using collectAsState
     val products by viewModel.productList.collectAsState(initial = emptyList())
-
     // Get the first 3 product descriptions from the product list
     val productDescriptions = products.take(3).map { it.productDescription }
-
+    val productImages = products.take(3).map { it.imageUri } // Get image URIs as Strings
     // Avoid creating a pager with zero pages
     val pageCount = if (productDescriptions.isNotEmpty()) productDescriptions.size else 1
-
     val coroutineScope = rememberCoroutineScope() // Coroutine scope to launch coroutines
     val pagerState = rememberPagerState(pageCount = { pageCount })
 
@@ -210,7 +299,7 @@ fun AutoSlidingCarousel(
                     headingText = productDescriptions[page], // Use product description as heading
                     taglineText = "Explore our amazing products.",
                     buttonText = "View Product",
-                    imageResource = painterResource(id = R.drawable.meat7), // Example image, can be dynamic
+                    imageUrl = productImages[page],
                     onButtonClick = {
                         navController.navigate(Destinations.CustomerSelection.route) // Navigate to a screen
                     }
@@ -302,7 +391,7 @@ fun SalesmanInfoCard(
                     Text(
                         text = "$${String.format("%.2f", currentSalesTotal)}",
                         style = MaterialTheme.typography.titleSmall,
-                        color = LightGreen
+                        color = MediumGreen
                     )
                 }
 
@@ -315,7 +404,7 @@ fun SalesmanInfoCard(
                     Text(
                         text = "$numberOfTransactions",
                         style = MaterialTheme.typography.titleSmall,
-                        color = LightGreen
+                        color = MediumGreen
                     )
                 }
             }

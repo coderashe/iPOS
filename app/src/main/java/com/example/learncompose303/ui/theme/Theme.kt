@@ -18,26 +18,26 @@ import androidx.core.view.WindowCompat
 
 // Theme Colors
 private val DarkColorScheme = darkColorScheme(
-    primary = Color(0xFFBB86FC),
-    secondary = Color(0xFF03DAC6),
-    tertiary = Color(0xFF03DAC5),
-    onPrimary = Color.Black,
-    surface = Color(0xFF121212),
-    onSurface = Color.White,
-    background = Color(0xFF121212) // Dark background
+    primary = Color(0xFF1B5E20),     // Deep forest green
+    secondary = Color(0xFF4CAF50),   // Subtle green for accents
+    tertiary = Color(0xFFAED581),    // Light green for tertiary accents
+    onPrimary = Color(0xFFFFFFFF),   // White text on primary
+    surface = Color(0xFF2E2E2E),     // Dark gray background
+    onSurface = Color(0xFFE1E1E1),   // Light gray text on surface
+    background = Color(0xFF121212)   // Dark background
 )
+
 
 // Light Theme Colors
 private val LightColorScheme = lightColorScheme(
-    primary = Color(0xFF6200EE),
-    secondary = Color(0xFF03DAC6),
-    tertiary = Color(0xFF018786),
-    onPrimary = Color.White,
-    surface = Color.White,
-    onSurface = Color.Black,
-    background = Color.White // Light background
+    primary = Color(0xFF388E3C),     // Muted medium green
+    secondary = Color(0xFF81C784),   // Subtle green accent
+    tertiary = Color(0xFFFFD700),    // Gold for tertiary accents
+    onPrimary = Color(0xFFFFFFFF),   // White text on primary
+    surface = Color(0xFFFFFFFF),     // White background
+    onSurface = Color(0xFF2E2E2E),   // Dark text on light surface
+    background = Color(0xFFFFFFFF)   // Light background
 )
-
 
 @Composable
 fun LearnCompose303Theme(

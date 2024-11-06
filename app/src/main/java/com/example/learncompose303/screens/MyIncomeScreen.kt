@@ -101,7 +101,11 @@ fun MyIncomeScreen(
             DisplayCurrentDate()
 
             // ArrowAndBalanceRow will display the balance based on the selected filter
-            ArrowAndBalanceRow(currentSalesTotal.toString())
+            DisplayTotalBalance(
+                modifier = Modifier.align(Alignment.CenterHorizontally),
+                "$${currentSalesTotal}"
+            )
+//            ArrowAndBalanceRow(currentSalesTotal.toString())
 
             // No complete orders section
             CompleteOrdersSection()
@@ -190,34 +194,23 @@ fun AchievementsSection() {
 fun ArrowAndBalanceRow(balance: String?) {
     ThreeItemRow(
         startContent = {
-            DisplayArrowLeft(modifier = Modifier)
+//            DisplayArrowLeft(modifier = Modifier)
         },
         centerContent = {
             DisplayTotalBalance(modifier = Modifier, "$${balance}" ?: "$0.0")
         },
         endContent = {
-            DisplayArrowRight(modifier = Modifier)
+//            DisplayArrowRight(modifier = Modifier)
         }
     )
 }
 
 @Composable
 fun CompleteOrdersSection() {
-    TwoItemColumn(
-        modifier = Modifier.height(260.dp),
-        topContent = {
-            Image(
-                painter = painterResource(id = R.drawable.istartlogo),
-                contentDescription = "istartk"
-            )
-        },
-        bottomContent = {
-            Text(
-                text = stringResource(R.string.no_complete_orders),
-                fontSize = 18.sp,
-                color = Color.Gray
-            )
-        }
+
+    Image(
+        painter = painterResource(id = R.drawable.istartlogo),
+        contentDescription = "istartk"
     )
 }
 

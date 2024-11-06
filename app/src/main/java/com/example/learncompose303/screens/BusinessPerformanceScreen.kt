@@ -59,10 +59,6 @@ import com.example.learncompose303.R
 import com.example.learncompose303.app.utils.exportDatabase
 import com.example.learncompose303.data.AppDatabase
 import com.example.learncompose303.screens.performance.BusinessPerformanceViewModel
-import com.example.learncompose303.ui.theme.Green1
-import com.example.learncompose303.ui.theme.GreenColor
-import com.example.learncompose303.ui.theme.LightGreen
-import com.example.learncompose303.ui.theme.MyBlueish
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -101,14 +97,14 @@ fun BusinessPerformanceScreen(
         Text(
             color = Color.Black,
             text = stringResource(R.string.business_position),
-            style = MaterialTheme.typography.headlineMedium
+            style = MaterialTheme.typography.headlineMedium,
+            modifier = Modifier.align(Alignment.CenterHorizontally)
         )
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
             text = "INCOME STATEMENT",
-            style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier.align(Alignment.CenterHorizontally)
+            style = MaterialTheme.typography.headlineSmall,
         )
 
         Row {
