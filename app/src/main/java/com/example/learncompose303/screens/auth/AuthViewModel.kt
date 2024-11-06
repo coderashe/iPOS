@@ -82,27 +82,6 @@ class AuthViewModel @Inject constructor(
     }
 
     // Method to log in
-//    fun login(email: String, password: String) {
-//        if (email.isEmpty() || password.isEmpty()) {
-//            _authState.value = AuthState.Error("Email or password can't be empty")
-//            return
-//        }
-//
-//        _authState.value = AuthState.Loading
-//        auth.signInWithEmailAndPassword(email, password)
-//            .addOnCompleteListener { task ->
-//                if (task.isSuccessful) {
-//                    _authState.value = AuthState.Authenticated
-//                    _userEmail.value = auth.currentUser?.email // Update email on successful login
-//                    resetLogoutState()
-//                } else {
-//                    _authState.value =
-//                        AuthState.Error(task.exception?.message ?: "Something went wrong")
-//                }
-//            }
-//    }
-
-    // Method to log in
     fun login(email: String, password: String) {
         if (email.isEmpty() || password.isEmpty()) {
             _authState.value = AuthState.Error("Email or password can't be empty")
@@ -220,6 +199,23 @@ class AuthViewModel @Inject constructor(
         isManuallyLoggedOut = true // Set flag to true on manual logout
         performLogout() // Perform logout directly
     }
+
+    fun resetPassword(email: String) {
+        if (email.isEmpty()) {
+            _authState.value = AuthState.Error("Please enter your email to reset the password")
+            return
+        }
+
+        auth.sendPasswordResetEmail(email)
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    _authState.value = AuthState.Success("Password reset email sent successfully")
+                } else {
+                    _authState.value = AuthState.Error(task.exception?.message ?: "Failed to send reset email")
+                }
+            }
+    }
+
 
     // Function that handles the actual logout process
     private fun performLogout() {

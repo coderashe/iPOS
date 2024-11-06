@@ -44,13 +44,8 @@ fun SignInPage(
     navController: NavController,
     authViewModel: AuthViewModel
 ) {
-    var email by remember {
-        mutableStateOf("")
-    }
-    var password by remember {
-        mutableStateOf("")
-    }
-
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
     val authState = authViewModel.authState.observeAsState()
     val context = LocalContext.current
     var passwordVisible by remember { mutableStateOf(false) }
@@ -60,7 +55,14 @@ fun SignInPage(
             is AuthState.Authenticated -> navController.navigate(Destinations.Rides.route)
             is AuthState.Error -> Toast.makeText(
                 context,
-                (authState.value as AuthState.Error).message, Toast.LENGTH_SHORT
+                (authState.value as AuthState.Error).message,
+                Toast.LENGTH_SHORT
+            ).show()
+
+            is AuthState.Success -> Toast.makeText(
+                context,
+                (authState.value as AuthState.Success).message,
+                Toast.LENGTH_SHORT
             ).show()
 
             else -> Unit
@@ -102,13 +104,6 @@ fun SignInPage(
             },
         )
 
-//        OutlinedTextField(
-//            value = password,
-//            onValueChange = { password = it },
-//            label = { Text("Password") },
-//            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
-//        )
-
         Spacer(modifier = Modifier.height(8.dp))
 
         Button(
@@ -118,7 +113,14 @@ fun SignInPage(
             enabled = authState.value != AuthState.Loading
         ) {
             Text(text = stringResource(id = R.string.login))
+        }
 
+        Spacer(modifier = Modifier.height(8.dp))
+
+        TextButton(onClick = {
+            authViewModel.resetPassword(email)
+        }) {
+            Text(text = "Forgot Password?")
         }
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -126,9 +128,95 @@ fun SignInPage(
         TextButton(onClick = {
             navController.navigate(Destinations.SignUp.route)
         }) {
-            Text(text = "Don't have an account, Signup")
+            Text(text = "Don't have an account? Sign up")
         }
-
     }
-
 }
+
+
+//@Composable
+//fun SignInPage(
+//    navController: NavController,
+//    authViewModel: AuthViewModel
+//) {
+//    var email by remember {
+//        mutableStateOf("")
+//    }
+//    var password by remember {
+//        mutableStateOf("")
+//    }
+//
+//    val authState = authViewModel.authState.observeAsState()
+//    val context = LocalContext.current
+//    var passwordVisible by remember { mutableStateOf(false) }
+//
+//    LaunchedEffect(authState.value) {
+//        when (authState.value) {
+//            is AuthState.Authenticated -> navController.navigate(Destinations.Rides.route)
+//            is AuthState.Error -> Toast.makeText(
+//                context,
+//                (authState.value as AuthState.Error).message, Toast.LENGTH_SHORT
+//            ).show()
+//
+//            else -> Unit
+//        }
+//    }
+//
+//    Column(
+//        modifier = Modifier
+//            .fillMaxSize(),
+//        verticalArrangement = Arrangement.Center,
+//        horizontalAlignment = Alignment.CenterHorizontally
+//    ) {
+//        CustomHeadingMedium(heading = stringResource(id = R.string.login))
+//
+//        OutlinedTextField(
+//            value = email,
+//            onValueChange = { email = it },
+//            label = { Text("Email") },
+//            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
+//        )
+//
+//        Spacer(modifier = Modifier.height(8.dp))
+//
+//        OutlinedTextField(
+//            value = password,
+//            onValueChange = { password = it },
+//            label = { Text("Password") },
+//            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+//            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+//            singleLine = true,
+//            trailingIcon = {
+//                val image = if (passwordVisible)
+//                    Icons.Default.Visibility
+//                else Icons.Default.VisibilityOff
+//
+//                IconButton(onClick = { passwordVisible = !passwordVisible }) {
+//                    Icon(imageVector = image, contentDescription = null)
+//                }
+//            },
+//        )
+//
+//        Spacer(modifier = Modifier.height(8.dp))
+//
+//        Button(
+//            onClick = {
+//                authViewModel.login(email, password)
+//            },
+//            enabled = authState.value != AuthState.Loading
+//        ) {
+//            Text(text = stringResource(id = R.string.login))
+//
+//        }
+//
+//        Spacer(modifier = Modifier.height(8.dp))
+//
+//        TextButton(onClick = {
+//            navController.navigate(Destinations.SignUp.route)
+//        }) {
+//            Text(text = "Don't have an account, Signup")
+//        }
+//
+//    }
+//
+//}
