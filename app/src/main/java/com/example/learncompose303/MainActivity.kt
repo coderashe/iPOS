@@ -32,61 +32,6 @@ import com.example.learncompose303.app.SwipeRefreshLayout
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 
-
-//@AndroidEntryPoint
-//class MainActivity : ComponentActivity() {
-//
-//    private val NOTIFICATION_PERMISSION_REQUEST_CODE = 1001
-//
-//    @RequiresApi(Build.VERSION_CODES.O)
-//    override fun onCreate(savedInstanceState: Bundle?) {
-//        super.onCreate(savedInstanceState)
-//
-//        // Request notification permission for Android 13 and above
-//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-//            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
-//                != PackageManager.PERMISSION_GRANTED
-//            ) {
-//
-//                ActivityCompat.requestPermissions(
-//                    this,
-//                    arrayOf(Manifest.permission.POST_NOTIFICATIONS),
-//                    NOTIFICATION_PERMISSION_REQUEST_CODE
-//                )
-//            }
-//        }
-//
-//        setContent {
-//            LearnCompose303Theme {
-//                Surface(
-//                    modifier = Modifier.fillMaxSize(),
-//                ) {
-//                    ShopLandingScreen()
-//                }
-//            }
-//        }
-//    }
-//
-//    // Handle the result of the permission request
-//    override fun onRequestPermissionsResult(
-//        requestCode: Int,
-//        permissions: Array<String>,  // Fix: Use Array<String> instead of Array<out String>
-//        grantResults: IntArray
-//    ) {
-//        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-//
-//        if (requestCode == NOTIFICATION_PERMISSION_REQUEST_CODE) {
-//            if ((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
-//                // Permission granted
-//                Log.d("MainActivity", "Notification permission granted.")
-//            } else {
-//                // Permission denied
-//                Log.d("MainActivity", "Notification permission denied.")
-//            }
-//        }
-//    }
-//}
-
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 

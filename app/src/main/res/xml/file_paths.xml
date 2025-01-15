@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths xmlns:android="http://schemas.android.com/apk/res/android">
-    <files-path
-        name="my_images"
-        path="images/" />
-    <cache-path
-        name="my_images"
-        path="images/" />
+    <!-- Grant access to files saved in the app-specific "Documents" folder -->
+    <external-files-path name="documents" path="Documents/" />
+
+    <!-- Access to files saved under the "images" folder in internal storage -->
+    <files-path name="my_images" path="images/" />
+
+    <!-- Access to cached images -->
+    <cache-path name="my_images" path="images/" />
 </paths>

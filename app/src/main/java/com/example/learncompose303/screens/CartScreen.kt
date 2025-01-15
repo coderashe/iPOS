@@ -1,6 +1,11 @@
 package com.example.learncompose303.screens
 
 import android.content.Intent
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.pdf.PdfDocument
+import android.os.Environment
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -43,6 +48,8 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.ui.platform.LocalContext
 import com.example.learncompose303.screens.auth.AuthViewModel
+import java.io.File
+import java.io.FileOutputStream
 
 @Composable
 fun CartScreen(
@@ -171,25 +178,69 @@ fun CartScreen(
                                 "Change: *$${amountTendered.toDouble() - totalPrice}*\n\n" +
                                 "THANK YOU!!!... powered by istartk \u00A92024"
 
-                        val sendIntent = Intent(Intent.ACTION_SEND).apply {
-                            type = "text/plain"
-                            putExtra(Intent.EXTRA_TEXT, message)
-                        }
 
                         try {
-                            val chooserIntent = Intent.createChooser(
-                                sendIntent,
-                                "Send via WhatsApp or WhatsApp Business"
-                            )
-                            chooserIntent.resolveActivity(context.packageManager)?.let {
-                                context.startActivity(chooserIntent)
-                            } ?: run {
-                                Toast.makeText(
-                                    context,
-                                    "No messaging app found",
-                                    Toast.LENGTH_SHORT
-                                ).show()
+                            // Create a PDF document
+                            val pdfDocument = PdfDocument()
+                            val pageInfo = PdfDocument.PageInfo.Builder(300, 600, 1).create()
+                            val page = pdfDocument.startPage(pageInfo)
+
+                            // Draw the invoice content on the page
+                            val canvas: Canvas = page.canvas
+                            val paint = Paint().apply { textSize = 12f }
+                            var yPosition = 20
+                            message.split("\n").forEach { line ->
+                                canvas.drawText(line, 10f, yPosition.toFloat(), paint)
+                                yPosition += 20
                             }
+
+                            pdfDocument.finishPage(page)
+
+                            // Save the PDF file
+                            val pdfFile = File(
+                                context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS),
+                                "Invoice_${System.currentTimeMillis()}.pdf"
+                            )
+                            pdfDocument.writeTo(FileOutputStream(pdfFile))
+                            pdfDocument.close()
+
+                            // Share the PDF
+                            val uri = androidx.core.content.FileProvider.getUriForFile(
+                                context,
+                                "${context.packageName}.fileprovider",
+                                pdfFile
+                            )
+
+                            val sendIntent = Intent(Intent.ACTION_SEND).apply {
+                                type = "application/pdf"
+                                putExtra(Intent.EXTRA_STREAM, uri)
+                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                            }
+
+
+                            try {
+
+                                val chooserIntent = Intent.createChooser(
+                                    sendIntent,
+                                    "Send via WhatsApp or WhatsApp Business"
+                                )
+                                chooserIntent.resolveActivity(context.packageManager)?.let {
+                                    context.startActivity(chooserIntent)
+                                } ?: run {
+                                    Toast.makeText(
+                                        context,
+                                        "No messaging app found",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+
+
+                            } catch (e: Exception) {
+                                Log.e("Error*", "${e.message}")
+                                Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT)
+                                    .show()
+                            }
+
                         } catch (e: Exception) {
                             Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT)
                                 .show()
