@@ -74,6 +74,7 @@ fun SignUpPage(
     // Handle authentication state changes
     LaunchedEffect(authState.value) {
         when (authState.value) {
+
             is AuthState.SignUpSuccess -> {
                 // Navigate to Login screen after sign-up success
                 navController.navigate(Destinations.SignIn.route) {

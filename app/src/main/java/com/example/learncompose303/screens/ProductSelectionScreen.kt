@@ -223,13 +223,6 @@ fun ProductCard(
 ) {
     val context = LocalContext.current
     val imageUri = remember { mutableStateOf<Uri?>(null) }
-    val imagePicker = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent(),
-        onResult = { uri ->
-            imageUri.value = uri
-            launchHandlingActivity(context, uri)
-        }
-    )
 
     Card(
         shape = RoundedCornerShape(8.dp),

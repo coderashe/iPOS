@@ -5,7 +5,8 @@ import androidx.room.PrimaryKey
 
 @Entity(tableName = "products")
 data class Inventory(
-    @PrimaryKey(autoGenerate = true) val productId: Long = 0,
+    @PrimaryKey(autoGenerate = true)
+    val productId: Long = 0,
     val productDescription: String,
     val currentStockLevel: Double,
     val saleable: Boolean, // Determines if the product can be sold

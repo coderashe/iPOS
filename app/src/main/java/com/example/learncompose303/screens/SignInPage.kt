@@ -56,7 +56,7 @@ fun SignInPage(
             is AuthState.Error -> Toast.makeText(
                 context,
                 (authState.value as AuthState.Error).message,
-                Toast.LENGTH_SHORT
+                Toast.LENGTH_LONG
             ).show()
 
             is AuthState.Success -> Toast.makeText(

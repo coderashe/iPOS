@@ -192,7 +192,7 @@ fun DisplayYoutubeData() {
 fun LearnCheckBoxes() {
     val todoList = listOf(
         "Goto Gym",
-        "Goto Shchool",
+        "Goto School",
         "Goto Work",
         "Goto Band Practice",
         "Goto Movie",
