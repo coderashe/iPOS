@@ -4,8 +4,6 @@ import android.content.res.Configuration
 import android.net.Uri
 import android.util.Log
 import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -56,7 +54,7 @@ import androidx.navigation.NavController
 import coil.compose.rememberImagePainter
 import com.example.learncompose303.R
 import com.example.learncompose303.data.entities.Customer
-import com.example.learncompose303.data.entities.Inventory
+import com.example.learncompose303.data.entities.Products
 import com.example.learncompose303.ui.theme.Blue1
 import com.example.learncompose303.viewmodels.InvoiceViewModel
 
@@ -71,7 +69,7 @@ fun ProductSelectionScreen(
     val products by viewModel.productList.collectAsState()
     val selectedProducts by viewModel.selectedProducts.collectAsState() // Get selected products
     var showLowStockWarning by remember { mutableStateOf(false) } // State for the popup
-    var lowStockInventories by remember { mutableStateOf(emptyList<Inventory>()) } // List to hold low stock products
+    var lowStockInventories by remember { mutableStateOf(emptyList<Products>()) } // List to hold low stock products
     var showNoSelectionWarning by remember { mutableStateOf(false) } // State for no product selected warning
 
     var searchQuery by remember { mutableStateOf("") } // State for the search query
@@ -144,7 +142,7 @@ fun ProductSelectionScreen(
                             val price = viewModel.getPricelistById(product.productId)
                             if (price != null) {
                                 ProductCard(
-                                    inventory = product,
+                                    products = product,
                                     isSelected = isSelected,
                                     onAddProduct = {
                                         viewModel.addProductToCart(product)
@@ -216,9 +214,9 @@ fun ProductSelectionScreen(
 
 @Composable
 fun ProductCard(
-    inventory: Inventory,
+    products: Products,
     isSelected: Boolean,
-    onAddProduct: (Inventory) -> Unit,
+    onAddProduct: (Products) -> Unit,
     price: Double
 ) {
     val context = LocalContext.current
@@ -230,13 +228,13 @@ fun ProductCard(
             .padding(4.dp)
             .clickable {
                 // Check if the product is in stock before adding
-                if (inventory.currentStockLevel > 0) {
-                    onAddProduct(inventory)
+                if (products.currentStockLevel > 0) {
+                    onAddProduct(products)
                 } else {
                     Toast
                         .makeText(
                             context,
-                            "${inventory.productDescription} is out of stock!...",
+                            "${products.productDescription} is out of stock!...",
                             Toast.LENGTH_SHORT
                         )
                         .show()
@@ -253,7 +251,7 @@ fun ProductCard(
 
             Text(
                 modifier = Modifier.fillMaxWidth(),
-                text = inventory.productDescription,
+                text = products.productDescription,
                 style = MaterialTheme.typography.bodyMedium
             )
             Spacer(modifier = Modifier.height(8.dp))
@@ -263,12 +261,12 @@ fun ProductCard(
                     .fillMaxWidth()
             ) {
                 // Product Image
-                val currentImageUri = imageUri.value ?: inventory.imageUri?.let { Uri.parse(it) }
+                val currentImageUri = imageUri.value ?: products.imageUri?.let { Uri.parse(it) }
                 val painter = rememberImagePainter(data = currentImageUri ?: R.drawable.meat7)
 
                 Image(
                     painter = painter,
-                    contentDescription = inventory.productDescription,
+                    contentDescription = products.productDescription,
                     modifier = Modifier
                         .size(90.dp)
                         .fillMaxWidth()
@@ -282,7 +280,7 @@ fun ProductCard(
                         .align(Alignment.TopEnd) // Align to the top end of the box
                         .background(Color.White, shape = RoundedCornerShape(8.dp))
                         .padding(2.dp),
-                    text = "%.1f".format(inventory.currentStockLevel), // Reduced decimal points
+                    text = "%.1f".format(products.currentStockLevel), // Reduced decimal points
                     style = MaterialTheme.typography.bodySmall, // Smaller text style
                     color = Color.Red,
                     fontWeight = FontWeight.Bold
@@ -299,12 +297,12 @@ fun ProductCard(
             Button(
                 onClick = {
                     // Check stock before adding
-                    if (inventory.currentStockLevel > 0) {
-                        onAddProduct(inventory)
+                    if (products.currentStockLevel > 0) {
+                        onAddProduct(products)
                     } else {
                         Toast.makeText(
                             context,
-                            "${inventory.productDescription} is out of stock!...",
+                            "${products.productDescription} is out of stock!...",
                             Toast.LENGTH_SHORT
                         ).show()
                     }

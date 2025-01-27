@@ -1,8 +1,6 @@
 package com.example.learncompose303.data
 
-import android.content.Context
 import androidx.room.Database
-import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
@@ -16,12 +14,14 @@ import com.example.learncompose303.data.data_source.ExpenseDao
 import com.example.learncompose303.data.data_source.InvoiceDao
 import com.example.learncompose303.data.data_source.InvoiceItemDao
 import com.example.learncompose303.data.data_source.InvoiceLineDao
+import com.example.learncompose303.data.data_source.ShoeBrandDao
 import com.example.learncompose303.data.data_source.NoteDao
 import com.example.learncompose303.data.data_source.OrderDao
 import com.example.learncompose303.data.data_source.PaymentDao
 import com.example.learncompose303.data.data_source.PriceListDao
 import com.example.learncompose303.data.data_source.ProductDao
 import com.example.learncompose303.data.data_source.ProductDayReportDao
+import com.example.learncompose303.data.data_source.ShoeSizeDao
 import com.example.learncompose303.data.data_source.StudentDao
 import com.example.learncompose303.data.data_source.TradeReceivablesDao
 import com.example.learncompose303.data.data_source.UserDao
@@ -38,7 +38,7 @@ import com.example.learncompose303.data.entities.InvoiceLine
 import com.example.learncompose303.data.entities.Order
 import com.example.learncompose303.data.entities.Payment
 import com.example.learncompose303.data.entities.PriceList
-import com.example.learncompose303.data.entities.Inventory
+import com.example.learncompose303.data.entities.Products
 import com.example.learncompose303.data.entities.ProductDayReport
 import com.example.learncompose303.data.entities.TradeReceivables
 import com.example.learncompose303.data.entities.User
@@ -85,7 +85,7 @@ import com.example.learncompose303.data.entities.User
         Item::class, Note::class,
         StudentEntity::class, Customer::class,
         Invoice::class, InvoiceItem::class, InvoiceLine::class,
-        Payment::class, Inventory::class, CartItem::class,
+        Payment::class, Products::class, CartItem::class,
         Order::class, PriceList::class, ProductDayReport::class, DayReports::class,
         User::class, Expense::class,
         TradeReceivables::class, DiscountsReceived::class, CashFlow::class // New entities
@@ -112,6 +112,8 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun dayReportsDao(): DayReportsDao
     abstract fun expenseDao(): ExpenseDao
     abstract fun userDao(): UserDao
+    abstract fun shoeBrandDao(): ShoeBrandDao
+    abstract fun shoeSizeDao(): ShoeSizeDao
 
     // New DAOs
     abstract fun tradeReceivablesDao(): TradeReceivablesDao

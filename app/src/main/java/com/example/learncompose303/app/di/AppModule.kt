@@ -12,12 +12,14 @@ import com.example.learncompose303.data.data_source.ExpenseDao
 import com.example.learncompose303.data.data_source.InvoiceDao
 import com.example.learncompose303.data.data_source.InvoiceItemDao
 import com.example.learncompose303.data.data_source.InvoiceLineDao
+import com.example.learncompose303.data.data_source.ShoeBrandDao
 import com.example.learncompose303.data.data_source.NoteDao
 import com.example.learncompose303.data.data_source.OrderDao
 import com.example.learncompose303.data.data_source.PaymentDao
 import com.example.learncompose303.data.data_source.PriceListDao
 import com.example.learncompose303.data.data_source.ProductDao
 import com.example.learncompose303.data.data_source.ProductDayReportDao
+import com.example.learncompose303.data.data_source.ShoeSizeDao
 import com.example.learncompose303.data.data_source.StudentDao
 import com.example.learncompose303.data.data_source.UserDao
 import com.example.learncompose303.data.domain.repository.NoteRepository
@@ -56,10 +58,11 @@ import com.example.learncompose303.data.repositories.ProductDayReportRepositoryI
 import com.example.learncompose303.data.repositories.ProductRepository
 import com.example.learncompose303.data.repositories.ProductRepositoryImpl
 import com.example.learncompose303.data.repositories.RepositoryImpl
+import com.example.learncompose303.data.repositories.ShoeBrandRepository
+import com.example.learncompose303.data.repositories.ShoeBrandRepositoryImpl
+import com.example.learncompose303.data.repositories.ShoeSizeRepository
+import com.example.learncompose303.data.repositories.ShoeSizeRepositoryImpl
 import com.example.learncompose303.data.repositories.StudentRepository
-import com.google.firebase.Firebase
-import com.google.firebase.auth.auth
-import com.google.firebase.firestore.firestore
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -93,6 +96,12 @@ object AppModule {
     }
 
 //    Provide daoS here
+
+    fun provideShoeBrandDao(appDatabase: AppDatabase): ShoeBrandDao =
+        appDatabase.shoeBrandDao()
+
+    fun provideShoeSizeDao(appDatabase: AppDatabase): ShoeSizeDao =
+        appDatabase.shoeSizeDao()
 
     @Provides
     fun provideCustomerDao(database: AppDatabase): CustomerDao = database.customerDao()
@@ -161,6 +170,21 @@ object AppModule {
 
     fun provideDayReportsDao(appDatabase: AppDatabase): DayReportsDao =
         appDatabase.dayReportsDao()
+
+//     repositories
+
+    @Provides
+    @Singleton
+    fun provideShoeBrandRepository(appDatabase: AppDatabase): ShoeBrandRepository {
+        return ShoeBrandRepositoryImpl(appDatabase.shoeBrandDao())
+    }
+
+
+    @Provides
+    @Singleton
+    fun provideShoeSizeRepository(appDatabase: AppDatabase): ShoeSizeRepository {
+        return ShoeSizeRepositoryImpl(appDatabase.shoeSizeDao())
+    }
 
     @Provides
     @Singleton

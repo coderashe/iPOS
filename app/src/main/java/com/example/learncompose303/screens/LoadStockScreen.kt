@@ -35,7 +35,7 @@ import androidx.navigation.NavController
 import com.example.learncompose303.R
 import com.example.learncompose303.data.Destinations
 import com.example.learncompose303.data.entities.PriceList
-import com.example.learncompose303.data.entities.Inventory
+import com.example.learncompose303.data.entities.Products
 import com.example.learncompose303.viewmodels.InvoiceViewModel
 
 
@@ -176,7 +176,7 @@ fun LoadStockScreen(
                         viewModel.calculateStandardCost(unitCostValue, currentStockLevelValue)
 
                     // Create and insert Product
-                    val newInventory = Inventory(
+                    val newProducts = Products(
                         productDescription = productName,
                         currentStockLevel = currentStockLevel.toDoubleOrNull() ?: 0.0,
                         saleable = true,
@@ -184,11 +184,11 @@ fun LoadStockScreen(
                         averageCost = totalCost,
                         standardCost = standardCost,
                         salesTaxCode = "VAT",
-                        purchasableTaxCode = "VAT",
+                        productCode = "VAT",
                         inclusiveTaxed = true,
                     )
 
-                    viewModel.insertTheProduct(newInventory) { productId ->
+                    viewModel.insertTheProduct(newProducts) { productId ->
                         // Create and insert PriceList entry
                         val newPriceList = sellingPriceValue?.let {
                             PriceList(

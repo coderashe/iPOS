@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -56,7 +55,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.rememberImagePainter
 import com.example.learncompose303.R
 import com.example.learncompose303.data.entities.PriceList
-import com.example.learncompose303.data.entities.Inventory
+import com.example.learncompose303.data.entities.Products
 import com.example.learncompose303.screens.auth.AuthViewModel
 import com.example.learncompose303.ui.theme.Blue1
 import com.example.learncompose303.viewmodels.InvoiceViewModel
@@ -70,7 +69,7 @@ fun ProductsScreen(
     val products by viewModel.productList.collectAsState()
     var searchQuery by remember { mutableStateOf("") } // State for the search query
     var showLowStockWarning by remember { mutableStateOf(false) } // State for the popup
-    var lowStockInventories by remember { mutableStateOf(emptyList<Inventory>()) } // List to hold low stock products
+    var lowStockInventories by remember { mutableStateOf(emptyList<Products>()) } // List to hold low stock products
 
     LaunchedEffect(key1 = true) {
         viewModel.fetchProducts() // Fetch products when the screen is launched
@@ -117,7 +116,7 @@ fun ProductsScreen(
                             val price = viewModel.getPricelistById(product.productId)
                             if (price != null) {
                                 TheProductCard(
-                                    inventory = product,
+                                    products = product,
                                     initialPrice = price.sellingPrice,
                                     viewModel,
                                     authViewModel
@@ -165,15 +164,15 @@ fun ProductsScreen(
 
 @Composable
 fun TheProductCard(
-    inventory: Inventory,
+    products: Products,
     initialPrice: Double,
     viewModel: InvoiceViewModel = viewModel(),
     authViewModel: AuthViewModel = viewModel()
 ) {
     val context = LocalContext.current
-    val imageUri = remember { mutableStateOf(inventory.imageUri?.let { Uri.parse(it) }) }
+    val imageUri = remember { mutableStateOf(products.imageUri?.let { Uri.parse(it) }) }
     val isEditing = remember { mutableStateOf(false) }
-    var editedProductDescription by remember { mutableStateOf(inventory.productDescription) }
+    var editedProductDescription by remember { mutableStateOf(products.productDescription) }
     var editedPrice by remember { mutableStateOf(initialPrice.toString()) }
     var price by remember { mutableStateOf(initialPrice) }
 
@@ -182,9 +181,9 @@ fun TheProductCard(
         onResult = { uri ->
             imageUri.value = uri
             if (uri != null) {
-                viewModel.onUpdateProductImage(inventory, uri, context)
+                viewModel.onUpdateProductImage(products, uri, context)
             }
-            viewModel.updateProduct(inventory)
+            viewModel.updateProduct(products)
         }
     )
 
@@ -211,7 +210,7 @@ fun TheProductCard(
                 )
             } else {
                 Text(
-                    text = inventory.productDescription,
+                    text = products.productDescription,
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -224,12 +223,12 @@ fun TheProductCard(
                     .fillMaxWidth()
             ) {
                 // Product Image
-                val currentImageUri = imageUri.value ?: inventory.imageUri?.let { Uri.parse(it) }
+                val currentImageUri = imageUri.value ?: products.imageUri?.let { Uri.parse(it) }
                 val painter = rememberImagePainter(data = currentImageUri ?: R.drawable.meat7)
 
                 Image(
                     painter = painter,
-                    contentDescription = inventory.productDescription,
+                    contentDescription = products.productDescription,
                     modifier = Modifier
                         .size(90.dp)
                         .fillMaxWidth()
@@ -244,7 +243,7 @@ fun TheProductCard(
                         .align(Alignment.TopEnd) // Align to the top end of the box
                         .background(Color.White, shape = RoundedCornerShape(8.dp))
                         .padding(2.dp),
-                    text = "${"%.1f".format(inventory.currentStockLevel)}", // Reduced decimal points
+                    text = "${"%.1f".format(products.currentStockLevel)}", // Reduced decimal points
                     style = MaterialTheme.typography.bodySmall, // Smaller text style
                     color = Color.Red,
                     fontWeight = FontWeight.Bold
@@ -278,21 +277,21 @@ fun TheProductCard(
                 onClick = {
                     if (isAdmin) {  // Only allow if the user is an admin
                         if (isEditing.value) {
-                            val updatedProduct = inventory.copy(
+                            val updatedProduct = products.copy(
                                 productDescription = editedProductDescription
                             )
                             viewModel.insertTheProduct(updatedProduct) { productId ->
                                 val updatedPriceList = PriceList(
                                     productId = productId,
                                     productDescription = updatedProduct.productDescription,
-                                    unitCost = inventory.standardCost,
+                                    unitCost = products.standardCost,
                                     sellingPrice = editedPrice.toDouble(),
                                     markupPercentage = viewModel.calculateMarkupPercentage(
-                                        inventory.standardCost,
+                                        products.standardCost,
                                         editedPrice.toDouble()
                                     ),
                                     grossProfitPercentage = viewModel.calculateGrossProfitPercentage(
-                                        inventory.standardCost,
+                                        products.standardCost,
                                         editedPrice.toDouble()
                                     )
                                 )

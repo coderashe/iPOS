@@ -64,7 +64,7 @@ fun CartScreen(
     val selectedProducts by viewModel.selectedProducts.collectAsState()
 
     // Collect product price details
-    val productWithPriceDetails by viewModel.inventoryWithPriceDetails.collectAsState(initial = emptyList())
+    val productWithPriceDetails by viewModel.productsWithPriceDetails.collectAsState(initial = emptyList())
     val productDetails = productWithPriceDetails.joinToString("\n") { (product, price, quantity) ->
         "${product.productDescription}, $$price, Quantity: $quantity"
     }

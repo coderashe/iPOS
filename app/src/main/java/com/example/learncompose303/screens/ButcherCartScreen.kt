@@ -56,7 +56,7 @@ fun ButcherCartScreen(
     val selectedProducts by viewModel.selectedProducts.collectAsState()
 
     // Collect butcher product price details
-    val productWithPriceDetails by viewModel.butcherInventoryWithPriceDetails.collectAsState(initial = emptyList())
+    val productWithPriceDetails by viewModel.butcherProductsWithPriceDetails.collectAsState(initial = emptyList())
 
     // Map to hold amount paid for each product
     val productAmountPaid = remember { mutableStateMapOf<Long, Double>() }
