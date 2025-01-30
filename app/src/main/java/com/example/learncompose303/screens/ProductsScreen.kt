@@ -93,7 +93,7 @@ fun ProductsScreen(
                 productDescription = product.productDescription, // Keep other fields intact
                 brandID = product.brandID,
                 shoeSizeId = product.shoeSizeId,
-                storeID = product.storeID
+                productQty = product.productQty
                 // Optionally, add the current stock to a custom field in the Product entity or manage it separately
             )
         }

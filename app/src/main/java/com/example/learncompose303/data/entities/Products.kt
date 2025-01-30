@@ -31,7 +31,7 @@ data class Products(
     @PrimaryKey(autoGenerate = true)
     val productId: Long = 0,
     val productDescription: String, // e.g., "Nike Air Max Size 10"
-    val storeID: String, // Foreign key linking to User (store)
+    val productQty: Long,
     val brandID: Long, // Foreign key linking to Label
     val shoeSizeId: Long, // Foreign key linking to ShoeSize
     val saleable: Boolean, // Indicates if the product can be sold

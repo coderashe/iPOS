@@ -35,7 +35,7 @@ interface ProductDao {
     @Delete
     suspend fun deleteProduct(products: Products)
 
-    @Query("SELECT * FROM products WHERE storeID = :storeID")
+    @Query("SELECT * FROM products WHERE productQty = :storeID")
     suspend fun getProductsByStoreID(storeID: String): List<Products>
 
     @Query("SELECT * FROM products WHERE brandID = :brandID")
@@ -44,7 +44,7 @@ interface ProductDao {
     @Query("SELECT * FROM products WHERE shoeSizeId = :shoeSizeId")
     suspend fun getProductsByShoeSizeId(shoeSizeId: Long): List<Products>
 
-    @Query("SELECT * FROM products WHERE storeID = :storeID AND brandID = :brandID AND shoeSizeId = :shoeSizeId")
+    @Query("SELECT * FROM products WHERE productQty = :storeID AND brandID = :brandID AND shoeSizeId = :shoeSizeId")
     suspend fun getProductsByStoreAndBrandAndShoeSize(
         storeID: String,
         brandID: Long,

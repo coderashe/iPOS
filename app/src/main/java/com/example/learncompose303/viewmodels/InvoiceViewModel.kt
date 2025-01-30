@@ -13,14 +13,12 @@ import com.example.learncompose303.data.StudentEntity
 import com.example.learncompose303.data.entities.CartItem
 import com.example.learncompose303.data.entities.CsvParser
 import com.example.learncompose303.data.entities.Customer
-import com.example.learncompose303.data.entities.DayReports
 import com.example.learncompose303.data.entities.Invoice
 import com.example.learncompose303.data.entities.InvoiceItem
 import com.example.learncompose303.data.entities.InvoiceLine
 import com.example.learncompose303.data.entities.Order
 import com.example.learncompose303.data.entities.PriceList
 import com.example.learncompose303.data.entities.Products
-import com.example.learncompose303.data.entities.ProductDayReport
 import com.example.learncompose303.data.entities.ShoeBrand
 import com.example.learncompose303.data.entities.ShoeSize
 import com.example.learncompose303.data.entities.User
@@ -45,7 +43,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.launch
 import java.io.File
@@ -266,7 +263,7 @@ class InvoiceViewModel @Inject constructor(
                         inclusiveTaxed = productCsv.inclusiveTaxed,
                         shoeSizeId = 1,
                         brandID = 1,
-                        storeID = "ISTART01_1",
+                        productQty = productCsv.currentStockLevel.toLong(),
                         imageUri = imageUri
                     )
 
@@ -457,13 +454,13 @@ class InvoiceViewModel @Inject constructor(
 
         if (existingSizes.isEmpty()) {
             val initialSizes = listOf(
-                ShoeSize(1, 1, 6.0, 20),
-                ShoeSize(2, 1, 5.0, 30),
-                ShoeSize(3, 2, 7.0, 40),
-                ShoeSize(4, 3, 9.0, 50),
-                ShoeSize(5, 2, 8.5, 60),
-                ShoeSize(6, 1, 4.0, 70),
-                ShoeSize(7, 3, 6.5, 80),
+                ShoeSize(1, 1, 6.0, 0),
+                ShoeSize(2, 1, 5.0, 0),
+                ShoeSize(3, 2, 7.0, 0),
+                ShoeSize(4, 3, 9.0, 0),
+                ShoeSize(5, 2, 8.5, 0),
+                ShoeSize(6, 1, 4.0, 0),
+                ShoeSize(7, 3, 6.5, 0),
             )
             shoeSizeRepository.insertShoeSizes(initialSizes)
         }
@@ -502,7 +499,7 @@ class InvoiceViewModel @Inject constructor(
                     inclusiveTaxed = true,
                     shoeSizeId = 1,
                     brandID = 1,
-                    storeID = "ISTART01_2"
+                    productQty = 30
                 ),
                 Products(
                     productDescription = "Adidas Ultraboost",
@@ -515,7 +512,7 @@ class InvoiceViewModel @Inject constructor(
                     inclusiveTaxed = true,
                     shoeSizeId = 2,
                     brandID = 2,
-                    storeID = "ISTART01_1"
+                    productQty = 25
                 )
             )
 
@@ -636,11 +633,27 @@ class InvoiceViewModel @Inject constructor(
 //        }
 //    }
 
+//    fun insertTheProduct(products: Products, onProductInserted: (Long) -> Unit) =
+//        viewModelScope.launch {
+//            val productId = productRepository.insertProduct(products)
+//            onProductInserted(productId)
+//        }
+
     fun insertTheProduct(products: Products, onProductInserted: (Long) -> Unit) =
         viewModelScope.launch {
             val productId = productRepository.insertProduct(products)
+
+            // Update ShoeSize quantity
+            val shoeSize = shoeSizeRepository.getShoeSizeById(products.shoeSizeId)
+            if (shoeSize != null) {
+                val updatedShoeSize =
+                    shoeSize.copy(quantity = shoeSize.quantity + products.productQty)
+                shoeSizeRepository.updateShoeSize(updatedShoeSize)
+            }
+
             onProductInserted(productId)
         }
+
 
     fun insertPriceList(priceList: PriceList) = viewModelScope.launch {
         priceListRepository.insertPriceList(priceList)

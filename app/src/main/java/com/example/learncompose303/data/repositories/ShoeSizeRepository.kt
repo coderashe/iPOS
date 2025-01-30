@@ -24,6 +24,18 @@ class ShoeSizeRepositoryImpl @Inject constructor(
     private val shoeSizeDao: ShoeSizeDao
 ) : ShoeSizeRepository {
 
+    override suspend fun insertShoeSizes(shoeSizes: List<ShoeSize>): List<Long> {
+        return withContext(Dispatchers.IO) {
+            shoeSizeDao.insertShoeSizes(shoeSizes)
+        }
+    }
+
+    override suspend fun updateShoeSize(shoeSize: ShoeSize) {
+        withContext(Dispatchers.IO) {
+            shoeSizeDao.updateShoeSize(shoeSize)
+        }
+    }
+
     // Method to get all shoe sizes once (this should return a list of ShoeSize objects)
     override suspend fun getAllShoeSizesOnce(): List<ShoeSize> {
         return shoeSizeDao.getAllShoeSizesOnce()
@@ -50,18 +62,6 @@ class ShoeSizeRepositoryImpl @Inject constructor(
     override suspend fun insertShoeSize(shoeSize: ShoeSize): Long {
         return withContext(Dispatchers.IO) {
             shoeSizeDao.insertShoeSize(shoeSize)
-        }
-    }
-
-    override suspend fun insertShoeSizes(shoeSizes: List<ShoeSize>): List<Long> {
-        return withContext(Dispatchers.IO) {
-            shoeSizeDao.insertShoeSizes(shoeSizes)
-        }
-    }
-
-    override suspend fun updateShoeSize(shoeSize: ShoeSize) {
-        withContext(Dispatchers.IO) {
-            shoeSizeDao.updateShoeSize(shoeSize)
         }
     }
 
