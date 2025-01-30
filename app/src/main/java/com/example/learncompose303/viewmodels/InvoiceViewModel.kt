@@ -160,9 +160,20 @@ class InvoiceViewModel @Inject constructor(
         // Fetch necessary data after inserting shoe sizes and brands
         fetchShoeSizes()
         fetchInvoiceLines()
+        fetchProducts()
         // Now insert initial products
 //        insertInitialProducts()
-//        fetchProducts()
+    }
+
+    private val _brandNameCache = mutableMapOf<Long, String>()
+
+    suspend fun getBrandNameById(brandId: Long): String {
+        return _brandNameCache[brandId] ?: run {
+            val brand = shoeBrandRepository.getBrandNameById(brandId)
+            val name = brand?.brandName ?: "Unknown Brand"
+            _brandNameCache[brandId] = name
+            name
+        }
     }
 
     // Function to fetch the stock level for a product based on brandId

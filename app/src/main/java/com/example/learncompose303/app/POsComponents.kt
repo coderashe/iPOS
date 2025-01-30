@@ -236,8 +236,8 @@ fun CarouselCard(
             Image(
                 painter = rememberAsyncImagePainter(
                     model = imageUrl,
-                    placeholder = painterResource(R.drawable.f13_gooseberry), // Add a placeholder image
-                    error = painterResource(R.drawable.f13_gooseberry) // Add an error fallback image
+                    placeholder = painterResource(R.drawable.bootsu), // Add a placeholder image
+                    error = painterResource(R.drawable.bootsu) // Add an error fallback image
                 ),
                 contentDescription = null,
                 modifier = Modifier

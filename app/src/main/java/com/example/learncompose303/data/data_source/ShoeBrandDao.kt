@@ -23,6 +23,10 @@ interface ShoeBrandDao {
     @Query("SELECT * FROM shoeBrand WHERE brandID = :id")
     suspend fun getShoeBrandById(id: Long): ShoeBrand?
 
+
+    @Query("SELECT * FROM shoeBrand WHERE brandId = :brandId LIMIT 1")
+    suspend fun getBrandNameById(brandId: Long): ShoeBrand?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertShoeBrand(shoeBrand: ShoeBrand): Long
 

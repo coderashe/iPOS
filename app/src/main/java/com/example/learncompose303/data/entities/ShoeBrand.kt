@@ -7,5 +7,5 @@ import androidx.room.PrimaryKey
 data class ShoeBrand(
     @PrimaryKey(autoGenerate = true)
     val brandID: Long = 0,
-    val labelName: String // e.g., "Nike", "Puma", "Vans"
+    val brandName: String // e.g., "Nike", "Puma", "Vans"
 )

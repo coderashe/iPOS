@@ -16,11 +16,18 @@ interface ShoeBrandRepository {
     suspend fun deleteShoeBrand(shoeBrand: ShoeBrand)
     suspend fun getAllShoeBrands(): Flow<List<ShoeBrand>>
     suspend fun getAllShoeBrandsOnce(): List<ShoeBrand>
+    suspend fun getBrandNameById(brandId: Long): ShoeBrand?
 }
 
 class ShoeBrandRepositoryImpl @Inject constructor(
     private val shoeBrandDao: ShoeBrandDao
 ) : ShoeBrandRepository {
+
+    override suspend fun getBrandNameById(brandId: Long): ShoeBrand? {
+        return withContext(Dispatchers.IO) {
+            shoeBrandDao.getBrandNameById(brandId)
+        }
+    }
 
     override suspend fun getAllShoeBrands(): Flow<List<ShoeBrand>> {
         return withContext(Dispatchers.IO) {

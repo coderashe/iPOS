@@ -58,11 +58,11 @@ fun CustomerSelectionScreen(
     Log.d("WalkInCustomer", "$walkInCustomer")
 
     Scaffold(
-        floatingActionButton = {
-            FloatingActionButton(onClick = onNewCustomerClicked) {
-                Icon(Icons.Default.Add, contentDescription = "Add New Customer")
-            }
-        },
+//        floatingActionButton = {
+//            FloatingActionButton(onClick = onNewCustomerClicked) {
+//                Icon(Icons.Default.Add, contentDescription = "Add New Customer")
+//            }
+//        },
         content = {
             Column(
                 modifier = Modifier
