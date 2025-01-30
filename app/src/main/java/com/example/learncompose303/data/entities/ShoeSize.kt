@@ -21,7 +21,7 @@ import androidx.room.PrimaryKey
 data class ShoeSize(
     @PrimaryKey(autoGenerate = true)
     val shoeSizeId: Long = 0,
-    val labelId: Long, // Foreign key referencing Label
+    val brandID: Long, // Foreign key referencing Label
     val size: Double, // Shoe size (e.g., 1-11)
     val quantity: Int // Quantity available for this size
 )

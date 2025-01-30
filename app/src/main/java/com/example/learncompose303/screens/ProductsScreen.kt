@@ -2,6 +2,7 @@ package com.example.learncompose303.screens
 
 import android.content.res.Configuration
 import android.net.Uri
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -71,14 +72,43 @@ fun ProductsScreen(
     var showLowStockWarning by remember { mutableStateOf(false) } // State for the popup
     var lowStockInventories by remember { mutableStateOf(emptyList<Products>()) } // List to hold low stock products
 
+//    LaunchedEffect(key1 = true) {
+//        viewModel.fetchProducts() // Fetch products when the screen is launched
+//
+//        // Check for low stock products
+//        val lowStock = products.filter { it.currentStockLevel < 10 }
+//        if (lowStock.isNotEmpty()) {
+//            lowStockInventories = lowStock // Save the low stock products
+//            showLowStockWarning = true // Trigger the popup
+//        }
+//    }
+
     LaunchedEffect(key1 = true) {
         viewModel.fetchProducts() // Fetch products when the screen is launched
 
+        val updatedProducts = products.map { product ->
+            val currentStock =
+                viewModel.getCurrentStockByBrand(product.brandID) // Fetch current stock
+            product.copy(
+                productDescription = product.productDescription, // Keep other fields intact
+                brandID = product.brandID,
+                shoeSizeId = product.shoeSizeId,
+                storeID = product.storeID
+                // Optionally, add the current stock to a custom field in the Product entity or manage it separately
+            )
+        }
+
         // Check for low stock products
-        val lowStock = products.filter { it.currentStockLevel < 10 }
+        val lowStock = updatedProducts.filter { product ->
+            // Replace the condition with your low stock logic (e.g., based on size or quantity)
+            val currentStock = viewModel.getCurrentStockByBrand(product.brandID)
+            currentStock < 10
+        }
+
         if (lowStock.isNotEmpty()) {
-            lowStockInventories = lowStock // Save the low stock products
-            showLowStockWarning = true // Trigger the popup
+            lowStockInventories = lowStock
+            Log.d("istart", "Check for lowStocks --- $lowStock")
+            showLowStockWarning = true
         }
     }
 
@@ -149,7 +179,7 @@ fun ProductsScreen(
                     Text("The following products have low stock:")
                     Spacer(modifier = Modifier.height(8.dp))
                     lowStockInventories.forEach { product ->
-                        Text("- ${product.productDescription} (Stock: ${product.currentStockLevel})")
+                        Text("- ${product.productDescription} (Stock: ---)")
                     }
                 }
             },
@@ -186,6 +216,13 @@ fun TheProductCard(
             viewModel.updateProduct(products)
         }
     )
+
+    var stockLevel by remember { mutableStateOf(0) }
+
+    // Fetch stock level when the brandId changes
+    LaunchedEffect(products.brandID) {
+        stockLevel = viewModel.fetchStockLevel(products.brandID)
+    }
 
     Card(
         shape = RoundedCornerShape(8.dp),
@@ -243,7 +280,7 @@ fun TheProductCard(
                         .align(Alignment.TopEnd) // Align to the top end of the box
                         .background(Color.White, shape = RoundedCornerShape(8.dp))
                         .padding(2.dp),
-                    text = "${"%.1f".format(products.currentStockLevel)}", // Reduced decimal points
+                    text = stockLevel.toString(),
                     style = MaterialTheme.typography.bodySmall, // Smaller text style
                     color = Color.Red,
                     fontWeight = FontWeight.Bold

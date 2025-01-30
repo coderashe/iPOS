@@ -2,55 +2,64 @@ package com.example.learncompose303.data.repositories
 
 import com.example.learncompose303.data.data_source.ShoeBrandDao
 import com.example.learncompose303.data.entities.ShoeBrand
+import com.example.learncompose303.data.entities.ShoeSize
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 interface ShoeBrandRepository {
-    suspend fun getLabelById(id: Long): ShoeBrand?
-    fun getAllLabels(): Flow<List<ShoeBrand>>
-    suspend fun insertLabel(shoeBrand: ShoeBrand): Long
-    suspend fun insertLabels(shoeBrands: List<ShoeBrand>): List<Long>
-    suspend fun updateLabel(shoeBrand: ShoeBrand)
-    suspend fun deleteLabel(shoeBrand: ShoeBrand)
+    suspend fun getShoeBrandById(id: Long): ShoeBrand?
+    suspend fun insertShoeBrand(shoeBrand: ShoeBrand): Long
+    suspend fun insertShoeBrands(shoeBrands: List<ShoeBrand>): List<Long>
+    suspend fun updateShoeBrand(shoeBrand: ShoeBrand)
+    suspend fun deleteShoeBrand(shoeBrand: ShoeBrand)
+    suspend fun getAllShoeBrands(): Flow<List<ShoeBrand>>
+    suspend fun getAllShoeBrandsOnce(): List<ShoeBrand>
 }
 
 class ShoeBrandRepositoryImpl @Inject constructor(
     private val shoeBrandDao: ShoeBrandDao
 ) : ShoeBrandRepository {
 
-    override suspend fun getLabelById(id: Long): ShoeBrand? {
+    override suspend fun getAllShoeBrands(): Flow<List<ShoeBrand>> {
         return withContext(Dispatchers.IO) {
-            shoeBrandDao.getLabelById(id)
+            shoeBrandDao.getAllShoeBrands()
         }
     }
 
-    override fun getAllLabels(): Flow<List<ShoeBrand>> {
-        return shoeBrandDao.getAllLabels()
+    // Method to get all shoe brands once
+    override suspend fun getAllShoeBrandsOnce(): List<ShoeBrand> {
+        return shoeBrandDao.getAllShoeBrandsOnce()
     }
 
-    override suspend fun insertLabel(shoeBrand: ShoeBrand): Long {
+    override suspend fun getShoeBrandById(id: Long): ShoeBrand? {
         return withContext(Dispatchers.IO) {
-            shoeBrandDao.insertLabel(shoeBrand)
+            shoeBrandDao.getShoeBrandById(id)
         }
     }
 
-    override suspend fun insertLabels(shoeBrands: List<ShoeBrand>): List<Long> {
+    override suspend fun insertShoeBrand(shoeBrand: ShoeBrand): Long {
         return withContext(Dispatchers.IO) {
-            shoeBrandDao.insertLabels(shoeBrands)
+            shoeBrandDao.insertShoeBrand(shoeBrand)
         }
     }
 
-    override suspend fun updateLabel(shoeBrand: ShoeBrand) {
+    override suspend fun insertShoeBrands(shoeBrands: List<ShoeBrand>): List<Long> {
+        return withContext(Dispatchers.IO) {
+            shoeBrandDao.insertShoeBrands(shoeBrands)
+        }
+    }
+
+    override suspend fun updateShoeBrand(shoeBrand: ShoeBrand) {
         withContext(Dispatchers.IO) {
-            shoeBrandDao.updateLabel(shoeBrand)
+            shoeBrandDao.updateShoeBrand(shoeBrand)
         }
     }
 
-    override suspend fun deleteLabel(shoeBrand: ShoeBrand) {
+    override suspend fun deleteShoeBrand(shoeBrand: ShoeBrand) {
         withContext(Dispatchers.IO) {
-            shoeBrandDao.deleteLabel(shoeBrand)
+            shoeBrandDao.deleteShoeBrand(shoeBrand)
         }
     }
 }

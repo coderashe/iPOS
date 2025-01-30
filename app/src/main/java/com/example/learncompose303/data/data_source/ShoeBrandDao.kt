@@ -7,25 +7,31 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import com.example.learncompose303.data.entities.ShoeBrand
+import com.example.learncompose303.data.entities.ShoeSize
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface ShoeBrandDao {
-    @Query("SELECT * FROM labels WHERE brandID = :id")
-    suspend fun getLabelById(id: Long): ShoeBrand?
 
-    @Query("SELECT * FROM labels")
-    fun getAllLabels(): Flow<List<ShoeBrand>>
+    @Query("SELECT * FROM shoeBrand")
+    fun getAllShoeBrands(): Flow<List<ShoeBrand>>
+
+
+    @Query("SELECT * FROM shoeBrand")
+    suspend fun getAllShoeBrandsOnce(): List<ShoeBrand>
+
+    @Query("SELECT * FROM shoeBrand WHERE brandID = :id")
+    suspend fun getShoeBrandById(id: Long): ShoeBrand?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertLabel(shoeBrand: ShoeBrand): Long
+    suspend fun insertShoeBrand(shoeBrand: ShoeBrand): Long
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertLabels(shoeBrands: List<ShoeBrand>): List<Long>
+    suspend fun insertShoeBrands(shoeBrands: List<ShoeBrand>): List<Long>
 
     @Update
-    suspend fun updateLabel(shoeBrand: ShoeBrand)
+    suspend fun updateShoeBrand(shoeBrand: ShoeBrand)
 
     @Delete
-    suspend fun deleteLabel(shoeBrand: ShoeBrand)
+    suspend fun deleteShoeBrand(shoeBrand: ShoeBrand)
 }

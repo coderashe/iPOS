@@ -40,45 +40,10 @@ import com.example.learncompose303.data.entities.Payment
 import com.example.learncompose303.data.entities.PriceList
 import com.example.learncompose303.data.entities.Products
 import com.example.learncompose303.data.entities.ProductDayReport
+import com.example.learncompose303.data.entities.ShoeBrand
+import com.example.learncompose303.data.entities.ShoeSize
 import com.example.learncompose303.data.entities.TradeReceivables
 import com.example.learncompose303.data.entities.User
-
-//@Database(
-//    entities = [Item::class, Note::class,
-//        StudentEntity::class, Customer::class,
-//        Invoice::class, InvoiceItem::class, InvoiceLine::class,
-//        Payment::class, Inventory::class,
-//        CartItem::class,
-//        Order::class, PriceList::class,
-//        ProductDayReport::class, DayReports::class,
-//        User::class,
-//        Expense::class],
-//    version = 35,
-//    exportSchema = false
-//)
-//
-//abstract class AppDatabase : RoomDatabase() {
-//    abstract fun itemDao(): ItemDao
-//    abstract fun noteDao(): NoteDao
-//    abstract fun studentDao(): StudentDao
-//    abstract fun invoiceDao(): InvoiceDao
-//    abstract fun customerDao(): CustomerDao
-//    abstract fun invoiceItemDao(): InvoiceItemDao
-//    abstract fun paymentDao(): PaymentDao
-//    abstract fun productDao(): ProductDao
-//    abstract fun cartItemDao(): CartItemDao
-//    abstract fun invoiceLineDao(): InvoiceLineDao
-//    abstract fun orderDao(): OrderDao
-//    abstract fun pricelistDao(): PriceListDao
-//    abstract fun productDayReportDao(): ProductDayReportDao
-//    abstract fun dayReportsDao(): DayReportsDao
-//    abstract fun expenseDao(): ExpenseDao
-//    abstract fun userDao(): UserDao
-//
-//    companion object {
-//        const val DATABASE_NAME = "ipos_db"
-//    }
-//}
 
 @Database(
     entities = [
@@ -88,7 +53,8 @@ import com.example.learncompose303.data.entities.User
         Payment::class, Products::class, CartItem::class,
         Order::class, PriceList::class, ProductDayReport::class, DayReports::class,
         User::class, Expense::class,
-        TradeReceivables::class, DiscountsReceived::class, CashFlow::class // New entities
+        TradeReceivables::class, DiscountsReceived::class,
+        CashFlow::class, ShoeBrand::class, ShoeSize::class // New entities
     ],
     version = 35,
     exportSchema = false

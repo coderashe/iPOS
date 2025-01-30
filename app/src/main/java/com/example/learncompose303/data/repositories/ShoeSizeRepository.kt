@@ -1,6 +1,7 @@
 package com.example.learncompose303.data.repositories
 
 import com.example.learncompose303.data.data_source.ShoeSizeDao
+import com.example.learncompose303.data.entities.Products
 import com.example.learncompose303.data.entities.ShoeSize
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -14,11 +15,27 @@ interface ShoeSizeRepository {
     suspend fun insertShoeSizes(shoeSizes: List<ShoeSize>): List<Long>
     suspend fun updateShoeSize(shoeSize: ShoeSize)
     suspend fun deleteShoeSize(shoeSize: ShoeSize)
+    fun getAllShoeSizes(): Flow<List<ShoeSize>>
+    suspend fun getTotalQuantityByBrand(brandId: Long): Int
+    suspend fun getAllShoeSizesOnce(): List<ShoeSize>
 }
 
 class ShoeSizeRepositoryImpl @Inject constructor(
     private val shoeSizeDao: ShoeSizeDao
 ) : ShoeSizeRepository {
+
+    // Method to get all shoe sizes once (this should return a list of ShoeSize objects)
+    override suspend fun getAllShoeSizesOnce(): List<ShoeSize> {
+        return shoeSizeDao.getAllShoeSizesOnce()
+    }
+
+    override suspend fun getTotalQuantityByBrand(brandId: Long): Int {
+        return shoeSizeDao.getTotalQuantityByBrand(brandId)
+    }
+
+    override fun getAllShoeSizes(): Flow<List<ShoeSize>> {
+        return shoeSizeDao.getAllShoeSizes()
+    }
 
     override suspend fun getShoeSizeById(id: Long): ShoeSize? {
         return withContext(Dispatchers.IO) {

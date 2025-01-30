@@ -9,6 +9,9 @@ interface UserDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertUser(user: User): Long
 
+    @Query("SELECT * FROM user")
+    suspend fun getAllUsersOnce(): List<User>
+
     @Query("SELECT * FROM user WHERE userContact = :contact LIMIT 1")
     suspend fun getUserByContact(contact: String): User?
 

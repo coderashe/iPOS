@@ -4,14 +4,32 @@ import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
 
-@Entity(tableName = "user", indices = [Index(value = ["userEmail"], unique = true)])
+@Entity(
+    tableName = "user",
+    indices = [
+        Index(value = ["userEmail"], unique = true), // Unique index for email
+    ]
+)
 data class User(
     @PrimaryKey(autoGenerate = true) val userId: Long = 0,
     val userFullName: String,
     val userContact: String,
-    val userRole: String,  // cashier/businessman/admin
+    val userRole: String,  // e.g., cashier/businessman/admin
     val userPassword: String,
-    val storeID: String,
+    val storeID: String,   // Store ID (now has a unique constraint)
     val userEmail: String,
     val userAddress: String?
 )
+
+
+//@Entity(tableName = "user", indices = [Index(value = ["userEmail"], unique = true)])
+//data class User(
+//    @PrimaryKey(autoGenerate = true) val userId: Long = 0,
+//    val userFullName: String,
+//    val userContact: String,
+//    val userRole: String,  // cashier/businessman/admin
+//    val userPassword: String,
+//    val storeID: String,
+//    val userEmail: String,
+//    val userAddress: String?
+//)

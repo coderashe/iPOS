@@ -9,12 +9,18 @@ interface AuthRepository {
     suspend fun signUpUser(user: User): Long
     suspend fun loginUser(contact: String, password: String): User?
     suspend fun getUserByEmail(email: String): User?
+    suspend fun getAllUsersOnce(): List<User>
 }
 
 // Implement AuthRepository
 class AuthRepositoryImpl @Inject constructor(
     private val userDao: UserDao
 ) : AuthRepository {
+
+    // Fetch all users once (for initial check)
+    override suspend fun getAllUsersOnce(): List<User> {
+        return userDao.getAllUsersOnce()
+    }
 
     override suspend fun signUpUser(user: User): Long {
         return userDao.insertUser(user)

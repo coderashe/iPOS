@@ -9,12 +9,6 @@ import androidx.room.PrimaryKey
     tableName = "products",
     foreignKeys = [
         ForeignKey(
-            entity = User::class,
-            parentColumns = ["storeID"],
-            childColumns = ["storeID"],
-            onDelete = ForeignKey.CASCADE
-        ),
-        ForeignKey(
             entity = ShoeBrand::class,
             parentColumns = ["brandID"],
             childColumns = ["brandID"],
@@ -28,7 +22,6 @@ import androidx.room.PrimaryKey
         )
     ],
     indices = [
-        Index(value = ["storeID"]), // Index for faster lookups
         Index(value = ["brandID"]),
         Index(value = ["shoeSizeId"]),
         Index(value = ["productCode"], unique = true) // Ensure productCode is unique
@@ -51,19 +44,3 @@ data class Products(
     val imageUri: String? = null // Optional URI for product image
 )
 
-
-//@Entity(tableName = "products")
-//data class Inventory(
-//    @PrimaryKey(autoGenerate = true)
-//    val productId: Long = 0,
-//    val productDescription: String,
-//    val currentStockLevel: Double,
-//    val saleable: Boolean, // Determines if the product can be sold
-//    val purchasable: Boolean, // Determines if the product can be purchased
-//    val averageCost: Double, // Average cost of the product
-//    val standardCost: Double, // Standard cost used for cost comparison
-//    val salesTaxCode: String?, // Tax code for sales
-//    val purchasableTaxCode: String?, // Tax code for purchases
-//    val inclusiveTaxed: Boolean, // Whether the price is inclusive of tax
-//    val imageUri: String? = null
-//)

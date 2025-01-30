@@ -8,12 +8,12 @@ import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
 interface ProductRepository {
+    fun getAllProducts(): Flow<List<Products>>
     suspend fun getProductById(id: Long): Products?
-    suspend fun getAllProducts(): Flow<List<Products>>
     suspend fun insertProduct(products: Products): Long
     suspend fun updateProduct(products: Products)
     suspend fun deleteProduct(products: Products)
-    suspend fun insertProducts(inventories: List<Products>): List<Long> // Return list of inserted product IDs
+    suspend fun insertProducts(products: List<Products>): List<Long> // Return list of inserted product IDs
     suspend fun getAllProductsOnce(): List<Products>
     suspend fun getProductsByStoreID(storeID: String): List<Products>
     suspend fun getProductsByBrandID(brandID: Long): List<Products>
@@ -30,28 +30,10 @@ class ProductRepositoryImpl @Inject constructor(
     private val productDao: ProductDao
 ) : ProductRepository {
 
-    override suspend fun getProductById(id: Long): Products? {
-        return withContext(Dispatchers.IO) {
-            productDao.getProductById(id)
-        }
-    }
-
-    override suspend fun getAllProducts(): Flow<List<Products>> {
-        return withContext(Dispatchers.IO) {
-            productDao.getAllProducts()
-        }
-    }
-
-//    override suspend fun insertProduct(products: Products): Long {
-//        return withContext(Dispatchers.IO) {
-//            productDao.insertProduct(products)
-//        }
-//    }
-
     override suspend fun insertProduct(products: Products): Long {
         return withContext(Dispatchers.IO) {
             val productId = productDao.insertProduct(products)
-            val productCode = "${products.storeID}$productId"
+            val productCode = "ISTART_$productId"
             productDao.updateProduct(
                 products.copy(
                     productId = productId,
@@ -59,6 +41,16 @@ class ProductRepositoryImpl @Inject constructor(
                 )
             )
             productId
+        }
+    }
+
+    override fun getAllProducts(): Flow<List<Products>> {
+        return productDao.getAllProducts()
+    }
+
+    override suspend fun getProductById(id: Long): Products? {
+        return withContext(Dispatchers.IO) {
+            productDao.getProductById(id)
         }
     }
 
@@ -74,9 +66,9 @@ class ProductRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun insertProducts(inventories: List<Products>): List<Long> {
+    override suspend fun insertProducts(products: List<Products>): List<Long> {
         return withContext(Dispatchers.IO) {
-            productDao.insertProducts(inventories)
+            productDao.insertProducts(products)
         }
     }
 
@@ -116,3 +108,10 @@ class ProductRepositoryImpl @Inject constructor(
     }
 
 }
+
+
+//    override suspend fun insertProduct(products: Products): Long {
+//        return withContext(Dispatchers.IO) {
+//            productDao.insertProduct(products)
+//        }
+//    }

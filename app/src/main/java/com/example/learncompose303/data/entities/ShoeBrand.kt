@@ -3,7 +3,7 @@ package com.example.learncompose303.data.entities
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
-@Entity(tableName = "labels")
+@Entity(tableName = "shoeBrand")
 data class ShoeBrand(
     @PrimaryKey(autoGenerate = true)
     val brandID: Long = 0,

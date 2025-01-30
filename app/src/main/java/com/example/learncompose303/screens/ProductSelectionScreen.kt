@@ -77,13 +77,43 @@ fun ProductSelectionScreen(
     LaunchedEffect(key1 = true) {
         viewModel.fetchProducts() // Fetch products when the screen is launched
 
+        val updatedProducts = products.map { product ->
+            val currentStock =
+                viewModel.getCurrentStockByBrand(product.brandID) // Fetch current stock
+            product.copy(
+                productDescription = product.productDescription, // Keep other fields intact
+                brandID = product.brandID,
+                shoeSizeId = product.shoeSizeId,
+                storeID = product.storeID
+                // Optionally, add the current stock to a custom field in the Product entity or manage it separately
+            )
+        }
+
         // Check for low stock products
-        val lowStock = products.filter { it.currentStockLevel < 10 }
+        val lowStock = updatedProducts.filter { product ->
+            // Replace the condition with your low stock logic (e.g., based on size or quantity)
+            val currentStock = viewModel.getCurrentStockByBrand(product.brandID)
+            currentStock < 10
+        }
+
         if (lowStock.isNotEmpty()) {
-            lowStockInventories = lowStock // Save the low stock products
-            showLowStockWarning = true // Trigger the popup
+            lowStockInventories = lowStock
+            Log.d("istart", "Check for lowStocks --- $lowStock")
+            showLowStockWarning = true
         }
     }
+
+
+//    LaunchedEffect(key1 = true) {
+//        viewModel.fetchProducts() // Fetch products when the screen is launched
+//
+//        // Check for low stock products
+//        val lowStock = products.filter { it.currentStockLevel < 10 }
+//        if (lowStock.isNotEmpty()) {
+//            lowStockInventories = lowStock // Save the low stock products
+//            showLowStockWarning = true // Trigger the popup
+//        }
+//    }
 
     // Filter products based on the search query
     val filteredProducts = products.filter { product ->
@@ -147,11 +177,12 @@ fun ProductSelectionScreen(
                                     onAddProduct = {
                                         viewModel.addProductToCart(product)
                                     },
-                                    price = price.sellingPrice
+                                    price = price.sellingPrice,
+                                    fetchStockLevel = { brandId -> viewModel.fetchStockLevel(brandId) }
                                 )
                             } else {
                                 Log.d(
-                                    "HazyLogs",
+                                    "istart",
                                     "No price found for product ID: ${product.productId}"
                                 )
                             }
@@ -185,7 +216,7 @@ fun ProductSelectionScreen(
                     Text("The following products have low stock:")
                     Spacer(modifier = Modifier.height(8.dp))
                     lowStockInventories.forEach { product ->
-                        Text("- ${product.productDescription} (Stock: ${product.currentStockLevel})")
+                        Text("- ${product.productDescription} (Stock: ---)")
                     }
                 }
             },
@@ -212,29 +243,130 @@ fun ProductSelectionScreen(
     }
 }
 
+//@Composable
+//fun ProductCard(
+//    products: Products,
+//    isSelected: Boolean,
+//    onAddProduct: (Products) -> Unit,
+//    price: Double,
+//    fetchStockLevel: suspend (Long) -> Int // Accepts a function to fetch stock by brandId
+//) {
+//    val context = LocalContext.current
+//    var stockLevel by remember { mutableStateOf(0) }
+//
+//    // Fetch stock level when the brandId changes
+//    LaunchedEffect(products.brandID) {
+//        stockLevel = fetchStockLevel(products.brandID)
+//    }
+//
+//    Card(
+//        shape = RoundedCornerShape(8.dp),
+//        modifier = Modifier
+//            .padding(4.dp)
+//            .clickable {
+//                if (stockLevel > 0) {
+//                    onAddProduct(products)
+//                } else {
+//                    Toast
+//                        .makeText(
+//                            context,
+//                            "${products.productDescription} is out of stock!",
+//                            Toast.LENGTH_SHORT
+//                        )
+//                        .show()
+//                }
+//            },
+//        elevation = CardDefaults.cardElevation(2.dp)
+//    ) {
+//        Column(
+//            modifier = Modifier
+//                .fillMaxSize()
+//                .padding(2.dp),
+//            horizontalAlignment = Alignment.CenterHorizontally
+//        ) {
+//            Text(
+//                modifier = Modifier.fillMaxWidth(),
+//                text = products.productDescription,
+//                style = MaterialTheme.typography.bodyMedium
+//            )
+//            Spacer(modifier = Modifier.height(8.dp))
+//            Box(
+//                modifier = Modifier.fillMaxWidth()
+//            ) {
+//                // Use stockLevel dynamically fetched
+//                Text(
+//                    modifier = Modifier
+//                        .align(Alignment.TopEnd)
+//                        .background(Color.White, shape = RoundedCornerShape(8.dp))
+//                        .padding(2.dp),
+//                    text = stockLevel.toString(),
+//                    style = MaterialTheme.typography.bodySmall,
+//                    color = Color.Red,
+//                    fontWeight = FontWeight.Bold
+//                )
+//            }
+//            Spacer(modifier = Modifier.height(4.dp))
+//            Text(
+//                "\$${"%.2f".format(price)}",
+//                style = MaterialTheme.typography.titleSmall,
+//                fontWeight = FontWeight.Bold
+//            )
+//            Spacer(modifier = Modifier.height(4.dp))
+//
+//            Button(
+//                onClick = {
+//                    if (stockLevel > 0) {
+//                        onAddProduct(products)
+//                    } else {
+//                        Toast.makeText(
+//                            context,
+//                            "${products.productDescription} is out of stock!",
+//                            Toast.LENGTH_SHORT
+//                        ).show()
+//                    }
+//                },
+//                colors = ButtonDefaults.buttonColors(
+//                    if (isSelected) Color.Red else Blue1
+//                ),
+//                shape = RoundedCornerShape(8.dp)
+//            ) {
+//                Text(
+//                    text = if (isSelected) stringResource(R.string.added) else stringResource(R.string.addToCart),
+//                    color = if (isSelected) Color.White else Color.Black
+//                )
+//            }
+//        }
+//    }
+//}
+
 @Composable
 fun ProductCard(
     products: Products,
     isSelected: Boolean,
     onAddProduct: (Products) -> Unit,
-    price: Double
+    price: Double,
+    fetchStockLevel: suspend (Long) -> Int // Accepts a function to fetch stock by brandId
 ) {
     val context = LocalContext.current
-    val imageUri = remember { mutableStateOf<Uri?>(null) }
+    var stockLevel by remember { mutableStateOf(0) }
+
+    // Fetch stock level when the brandId changes
+    LaunchedEffect(products.brandID) {
+        stockLevel = fetchStockLevel(products.brandID)
+    }
 
     Card(
         shape = RoundedCornerShape(8.dp),
         modifier = Modifier
             .padding(4.dp)
             .clickable {
-                // Check if the product is in stock before adding
-                if (products.currentStockLevel > 0) {
+                if (stockLevel > 0) {
                     onAddProduct(products)
                 } else {
                     Toast
                         .makeText(
                             context,
-                            "${products.productDescription} is out of stock!...",
+                            "${products.productDescription} is out of stock!",
                             Toast.LENGTH_SHORT
                         )
                         .show()
@@ -245,43 +377,26 @@ fun ProductCard(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(2.dp), // Adjusted padding
+                .padding(2.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-
             Text(
                 modifier = Modifier.fillMaxWidth(),
                 text = products.productDescription,
                 style = MaterialTheme.typography.bodyMedium
             )
             Spacer(modifier = Modifier.height(8.dp))
-            // Product Image using Coil to load image from URI or String
             Box(
-                modifier = Modifier
-                    .fillMaxWidth()
+                modifier = Modifier.fillMaxWidth()
             ) {
-                // Product Image
-                val currentImageUri = imageUri.value ?: products.imageUri?.let { Uri.parse(it) }
-                val painter = rememberImagePainter(data = currentImageUri ?: R.drawable.meat7)
-
-                Image(
-                    painter = painter,
-                    contentDescription = products.productDescription,
-                    modifier = Modifier
-                        .size(90.dp)
-                        .fillMaxWidth()
-                        .clip(CircleShape),
-                    contentScale = ContentScale.Crop
-                )
-
-                // Stock Level Overlay
+                // Use stockLevel dynamically fetched
                 Text(
                     modifier = Modifier
-                        .align(Alignment.TopEnd) // Align to the top end of the box
+                        .align(Alignment.TopEnd)
                         .background(Color.White, shape = RoundedCornerShape(8.dp))
                         .padding(2.dp),
-                    text = "%.1f".format(products.currentStockLevel), // Reduced decimal points
-                    style = MaterialTheme.typography.bodySmall, // Smaller text style
+                    text = stockLevel.toString(),
+                    style = MaterialTheme.typography.bodySmall,
                     color = Color.Red,
                     fontWeight = FontWeight.Bold
                 )
@@ -296,13 +411,12 @@ fun ProductCard(
 
             Button(
                 onClick = {
-                    // Check stock before adding
-                    if (products.currentStockLevel > 0) {
+                    if (stockLevel > 0) {
                         onAddProduct(products)
                     } else {
                         Toast.makeText(
                             context,
-                            "${products.productDescription} is out of stock!...",
+                            "${products.productDescription} is out of stock!",
                             Toast.LENGTH_SHORT
                         ).show()
                     }
@@ -317,7 +431,117 @@ fun ProductCard(
                     color = if (isSelected) Color.White else Color.Black
                 )
             }
-
         }
     }
 }
+
+
+//@Composable
+//fun ProductCard(
+//    products: Products,
+//    isSelected: Boolean,
+//    onAddProduct: (Products) -> Unit,
+//    price: Double
+//) {
+//    val context = LocalContext.current
+//    val imageUri = remember { mutableStateOf<Uri?>(null) }
+//
+//    Card(
+//        shape = RoundedCornerShape(8.dp),
+//        modifier = Modifier
+//            .padding(4.dp)
+//            .clickable {
+//                // Check if the product is in stock before adding
+//                if (products.currentStockLevel > 0) {
+//                    onAddProduct(products)
+//                } else {
+//                    Toast
+//                        .makeText(
+//                            context,
+//                            "${products.productDescription} is out of stock!...",
+//                            Toast.LENGTH_SHORT
+//                        )
+//                        .show()
+//                }
+//            },
+//        elevation = CardDefaults.cardElevation(2.dp)
+//    ) {
+//        Column(
+//            modifier = Modifier
+//                .fillMaxSize()
+//                .padding(2.dp), // Adjusted padding
+//            horizontalAlignment = Alignment.CenterHorizontally
+//        ) {
+//
+//            Text(
+//                modifier = Modifier.fillMaxWidth(),
+//                text = products.productDescription,
+//                style = MaterialTheme.typography.bodyMedium
+//            )
+//            Spacer(modifier = Modifier.height(8.dp))
+//            // Product Image using Coil to load image from URI or String
+//            Box(
+//                modifier = Modifier
+//                    .fillMaxWidth()
+//            ) {
+//                // Product Image
+//                val currentImageUri = imageUri.value ?: products.imageUri?.let { Uri.parse(it) }
+//                val painter = rememberImagePainter(data = currentImageUri ?: R.drawable.meat7)
+//
+//                Image(
+//                    painter = painter,
+//                    contentDescription = products.productDescription,
+//                    modifier = Modifier
+//                        .size(90.dp)
+//                        .fillMaxWidth()
+//                        .clip(CircleShape),
+//                    contentScale = ContentScale.Crop
+//                )
+//
+//                // Stock Level Overlay
+//                Text(
+//                    modifier = Modifier
+//                        .align(Alignment.TopEnd) // Align to the top end of the box
+//                        .background(Color.White, shape = RoundedCornerShape(8.dp))
+//                        .padding(2.dp),
+//                    text = "%.1f".format(products.currentStockLevel), // Reduced decimal points
+//                    style = MaterialTheme.typography.bodySmall, // Smaller text style
+//                    color = Color.Red,
+//                    fontWeight = FontWeight.Bold
+//                )
+//            }
+//            Spacer(modifier = Modifier.height(4.dp))
+//            Text(
+//                "\$${"%.2f".format(price)}",
+//                style = MaterialTheme.typography.titleSmall,
+//                fontWeight = FontWeight.Bold
+//            )
+//            Spacer(modifier = Modifier.height(4.dp))
+//
+//            Button(
+//                onClick = {
+//                    // Check stock before adding
+//                    if (products.currentStockLevel > 0) {
+//                        onAddProduct(products)
+//                    } else {
+//                        Toast.makeText(
+//                            context,
+//                            "${products.productDescription} is out of stock!...",
+//                            Toast.LENGTH_SHORT
+//                        ).show()
+//                    }
+//                },
+//                colors = ButtonDefaults.buttonColors(
+//                    if (isSelected) Color.Red else Blue1
+//                ),
+//                shape = RoundedCornerShape(8.dp)
+//            ) {
+//                Text(
+//                    text = if (isSelected) stringResource(R.string.added) else stringResource(R.string.addToCart),
+//                    color = if (isSelected) Color.White else Color.Black
+//                )
+//            }
+//
+//        }
+//    }
+//}

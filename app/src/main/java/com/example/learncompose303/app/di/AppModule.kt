@@ -179,7 +179,6 @@ object AppModule {
         return ShoeBrandRepositoryImpl(appDatabase.shoeBrandDao())
     }
 
-
     @Provides
     @Singleton
     fun provideShoeSizeRepository(appDatabase: AppDatabase): ShoeSizeRepository {
