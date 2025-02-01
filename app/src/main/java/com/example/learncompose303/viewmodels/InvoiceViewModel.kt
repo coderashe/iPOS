@@ -12,6 +12,7 @@ import com.example.learncompose303.R
 import com.example.learncompose303.data.StudentEntity
 import com.example.learncompose303.data.entities.CartItem
 import com.example.learncompose303.data.entities.CsvParser
+import com.example.learncompose303.data.entities.Currency
 import com.example.learncompose303.data.entities.Customer
 import com.example.learncompose303.data.entities.Invoice
 import com.example.learncompose303.data.entities.InvoiceItem
@@ -144,6 +145,12 @@ class InvoiceViewModel @Inject constructor(
     private val _invoiceLines = MutableStateFlow<List<InvoiceLine>>(emptyList())
     val invoiceLines: StateFlow<List<InvoiceLine>> get() = _invoiceLines
 
+    private val _currencies = MutableStateFlow<List<Currency>>(emptyList())
+    val currencies: StateFlow<List<Currency>> = _currencies
+
+    private val _selectedCurrency = MutableStateFlow<Currency?>(null)
+    val selectedCurrency: StateFlow<Currency?> = _selectedCurrency
+
     init {
         // Essential db operations to load data
         insertDefaultUser()
@@ -161,8 +168,17 @@ class InvoiceViewModel @Inject constructor(
         fetchShoeSizes()
         fetchInvoiceLines()
         fetchProducts()
+        insertInitialCurrencies()
+        fetchCurrencies()
         // Now insert initial products
 //        insertInitialProducts()
+    }
+
+    // Fetch all currencies
+    fun fetchCurrencies() = viewModelScope.launch {
+        invoiceRepository.getAllCurrencies().collectLatest { currencyList ->
+            _currencies.value = currencyList
+        }
     }
 
     private val _brandNameCache = mutableMapOf<Long, String>()
@@ -455,6 +471,25 @@ class InvoiceViewModel @Inject constructor(
             )
 
             authRepository.signUpUser(initialUser)
+        }
+    }
+
+    fun insertCurrency(currency: Currency) = viewModelScope.launch {
+        invoiceRepository.insertCurrency(currency)
+    }
+
+    // Insert initial currencies
+    private fun insertInitialCurrencies() = viewModelScope.launch {
+        val existingCurrencies = invoiceRepository.getAllCurrenciesOnce()
+
+        if (existingCurrencies.isEmpty()) {
+            val initialCurrencies = listOf(
+                Currency("USD", "United States Dollar", 1.0),
+                Currency("ZAR", "South African Rand", 18.5),
+                Currency("ZiG", "Zimbabwe Gold", 13.0),
+                Currency("Ecocash", "Ecocash Mobile Money", 1.0)
+            )
+            invoiceRepository.insertCurrencies(initialCurrencies)
         }
     }
 
@@ -1375,6 +1410,7 @@ class InvoiceViewModel @Inject constructor(
         cashierEmail: String
     ) = viewModelScope.launch {
         try {
+            val currencyCode = _selectedCurrency.value?.code ?: "USD"
             var totalAmount = 0.0
             val taxPercentage = 0.15 // Example tax percentage
             val discountPercentage = 0.0 // Example discount percentage
@@ -1417,7 +1453,8 @@ class InvoiceViewModel @Inject constructor(
                     totalAmount = totalAmount,
                     invoiceDate = System.currentTimeMillis(),
                     dueDate = null,
-                    status = "Paid"
+                    status = "Paid",
+                    currencyCode = currencyCode
                 )
 
                 val invoiceId = invoiceRepository.insertInvoice(invoice)
@@ -1482,6 +1519,9 @@ class InvoiceViewModel @Inject constructor(
         }
     }
 
+    fun selectCurrency(currency: Currency) {
+        _selectedCurrency.value = currency
+    }
 
     fun submitInvoice(
         customerId: Long,
@@ -1491,6 +1531,7 @@ class InvoiceViewModel @Inject constructor(
     ) =
         viewModelScope.launch {
             try {
+                val currencyCode = _selectedCurrency.value?.code ?: "USD"
                 var totalAmount = 0.0
                 val taxPercentage = 0.15 // Example tax percentage
                 val discountPercentage = 0.0 // Example discount percentage
@@ -1540,7 +1581,8 @@ class InvoiceViewModel @Inject constructor(
                         totalAmount = totalAmount,
                         invoiceDate = System.currentTimeMillis(),
                         dueDate = null,
-                        status = "Paid"
+                        status = "Paid",
+                        currencyCode = currencyCode
                     )
 
                     // Insert the invoice and get the invoiceId

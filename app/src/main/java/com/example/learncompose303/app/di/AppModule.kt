@@ -4,8 +4,9 @@ import android.content.Context
 import androidx.room.Room
 import com.example.learncompose303.daos.ItemDao
 import com.example.learncompose303.data.AppDatabase
-import com.example.learncompose303.data.MIGRATION_34_35
+//import com.example.learncompose303.data.MIGRATION_34_35
 import com.example.learncompose303.data.data_source.CartItemDao
+import com.example.learncompose303.data.data_source.CurrencyDao
 import com.example.learncompose303.data.data_source.CustomerDao
 import com.example.learncompose303.data.data_source.DayReportsDao
 import com.example.learncompose303.data.data_source.ExpenseDao
@@ -33,6 +34,8 @@ import com.example.learncompose303.data.repositories.BusinessRepository
 import com.example.learncompose303.data.repositories.BusinessRepositoryImpl
 import com.example.learncompose303.data.repositories.CartItemRepository
 import com.example.learncompose303.data.repositories.CartItemRepositoryImpl
+import com.example.learncompose303.data.repositories.CurrencyRepository
+import com.example.learncompose303.data.repositories.CurrencyRepositoryImpl
 import com.example.learncompose303.data.repositories.CustomerRepository
 import com.example.learncompose303.data.repositories.CustomerRepositoryImpl
 import com.example.learncompose303.data.repositories.DayReportsRepository
@@ -85,7 +88,7 @@ object AppModule {
             AppDatabase::class.java,
             AppDatabase.DATABASE_NAME
         )
-            .addMigrations(MIGRATION_34_35) // Add your migrations here
+//            .addMigrations(MIGRATION_34_35) // Add your migrations here
             .build()
     }
 
@@ -201,8 +204,20 @@ object AppModule {
     @Provides
     @Singleton
     fun provideInvoiceRepository(appDatabase: AppDatabase): InvoiceRepository {
-        return InvoiceRepositoryImpl(appDatabase.invoiceDao())
+        return InvoiceRepositoryImpl(appDatabase.invoiceDao(), appDatabase.currencyDao())
     }
+
+    //    currencies
+
+    @Provides
+    fun provideCurrencyDao(database: AppDatabase): CurrencyDao = database.currencyDao()
+
+    @Provides
+    @Singleton
+    fun provideCurrencyRepository(appDatabase: AppDatabase): CurrencyRepository {
+        return CurrencyRepositoryImpl(appDatabase.currencyDao())
+    }
+
 
     @Provides
     @Singleton

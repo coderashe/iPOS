@@ -83,11 +83,10 @@ fun CustomerSelectionScreen(
                         onClick = {
                             if (walkInCustomer != null) {
                                 onCustomerSelected(walkInCustomer)
-                                Log.d("WalkInCustomer", "$walkInCustomer")
                             }
                         },
                     ) {
-                        Text(text = "WalkInCustomer")
+                        Text(text = "Skip")
                     }
                 }
                 Spacer(modifier = Modifier.height(16.dp))

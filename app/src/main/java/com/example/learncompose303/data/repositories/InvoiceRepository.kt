@@ -2,7 +2,9 @@ package com.example.learncompose303.data.repositories
 
 import android.util.Log
 import androidx.compose.runtime.LaunchedEffect
+import com.example.learncompose303.data.data_source.CurrencyDao
 import com.example.learncompose303.data.data_source.InvoiceDao
+import com.example.learncompose303.data.entities.Currency
 import com.example.learncompose303.data.entities.Invoice
 import com.example.learncompose303.data.entities.MonthlySales
 import com.example.learncompose303.data.entities.mapInvoiceToFirestore
@@ -20,19 +22,49 @@ interface InvoiceRepository {
     suspend fun deleteInvoice(invoice: Invoice)
     suspend fun getInvoicesByDate(startDate: Long): Flow<List<Invoice>>
     suspend fun getSalesPerMonth(): Flow<List<MonthlySales>>
+    suspend fun getExchangeRate(currencyCode: String): Double
+    suspend fun getAllCurrencies(): Flow<List<Currency>>
+    suspend fun insertCurrencies(currencies: List<Currency>)
+    suspend fun insertCurrency(currency: Currency)
+    suspend fun getAllCurrenciesOnce(): List<Currency>
 
 }
 
 class InvoiceRepositoryImpl @Inject constructor(
-    private val invoiceDao: InvoiceDao
+    private val invoiceDao: InvoiceDao,
+    private val currencyDao: CurrencyDao
 ) : InvoiceRepository {
+
+    override suspend fun insertCurrency(currency: Currency) {
+        currencyDao.insertCurrency(currency)
+    }
+
+    override suspend fun getAllCurrenciesOnce(): List<Currency> {
+        return withContext(Dispatchers.IO) {
+            currencyDao.getAllCurrenciesOnce()
+        }
+    }
+
+    override suspend fun insertCurrencies(currencies: List<Currency>) {
+        currencyDao.insertCurrencies(currencies)
+    }
+
+    override suspend fun getAllCurrencies(): Flow<List<Currency>> {
+        return withContext(Dispatchers.IO) {
+            currencyDao.getAllCurrencies()
+        }
+    }
+
+    override suspend fun getExchangeRate(currencyCode: String): Double {
+        return currencyDao.getExchangeRate(currencyCode) ?: 1.0 // Default to USD (1.0)
+    }
 
     override suspend fun insertInvoice(invoice: Invoice): Long {
         return withContext(Dispatchers.IO) {
             invoiceDao.insertInvoice(invoice)
         }
     }
-    
+
     override suspend fun getSalesPerMonth(): Flow<List<MonthlySales>> {
         return withContext(Dispatchers.IO) {
             invoiceDao.getSalesPerMonth()

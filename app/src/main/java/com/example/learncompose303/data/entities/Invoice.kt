@@ -12,7 +12,7 @@ data class Invoice(
     val invoiceDate: Long,
     val dueDate: Long?,
     val status: String,
-    val currencyCode: String = "USD",
+    val currencyCode: String,
     val lastUpdated: Long? = null,
     val isArchived: Boolean = false
 )

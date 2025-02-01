@@ -122,6 +122,7 @@ import com.example.learncompose303.viewmodels.InvoiceViewModel
 import kotlinx.coroutines.launch
 import android.content.Intent
 import android.net.Uri
+import com.example.learncompose303.screens.AddCurrencyScreen
 
 
 @Composable
@@ -260,6 +261,13 @@ fun InDriveTopBottomNavigation() {
                 modifier = Modifier.padding(paddingValues)
             ) {
 
+                composable(Destinations.Currency.route) {
+                    AddCurrencyScreen(
+                        viewModel = viewModel,
+                        onBack = { navController.popBackStack() } // Navigate back when triggered
+                    )
+                }
+
                 // Navigation Composable for BusinessPerformanceScreen
                 composable(Destinations.BusinessPerformance.route) {
                     // Observe user role here again to ensure correct handling
@@ -337,6 +345,7 @@ fun InDriveTopBottomNavigation() {
                 composable(Destinations.Faqs.route) {
                     FAQScreen()
                 }
+
                 composable(Destinations.ExpenseReport.route) {
                     ExpenseReportScreen(
                         viewModel = expenseViewModel,
@@ -397,13 +406,13 @@ fun InDriveTopBottomNavigation() {
 
                     if (customer != null) {
                         // Handle back button press
-                        BackHandler {
-                            navController.navigate(Destinations.Rides.route) {
-                                popUpTo(Destinations.Cart.route) {
-                                    inclusive = true
-                                } // Remove CartScreen from the back stack
-                            }
-                        }
+//                        BackHandler {
+//                            navController.navigate(Destinations.Rides.route) {
+//                                popUpTo(Destinations.Cart.route) {
+//                                    inclusive = true
+//                                } // Remove CartScreen from the back stack
+//                            }
+//                        }
 
                         CartScreen(
                             customer = customer,

@@ -7,6 +7,7 @@ import android.graphics.pdf.PdfDocument
 import android.os.Environment
 import android.util.Log
 import android.widget.Toast
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -23,6 +24,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -97,6 +100,23 @@ fun CartScreen(
 
     // Get the cashierEmail from AuthViewModel
     val cashierEmail = authViewModel.userEmail.value ?: "unknown"
+    val currencies by viewModel.currencies.collectAsState()
+    val selectedCurrency by viewModel.selectedCurrency.collectAsState()
+
+    var expanded by remember { mutableStateOf(false) }
+
+    // State for total price in base currency (USD)
+    val baseTotalPrice by remember {
+        derivedStateOf {
+            productWithPriceDetails.sumOf { (product, price) ->
+                val quantity = productQuantities[product.productId] ?: 1
+                price * quantity
+            }
+        }
+    }
+    // Convert total price based on selected currency
+    val exchangeRate = selectedCurrency?.rateToBase ?: 1.0
+    val convertedTotalPrice = baseTotalPrice * exchangeRate
 
     // Load price details for selected products when the screen is entered
     LaunchedEffect(selectedProducts) {
@@ -114,17 +134,45 @@ fun CartScreen(
             color = MaterialTheme.colorScheme.primary
         )
         Spacer(modifier = Modifier.height(8.dp))
+        // Currency Dropdown
+        Box {
+            Text("Select Currency")
+            Button(onClick = { expanded = true }) {
+                Text(selectedCurrency?.name ?: "Select Currency")
+            }
+            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                currencies.forEach { currency ->
+                    DropdownMenuItem(
+                        text = { Text(currency.name) },
+                        onClick = {
+                            viewModel.selectCurrency(currency)
+                            expanded = false
+                        }
+                    )
+                }
+            }
+        }
 
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            "Total Amount: ${selectedCurrency?.code ?: "USD"} $convertedTotalPrice",
+            style = MaterialTheme.typography.headlineSmall
+        )
+        Spacer(modifier = Modifier.height(8.dp))
         Row(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "Total Price: \$${totalPrice}",
+                    text = "Total Price: ${selectedCurrency?.code ?: "$"}${
+                        "%.2f".format(
+                            convertedTotalPrice
+                        )
+                    }",
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.primary
                 )
 
                 Text(
-                    text = "Change: \$${"%.2f".format(changeBalance)}",
+                    text = "Change: ${selectedCurrency?.code ?: "$"}${"%.2f".format(changeBalance * exchangeRate)}",
                     style = MaterialTheme.typography.bodySmall,
                     fontSize = 16.sp
                 )
@@ -134,11 +182,37 @@ fun CartScreen(
                 OutlinedTextField(
                     value = amountTendered,
                     onValueChange = { newValue -> amountTendered = newValue },
-                    label = { Text("Amount Tendered") },
+                    label = { Text("Amount Tendered (${selectedCurrency?.code ?: "$"})") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
                 )
             }
         }
+
+
+//        Row(modifier = Modifier.fillMaxWidth()) {
+//            Column(modifier = Modifier.weight(1f)) {
+//                Text(
+//                    text = "Total Price: \$${totalPrice}",
+//                    style = MaterialTheme.typography.titleSmall,
+//                    color = MaterialTheme.colorScheme.primary
+//                )
+//
+//                Text(
+//                    text = "Change: \$${"%.2f".format(changeBalance)}",
+//                    style = MaterialTheme.typography.bodySmall,
+//                    fontSize = 16.sp
+//                )
+//            }
+//            Spacer(modifier = Modifier.width(8.dp))
+//            Column {
+//                OutlinedTextField(
+//                    value = amountTendered,
+//                    onValueChange = { newValue -> amountTendered = newValue },
+//                    label = { Text("Amount Tendered") },
+//                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
+//                )
+//            }
+//        }
         Divider(
             modifier = Modifier.padding(vertical = 8.dp),
             color = MaterialTheme.colorScheme.primary
@@ -149,7 +223,8 @@ fun CartScreen(
             onClick = {
                 val tenderedAmount = amountTendered.toDoubleOrNull()
 
-                if (amountTendered.isNotEmpty() && tenderedAmount != null && tenderedAmount > 0) {
+//                if (amountTendered.isNotEmpty() && tenderedAmount != null && tenderedAmount > 0) {
+                if (tenderedAmount != null && tenderedAmount >= convertedTotalPrice) {
 
                     if (tenderedAmount >= totalPrice) {
                         // Use the actual quantities from productQuantities map
@@ -270,91 +345,6 @@ fun CartScreen(
         ) {
             Text("Submit Invoice")
         }
-
-
-//        Button(
-//            onClick = {
-//                val tenderedAmount = amountTendered.toDoubleOrNull()
-//
-//                if (amountTendered.isNotEmpty() && tenderedAmount != null && tenderedAmount > 0) {
-//
-//                    if (tenderedAmount >= totalPrice) {
-//                        // Ensure that we are using the actual quantities from the selectedProducts list
-//                        val productQuantities: Map<Long, Int> =
-//                            selectedProducts.associate { product ->
-//                                product.productId to product.selectedQuantity // Replace with the actual quantity property
-//                            }
-//
-//                        // Submit the invoice with individual product quantities
-//                        viewModel.submitInvoice(
-//                            customer.customerId,
-//                            tenderedAmount,
-//                            productQuantities,
-//                            cashierEmail
-//                        )
-//
-//                        // Code for sharing the invoice message...
-//                        val message = "*INVOICE RECEIPT:*\n\n" +
-//                                "*CUSTOMER DETAILS*\n" +
-//                                "${customer.name}: ${customer.phone}\n\n" +
-//                                "*PRODUCTS PURCHASED:*\n" +
-//                                "$productDetails\n\n" +
-//                                "*SALES TOTALS*\n" +
-//                                "Total Amount: *$$totalPrice*\n" +
-//                                "Amount Tendered: *$$amountTendered*\n" +
-//                                "Change: *$${amountTendered.toDouble() - totalPrice}*\n\n" +
-//                                "THANK YOU!!!... powered by istartk \u00A92024"
-//
-//                        val sendIntent = Intent(Intent.ACTION_SEND).apply {
-//                            type = "text/plain"
-//                            putExtra(Intent.EXTRA_TEXT, message)
-//                        }
-//
-//                        try {
-//                            val chooserIntent = Intent.createChooser(
-//                                sendIntent,
-//                                "Send via WhatsApp or WhatsApp Business"
-//                            )
-//                            chooserIntent.resolveActivity(context.packageManager)?.let {
-//                                context.startActivity(chooserIntent)
-//                            } ?: run {
-//                                Toast.makeText(
-//                                    context,
-//                                    "No messaging app found",
-//                                    Toast.LENGTH_SHORT
-//                                )
-//                                    .show()
-//                            }
-//                        } catch (e: Exception) {
-//                            Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT)
-//                                .show()
-//                        }
-//
-////                        navController.navigate(Destinations.Rides.route)
-//                        navController.navigate(Destinations.Rides.route) {
-//                            popUpTo(Destinations.Rides.route) {
-//                                inclusive = true
-//                            }
-//                        }
-//
-//                        Toast.makeText(context, "Invoice paid successfully", Toast.LENGTH_SHORT)
-//                            .show()
-//                    } else {
-//                        Toast.makeText(
-//                            context,
-//                            "Amount tendered must be greater than or equal to total price",
-//                            Toast.LENGTH_SHORT
-//                        ).show()
-//                    }
-//                } else {
-//                    Toast.makeText(context, "Please enter valid details", Toast.LENGTH_SHORT)
-//                        .show()
-//                }
-//            },
-//            modifier = Modifier.fillMaxWidth(),
-//        ) {
-//            Text("Submit Invoice")
-//        }
 
         Spacer(modifier = Modifier.height(16.dp))
 

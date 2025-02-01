@@ -7,6 +7,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.learncompose303.daos.ItemDao
 import com.example.learncompose303.data.data_source.CartItemDao
 import com.example.learncompose303.data.data_source.CashFlowDao
+import com.example.learncompose303.data.data_source.CurrencyDao
 import com.example.learncompose303.data.data_source.CustomerDao
 import com.example.learncompose303.data.data_source.DayReportsDao
 import com.example.learncompose303.data.data_source.DiscountsReceivedDao
@@ -28,6 +29,7 @@ import com.example.learncompose303.data.data_source.UserDao
 import com.example.learncompose303.data.domain.model.Note
 import com.example.learncompose303.data.entities.CartItem
 import com.example.learncompose303.data.entities.CashFlow
+import com.example.learncompose303.data.entities.Currency
 import com.example.learncompose303.data.entities.Customer
 import com.example.learncompose303.data.entities.DayReports
 import com.example.learncompose303.data.entities.DiscountsReceived
@@ -53,10 +55,10 @@ import com.example.learncompose303.data.entities.User
         Payment::class, Products::class, CartItem::class,
         Order::class, PriceList::class, ProductDayReport::class, DayReports::class,
         User::class, Expense::class,
-        TradeReceivables::class, DiscountsReceived::class,
+        TradeReceivables::class, DiscountsReceived::class, Currency::class,
         CashFlow::class, ShoeBrand::class, ShoeSize::class // New entities
     ],
-    version = 35,
+    version = 1,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -85,56 +87,57 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun tradeReceivablesDao(): TradeReceivablesDao
     abstract fun discountsReceivedDao(): DiscountsReceivedDao
     abstract fun cashFlowDao(): CashFlowDao
+    abstract fun currencyDao(): CurrencyDao
 
     companion object {
         const val DATABASE_NAME = "ipos_db"
     }
 }
 
-val MIGRATION_34_35 = object : Migration(34, 35) {
-    override fun migrate(db: SupportSQLiteDatabase) {
-        // Create the TradeReceivables table
-        db.execSQL(
-            """
-            CREATE TABLE IF NOT EXISTS `tradereceivables` (
-                `receivableId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-                `orderId` INTEGER NOT NULL,
-                `totalAmount` REAL NOT NULL,
-                `amountPaid` REAL NOT NULL,
-                `creditPeriod` INTEGER NOT NULL,
-                `dueDate` INTEGER NOT NULL,
-                `paymentStatus` TEXT NOT NULL,
-                `dateCreated` INTEGER NOT NULL
-            )
-            """.trimIndent()
-        )
-
-        // Create the DiscountsReceived table
-        db.execSQL(
-            """
-            CREATE TABLE IF NOT EXISTS `discountsreceived` (
-                `discountId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-                `orderId` INTEGER NOT NULL,
-                `discountAmount` REAL NOT NULL,
-                `dateReceived` INTEGER NOT NULL
-            )
-            """.trimIndent()
-        )
-
-        // Create the CashFlow table
-        db.execSQL(
-            """
-            CREATE TABLE IF NOT EXISTS `cashflow` (
-                `cashFlowId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-                `orderId` INTEGER NOT NULL,
-                `amount` REAL NOT NULL,
-                `cashOutflow` INTEGER NOT NULL,
-                `transactionDate` INTEGER NOT NULL,
-                `description` TEXT
-            )
-            """.trimIndent()
-        )
-    }
-}
+//val MIGRATION_34_35 = object : Migration(34, 35) {
+//    override fun migrate(db: SupportSQLiteDatabase) {
+//        // Create the TradeReceivables table
+//        db.execSQL(
+//            """
+//            CREATE TABLE IF NOT EXISTS `tradereceivables` (
+//                `receivableId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+//                `orderId` INTEGER NOT NULL,
+//                `totalAmount` REAL NOT NULL,
+//                `amountPaid` REAL NOT NULL,
+//                `creditPeriod` INTEGER NOT NULL,
+//                `dueDate` INTEGER NOT NULL,
+//                `paymentStatus` TEXT NOT NULL,
+//                `dateCreated` INTEGER NOT NULL
+//            )
+//            """.trimIndent()
+//        )
+//
+//        // Create the DiscountsReceived table
+//        db.execSQL(
+//            """
+//            CREATE TABLE IF NOT EXISTS `discountsreceived` (
+//                `discountId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+//                `orderId` INTEGER NOT NULL,
+//                `discountAmount` REAL NOT NULL,
+//                `dateReceived` INTEGER NOT NULL
+//            )
+//            """.trimIndent()
+//        )
+//
+//        // Create the CashFlow table
+//        db.execSQL(
+//            """
+//            CREATE TABLE IF NOT EXISTS `cashflow` (
+//                `cashFlowId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+//                `orderId` INTEGER NOT NULL,
+//                `amount` REAL NOT NULL,
+//                `cashOutflow` INTEGER NOT NULL,
+//                `transactionDate` INTEGER NOT NULL,
+//                `description` TEXT
+//            )
+//            """.trimIndent()
+//        )
+//    }
+//}
 
 

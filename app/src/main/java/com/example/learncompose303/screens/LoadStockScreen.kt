@@ -222,6 +222,7 @@ fun LoadStockScreen(
                         productCode = "ISTART32",
                         inclusiveTaxed = true,
                         shoeSizeId = selectedShoeSize!!.shoeSizeId,
+//                        allow not selecting brand and reset to defaultBrand = 0
                         brandID = selectedShoeBrand!!.brandID,
                         productQty = currentStockLevelValue
                     )
@@ -250,6 +251,7 @@ fun LoadStockScreen(
                         selectedShoeBrand = null
                         navController.navigate(Destinations.Rides.route)
                     }
+//                    upon adding newProduct, save a record to db
                 } else {
                     Log.d(
                         "LoadStockScreen",

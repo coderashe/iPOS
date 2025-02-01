@@ -161,6 +161,7 @@ fun ProductSelectionScreen(
             LazyColumn {
                 items(groupedProducts.entries.toList()) { (brandId, brandProducts) ->
                     var fetchedBrandName by remember { mutableStateOf("Loading...") } // Default value
+                    val isSelected = selectedProducts.contains(brandProducts.firstOrNull())
 
                     // Fetch brand name asynchronously
                     LaunchedEffect(brandId) {
@@ -168,6 +169,7 @@ fun ProductSelectionScreen(
                     }
 
                     ProductCard(
+                        isSelected = isSelected,
                         brandName = fetchedBrandName, // Use fetched brand name
                         products = brandProducts,
                         selectedProduct = brandProducts.firstOrNull(),
@@ -273,145 +275,9 @@ fun ProductSelectionScreen(
     }
 }
 
-//@Composable
-//fun ProductCard(
-//    brandName: String,
-//    products: List<Products>,
-//    selectedProduct: Products?,
-//    onProductSelected: (Products) -> Unit,
-//    price: Double,
-//    fetchStockLevel: suspend (Long) -> Int
-//) {
-//    val context = LocalContext.current
-//    var expanded by remember { mutableStateOf(false) }
-//    var stockLevel by remember { mutableStateOf(0) }
-//
-//    LaunchedEffect(selectedProduct?.brandID) {
-//        selectedProduct?.let {
-//            stockLevel = fetchStockLevel(it.brandID)
-//        }
-//    }
-//
-//    Card(
-//        shape = RoundedCornerShape(16.dp),
-//        modifier = Modifier
-//            .fillMaxWidth()
-//            .padding(12.dp)
-//            .clip(RoundedCornerShape(16.dp))
-//            .background(Color.White)
-//            .shadow(6.dp, RoundedCornerShape(16.dp)),
-//        elevation = CardDefaults.cardElevation(4.dp)
-//    ) {
-//        Column(
-//            modifier = Modifier
-//                .fillMaxWidth()
-//                .padding(16.dp),
-//            horizontalAlignment = Alignment.CenterHorizontally
-//        ) {
-//            // 🏷 Brand Name
-//            Text(
-//                text = brandName.uppercase(),
-//                style = MaterialTheme.typography.titleLarge,
-//                fontWeight = FontWeight.Bold,
-//                color = MaterialTheme.colorScheme.primary
-//            )
-//
-//            Spacer(modifier = Modifier.height(12.dp))
-//
-//            // 🔽 Product Dropdown
-//            Box(
-//                modifier = Modifier
-//                    .fillMaxWidth()
-//                    .border(1.dp, Color.Gray, RoundedCornerShape(12.dp))
-//                    .clip(RoundedCornerShape(12.dp))
-//                    .background(MaterialTheme.colorScheme.surface)
-//            ) {
-//                TextButton(
-//                    onClick = { expanded = true },
-//                    modifier = Modifier.fillMaxWidth()
-//                ) {
-//                    Text(
-//                        text = selectedProduct?.let { "${it.productDescription} | Size: ${it.shoeSizeId}" }
-//                            ?: "Select a product",
-//                        color = MaterialTheme.colorScheme.onSurface
-//                    )
-//                }
-//
-//                DropdownMenu(
-//                    expanded = expanded,
-//                    onDismissRequest = { expanded = false },
-//                    modifier = Modifier.fillMaxWidth()
-//                ) {
-//                    products.forEach { product ->
-//                        DropdownMenuItem(
-//                            text = { Text("${product.productDescription} | Size: ${product.shoeSizeId}") },
-//                            onClick = {
-//                                expanded = false
-//                                onProductSelected(product)
-//                            }
-//                        )
-//                    }
-//                }
-//            }
-//
-//            Spacer(modifier = Modifier.height(12.dp))
-//
-//            // 📦 Stock Level Indicator
-//            Box(
-//                modifier = Modifier
-//                    .clip(RoundedCornerShape(12.dp))
-//                    .background(if (stockLevel > 0) Color(0xFF4CAF50) else Color(0xFFD32F2F))
-//                    .padding(horizontal = 12.dp, vertical = 4.dp)
-//            ) {
-//                Text(
-//                    text = if (stockLevel > 0) "In Stock ($stockLevel)" else "Out of Stock",
-//                    color = Color.White,
-//                    fontWeight = FontWeight.Bold
-//                )
-//            }
-//
-//            Spacer(modifier = Modifier.height(12.dp))
-//
-//            // 💰 Price Display
-//            Text(
-//                text = "$${"%.2f".format(price)}",
-//                style = MaterialTheme.typography.headlineMedium,
-//                fontWeight = FontWeight.Bold,
-//                color = MaterialTheme.colorScheme.secondary
-//            )
-//
-//            Spacer(modifier = Modifier.height(12.dp))
-//
-//            // 🛒 Add to Cart Button
-//            ElevatedButton(
-//                onClick = {
-//                    if (selectedProduct != null && stockLevel > 0) {
-//                        onProductSelected(selectedProduct)
-//                    } else {
-//                        Toast.makeText(
-//                            context,
-//                            "Please select a product or check stock availability!",
-//                            Toast.LENGTH_SHORT
-//                        ).show()
-//                    }
-//                },
-//                colors = ButtonDefaults.buttonColors(if (stockLevel > 0) Color(0xFF008CFF) else Color.Gray),
-//                shape = RoundedCornerShape(12.dp),
-//                modifier = Modifier.fillMaxWidth()
-//            ) {
-//                Icon(Icons.Filled.ShoppingCart, contentDescription = "Cart", tint = Color.White)
-//                Spacer(modifier = Modifier.width(8.dp))
-//                Text(
-//                    text = if (selectedProduct != null) "Add to Cart" else "Select Product",
-//                    color = Color.White
-//                )
-//            }
-//        }
-//    }
-//}
-
 @Composable
 fun ProductCard(
+    isSelected: Boolean,
     brandName: String,
     products: List<Products>,
     selectedProduct: Products?,
@@ -445,19 +311,31 @@ fun ProductCard(
                 .padding(16.dp)
         ) {
 
-            //
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(12.dp))
-                    .align(Alignment.End)
-                    .background(if (stockLevel > 0) Color(0xFF4CAF50) else Color(0xFFD32F2F))
-                    .padding(horizontal = 12.dp, vertical = 4.dp)
-            ) {
+            Row {
+                // 🏷 Brand Name and Stock Level
                 Text(
-                    text = if (stockLevel > 0) "In Stock ($stockLevel)" else "Out of Stock",
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold
+                    text = brandName.uppercase(),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier
+                        .weight(1f)
                 )
+
+                //
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(12.dp))
+//                    .align(Alignment.End)
+                        .background(if (stockLevel > 0) Color(0xFF4CAF50) else Color(0xFFD32F2F))
+                        .padding(horizontal = 12.dp, vertical = 4.dp)
+                ) {
+                    Text(
+                        text = if (stockLevel > 0) "In Stock ($stockLevel)" else "Out of Stock",
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
 
             // 🔽 Product Dropdown
@@ -515,54 +393,54 @@ fun ProductCard(
                 }
                 Column {
                     Row {
-                        // 🏷 Brand Name and Stock Level
-                        Text(
-                            text = brandName.uppercase(),
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier
-                                .weight(1f)
-                        )
-
                         // 💰 Price Display
                         Text(
                             text = "$${"%.2f".format(price)}",
-                            style = MaterialTheme.typography.headlineMedium,
+                            style = MaterialTheme.typography.headlineLarge,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.secondary,
                             modifier = Modifier
                                 .weight(1f)
                         )
+                        //            // 🛒 Add to Cart Button
+                        ElevatedButton(
+                            onClick = {
+                                if (selectedProduct != null && stockLevel > 0) {
+                                    onProductSelected(selectedProduct)
+                                } else {
+                                    Toast.makeText(
+                                        context,
+                                        "Please check stock availability!",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                if (isSelected) {
+                                    Color.Red
+                                } else {
+                                    Blue1
+                                }
+                            ),
+//                        colors = ButtonDefaults.buttonColors(if (stockLevel > 0) Color(0xFF008CFF) else Color.Gray),
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight()
+                        ) {
+                            Icon(
+                                Icons.Filled.ShoppingCart,
+                                contentDescription = "Cart",
+                                tint = Color.White
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = if (selectedProduct != null) "Add to Cart" else "Select Product",
+                                color = if (isSelected) Color.White else Color.Black
+                            )
+                        }
                     }
-                    //            // 🛒 Add to Cart Button
-                    ElevatedButton(
-                        onClick = {
-                            if (selectedProduct != null && stockLevel > 0) {
-                                onProductSelected(selectedProduct)
-                            } else {
-                                Toast.makeText(
-                                    context,
-                                    "Please select a product or check stock availability!",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
-                        },
-                        colors = ButtonDefaults.buttonColors(if (stockLevel > 0) Color(0xFF008CFF) else Color.Gray),
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Icon(
-                            Icons.Filled.ShoppingCart,
-                            contentDescription = "Cart",
-                            tint = Color.White
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = if (selectedProduct != null) "Add to Cart" else "Select Product",
-                            color = Color.White
-                        )
-                    }
+
                 }
             }
 
