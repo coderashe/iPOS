@@ -188,7 +188,6 @@ fun CartScreen(
             }
         }
 
-
 //        Row(modifier = Modifier.fillMaxWidth()) {
 //            Column(modifier = Modifier.weight(1f)) {
 //                Text(
@@ -213,6 +212,7 @@ fun CartScreen(
 //                )
 //            }
 //        }
+
         Divider(
             modifier = Modifier.padding(vertical = 8.dp),
             color = MaterialTheme.colorScheme.primary

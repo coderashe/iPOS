@@ -23,12 +23,15 @@ import dagger.hilt.android.AndroidEntryPoint
 import android.Manifest
 import android.os.Handler
 import android.os.Looper
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
 import com.example.learncompose303.app.SwipeRefreshLayout
+import com.example.learncompose303.app.utils.BluetoothPrinterScanner
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 
@@ -37,9 +40,32 @@ class MainActivity : ComponentActivity() {
 
     private val NOTIFICATION_PERMISSION_REQUEST_CODE = 1001
 
+    // Register the permission request launcher
+    private val requestBluetoothPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+            if (isGranted) {
+                // Your printing code/method HERE
+            } else {
+                // Handle the permission denied case
+            }
+        }
+
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Check if the permission is already granted
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(
+                    Manifest.permission.BLUETOOTH_SCAN,
+                    Manifest.permission.BLUETOOTH_CONNECT
+                ),
+                1
+            )
+        }
+
 
         // Request notification permission for Android 13 and above
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -53,6 +79,14 @@ class MainActivity : ComponentActivity() {
                 )
             }
         }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val permissions = arrayOf(
+                Manifest.permission.BLUETOOTH_SCAN,
+                Manifest.permission.BLUETOOTH_CONNECT
+            )
+            requestPermissions(permissions, 100)
+        }
+
 
         setContent {
             LearnCompose303Theme {
@@ -64,6 +98,7 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
 
     // Handle the result of the permission request
     override fun onRequestPermissionsResult(

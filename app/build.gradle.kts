@@ -128,4 +128,7 @@ dependencies {
 
     // Add desugaring library
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.2")
+
+    implementation("com.github.DantSu:ESCPOS-ThermalPrinter-Android:3.2.0")
+
 }

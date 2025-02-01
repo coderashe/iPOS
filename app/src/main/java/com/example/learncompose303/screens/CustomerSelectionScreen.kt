@@ -1,6 +1,8 @@
 package com.example.learncompose303.screens
 
+import android.Manifest
 import android.annotation.SuppressLint
+import android.content.pm.PackageManager
 import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -28,17 +30,29 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+
 import com.example.learncompose303.data.Destinations
 import com.example.learncompose303.viewmodels.InvoiceViewModel
 import com.example.learncompose303.data.entities.Customer
+
+import com.dantsu.escposprinter.EscPosPrinter
+import com.dantsu.escposprinter.connection.bluetooth.BluetoothConnection
+import com.dantsu.escposprinter.textparser.PrinterTextParserImg
+import com.dantsu.escposprinter.connection.DeviceConnection
+import com.dantsu.escposprinter.EscPosPrinterCommands
+import com.example.learncompose303.app.utils.BluetoothPrinterScanner
+
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
@@ -56,6 +70,14 @@ fun CustomerSelectionScreen(
 
     val walkInCustomer = viewModel.getWalkinCustomer()
     Log.d("WalkInCustomer", "$walkInCustomer")
+
+    val context = LocalContext.current
+
+    val scanner = BluetoothPrinterScanner(context)
+
+
+// Stop scanning manually if needed
+//    scanner.stopScanning()
 
     Scaffold(
 //        floatingActionButton = {
@@ -81,9 +103,12 @@ fun CustomerSelectionScreen(
 
                     Button(
                         onClick = {
-                            if (walkInCustomer != null) {
-                                onCustomerSelected(walkInCustomer)
-                            }
+                            // Start scanning
+                            BluetoothPrinterScanner(context).connectToHardcodedPrinter()
+
+//                            if (walkInCustomer != null) {
+//                                onCustomerSelected(walkInCustomer)
+//                            }
                         },
                     ) {
                         Text(text = "Skip")

@@ -8,6 +8,22 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+    <!-- Bluetooth permissions for discovering and connecting -->
+    <uses-permission android:name="android.permission.BLUETOOTH" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+
+    <!-- Required for Android 12+ -->
+    <uses-permission
+        android:name="android.permission.BLUETOOTH_SCAN"
+        android:usesPermissionFlags="neverForLocation"
+        tools:targetApi="s" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+
+    <!-- Required for finding Bluetooth devices -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
+
     <application
         android:name=".MyApplication"
         android:allowBackup="true"
@@ -36,10 +52,10 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
 
-                <data android:scheme="https"/>
-                <data android:host="fblikeapp.com"/>
-                <data android:scheme="https"/>
-                <data android:host="www.fblikeapp.com"/>
+                <data android:scheme="https" />
+                <data android:host="fblikeapp.com" />
+                <data android:scheme="https" />
+                <data android:host="www.fblikeapp.com" />
             </intent-filter>
         </activity>
 
