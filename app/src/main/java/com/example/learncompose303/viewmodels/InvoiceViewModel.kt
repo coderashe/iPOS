@@ -1108,59 +1108,6 @@ class InvoiceViewModel @Inject constructor(
         }
     }
 
-
-//    suspend fun deductQuantityAndUpdateStock(productId: Long, quantitySold: Int) {
-//        try {
-//            // Fetch the product from the repository
-//            val product = productRepository.getProductById(productId)
-//
-//            // Check if the product exists
-//            if (product == null) {
-//                Log.e("StockUpdateError", "Product not found with productId: $productId")
-//                return
-//            }
-//
-//            // Check if the product is saleable
-//            if (!product.saleable) {
-//                Log.e(
-//                    "StockUpdateError",
-//                    "Product with productId: $productId is not saleable"
-//                )
-//                return
-//            }
-//
-//            // Check if there is enough stock to sell the desired quantity
-//            if (product.currentStockLevel < quantitySold) {
-//                Log.e(
-//                    "StockUpdateError",
-//                    "Insufficient stock for product: ${product.productDescription}. " +
-//                            "Available: , Required: $quantitySold"
-//                )
-//                return
-//            }
-//
-//            // Deduct the quantity sold from the current stock level
-//            val newStockLevel = product.currentStockLevel - quantitySold
-//
-//            // Create a new product object with the updated stock level
-//            val updatedProduct = product.copy(newStockLevel)
-//
-//            // Update the product in the database
-//            productRepository.updateProduct(updatedProduct)
-//
-//            Log.d(
-//                "StockUpdate",
-//                "Stock updated for product: ${product.productDescription}, New stock: $newStockLevel"
-//            )
-//
-//        } catch (e: Exception) {
-//            Log.e(
-//                "StockUpdateError",
-//                "Error while updating stock for productId: $productId: ${e.message}"
-//            )
-//        }
-//    }
-
     suspend fun deductQuantityAndUpdateStock(productId: Long, quantitySold: Int) {
         try {
             // Fetch the product from the repository
@@ -1174,10 +1121,7 @@ class InvoiceViewModel @Inject constructor(
 
             // Check if the product is saleable
             if (!product.saleable) {
-                Log.e(
-                    "StockUpdateError",
-                    "Product with productId: $productId is not saleable"
-                )
+                Log.e("StockUpdateError", "Product with productId: $productId is not saleable")
                 return
             }
 
@@ -1193,10 +1137,10 @@ class InvoiceViewModel @Inject constructor(
                 return
             }
 
-            // Calculate the actual stock level by summing the quantity of all ShoeSizes for the brand
+            // Check total stock level
             val totalStockLevel = shoeSizeRepository.getTotalQuantityByBrand(shoeBrand.brandID)
+            Log.d("Invoice Shoes", "TotalStockLevel is $totalStockLevel")
 
-            // Check if there is enough stock to sell the desired quantity
             if (totalStockLevel < quantitySold) {
                 Log.e(
                     "StockUpdateError",
@@ -1206,65 +1150,39 @@ class InvoiceViewModel @Inject constructor(
                 return
             }
 
-            // Deduct the quantity sold from the total stock level
-            val newStockLevel = totalStockLevel - quantitySold
+            // Deduct stock from Product
+            val newProductStock = product.productQty - quantitySold
+            if (newProductStock < 0) {
+                Log.e("StockUpdateError", "Product stock would be negative. Aborting update.")
+                return
+            }
+            productRepository.updateProductQuantity(productId, newProductStock)
 
-            // Create a new product object with the updated stock level
-            val updatedProduct = product.copy(newStockLevel.toLong())
-
-            // Update the product in the database
-            productRepository.updateProduct(updatedProduct)
+            // Deduct stock from ShoeSize
+            val newShoeSizeStock = shoeSize.quantity - quantitySold
+            if (newShoeSizeStock < 0) {
+                Log.e("StockUpdateError", "Shoe size stock would be negative. Aborting update.")
+                return
+            }
+            shoeSizeRepository.updateShoeSizeQuantity(shoeSize.shoeSizeId, newShoeSizeStock)
 
             Log.d(
-                "StockUpdate",
-                "Stock updated for product: ${product.productDescription}, New stock: $newStockLevel"
+                "Invoice StockUpdate",
+                "Stock updated for product: ${product.productDescription}, New stock: $newProductStock"
+            )
+            Log.d(
+                "Invoice ShoeUpdate",
+                "ShoeSize updated for sizeID: ${shoeSize.shoeSizeId}, New stock: $newShoeSizeStock"
             )
 
         } catch (e: Exception) {
             Log.e(
-                "StockUpdateError",
+                "Invoice Error",
                 "Error while updating stock for productId: $productId: ${e.message}"
             )
         }
     }
 
-
-//    fun startDay() = viewModelScope.launch {
-//        // If the day has already started, return early and avoid re-running the logic
-//        if (_dayStarted.value) return@launch
-//
-//        productRepository.getAllProducts().collect { products ->
-//            products.forEach { product ->
-//                // Set the opening stock at the start of the day
-//                val productDayReport = ProductDayReport(
-//                    productId = product.productId,
-//                    productName = product.productDescription,
-//                    openingStock = product.currentStockLevel, // Opening stock set at day start
-//                    closingStock = 0.0,
-//                    quantitySold = 0, // No sales at the start of the day
-//                    totalSales = 0.0,
-//                    totalCost = 0.0,
-//                    totalProfit = 0.0,
-//                    reportDate = System.currentTimeMillis()
-//                )
-//                productDayReportRepository.insertProductDayReport(productDayReport)
-//            }
-//
-//            // Create a day report with initial values
-//            val dayReport = DayReports(
-//                totalInvoices = 0,
-//                totalOrders = 0,
-//                totalProductsSold = 0,
-//                totalInvoiceSales = 0.0,
-//                reportDate = System.currentTimeMillis(),
-//                startTime = System.currentTimeMillis(),
-//                endTime = 0L // This will be updated at the end of the day
-//            )
-//            dayReportRepository.insertDayReport(dayReport)
-//
-//            _dayStarted.value = true // Mark the day as started
-//        }
-//    }
 
     fun getTodayStartInMillis(): Long {
         val calendar = Calendar.getInstance().apply {
@@ -1275,84 +1193,6 @@ class InvoiceViewModel @Inject constructor(
         }
         return calendar.timeInMillis
     }
-
-//    fun endDay() = viewModelScope.launch {
-//        // Fetch all invoices and orders from today
-//        val todayStart = getTodayStartInMillis()
-//
-//        // Collect today's invoices
-//        invoiceRepository.getInvoicesByDate(todayStart).collect { todayInvoices ->
-//            // Collect today's orders
-//            orderRepository.getOrderByDate(todayStart).collect { todayOrders ->
-//
-//                // Total products sold and total sales
-//                var totalProductsSold = 0
-//                var totalSales = 0.0
-//
-//                // Iterate through each invoice
-//                todayInvoices.forEach { invoice ->
-//                    totalSales += invoice.totalAmount
-//
-//                    // Collect invoice items for this invoice
-//                    invoiceItemRepository.getInvoiceItemsByInvoiceId(invoice.invoiceId)
-//                        .collect { invoiceItems ->
-//                            invoiceItems.forEach { item ->
-//                                totalProductsSold += item.quantity
-//
-//                                // Fetch the product details
-//                                val product =
-//                                    productRepository.getProductById(item.productId)
-//
-//                                // Fetch the product day report to update it
-//                                val productReport = product?.let {
-//                                    productDayReportRepository.getProductDayReportById(
-//                                        it.productId
-//                                    )
-//                                }
-//
-//                                if (productReport != null) {
-//                                    // Calculate profit
-//                                    val productProfit =
-//                                        (item.price - (product.standardCost
-//                                            ?: 0.0)) * item.quantity
-//
-//                                    // Update product report details
-//                                    val updatedReport = productReport.copy(
-//                                        closingStock = product.currentStockLevel, // Now this line will work
-//                                        quantitySold = productReport.quantitySold + item.quantity,
-//                                        totalSales = productReport.totalSales + item.total,
-//                                        totalCost = productReport.totalCost + (product.standardCost
-//                                            ?: 0.0) * item.quantity,
-//                                        totalProfit = productReport.totalProfit + productProfit
-//                                    )
-//
-//                                    // Update the product day report in the database
-//                                    productDayReportRepository.updateProductDayReport(
-//                                        updatedReport
-//                                    )
-//                                }
-//                            }
-//                        }
-//                }
-//
-//                // Create a final day report summary
-//                val finalDayReport = DayReports(
-//                    totalInvoices = todayInvoices.size,
-//                    totalOrders = todayOrders.size,
-//                    totalProductsSold = totalProductsSold,
-//                    totalInvoiceSales = totalSales,
-//                    reportDate = todayStart,
-//                    startTime = todayStart,
-//                    endTime = System.currentTimeMillis()
-//                )
-//
-//                // Update the final day report in the database
-//                dayReportRepository.updateDayReport(finalDayReport)
-//            }
-//        }
-//
-//        _dayStarted.value = false // Update the state to indicate the day has ended
-//    }
 
     // In your ViewModel or a helper function, add this logic to copy the file
     fun saveImageToInternalStorage(context: Context, uri: Uri): String? {
@@ -1401,7 +1241,6 @@ class InvoiceViewModel @Inject constructor(
             Log.e("PriceListUpdate", "Failed to update price list: ${e.message}")
         }
     }
-
 
     fun butcherSubmitInvoice(
         customerId: Long,
@@ -1500,7 +1339,7 @@ class InvoiceViewModel @Inject constructor(
                         totalAmount = totalAmount,
                         amountTendered = amountTendered,
                         changeBalance = change,
-                        currentStock = quantitySold, // Adjust as necessary
+                        currentStock = product.productQty.toDouble().minus(quantitySold),
                         invoiceDate = System.currentTimeMillis()
                     )
 
@@ -1554,7 +1393,12 @@ class InvoiceViewModel @Inject constructor(
                         priceListRepository.getPriceListByProductId(product.productId)
                     val basePrice = priceList?.sellingPrice ?: 0.0
                     val taxAmount = basePrice * taxPercentage
-                    val discountAmount = basePrice * discountPercentage
+                    val stockLeft = productQuantities[product.productId]?.let {
+                        product.productQty.minus(
+                            it
+                        )
+                    }
+                    Log.d("Invoice", "Qty left is: $stockLeft")
 
                     val finalPrice = basePrice
                     totalAmount += finalPrice * quantitySold // Use product-specific quantity for calculations
@@ -1634,8 +1478,7 @@ class InvoiceViewModel @Inject constructor(
                             totalAmount = totalAmount,
                             amountTendered = amountTendered,
                             changeBalance = change,
-//                            currentStock =  .minus(quantitySold),
-                            currentStock = quantitySold.toDouble(),
+                            currentStock = product.productQty.toDouble().minus(quantitySold),
                             invoiceDate = System.currentTimeMillis()
                         )
 
@@ -1646,15 +1489,15 @@ class InvoiceViewModel @Inject constructor(
 
                     // Clear the selected products list after invoice submission
                     _selectedProducts.value = emptyList()
-                    Log.d("Invoice", "Cleared selected products for customer: $customerId")
+                    Log.d("istart", "Cleared selected products for customer: $customerId")
                 } else {
                     Log.e(
-                        "InvoiceError",
+                        "istart",
                         "No valid selected products to invoice or total amount is 0"
                     )
                 }
             } catch (e: Exception) {
-                Log.e("InvoiceError", "Error during invoice submission: ${e.message}")
+                Log.e("istart", "Error during invoice submission: ${e.message}")
             }
         }
 
@@ -1877,3 +1720,195 @@ class InvoiceViewModel @Inject constructor(
         }
     }
 }
+
+
+//    fun startDay() = viewModelScope.launch {
+//        // If the day has already started, return early and avoid re-running the logic
+//        if (_dayStarted.value) return@launch
+//
+//        productRepository.getAllProducts().collect { products ->
+//            products.forEach { product ->
+//                // Set the opening stock at the start of the day
+//                val productDayReport = ProductDayReport(
+//                    productId = product.productId,
+//                    productName = product.productDescription,
+//                    openingStock = product.currentStockLevel, // Opening stock set at day start
+//                    closingStock = 0.0,
+//                    quantitySold = 0, // No sales at the start of the day
+//                    totalSales = 0.0,
+//                    totalCost = 0.0,
+//                    totalProfit = 0.0,
+//                    reportDate = System.currentTimeMillis()
+//                )
+//                productDayReportRepository.insertProductDayReport(productDayReport)
+//            }
+//
+//            // Create a day report with initial values
+//            val dayReport = DayReports(
+//                totalInvoices = 0,
+//                totalOrders = 0,
+//                totalProductsSold = 0,
+//                totalInvoiceSales = 0.0,
+//                reportDate = System.currentTimeMillis(),
+//                startTime = System.currentTimeMillis(),
+//                endTime = 0L // This will be updated at the end of the day
+//            )
+//            dayReportRepository.insertDayReport(dayReport)
+//
+//            _dayStarted.value = true // Mark the day as started
+//        }
+//    }
+
+
+//    fun endDay() = viewModelScope.launch {
+//        // Fetch all invoices and orders from today
+//        val todayStart = getTodayStartInMillis()
+//
+//        // Collect today's invoices
+//        invoiceRepository.getInvoicesByDate(todayStart).collect { todayInvoices ->
+//            // Collect today's orders
+//            orderRepository.getOrderByDate(todayStart).collect { todayOrders ->
+//
+//                // Total products sold and total sales
+//                var totalProductsSold = 0
+//                var totalSales = 0.0
+//
+//                // Iterate through each invoice
+//                todayInvoices.forEach { invoice ->
+//                    totalSales += invoice.totalAmount
+//
+//                    // Collect invoice items for this invoice
+//                    invoiceItemRepository.getInvoiceItemsByInvoiceId(invoice.invoiceId)
+//                        .collect { invoiceItems ->
+//                            invoiceItems.forEach { item ->
+//                                totalProductsSold += item.quantity
+//
+//                                // Fetch the product details
+//                                val product =
+//                                    productRepository.getProductById(item.productId)
+//
+//                                // Fetch the product day report to update it
+//                                val productReport = product?.let {
+//                                    productDayReportRepository.getProductDayReportById(
+//                                        it.productId
+//                                    )
+//                                }
+//
+//                                if (productReport != null) {
+//                                    // Calculate profit
+//                                    val productProfit =
+//                                        (item.price - (product.standardCost
+//                                            ?: 0.0)) * item.quantity
+//
+//                                    // Update product report details
+//                                    val updatedReport = productReport.copy(
+//                                        closingStock = product.currentStockLevel, // Now this line will work
+//                                        quantitySold = productReport.quantitySold + item.quantity,
+//                                        totalSales = productReport.totalSales + item.total,
+//                                        totalCost = productReport.totalCost + (product.standardCost
+//                                            ?: 0.0) * item.quantity,
+//                                        totalProfit = productReport.totalProfit + productProfit
+//                                    )
+//
+//                                    // Update the product day report in the database
+//                                    productDayReportRepository.updateProductDayReport(
+//                                        updatedReport
+//                                    )
+//                                }
+//                            }
+//                        }
+//                }
+//
+//                // Create a final day report summary
+//                val finalDayReport = DayReports(
+//                    totalInvoices = todayInvoices.size,
+//                    totalOrders = todayOrders.size,
+//                    totalProductsSold = totalProductsSold,
+//                    totalInvoiceSales = totalSales,
+//                    reportDate = todayStart,
+//                    startTime = todayStart,
+//                    endTime = System.currentTimeMillis()
+//                )
+//
+//                // Update the final day report in the database
+//                dayReportRepository.updateDayReport(finalDayReport)
+//            }
+//        }
+//
+//        _dayStarted.value = false // Update the state to indicate the day has ended
+//    }
+
+// suspend fun deductQuantityAndUpdateStock(productId: Long, quantitySold: Int) {
+//        try {
+//            // Fetch the product from the repository
+//            val product = productRepository.getProductById(productId)
+//
+//            // Check if the product exists
+//            if (product == null) {
+//                Log.e("StockUpdateError", "Product not found with productId: $productId")
+//                return
+//            }
+//
+//            // Check if the product is saleable
+//            if (!product.saleable) {
+//                Log.e(
+//                    "StockUpdateError",
+//                    "Product with productId: $productId is not saleable"
+//                )
+//                return
+//            }
+//
+//            // Fetch the related ShoeBrand and ShoeSize entities
+//            val shoeBrand = shoeBrandRepository.getShoeBrandById(product.brandID)
+//            val shoeSize = shoeSizeRepository.getShoeSizeById(product.shoeSizeId)
+//
+//            if (shoeBrand == null || shoeSize == null) {
+//                Log.e(
+//                    "StockUpdateError",
+//                    "ShoeBrand or ShoeSize not found for productId: $productId"
+//                )
+//                return
+//            }
+//
+//            // Calculate the actual stock level by summing the quantity of all ShoeSizes for the brand
+//            val totalStockLevel = shoeSizeRepository.getTotalQuantityByBrand(shoeBrand.brandID)
+//            Log.d("Invoice Shoes", "TotalStockLevel is $totalStockLevel")
+//
+//            // Check if there is enough stock to sell the desired quantity
+//            if (totalStockLevel < quantitySold) {
+//                Log.e(
+//                    "StockUpdateError",
+//                    "Insufficient stock for product: ${product.productDescription}. " +
+//                            "Available: $totalStockLevel, Required: $quantitySold"
+//                )
+//                return
+//            }
+//
+//            // Deduct the quantity sold from the total stock level
+//            val newStockLevel = product.productQty - quantitySold
+//            val newTotalStockLevel = totalStockLevel - quantitySold
+//
+//            // Create a new product object with the updated stock level
+//            val updatedProduct = product.copy(newStockLevel)
+//            val updatedShoeSize = shoeSize.copy(newTotalStockLevel.toLong())
+//
+//            // Update the product in the database
+//            productRepository.updateProduct(updatedProduct)
+//            shoeSizeRepository.updateShoeSize(updatedShoeSize)
+//
+//            Log.d(
+//                "Invoice StockUpdate",
+//                "Stock updated for product: ${product.productDescription}, New stock: $newStockLevel"
+//            )
+//            Log.d(
+//                "Invoice ShoeUpdate",
+//                "ShoeSize updated for sizeID: ${shoeSize.shoeSizeId}, New stock: $newTotalStockLevel"
+//            )
+//
+//        } catch (e: Exception) {
+//            Log.e(
+//                "Invoice Error",
+//                "Error while updating stock for productId: $productId: ${e.message}"
+//            )
+//        }
+//    }

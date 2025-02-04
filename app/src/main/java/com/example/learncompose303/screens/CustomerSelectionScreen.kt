@@ -31,6 +31,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.tooling.preview.Preview
@@ -51,6 +52,7 @@ import com.dantsu.escposprinter.connection.bluetooth.BluetoothConnection
 import com.dantsu.escposprinter.textparser.PrinterTextParserImg
 import com.dantsu.escposprinter.connection.DeviceConnection
 import com.dantsu.escposprinter.EscPosPrinterCommands
+import com.example.learncompose303.R
 import com.example.learncompose303.app.utils.BluetoothPrinterScanner
 
 
@@ -69,15 +71,7 @@ fun CustomerSelectionScreen(
     val customers by viewModel.customerList.collectAsState()
 
     val walkInCustomer = viewModel.getWalkinCustomer()
-    Log.d("WalkInCustomer", "$walkInCustomer")
-
     val context = LocalContext.current
-
-    val scanner = BluetoothPrinterScanner(context)
-
-
-// Stop scanning manually if needed
-//    scanner.stopScanning()
 
     Scaffold(
 //        floatingActionButton = {
@@ -96,19 +90,16 @@ fun CustomerSelectionScreen(
                     Text(
                         modifier = Modifier
                             .weight(1f),
-                        text = "Select Customer",
+                        text = stringResource(R.string.select_customer),
                         fontWeight = FontWeight.Bold,
                         style = MaterialTheme.typography.titleMedium
                     )
 
                     Button(
                         onClick = {
-                            // Start scanning
-                            BluetoothPrinterScanner(context).connectToHardcodedPrinter()
-
-//                            if (walkInCustomer != null) {
-//                                onCustomerSelected(walkInCustomer)
-//                            }
+                            if (walkInCustomer != null) {
+                                onCustomerSelected(walkInCustomer)
+                            }
                         },
                     ) {
                         Text(text = "Skip")
@@ -144,27 +135,8 @@ fun CustomerCard(customer: Customer, onClick: () -> Unit) {
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(customer.name, fontWeight = FontWeight.Bold)
-            Text(customer.email ?: "No email")
-            Text(customer.phone ?: "No phone")
+            Text(customer.email ?: "***")
+            Text(customer.phone ?: "+263")
         }
     }
 }
-
-
-@Preview(showBackground = true)
-@Composable
-fun PreviewCustomerSelectionScreen() {
-    val navController = rememberNavController()
-    val customers = listOf(
-        Customer(1, "John Doe", "john@example.com", "123456789", "State House"),
-        Customer(2, "Jane Smith", "jane@example.com", "987654321", "State House")
-    )
-
-    // Sample preview of the screen
-    CustomerSelectionScreen(
-        onCustomerSelected = { /* Do nothing for preview */ },
-        onNewCustomerClicked = { /* Do nothing for preview */ },
-        navController
-    )
-}
-

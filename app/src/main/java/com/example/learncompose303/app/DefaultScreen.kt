@@ -437,13 +437,13 @@ fun InDriveTopBottomNavigation() {
 
                     if (customer != null) {
                         // Handle back button press
-                        BackHandler {
-                            navController.navigate(Destinations.Rides.route) {
-                                popUpTo(Destinations.ButcherCart.route) {
-                                    inclusive = true
-                                } // Remove CartScreen from the back stack
-                            }
-                        }
+//                        BackHandler {
+//                            navController.navigate(Destinations.Rides.route) {
+//                                popUpTo(Destinations.ButcherCart.route) {
+//                                    inclusive = true
+//                                } // Remove CartScreen from the back stack
+//                            }
+//                        }
 
                         ButcherCartScreen(
                             customer = customer,

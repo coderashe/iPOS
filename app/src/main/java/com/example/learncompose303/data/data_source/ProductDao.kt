@@ -32,6 +32,9 @@ interface ProductDao {
     @Update
     suspend fun updateProduct(products: Products)
 
+    @Query("UPDATE products SET productQty = :newQty WHERE productId = :productId")
+    suspend fun updateProductQuantity(productId: Long, newQty: Long)
+
     @Delete
     suspend fun deleteProduct(products: Products)
 

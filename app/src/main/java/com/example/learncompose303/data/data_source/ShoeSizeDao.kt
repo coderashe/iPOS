@@ -37,6 +37,9 @@ interface ShoeSizeDao {
     @Update
     suspend fun updateShoeSize(shoeSize: ShoeSize)
 
+    @Query("UPDATE shoe_sizes SET quantity = :newQty WHERE shoeSizeId = :shoeSizeId")
+    suspend fun updateShoeSizeQuantity(shoeSizeId: Long, newQty: Long)
+
     @Delete
     suspend fun deleteShoeSize(shoeSize: ShoeSize)
 }

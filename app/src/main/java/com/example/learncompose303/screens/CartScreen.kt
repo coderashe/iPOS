@@ -50,9 +50,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.ui.platform.LocalContext
+import com.example.learncompose303.app.utils.BluetoothPrinterScanner
 import com.example.learncompose303.screens.auth.AuthViewModel
 import java.io.File
 import java.io.FileOutputStream
+import java.util.Date
 
 @Composable
 fun CartScreen(
@@ -69,7 +71,7 @@ fun CartScreen(
     // Collect product price details
     val productWithPriceDetails by viewModel.productsWithPriceDetails.collectAsState(initial = emptyList())
     val productDetails = productWithPriceDetails.joinToString("\n") { (product, price, quantity) ->
-        "${product.productDescription}, $$price, Quantity: $quantity"
+        "${product.productDescription} :*$quantity :@ $$price"
     }
 
     // State to hold the total amount tendered by the customer
@@ -188,31 +190,6 @@ fun CartScreen(
             }
         }
 
-//        Row(modifier = Modifier.fillMaxWidth()) {
-//            Column(modifier = Modifier.weight(1f)) {
-//                Text(
-//                    text = "Total Price: \$${totalPrice}",
-//                    style = MaterialTheme.typography.titleSmall,
-//                    color = MaterialTheme.colorScheme.primary
-//                )
-//
-//                Text(
-//                    text = "Change: \$${"%.2f".format(changeBalance)}",
-//                    style = MaterialTheme.typography.bodySmall,
-//                    fontSize = 16.sp
-//                )
-//            }
-//            Spacer(modifier = Modifier.width(8.dp))
-//            Column {
-//                OutlinedTextField(
-//                    value = amountTendered,
-//                    onValueChange = { newValue -> amountTendered = newValue },
-//                    label = { Text("Amount Tendered") },
-//                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
-//                )
-//            }
-//        }
-
         Divider(
             modifier = Modifier.padding(vertical = 8.dp),
             color = MaterialTheme.colorScheme.primary
@@ -242,17 +219,19 @@ fun CartScreen(
                         )
 
                         // Code for sharing the invoice message...
-                        val message = "*INVOICE RECEIPT:*\n\n" +
-                                "*CUSTOMER DETAILS*\n" +
+                        val message = "RECEIPT: ${Date(System.currentTimeMillis())}\n\n" +
+                                "CUSTOMER DETAILS\n" +
                                 "${customer.name}: ${customer.phone}\n\n" +
-                                "*PRODUCTS PURCHASED:*\n" +
+                                "PRODUCTS PURCHASED\n" +
                                 "$productDetails\n\n" +
-                                "*SALES TOTALS*\n" +
-                                "Total Amount: *$$totalPrice*\n" +
-                                "Amount Tendered: *$$amountTendered*\n" +
-                                "Change: *$${amountTendered.toDouble() - totalPrice}*\n\n" +
-                                "THANK YOU!!!... powered by istartk \u00A92024"
+                                "SALES TOTALS\n" +
+                                "Total Cost: $$totalPrice\n" +
+                                "Tendered:   $$amountTendered\n" +
+                                "Change:     $${amountTendered.toDouble() - totalPrice}\n\n" +
+                                "THANK YOU!.. @iSTARTk \u00A92025"
 
+                        // Start scanning
+                        BluetoothPrinterScanner(context).connectToHardcodedPrinter(message)
 
                         try {
                             // Create a PDF document
@@ -321,7 +300,7 @@ fun CartScreen(
                                 .show()
                         }
 
-                        navController.navigate(Destinations.Rides.route) {
+                        navController.navigate(Destinations.CustomerSelection.route) {
                             popUpTo(Destinations.Rides.route) {
                                 inclusive = true
                             }
@@ -343,7 +322,7 @@ fun CartScreen(
             },
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Text("Submit Invoice")
+            Text("PAY")
         }
 
         Spacer(modifier = Modifier.height(16.dp))
