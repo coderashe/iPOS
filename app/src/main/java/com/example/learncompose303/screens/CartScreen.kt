@@ -91,14 +91,6 @@ fun CartScreen(
         }
     }
 
-    // State to hold the change balance
-    val changeBalance = if (amountTendered.isNotEmpty()) {
-        amountTendered.toDoubleOrNull()?.let { tendered ->
-            tendered - totalPrice
-        } ?: 0.0
-    } else {
-        0.0
-    }
 
     // Get the cashierEmail from AuthViewModel
     val cashierEmail = authViewModel.userEmail.value ?: "unknown"
@@ -119,6 +111,15 @@ fun CartScreen(
     // Convert total price based on selected currency
     val exchangeRate = selectedCurrency?.rateToBase ?: 1.0
     val convertedTotalPrice = baseTotalPrice * exchangeRate
+
+    // State to hold the change balance
+    val changeBalance = if (amountTendered.isNotEmpty()) {
+        amountTendered.toDoubleOrNull()?.let { tendered ->
+            (tendered - convertedTotalPrice)
+        } ?: 0.0
+    } else {
+        0.0
+    }
 
     // Load price details for selected products when the screen is entered
     LaunchedEffect(selectedProducts) {
@@ -173,8 +174,11 @@ fun CartScreen(
                     color = MaterialTheme.colorScheme.primary
                 )
 
+//                val theChange = ((amountTendered.toDoubleOrNull() ?: (0.0 - convertedTotalPrice)))
+//                Log.d("Invoice", "Change === $theChange")
+
                 Text(
-                    text = "Change: ${selectedCurrency?.code ?: "$"}${"%.2f".format(changeBalance * exchangeRate)}",
+                    text = "Change: ${selectedCurrency?.code ?: "$"}${"%.2f".format(changeBalance)}",
                     style = MaterialTheme.typography.bodySmall,
                     fontSize = 16.sp
                 )
@@ -203,7 +207,7 @@ fun CartScreen(
 //                if (amountTendered.isNotEmpty() && tenderedAmount != null && tenderedAmount > 0) {
                 if (tenderedAmount != null && tenderedAmount >= convertedTotalPrice) {
 
-                    if (tenderedAmount >= totalPrice) {
+                    if (tenderedAmount >= convertedTotalPrice) {
                         // Use the actual quantities from productQuantities map
                         val productQuantitiesMap: Map<Long, Int> =
                             selectedProducts.associate { product ->
@@ -225,9 +229,9 @@ fun CartScreen(
                                 "PRODUCTS PURCHASED\n" +
                                 "$productDetails\n\n" +
                                 "SALES TOTALS\n" +
-                                "Total Cost: $$totalPrice\n" +
-                                "Tendered:   $$amountTendered\n" +
-                                "Change:     $${amountTendered.toDouble() - totalPrice}\n\n" +
+                                "Total Cost: ${selectedCurrency?.code ?: "$"}$convertedTotalPrice\n" +
+                                "Tendered:   ${selectedCurrency?.code ?: "$"}$amountTendered\n" +
+                                "Change:     ${selectedCurrency?.code ?: "$"}${amountTendered.toDouble() - convertedTotalPrice}\n\n" +
                                 "THANK YOU!.. @iSTARTk \u00A92025"
 
                         // Start scanning
