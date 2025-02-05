@@ -64,23 +64,26 @@ fun CartScreen(
     authViewModel: AuthViewModel = viewModel()
 ) {
     val context = LocalContext.current
-
     // Get the selected products
     val selectedProducts by viewModel.selectedProducts.collectAsState()
-
     // Collect product price details
     val productWithPriceDetails by viewModel.productsWithPriceDetails.collectAsState(initial = emptyList())
-    val productDetails = productWithPriceDetails.joinToString("\n") { (product, price, quantity) ->
+//
+    // Map to hold quantities for each product
+    val productQuantities = remember { mutableStateMapOf<Long, Int>() }
+    val productDetails = selectedProducts.joinToString("\n") { product ->
+        val quantity = productQuantities[product.productId] ?: 1  // Fetch actual quantity
+        val price =
+            productWithPriceDetails.find { it.first.productId == product.productId }?.second ?: 0.0
         "${product.productDescription} :*$quantity :@ $$price"
     }
 
+//    val productDetails = productWithPriceDetails.joinToString("\n") { (product, price, quantity) ->
+//        "${product.productDescription} :*$quantity :@ $$price"
+//    }
+//
     // State to hold the total amount tendered by the customer
     var amountTendered by remember { mutableStateOf("") }
-
-
-    // Map to hold quantities for each product
-    val productQuantities = remember { mutableStateMapOf<Long, Int>() }
-
     // Calculate totalPrice using sumOf for all product prices and quantities
     val totalPrice by remember {
         derivedStateOf {
@@ -90,15 +93,11 @@ fun CartScreen(
             }
         }
     }
-
-
     // Get the cashierEmail from AuthViewModel
     val cashierEmail = authViewModel.userEmail.value ?: "unknown"
     val currencies by viewModel.currencies.collectAsState()
     val selectedCurrency by viewModel.selectedCurrency.collectAsState()
-
     var expanded by remember { mutableStateOf(false) }
-
     // State for total price in base currency (USD)
     val baseTotalPrice by remember {
         derivedStateOf {
@@ -111,7 +110,6 @@ fun CartScreen(
     // Convert total price based on selected currency
     val exchangeRate = selectedCurrency?.rateToBase ?: 1.0
     val convertedTotalPrice = baseTotalPrice * exchangeRate
-
     // State to hold the change balance
     val changeBalance = if (amountTendered.isNotEmpty()) {
         amountTendered.toDoubleOrNull()?.let { tendered ->
@@ -120,12 +118,10 @@ fun CartScreen(
     } else {
         0.0
     }
-
     // Load price details for selected products when the screen is entered
     LaunchedEffect(selectedProducts) {
         viewModel.getPriceDetailsForSelectedProducts(selectedProducts, productQuantities)
     }
-
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -155,7 +151,6 @@ fun CartScreen(
                 }
             }
         }
-
         Spacer(modifier = Modifier.height(8.dp))
         Text(
             "Total Amount: ${selectedCurrency?.code ?: "USD"} $convertedTotalPrice",
@@ -173,10 +168,6 @@ fun CartScreen(
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.primary
                 )
-
-//                val theChange = ((amountTendered.toDoubleOrNull() ?: (0.0 - convertedTotalPrice)))
-//                Log.d("Invoice", "Change === $theChange")
-
                 Text(
                     text = "Change: ${selectedCurrency?.code ?: "$"}${"%.2f".format(changeBalance)}",
                     style = MaterialTheme.typography.bodySmall,
@@ -193,17 +184,14 @@ fun CartScreen(
                 )
             }
         }
-
         Divider(
             modifier = Modifier.padding(vertical = 8.dp),
             color = MaterialTheme.colorScheme.primary
         )
         Spacer(modifier = Modifier.height(8.dp))
-
         Button(
             onClick = {
                 val tenderedAmount = amountTendered.toDoubleOrNull()
-
 //                if (amountTendered.isNotEmpty() && tenderedAmount != null && tenderedAmount > 0) {
                 if (tenderedAmount != null && tenderedAmount >= convertedTotalPrice) {
 
@@ -213,7 +201,6 @@ fun CartScreen(
                             selectedProducts.associate { product ->
                                 product.productId to (productQuantities[product.productId] ?: 1)
                             }
-
                         // Submit the invoice with individual product quantities
                         viewModel.submitInvoice(
                             customer.customerId,
@@ -221,7 +208,6 @@ fun CartScreen(
                             productQuantitiesMap,
                             cashierEmail
                         )
-
                         // Code for sharing the invoice message...
                         val message = "RECEIPT: ${Date(System.currentTimeMillis())}\n\n" +
                                 "CUSTOMER DETAILS\n" +
@@ -233,10 +219,8 @@ fun CartScreen(
                                 "Tendered:   ${selectedCurrency?.code ?: "$"}$amountTendered\n" +
                                 "Change:     ${selectedCurrency?.code ?: "$"}${amountTendered.toDouble() - convertedTotalPrice}\n\n" +
                                 "THANK YOU!.. @iSTARTk \u00A92025"
-
                         // Start scanning
                         BluetoothPrinterScanner(context).connectToHardcodedPrinter(message)
-
                         try {
                             // Create a PDF document
                             val pdfDocument = PdfDocument()
@@ -251,9 +235,7 @@ fun CartScreen(
                                 canvas.drawText(line, 10f, yPosition.toFloat(), paint)
                                 yPosition += 20
                             }
-
                             pdfDocument.finishPage(page)
-
                             // Save the PDF file
                             val pdfFile = File(
                                 context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS),
@@ -268,14 +250,11 @@ fun CartScreen(
                                 "${context.packageName}.fileprovider",
                                 pdfFile
                             )
-
                             val sendIntent = Intent(Intent.ACTION_SEND).apply {
                                 type = "application/pdf"
                                 putExtra(Intent.EXTRA_STREAM, uri)
                                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                             }
-
-
                             try {
 
                                 val chooserIntent = Intent.createChooser(
@@ -291,8 +270,6 @@ fun CartScreen(
                                         Toast.LENGTH_SHORT
                                     ).show()
                                 }
-
-
                             } catch (e: Exception) {
                                 Log.e("Error*", "${e.message}")
                                 Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT)
@@ -303,13 +280,11 @@ fun CartScreen(
                             Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT)
                                 .show()
                         }
-
                         navController.navigate(Destinations.CustomerSelection.route) {
                             popUpTo(Destinations.Rides.route) {
                                 inclusive = true
                             }
                         }
-
                         Toast.makeText(context, "Invoice paid successfully", Toast.LENGTH_SHORT)
                             .show()
                     } else {
@@ -328,28 +303,21 @@ fun CartScreen(
         ) {
             Text("PAY")
         }
-
         Spacer(modifier = Modifier.height(16.dp))
-
 // Display the list of selected products and their total cost
         LazyColumn {
             items(selectedProducts) { product ->
-
                 // Find the product price from the collected productWithPriceDetails
                 val productPrice =
                     productWithPriceDetails.find { it.first.productId == product.productId }?.second
                         ?: 0.0
-
                 // Get the current quantity for this product from the map, default to 1 if not present
                 val quantitySold = productQuantities[product.productId] ?: 1
-
                 // Calculate the total price for the product
                 val productTotalPrice = productPrice * quantitySold
-
                 LaunchedEffect(quantitySold) {
                     productQuantities[product.productId] = quantitySold
                 }
-
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -375,9 +343,7 @@ fun CartScreen(
                             )
                         }
                         Spacer(modifier = Modifier.width(16.dp))
-
                         Column(horizontalAlignment = Alignment.End) {
-
                             // Input for quantity with better handling
                             OutlinedTextField(
                                 value = if (quantitySold == 0) "" else quantitySold.toString(), // Show empty if quantity is 0
@@ -392,7 +358,6 @@ fun CartScreen(
                                 shape = RoundedCornerShape(8.dp),
                                 singleLine = true
                             )
-
                             // Display SubTotal
                             Text(
                                 text = "SubTotal: \$${"%.2f".format(productTotalPrice)}", // Ensure proper formatting of price
@@ -400,14 +365,10 @@ fun CartScreen(
                                 style = MaterialTheme.typography.titleSmall
                             )
                         }
-
                     }
                 }
             }
         }
-
         Spacer(modifier = Modifier.height(8.dp))
-
     }
-
 }
