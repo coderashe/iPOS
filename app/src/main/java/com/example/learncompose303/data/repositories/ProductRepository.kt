@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
 interface ProductRepository {
+    suspend fun getProductByNameAndSize(productName: String, shoeSizeId: Long): Products?
     suspend fun updateProductQuantity(productId: Long, newQty: Long)
     fun getAllProducts(): Flow<List<Products>>
     suspend fun getProductById(id: Long): Products?
@@ -58,6 +59,12 @@ class ProductRepositoryImpl @Inject constructor(
     override suspend fun getProductById(id: Long): Products? {
         return withContext(Dispatchers.IO) {
             productDao.getProductById(id)
+        }
+    }
+
+    override suspend fun getProductByNameAndSize(productName: String, shoeSizeId: Long): Products? {
+        return withContext(Dispatchers.IO) {
+            productDao.getProductByNameAndSize(productName, shoeSizeId)
         }
     }
 

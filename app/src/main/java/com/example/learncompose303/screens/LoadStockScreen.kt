@@ -1,6 +1,5 @@
 package com.example.learncompose303.screens
 
-import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -13,8 +12,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.AlertDialog
 import androidx.compose.material.icons.Icons
 import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedTextField
@@ -35,11 +36,16 @@ import com.example.learncompose303.data.entities.PriceList
 import com.example.learncompose303.data.entities.Products
 import com.example.learncompose303.viewmodels.InvoiceViewModel
 import androidx.compose.material.DropdownMenuItem
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import com.example.learncompose303.data.entities.ShoeBrand
 import com.example.learncompose303.data.entities.ShoeSize
 
@@ -54,8 +60,6 @@ fun LoadStockScreen(
     var unitCost by remember { mutableStateOf("") }
     var sellingPrice by remember { mutableStateOf("") }
     val context = LocalContext.current
-
-
     val shoeSizes by viewModel.shoeSizes.collectAsState()
     val shoeBrands by viewModel.shoeBrands.collectAsState()
     val shoeSizeList = shoeSizes.map { it.size.toString() }  // Extract only sizes
@@ -66,12 +70,137 @@ fun LoadStockScreen(
     var shoeBrand by remember { mutableStateOf("Nike") } // Default Brand -> "Nike"
     var sizeExpanded by remember { mutableStateOf(false) }     // Dropdown Menu state
     var brandExpanded by remember { mutableStateOf(false) }     // Dropdown Menu state
+    var showDialog by remember { mutableStateOf(false) } // Show confirmation dialog
+    var errorMessage by remember { mutableStateOf<String?>(null) } // Error message for duplicate check
 
     LaunchedEffect(Unit) {
         viewModel.fetchShoeBrands()
         viewModel.fetchShoeSizes()
     }
+//
 
+    // When showing the dialog, launch a coroutine to check for duplicates
+    if (showDialog) {
+        LaunchedEffect(productName, selectedShoeSize) {
+            // Run the suspend function in a coroutine scope
+            val product =
+                viewModel.getProductByNameAndSize(productName, selectedShoeSize?.shoeSizeId ?: 0)
+            if (product != null) {
+                errorMessage =
+                    "This shoe already exists in the inventory with the same name and size."
+                showDialog = false
+                Toast.makeText(context, "$errorMessage", Toast.LENGTH_SHORT).show()
+            } else {
+                errorMessage = null
+            }
+        }
+
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            title = { Text(text = "Confirm Adding Shoe") },
+            text = {
+                Column {
+                    Text("Are you sure you want to add this shoe to the inventory?")
+                    if (errorMessage != null) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(text = errorMessage ?: "", color = Color.Red)
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        // Handle adding product logic
+                        val unitCostValue = unitCost.toDoubleOrNull()
+                        val sellingPriceValue = sellingPrice.toDoubleOrNull()
+                        val currentStockLevelValue = currentStockLevel.toLongOrNull()
+
+                        // Ensure brand is selected, otherwise pick the first available brand
+                        if (selectedShoeBrand == null && shoeBrands.isNotEmpty()) {
+                            selectedShoeBrand = shoeBrands.first()
+                        }
+
+                        if ((unitCostValue != null) &&
+                            (currentStockLevelValue != null) &&
+                            (selectedShoeSize != null) &&
+                            (selectedShoeBrand != null)
+                        ) {
+                            val totalCost = unitCostValue * currentStockLevelValue
+                            val newProducts = Products(
+                                productDescription = productName,
+                                saleable = true,
+                                purchasable = true,
+                                averageCost = totalCost,
+                                standardCost = unitCostValue,
+                                salesTaxCode = "VAT",
+                                productCode = "ISTART32",
+                                inclusiveTaxed = true,
+                                shoeSizeId = selectedShoeSize!!.shoeSizeId,
+                                brandID = selectedShoeBrand!!.brandID,
+                                productQty = currentStockLevelValue
+                            )
+                            viewModel.insertTheProduct(newProducts) { productId ->
+                                val newPriceList = sellingPriceValue?.let {
+                                    PriceList(
+                                        productId = productId,
+                                        productDescription = productName,
+                                        unitCost = unitCostValue,
+                                        sellingPrice = it,
+                                        markupPercentage = 0.0,
+                                        grossProfitPercentage = 0.0
+                                    )
+                                }
+                                if (newPriceList != null) {
+                                    viewModel.insertPriceList(newPriceList)
+                                }
+                                onProductAdded()
+                                Toast.makeText(
+                                    context,
+                                    "Product and Price added!",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                                productName = ""
+                                unitCost = ""
+                                currentStockLevel = ""
+                                sellingPrice = ""
+                                selectedShoeSize = null
+                                selectedShoeBrand = null
+                                navController.navigate(Destinations.Rides.route)
+                            }
+                        } else {
+                            Toast.makeText(
+                                context,
+                                "Please enter valid details",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+
+                        // Close dialog after attempting to add
+                        showDialog = false
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colors.primary)
+                ) {
+                    Text("Yes", fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showDialog = false
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = Color.Red)
+                ) {
+                    Text("No", fontWeight = FontWeight.Bold)
+                }
+            },
+            backgroundColor = Color.White,
+            contentColor = Color.Black,
+            shape = RoundedCornerShape(16.dp),
+            modifier = Modifier.fillMaxWidth(0.9f)
+        )
+    }
+
+//
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -113,11 +242,9 @@ fun LoadStockScreen(
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
         )
         Spacer(modifier = Modifier.height(16.dp))
-
         Row(
             modifier = Modifier.fillMaxWidth()
         ) {
-
             // Shoe Size Dropdown
             Box(
                 modifier = Modifier
@@ -183,7 +310,6 @@ fun LoadStockScreen(
                         )
                     }
                 )
-
                 // DropdownMenu should be anchored to the TextField
                 DropdownMenu(
                     expanded = brandExpanded,
@@ -203,68 +329,14 @@ fun LoadStockScreen(
 
         }
         Spacer(modifier = Modifier.height(16.dp))
-
         Button(
             onClick = {
-                val unitCostValue = unitCost.toDoubleOrNull()
-                val sellingPriceValue = sellingPrice.toDoubleOrNull()
-                val currentStockLevelValue = currentStockLevel.toLongOrNull()
-                if ((unitCostValue != null) &&
-                    (currentStockLevelValue != null) &&
-                    (selectedShoeSize != null) &&
-                    (selectedShoeBrand != null)
-                ) {
-                    val totalCost = unitCostValue * currentStockLevelValue
-                    val newProducts = Products(
-                        productDescription = productName,
-                        saleable = true,
-                        purchasable = true,
-                        averageCost = totalCost,
-                        standardCost = unitCostValue,
-                        salesTaxCode = "VAT",
-                        productCode = "ISTART32",
-                        inclusiveTaxed = true,
-                        shoeSizeId = selectedShoeSize!!.shoeSizeId,
-//                        allow not selecting brand and reset to defaultBrand = 0
-                        brandID = selectedShoeBrand!!.brandID,
-                        productQty = currentStockLevelValue
-                    )
-                    viewModel.insertTheProduct(newProducts) { productId ->
-                        val newPriceList = sellingPriceValue?.let {
-                            PriceList(
-                                productId = productId,
-                                productDescription = productName,
-                                unitCost = unitCostValue,
-                                sellingPrice = it,
-                                markupPercentage = 0.0,
-                                grossProfitPercentage = 0.0
-                            )
-                        }
-                        if (newPriceList != null) {
-                            viewModel.insertPriceList(newPriceList)
-                        }
-                        onProductAdded()
-                        Toast.makeText(context, "Product and Price added!", Toast.LENGTH_SHORT)
-                            .show()
-                        productName = ""
-                        unitCost = ""
-                        currentStockLevel = ""
-                        sellingPrice = ""
-                        selectedShoeSize = null
-                        selectedShoeBrand = null
-                        navController.navigate(Destinations.Rides.route)
-                    }
-//                    upon adding newProduct, save a record to db
-                } else {
-                    Log.d(
-                        "LoadStockScreen",
-                        "unitCost: $unitCostValue, stockLevel: $currentStockLevelValue, size: $selectedShoeSize, brand: $selectedShoeBrand"
-                    )
-                    Toast.makeText(context, "Please enter valid details", Toast.LENGTH_SHORT).show()
-                }
+                // Show confirmation dialog before adding product
+                showDialog = true
             }
         ) {
             Text("Add Product")
         }
+
     }
 }

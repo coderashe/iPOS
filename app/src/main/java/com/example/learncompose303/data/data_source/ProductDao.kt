@@ -11,6 +11,15 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface ProductDao {
+//    @Query("SELECT * FROM products WHERE productDescription = :productName AND shoeSizeId = :shoeSizeId LIMIT 1")
+//    fun getProductByNameAndSize(productName: String, shoeSizeId: Long): Products?
+
+
+    //    handles case-sensitive
+    @Query("SELECT * FROM products WHERE LOWER(productDescription) = LOWER(:productName) AND shoeSizeId = :shoeSizeId LIMIT 1")
+    suspend fun getProductByNameAndSize(productName: String, shoeSizeId: Long): Products?
+
+
     @Query("SELECT * FROM products WHERE productId = :id")
     suspend fun getProductById(id: Long): Products?
 

@@ -181,6 +181,10 @@ class InvoiceViewModel @Inject constructor(
         return shoeSizeFlow
     }
 
+    suspend fun getProductByNameAndSize(productName: String, shoeSizeId: Long): Products? {
+        return productRepository.getProductByNameAndSize(productName, shoeSizeId)
+    }
+
     // Fetch all currencies
     fun fetchCurrencies() = viewModelScope.launch {
         invoiceRepository.getAllCurrencies().collectLatest { currencyList ->
