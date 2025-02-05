@@ -9,8 +9,8 @@ import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 interface ShoeSizeRepository {
-    suspend fun updateShoeSizeQuantity(shoeSizeId: Long, newQty: Long)
     suspend fun getShoeSizeById(id: Long): ShoeSize?
+    suspend fun updateShoeSizeQuantity(shoeSizeId: Long, newQty: Long)
     fun getShoeSizesByLabel(labelId: Long): Flow<List<ShoeSize>>
     suspend fun insertShoeSize(shoeSize: ShoeSize): Long
     suspend fun insertShoeSizes(shoeSizes: List<ShoeSize>): List<Long>
@@ -24,6 +24,13 @@ interface ShoeSizeRepository {
 class ShoeSizeRepositoryImpl @Inject constructor(
     private val shoeSizeDao: ShoeSizeDao
 ) : ShoeSizeRepository {
+
+    override suspend fun getShoeSizeById(id: Long): ShoeSize? {
+        return withContext(Dispatchers.IO) {
+            shoeSizeDao.getShoeSizeById(id)
+        }
+    }
+
     override suspend fun updateShoeSizeQuantity(shoeSizeId: Long, newQty: Long) {
         withContext(Dispatchers.IO) {
             shoeSizeDao.updateShoeSizeQuantity(shoeSizeId, newQty)
@@ -53,12 +60,6 @@ class ShoeSizeRepositoryImpl @Inject constructor(
 
     override fun getAllShoeSizes(): Flow<List<ShoeSize>> {
         return shoeSizeDao.getAllShoeSizes()
-    }
-
-    override suspend fun getShoeSizeById(id: Long): ShoeSize? {
-        return withContext(Dispatchers.IO) {
-            shoeSizeDao.getShoeSizeById(id)
-        }
     }
 
     override fun getShoeSizesByLabel(labelId: Long): Flow<List<ShoeSize>> {

@@ -171,7 +171,14 @@ class InvoiceViewModel @Inject constructor(
         insertInitialCurrencies()
         fetchCurrencies()
         // Now insert initial products
-//        insertInitialProducts()
+    }
+
+    fun getShoeSizeById(shoeSizeId: Long): StateFlow<ShoeSize?> {
+        val shoeSizeFlow = MutableStateFlow<ShoeSize?>(null)
+        viewModelScope.launch {
+            shoeSizeFlow.value = shoeSizeRepository.getShoeSizeById(shoeSizeId)
+        }
+        return shoeSizeFlow
     }
 
     // Fetch all currencies
@@ -451,6 +458,7 @@ class InvoiceViewModel @Inject constructor(
         return customerList.value.firstOrNull { it.customerId == customerId }
     }
 
+
     fun getWalkinCustomer(): Customer? {
         return customerList.value.firstOrNull { it.name == "walkInCustomer" }
     }
@@ -469,7 +477,6 @@ class InvoiceViewModel @Inject constructor(
                 userEmail = "dr.simbastart@gmail.com",
                 userAddress = "3 Maywood St, Kwekwe, Zimbabwe"
             )
-
             authRepository.signUpUser(initialUser)
         }
     }
@@ -493,20 +500,19 @@ class InvoiceViewModel @Inject constructor(
         }
     }
 
-
     // Insert initial shoe sizes
     private fun insertInitialShoeSizes() = viewModelScope.launch {
         val existingSizes = shoeSizeRepository.getAllShoeSizesOnce()
 
         if (existingSizes.isEmpty()) {
             val initialSizes = listOf(
-                ShoeSize(1, 1, 6.0, 0),
+                ShoeSize(1, 2, 6.0, 0),
                 ShoeSize(2, 1, 5.0, 0),
                 ShoeSize(3, 2, 7.0, 0),
                 ShoeSize(4, 3, 9.0, 0),
-                ShoeSize(5, 2, 8.5, 0),
-                ShoeSize(6, 1, 4.0, 0),
-                ShoeSize(7, 3, 6.5, 0),
+                ShoeSize(5, 4, 8.5, 0),
+                ShoeSize(6, 3, 4.0, 0),
+                ShoeSize(7, 5, 6.5, 0),
             )
             shoeSizeRepository.insertShoeSizes(initialSizes)
         }
@@ -518,71 +524,13 @@ class InvoiceViewModel @Inject constructor(
 
         if (existingBrands.isEmpty()) {
             val initialBrands = listOf(
-                ShoeBrand(1, "Nike"),
-                ShoeBrand(2, "Adidas"),
-                ShoeBrand(3, "Puma")
+                ShoeBrand(1, "REGULAR"),
+                ShoeBrand(2, "NIKE"),
+                ShoeBrand(3, "ADIDAS"),
+                ShoeBrand(4, "PUMA"),
+                ShoeBrand(5, "TENNIS")
             )
             shoeBrandRepository.insertShoeBrands(initialBrands)
-        }
-    }
-
-
-    // Insert initial products with ShoeSize and ShoeBrand associations
-    private fun insertInitialProducts() = viewModelScope.launch {
-        val existingProducts = productRepository.getAllProductsOnce()
-
-        if (existingProducts.isEmpty()) {
-            // Example products with associated sizes and brands
-            val initialProducts = listOf(
-                Products(
-                    productDescription = "Nike Air Max",
-                    saleable = true,
-                    purchasable = true,
-                    averageCost = 75.00,
-                    standardCost = 90.00,
-                    salesTaxCode = "VAT",
-                    productCode = "NA001",
-                    inclusiveTaxed = true,
-                    shoeSizeId = 1,
-                    brandID = 1,
-                    productQty = 30
-                ),
-                Products(
-                    productDescription = "Adidas Ultraboost",
-                    saleable = true,
-                    purchasable = true,
-                    averageCost = 100.00,
-                    standardCost = 120.00,
-                    salesTaxCode = "VAT",
-                    productCode = "AU001",
-                    inclusiveTaxed = true,
-                    shoeSizeId = 2,
-                    brandID = 2,
-                    productQty = 25
-                )
-            )
-
-            // Insert products and update the PriceList
-            val productIds = productRepository.insertProducts(initialProducts)
-
-            productIds.forEachIndexed { index, productId ->
-                val product = initialProducts[index]
-                val sellingPrice = product.standardCost * 1.2
-                val markupPercentage =
-                    ((sellingPrice - product.standardCost) / product.standardCost) * 100
-                val grossProfitPercentage =
-                    ((sellingPrice - product.averageCost) / sellingPrice) * 100
-
-                val priceList = PriceList(
-                    productId = productId,
-                    productDescription = product.productDescription,
-                    unitCost = product.standardCost,
-                    sellingPrice = sellingPrice,
-                    markupPercentage = markupPercentage,
-                    grossProfitPercentage = grossProfitPercentage
-                )
-                priceListRepository.insertPriceList(priceList)
-            }
         }
     }
 
@@ -592,98 +540,6 @@ class InvoiceViewModel @Inject constructor(
             _productsList.value = productList
         }
     }
-
-//
-
-    // Insert initial products into the database
-//    private fun insertInitialProducts() = viewModelScope.launch {
-//        val existingProducts = productRepository.getAllProductsOnce()
-//
-//        if (existingProducts.isEmpty()) {
-//            val initialInventories = listOf(
-//                Products(
-//                    productDescription = "Beef",
-//                    saleable = true,
-//                    purchasable = true,
-//                    averageCost = 7.50,
-//                    standardCost = 8.00,
-//                    salesTaxCode = "VAT",
-//                    productCode = "VAT",
-//                    inclusiveTaxed = true,
-//                ),
-//                Products(
-//                    productDescription = "Coke",
-//                    saleable = true,
-//                    purchasable = true,
-//                    averageCost = 6.50,
-//                    standardCost = 7.00,
-//                    salesTaxCode = "VAT",
-//                    productCode = "VAT",
-//                    inclusiveTaxed = true
-//                ),
-//                Products(
-//                    productDescription = "Chips",
-//                    saleable = true,
-//                    purchasable = true,
-//                    averageCost = 3.60,
-//                    standardCost = 4.00,
-//                    salesTaxCode = "VAT",
-//                    productCode = "VAT",
-//                    inclusiveTaxed = true
-//                ),
-//                Products(
-//                    productDescription = "iPhone",
-//                    saleable = true,
-//                    purchasable = true,
-//                    averageCost = 8.50,
-//                    standardCost = 9.00,
-//                    salesTaxCode = "VAT",
-//                    productCode = "VAT",
-//                    inclusiveTaxed = true
-//                ),
-//                Products(
-//                    productDescription = "Jersey",
-//                    saleable = true,
-//                    purchasable = true,
-//                    averageCost = 4.50,
-//                    standardCost = 5.0,
-//                    salesTaxCode = "VAT",
-//                    productCode = "VAT",
-//                    inclusiveTaxed = true
-//                )
-//            )
-//
-//            // Insert initial products and get the inserted IDs
-//            val productIds = productRepository.insertProducts(initialInventories)
-//
-//            // After inserting products, insert into PriceList table
-//            productIds.forEachIndexed { index, productId ->
-//                val product = initialInventories[index]
-////                val sellingPrice = product.standardCost * 1.2 // Example of a 20% markup
-//                val sellingPrice = product.standardCost * 1
-//                val markupPercentage =
-//                    ((sellingPrice - product.standardCost) / product.standardCost) * 100
-//                val grossProfitPercentage =
-//                    ((sellingPrice - product.averageCost) / sellingPrice) * 100
-//
-//                val priceList = PriceList(
-//                    productId = productId,
-//                    productDescription = product.productDescription,
-//                    unitCost = product.standardCost,
-//                    sellingPrice = sellingPrice,
-//                    markupPercentage = markupPercentage,
-//                    grossProfitPercentage = grossProfitPercentage
-//                )
-//                priceListRepository.insertPriceList(priceList)
-//            }
-//        }
-//    }
-
-//    fun insertTheProduct(products: Products, onProductInserted: (Long) -> Unit) =
-//        viewModelScope.launch {
-//            val productId = productRepository.insertProduct(products)
-//            onProductInserted(productId)
-//        }
 
     fun insertTheProduct(products: Products, onProductInserted: (Long) -> Unit) =
         viewModelScope.launch {
@@ -1910,5 +1766,64 @@ class InvoiceViewModel @Inject constructor(
 //                "Invoice Error",
 //                "Error while updating stock for productId: $productId: ${e.message}"
 //            )
+//        }
+//    }
+
+// Insert initial products with ShoeSize and ShoeBrand associations
+//    private fun insertInitialProducts() = viewModelScope.launch {
+//        val existingProducts = productRepository.getAllProductsOnce()
+//
+//        if (existingProducts.isEmpty()) {
+//            // Example products with associated sizes and brands
+//            val initialProducts = listOf(
+//                Products(
+//                    productDescription = "Nike Air Max",
+//                    saleable = true,
+//                    purchasable = true,
+//                    averageCost = 75.00,
+//                    standardCost = 90.00,
+//                    salesTaxCode = "VAT",
+//                    productCode = "NA001",
+//                    inclusiveTaxed = true,
+//                    shoeSizeId = 1,
+//                    brandID = 1,
+//                    productQty = 30
+//                ),
+//                Products(
+//                    productDescription = "Adidas Ultraboost",
+//                    saleable = true,
+//                    purchasable = true,
+//                    averageCost = 100.00,
+//                    standardCost = 120.00,
+//                    salesTaxCode = "VAT",
+//                    productCode = "AU001",
+//                    inclusiveTaxed = true,
+//                    shoeSizeId = 2,
+//                    brandID = 2,
+//                    productQty = 25
+//                )
+//            )
+//
+//            // Insert products and update the PriceList
+//            val productIds = productRepository.insertProducts(initialProducts)
+//
+//            productIds.forEachIndexed { index, productId ->
+//                val product = initialProducts[index]
+//                val sellingPrice = product.standardCost * 1.2
+//                val markupPercentage =
+//                    ((sellingPrice - product.standardCost) / product.standardCost) * 100
+//                val grossProfitPercentage =
+//                    ((sellingPrice - product.averageCost) / sellingPrice) * 100
+//
+//                val priceList = PriceList(
+//                    productId = productId,
+//                    productDescription = product.productDescription,
+//                    unitCost = product.standardCost,
+//                    sellingPrice = sellingPrice,
+//                    markupPercentage = markupPercentage,
+//                    grossProfitPercentage = grossProfitPercentage
+//                )
+//                priceListRepository.insertPriceList(priceList)
+//            }
 //        }
 //    }

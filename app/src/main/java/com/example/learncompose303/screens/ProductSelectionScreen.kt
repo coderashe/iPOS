@@ -15,16 +15,21 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -36,11 +41,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -141,37 +150,6 @@ fun ProductSelectionScreen(
         // Group products by brand
         val groupedProducts = filteredProducts.groupBy { it.brandID }
 
-//        if (filteredProducts.isNotEmpty()) {
-//            LazyColumn {
-//                items(groupedProducts.entries.toList()) { (brandId, brandProducts) ->
-//                    var fetchedBrandName by remember { mutableStateOf("Loading...") } // Default value
-//                    val isSelected = selectedProducts.contains(brandProducts.firstOrNull())
-//
-//                    // Fetch brand name asynchronously
-//                    LaunchedEffect(brandId) {
-//                        fetchedBrandName = viewModel.getBrandNameById(brandId)
-//                    }
-//
-//                    ProductCard(
-//                        isSelected = isSelected,
-//                        brandName = fetchedBrandName, // Use fetched brand name
-//                        products = brandProducts,
-//                        selectedProduct = brandProducts.firstOrNull(),
-//                        onProductSelected = { viewModel.addProductToCart(it) },
-//                        price = brandProducts.firstOrNull()?.standardCost ?: 0.0,
-//                        fetchStockLevel = { viewModel.fetchStockLevel(brandId) }
-//                    )
-//                }
-//            }
-//        } else {
-//            Text(
-//                text = "No products found",
-//                modifier = Modifier.align(Alignment.CenterHorizontally)
-//            )
-//        }
-
-//        above code works with new ProductCard logic
-
         if (filteredProducts.isNotEmpty()) {
             LazyColumn {
                 items(filteredProducts.chunked(chunkSize)) { rowItems ->
@@ -184,7 +162,9 @@ fun ProductSelectionScreen(
                         for (product in rowItems) {
                             val isSelected = selectedProducts.contains(product)
                             val price = viewModel.getPricelistById(product.productId)
-                            val groupedProducts = products.groupBy { it.brandID }
+                            val shoeSize =
+                                viewModel.getShoeSizeById(product.shoeSizeId).collectAsState().value
+
 
                             if (price != null) {
                                 ProductCard(
@@ -193,7 +173,8 @@ fun ProductSelectionScreen(
                                     onAddProduct = {
                                         viewModel.addProductToCart(product)
                                     },
-                                    price = price.sellingPrice
+                                    price = price.sellingPrice,
+                                    viewModel = viewModel // Pass ViewModel directly
                                 )
                             } else {
                                 Log.d(
@@ -258,203 +239,35 @@ fun ProductSelectionScreen(
     }
 }
 
-//new logic working
-//@Composable
-//fun ProductCard(
-//    isSelected: Boolean,
-//    brandName: String,
-//    products: List<Products>,
-//    selectedProduct: Products?,
-//    onProductSelected: (Products) -> Unit,
-//    price: Double,
-//    fetchStockLevel: suspend (Long) -> Int
-//) {
-//    val context = LocalContext.current
-//    var expanded by remember { mutableStateOf(false) }
-//    var stockLevel by remember { mutableStateOf(0) }
-//
-//    LaunchedEffect(selectedProduct?.brandID) {
-//        selectedProduct?.let {
-//            stockLevel = fetchStockLevel(it.brandID)
-//        }
-//    }
-//
-//    Card(
-//        shape = RoundedCornerShape(16.dp),
-//        modifier = Modifier
-//            .fillMaxWidth()
-//            .padding(12.dp)
-//            .clip(RoundedCornerShape(16.dp))
-//            .background(Color.White)
-//            .shadow(6.dp, RoundedCornerShape(16.dp)),
-//        elevation = CardDefaults.cardElevation(4.dp)
-//    ) {
-//        Column(
-//            modifier = Modifier
-//                .fillMaxSize()
-//                .padding(16.dp)
-//        ) {
-//
-//            Row {
-//                // 🏷 Brand Name and Stock Level
-//                Text(
-//                    text = brandName.uppercase(),
-//                    style = MaterialTheme.typography.titleLarge,
-//                    fontWeight = FontWeight.Bold,
-//                    color = MaterialTheme.colorScheme.primary,
-//                    modifier = Modifier
-//                        .weight(1f)
-//                )
-//
-//                //
-//                Box(
-//                    modifier = Modifier
-//                        .clip(RoundedCornerShape(12.dp))
-////                    .align(Alignment.End)
-//                        .background(if (stockLevel > 0) Color(0xFF4CAF50) else Color(0xFFD32F2F))
-//                        .padding(horizontal = 12.dp, vertical = 4.dp)
-//                ) {
-//                    Text(
-//                        text = if (stockLevel > 0) "In Stock ($stockLevel)" else "Out of Stock",
-//                        color = Color.White,
-//                        fontWeight = FontWeight.Bold
-//                    )
-//                }
-//            }
-//
-//            // 🔽 Product Dropdown
-//            Box(
-//                modifier = Modifier
-//                    .fillMaxWidth()
-//                    .border(1.dp, Color.Gray, RoundedCornerShape(12.dp))
-//                    .clip(RoundedCornerShape(12.dp))
-//                    .background(MaterialTheme.colorScheme.surface)
-//            ) {
-//                TextButton(
-//                    onClick = { expanded = true },
-//                    modifier = Modifier.fillMaxWidth()
-//                ) {
-//                    Text(
-//                        text = selectedProduct?.let { "${it.productDescription} | Size: ${it.shoeSizeId}" }
-//                            ?: "Select a product",
-//                        color = MaterialTheme.colorScheme.onSurface
-//                    )
-//                }
-//
-//                DropdownMenu(
-//                    expanded = expanded,
-//                    onDismissRequest = { expanded = false },
-//                    modifier = Modifier.fillMaxWidth()
-//                ) {
-//                    products.forEach { product ->
-//                        DropdownMenuItem(
-//                            text = { Text("${product.productDescription} | Size: ${product.shoeSizeId}") },
-//                            onClick = {
-//                                expanded = false
-//                                onProductSelected(product)
-//                            }
-//                        )
-//                    }
-//                }
-//            }
-//            Spacer(modifier = Modifier.height(8.dp))
-//
-//            // Column for product details
-//            Row(
-//                modifier = Modifier
-//                    .fillMaxWidth(),
-//                horizontalArrangement = Arrangement.SpaceBetween
-//            ) {
-//                Column {
-//                    // 🖼️ Image at the start
-//                    Image(
-//                        painter = painterResource(id = R.drawable.bootsu), // Replace with your image
-//                        contentDescription = null,
-//                        modifier = Modifier
-//                            .size(100.dp)
-//                            .clip(RoundedCornerShape(16.dp))
-//                    )
-//                }
-//                Column {
-//                    Row {
-//                        // 💰 Price Display
-//                        Text(
-//                            text = "$${"%.2f".format(price)}",
-//                            style = MaterialTheme.typography.headlineLarge,
-//                            fontWeight = FontWeight.Bold,
-//                            color = MaterialTheme.colorScheme.secondary,
-//                            modifier = Modifier
-//                                .weight(1f)
-//                        )
-//                        //            // 🛒 Add to Cart Button
-//                        ElevatedButton(
-//                            onClick = {
-//                                if (selectedProduct != null && stockLevel > 0) {
-//                                    onProductSelected(selectedProduct)
-//                                } else {
-//                                    Toast.makeText(
-//                                        context,
-//                                        "Please check stock availability!",
-//                                        Toast.LENGTH_SHORT
-//                                    ).show()
-//                                }
-//                            },
-//                            colors = ButtonDefaults.buttonColors(
-//                                if (isSelected) {
-//                                    Color.Red
-//                                } else {
-//                                    Blue1
-//                                }
-//                            ),
-////                        colors = ButtonDefaults.buttonColors(if (stockLevel > 0) Color(0xFF008CFF) else Color.Gray),
-//                            shape = RoundedCornerShape(12.dp),
-//                            modifier = Modifier
-//                                .weight(1f)
-//                                .fillMaxHeight()
-//                        ) {
-//                            Icon(
-//                                Icons.Filled.ShoppingCart,
-//                                contentDescription = "Cart",
-//                                tint = Color.White
-//                            )
-//                            Spacer(modifier = Modifier.width(8.dp))
-//                            Text(
-//                                text = if (selectedProduct != null) "Add to Cart" else "Select Product",
-//                                color = if (isSelected) Color.White else Color.Black
-//                            )
-//                        }
-//                    }
-//
-//                }
-//            }
-//
-//        }
-//
-//    }
-//}
-
-
-// old working
 @Composable
 fun ProductCard(
     products: Products,
     isSelected: Boolean,
     onAddProduct: (Products) -> Unit,
-    price: Double
+    price: Double,
+    viewModel: InvoiceViewModel
 ) {
     val context = LocalContext.current
-    var stockLevel: Long by remember { mutableStateOf(0) }
+    var stockLevel by remember { mutableStateOf(0L) }
 
-    // Fetch stock level when the brandId changes
+    // Collect shoe size state from ViewModel
+    val shoeSizeState = viewModel.getShoeSizeById(products.shoeSizeId)
+        .collectAsState(initial = null)
+
+    val shoeSize = shoeSizeState.value?.size?.toString() ?: "N/A"
+
+    // Fetch stock level when productId changes
     LaunchedEffect(products.productId) {
-//        stockLevel = fetchStockLevel(products.productId)
         stockLevel = products.productQty
     }
 
     Card(
-        shape = RoundedCornerShape(8.dp),
+        shape = RoundedCornerShape(16.dp),
         modifier = Modifier
-            .padding(4.dp)
+            .padding(8.dp)
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .shadow(8.dp, RoundedCornerShape(16.dp))
             .clickable {
                 if (stockLevel > 0) {
                     onAddProduct(products)
@@ -468,42 +281,74 @@ fun ProductCard(
                         .show()
                 }
             },
-        elevation = CardDefaults.cardElevation(2.dp)
+        elevation = CardDefaults.cardElevation(6.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(2.dp),
+                .padding(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                modifier = Modifier.fillMaxWidth(),
-                text = products.productDescription,
-                style = MaterialTheme.typography.bodyMedium
-            )
-            Spacer(modifier = Modifier.height(8.dp))
+            // Product Image Placeholder
             Box(
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .size(80.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
+                contentAlignment = Alignment.Center
             ) {
-                // Use stockLevel dynamically fetched
-                Text(
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .background(Color.White, shape = RoundedCornerShape(8.dp))
-                        .padding(2.dp),
-                    text = stockLevel.toString(),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color.Red,
-                    fontWeight = FontWeight.Bold
+                Icon(
+                    imageVector = Icons.Default.ShoppingCart,
+                    contentDescription = "Product Image",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(48.dp)
                 )
             }
-            Spacer(modifier = Modifier.height(4.dp))
+
+            Spacer(modifier = Modifier.height(8.dp))
+
             Text(
-                "\$${"%.2f".format(price)}",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold
+                text = products.productDescription,
+                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                textAlign = TextAlign.Center,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
             )
-            Spacer(modifier = Modifier.height(4.dp))
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            Text(
+                text = "Size: $shoeSize",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+            )
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Stock Level
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp),
+                contentAlignment = Alignment.CenterEnd
+            ) {
+                Text(
+                    text = "Stock: $stockLevel",
+                    style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                    color = if (stockLevel > 0) MaterialTheme.colorScheme.primary else Color.Red
+                )
+            }
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            Text(
+                text = "$${"%.2f".format(price)}",
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.primary
+            )
+
+            Spacer(modifier = Modifier.height(10.dp))
 
             Button(
                 onClick = {
@@ -518,13 +363,15 @@ fun ProductCard(
                     }
                 },
                 colors = ButtonDefaults.buttonColors(
-                    if (isSelected) Color.Red else Blue1
+                    containerColor = if (isSelected) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.primary,
+                    contentColor = Color.White
                 ),
-                shape = RoundedCornerShape(8.dp)
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth(0.8f)
             ) {
                 Text(
                     text = if (isSelected) stringResource(R.string.added) else stringResource(R.string.addToCart),
-                    color = if (isSelected) Color.White else Color.Black
+                    fontWeight = FontWeight.Bold
                 )
             }
         }

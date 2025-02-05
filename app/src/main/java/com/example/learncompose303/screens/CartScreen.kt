@@ -7,6 +7,7 @@ import android.graphics.pdf.PdfDocument
 import android.os.Environment
 import android.util.Log
 import android.widget.Toast
+import androidx.compose.foundation.gestures.snapping.SnapPosition
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,8 +19,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -49,6 +52,7 @@ import com.example.learncompose303.viewmodels.InvoiceViewModel
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import com.example.learncompose303.app.utils.BluetoothPrinterScanner
 import com.example.learncompose303.screens.auth.AuthViewModel
@@ -77,11 +81,6 @@ fun CartScreen(
             productWithPriceDetails.find { it.first.productId == product.productId }?.second ?: 0.0
         "${product.productDescription} :*$quantity :@ $$price"
     }
-
-//    val productDetails = productWithPriceDetails.joinToString("\n") { (product, price, quantity) ->
-//        "${product.productDescription} :*$quantity :@ $$price"
-//    }
-//
     // State to hold the total amount tendered by the customer
     var amountTendered by remember { mutableStateOf("") }
     // Calculate totalPrice using sumOf for all product prices and quantities
@@ -127,55 +126,62 @@ fun CartScreen(
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        Text("For: ${customer.name}", fontWeight = FontWeight.Bold, fontSize = 18.sp)
-        Divider(
-            modifier = Modifier.padding(vertical = 8.dp),
-            color = MaterialTheme.colorScheme.primary
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        // Currency Dropdown
-        Box {
-            Text("Select Currency")
-            Button(onClick = { expanded = true }) {
-                Text(selectedCurrency?.name ?: "Select Currency")
+        Row(modifier = Modifier.fillMaxWidth()) {
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .align(Alignment.CenterVertically)
+            ) {
+                Text(customer.name, fontWeight = FontWeight.Bold)
             }
-            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                currencies.forEach { currency ->
-                    DropdownMenuItem(
-                        text = { Text(currency.name) },
-                        onClick = {
-                            viewModel.selectCurrency(currency)
-                            expanded = false
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .align(Alignment.CenterVertically)
+            ) {
+                // Currency Dropdown
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    Text("Select Currency")
+                    Button(onClick = { expanded = true }) {
+                        Text(selectedCurrency?.name ?: "Select Currency")
+                    }
+                    DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                        currencies.forEach { currency ->
+                            DropdownMenuItem(
+                                text = { Text(currency.name) },
+                                onClick = {
+                                    viewModel.selectCurrency(currency)
+                                    expanded = false
+                                }
+                            )
                         }
-                    )
+                    }
                 }
             }
-        }
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            "Total Amount: ${selectedCurrency?.code ?: "USD"} $convertedTotalPrice",
-            style = MaterialTheme.typography.headlineSmall
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Row(modifier = Modifier.fillMaxWidth()) {
-            Column(modifier = Modifier.weight(1f)) {
+            Column(
+                modifier = Modifier
+                    .align(Alignment.CenterVertically)
+            ) {
                 Text(
-                    text = "Total Price: ${selectedCurrency?.code ?: "$"}${
+                    text = "Total: ${selectedCurrency?.code ?: "$"}${
                         "%.2f".format(
                             convertedTotalPrice
                         )
                     }",
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                Text(
-                    text = "Change: ${selectedCurrency?.code ?: "$"}${"%.2f".format(changeBalance)}",
-                    style = MaterialTheme.typography.bodySmall,
-                    fontSize = 16.sp
+                    style = MaterialTheme.typography.titleLarge,
+                    color = Color.Black,
+                    modifier = Modifier.align(Alignment.End)
                 )
             }
-            Spacer(modifier = Modifier.width(8.dp))
-            Column {
+        }
+        Divider(
+            modifier = Modifier.padding(vertical = 2.dp),
+            color = MaterialTheme.colorScheme.primary
+        )
+        Spacer(modifier = Modifier.height(2.dp))
+
+        Row(modifier = Modifier.fillMaxWidth()) {
+            Column(modifier = Modifier.weight(1f)) {
                 OutlinedTextField(
                     value = amountTendered,
                     onValueChange = { newValue -> amountTendered = newValue },
@@ -183,127 +189,162 @@ fun CartScreen(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
                 )
             }
-        }
-        Divider(
-            modifier = Modifier.padding(vertical = 8.dp),
-            color = MaterialTheme.colorScheme.primary
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Button(
-            onClick = {
-                val tenderedAmount = amountTendered.toDoubleOrNull()
+            Spacer(modifier = Modifier.width(2.dp))
+            Column(
+                modifier = Modifier
+                    .align(Alignment.CenterVertically)
+                    .weight(1f)
+            ) {
+                Text(
+                    text = "Change: ${selectedCurrency?.code ?: "$"}${"%.2f".format(changeBalance)}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Black,
+                )
+            }
+            Column(
+                modifier = Modifier
+                    .align(Alignment.CenterVertically)
+            ) {
+                Button(
+                    onClick = {
+                        val tenderedAmount = amountTendered.toDoubleOrNull()
 //                if (amountTendered.isNotEmpty() && tenderedAmount != null && tenderedAmount > 0) {
-                if (tenderedAmount != null && tenderedAmount >= convertedTotalPrice) {
+                        if (tenderedAmount != null && tenderedAmount >= convertedTotalPrice) {
 
-                    if (tenderedAmount >= convertedTotalPrice) {
-                        // Use the actual quantities from productQuantities map
-                        val productQuantitiesMap: Map<Long, Int> =
-                            selectedProducts.associate { product ->
-                                product.productId to (productQuantities[product.productId] ?: 1)
-                            }
-                        // Submit the invoice with individual product quantities
-                        viewModel.submitInvoice(
-                            customer.customerId,
-                            tenderedAmount,
-                            productQuantitiesMap,
-                            cashierEmail
-                        )
-                        // Code for sharing the invoice message...
-                        val message = "RECEIPT: ${Date(System.currentTimeMillis())}\n\n" +
-                                "CUSTOMER DETAILS\n" +
-                                "${customer.name}: ${customer.phone}\n\n" +
-                                "PRODUCTS PURCHASED\n" +
-                                "$productDetails\n\n" +
-                                "SALES TOTALS\n" +
-                                "Total Cost: ${selectedCurrency?.code ?: "$"}$convertedTotalPrice\n" +
-                                "Tendered:   ${selectedCurrency?.code ?: "$"}$amountTendered\n" +
-                                "Change:     ${selectedCurrency?.code ?: "$"}${amountTendered.toDouble() - convertedTotalPrice}\n\n" +
-                                "THANK YOU!.. @iSTARTk \u00A92025"
-                        // Start scanning
-                        BluetoothPrinterScanner(context).connectToHardcodedPrinter(message)
-                        try {
-                            // Create a PDF document
-                            val pdfDocument = PdfDocument()
-                            val pageInfo = PdfDocument.PageInfo.Builder(300, 600, 1).create()
-                            val page = pdfDocument.startPage(pageInfo)
-
-                            // Draw the invoice content on the page
-                            val canvas: Canvas = page.canvas
-                            val paint = Paint().apply { textSize = 12f }
-                            var yPosition = 20
-                            message.split("\n").forEach { line ->
-                                canvas.drawText(line, 10f, yPosition.toFloat(), paint)
-                                yPosition += 20
-                            }
-                            pdfDocument.finishPage(page)
-                            // Save the PDF file
-                            val pdfFile = File(
-                                context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS),
-                                "Invoice_${System.currentTimeMillis()}.pdf"
-                            )
-                            pdfDocument.writeTo(FileOutputStream(pdfFile))
-                            pdfDocument.close()
-
-                            // Share the PDF
-                            val uri = androidx.core.content.FileProvider.getUriForFile(
-                                context,
-                                "${context.packageName}.fileprovider",
-                                pdfFile
-                            )
-                            val sendIntent = Intent(Intent.ACTION_SEND).apply {
-                                type = "application/pdf"
-                                putExtra(Intent.EXTRA_STREAM, uri)
-                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                            }
-                            try {
-
-                                val chooserIntent = Intent.createChooser(
-                                    sendIntent,
-                                    "Send via WhatsApp or WhatsApp Business"
+                            if (tenderedAmount >= convertedTotalPrice) {
+                                // Use the actual quantities from productQuantities map
+                                val productQuantitiesMap: Map<Long, Int> =
+                                    selectedProducts.associate { product ->
+                                        product.productId to (productQuantities[product.productId]
+                                            ?: 1)
+                                    }
+                                // Submit the invoice with individual product quantities
+                                viewModel.submitInvoice(
+                                    customer.customerId,
+                                    tenderedAmount,
+                                    productQuantitiesMap,
+                                    cashierEmail
                                 )
-                                chooserIntent.resolveActivity(context.packageManager)?.let {
-                                    context.startActivity(chooserIntent)
-                                } ?: run {
+                                // Code for sharing the invoice message...
+                                val message = "RECEIPT: ${Date(System.currentTimeMillis())}\n\n" +
+                                        "CUSTOMER DETAILS\n" +
+                                        "${customer.name}: ${customer.phone}\n\n" +
+                                        "PRODUCTS PURCHASED\n" +
+                                        "$productDetails\n\n" +
+                                        "SALES TOTALS\n" +
+                                        "Total Cost: ${selectedCurrency?.code ?: "$"}$convertedTotalPrice\n" +
+                                        "Tendered:   ${selectedCurrency?.code ?: "$"}$amountTendered\n" +
+                                        "Change:     ${selectedCurrency?.code ?: "$"}${amountTendered.toDouble() - convertedTotalPrice}\n\n" +
+                                        "THANK YOU!.. @iSTARTk \u00A92025"
+                                // Start scanning
+                                BluetoothPrinterScanner(context).connectToHardcodedPrinter(message)
+                                try {
+                                    // Create a PDF document
+                                    val pdfDocument = PdfDocument()
+                                    val pageInfo =
+                                        PdfDocument.PageInfo.Builder(300, 600, 1).create()
+                                    val page = pdfDocument.startPage(pageInfo)
+
+                                    // Draw the invoice content on the page
+                                    val canvas: Canvas = page.canvas
+                                    val paint = Paint().apply { textSize = 12f }
+                                    var yPosition = 20
+                                    message.split("\n").forEach { line ->
+                                        canvas.drawText(line, 10f, yPosition.toFloat(), paint)
+                                        yPosition += 20
+                                    }
+                                    pdfDocument.finishPage(page)
+                                    // Save the PDF file
+                                    val pdfFile = File(
+                                        context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS),
+                                        "Invoice_${System.currentTimeMillis()}.pdf"
+                                    )
+                                    pdfDocument.writeTo(FileOutputStream(pdfFile))
+                                    pdfDocument.close()
+
+                                    // Share the PDF
+                                    val uri = androidx.core.content.FileProvider.getUriForFile(
+                                        context,
+                                        "${context.packageName}.fileprovider",
+                                        pdfFile
+                                    )
+                                    val sendIntent = Intent(Intent.ACTION_SEND).apply {
+                                        type = "application/pdf"
+                                        putExtra(Intent.EXTRA_STREAM, uri)
+                                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                    }
+                                    try {
+
+                                        val chooserIntent = Intent.createChooser(
+                                            sendIntent,
+                                            "Send via WhatsApp or WhatsApp Business"
+                                        )
+                                        chooserIntent.resolveActivity(context.packageManager)?.let {
+                                            context.startActivity(chooserIntent)
+                                        } ?: run {
+                                            Toast.makeText(
+                                                context,
+                                                "No messaging app found",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                        }
+                                    } catch (e: Exception) {
+                                        Log.e("Error*", "${e.message}")
+                                        Toast.makeText(
+                                            context,
+                                            "Error: ${e.message}",
+                                            Toast.LENGTH_SHORT
+                                        )
+                                            .show()
+                                    }
+
+                                } catch (e: Exception) {
                                     Toast.makeText(
                                         context,
-                                        "No messaging app found",
+                                        "Error: ${e.message}",
                                         Toast.LENGTH_SHORT
-                                    ).show()
+                                    )
+                                        .show()
                                 }
-                            } catch (e: Exception) {
-                                Log.e("Error*", "${e.message}")
-                                Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT)
+                                navController.navigate(Destinations.CustomerSelection.route) {
+                                    popUpTo(Destinations.Rides.route) {
+                                        inclusive = true
+                                    }
+                                }
+                                Toast.makeText(
+                                    context,
+                                    "Invoice paid successfully",
+                                    Toast.LENGTH_SHORT
+                                )
                                     .show()
+                            } else {
+                                Toast.makeText(
+                                    context,
+                                    "Amount tendered must be greater than or equal to total price",
+                                    Toast.LENGTH_SHORT
+                                ).show()
                             }
-
-                        } catch (e: Exception) {
-                            Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT)
+                        } else {
+                            Toast.makeText(
+                                context,
+                                "Please enter valid details",
+                                Toast.LENGTH_SHORT
+                            )
                                 .show()
                         }
-                        navController.navigate(Destinations.CustomerSelection.route) {
-                            popUpTo(Destinations.Rides.route) {
-                                inclusive = true
-                            }
-                        }
-                        Toast.makeText(context, "Invoice paid successfully", Toast.LENGTH_SHORT)
-                            .show()
-                    } else {
-                        Toast.makeText(
-                            context,
-                            "Amount tendered must be greater than or equal to total price",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                } else {
-                    Toast.makeText(context, "Please enter valid details", Toast.LENGTH_SHORT)
-                        .show()
+                    },
+//            modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text("PAY")
                 }
-            },
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text("PAY")
+            }
         }
-        Spacer(modifier = Modifier.height(16.dp))
+        Divider(
+            modifier = Modifier.padding(vertical = 2.dp),
+            color = MaterialTheme.colorScheme.primary
+        )
+        Spacer(modifier = Modifier.height(2.dp))
+
 // Display the list of selected products and their total cost
         LazyColumn {
             items(selectedProducts) { product ->
