@@ -23,6 +23,7 @@ import com.example.learncompose303.data.data_source.PriceListDao
 import com.example.learncompose303.data.data_source.ProductDao
 import com.example.learncompose303.data.data_source.ProductDayReportDao
 import com.example.learncompose303.data.data_source.ShoeSizeDao
+import com.example.learncompose303.data.data_source.StockTakeDao
 import com.example.learncompose303.data.data_source.StudentDao
 import com.example.learncompose303.data.data_source.TradeReceivablesDao
 import com.example.learncompose303.data.data_source.UserDao
@@ -44,6 +45,7 @@ import com.example.learncompose303.data.entities.Products
 import com.example.learncompose303.data.entities.ProductDayReport
 import com.example.learncompose303.data.entities.ShoeBrand
 import com.example.learncompose303.data.entities.ShoeSize
+import com.example.learncompose303.data.entities.StockTake
 import com.example.learncompose303.data.entities.TradeReceivables
 import com.example.learncompose303.data.entities.User
 
@@ -56,9 +58,9 @@ import com.example.learncompose303.data.entities.User
         Order::class, PriceList::class, ProductDayReport::class, DayReports::class,
         User::class, Expense::class,
         TradeReceivables::class, DiscountsReceived::class, Currency::class,
-        CashFlow::class, ShoeBrand::class, ShoeSize::class // New entities
+        CashFlow::class, ShoeBrand::class, ShoeSize::class, StockTake::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -82,6 +84,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun userDao(): UserDao
     abstract fun shoeBrandDao(): ShoeBrandDao
     abstract fun shoeSizeDao(): ShoeSizeDao
+    abstract fun stockTakeDao(): StockTakeDao
 
     // New DAOs
     abstract fun tradeReceivablesDao(): TradeReceivablesDao
@@ -93,6 +96,27 @@ abstract class AppDatabase : RoomDatabase() {
         const val DATABASE_NAME = "ipos_db"
     }
 }
+
+val MIGRATION_1_2 = object : Migration(1, 2) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        // Create the STOCKTAKE table with correct column types
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS `stock_take` (
+                `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                `productId` INTEGER NOT NULL,
+                `recordedStock` INTEGER NOT NULL,
+                `countedStock` REAL NOT NULL,
+                `variance` REAL NOT NULL,
+                `varianceReason` TEXT,
+                `dateRecorded` INTEGER NOT NULL,
+                `recordedBy` TEXT NOT NULL
+            )
+            """.trimIndent()
+        )
+    }
+}
+
 
 //val MIGRATION_34_35 = object : Migration(34, 35) {
 //    override fun migrate(db: SupportSQLiteDatabase) {

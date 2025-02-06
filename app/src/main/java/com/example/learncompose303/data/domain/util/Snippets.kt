@@ -36,7 +36,6 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.learncompose303.data.entities.Customer
 import com.example.learncompose303.screens.CartScreen
-import com.example.learncompose303.screens.ProductCard
 import com.example.learncompose303.viewmodels.InvoiceViewModel
 
 //        Button(

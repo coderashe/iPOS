@@ -19,6 +19,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddShoppingCart
+import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.More
 import androidx.compose.material.icons.filled.Receipt
@@ -174,18 +175,24 @@ fun QuickAccessButtons(navController: NavController) {
             }
         )
         QuickAccessCard(
-            label = stringResource(R.string.orders),
-            subTitle = "---",
-            icon = Icons.Default.More,
-            onClick = { navController.navigate(Destinations.OrderReports.route)             /* Navigate to OrderReports Screen */ }
-        )
-        QuickAccessCard(
             label = stringResource(R.string.load_stocks),
             subTitle = "---",
             icon = Icons.Default.AddShoppingCart,
             onClick = {
                 navController.navigate(Destinations.LoadStocks.route) // Navigate to Stock Loading Screen
             }
+        )
+        QuickAccessCard(
+            label = stringResource(R.string.orders),
+            subTitle = "---",
+            icon = Icons.Default.More,
+            onClick = { navController.navigate(Destinations.OrderReports.route)             /* Navigate to OrderReports Screen */ }
+        )
+        QuickAccessCard(
+            label = stringResource(R.string.stockTaking),
+            subTitle = "---",
+            icon = Icons.Default.AttachMoney,
+            onClick = { navController.navigate(Destinations.StockTaking.route)             /* Navigate to OrderReports Screen */ }
         )
 
     }

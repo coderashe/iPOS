@@ -123,6 +123,7 @@ import kotlinx.coroutines.launch
 import android.content.Intent
 import android.net.Uri
 import com.example.learncompose303.screens.AddCurrencyScreen
+import com.example.learncompose303.screens.StockTakingScreen
 
 
 @Composable
@@ -349,6 +350,15 @@ fun InDriveTopBottomNavigation() {
                 composable(Destinations.ExpenseReport.route) {
                     ExpenseReportScreen(
                         viewModel = expenseViewModel,
+                        navController = navController
+                    )
+                }
+
+//                for stockTackingScreen
+                composable(Destinations.StockTaking.route) {
+                    StockTakingScreen(
+                        viewModel = viewModel,
+                        authViewModel = authViewModel,
                         navController = navController
                     )
                 }

@@ -4,7 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import com.example.learncompose303.daos.ItemDao
 import com.example.learncompose303.data.AppDatabase
-//import com.example.learncompose303.data.MIGRATION_34_35
+import com.example.learncompose303.data.MIGRATION_1_2
 import com.example.learncompose303.data.data_source.CartItemDao
 import com.example.learncompose303.data.data_source.CurrencyDao
 import com.example.learncompose303.data.data_source.CustomerDao
@@ -21,6 +21,7 @@ import com.example.learncompose303.data.data_source.PriceListDao
 import com.example.learncompose303.data.data_source.ProductDao
 import com.example.learncompose303.data.data_source.ProductDayReportDao
 import com.example.learncompose303.data.data_source.ShoeSizeDao
+import com.example.learncompose303.data.data_source.StockTakeDao
 import com.example.learncompose303.data.data_source.StudentDao
 import com.example.learncompose303.data.data_source.UserDao
 import com.example.learncompose303.data.domain.repository.NoteRepository
@@ -65,6 +66,8 @@ import com.example.learncompose303.data.repositories.ShoeBrandRepository
 import com.example.learncompose303.data.repositories.ShoeBrandRepositoryImpl
 import com.example.learncompose303.data.repositories.ShoeSizeRepository
 import com.example.learncompose303.data.repositories.ShoeSizeRepositoryImpl
+import com.example.learncompose303.data.repositories.StockTakeRepository
+import com.example.learncompose303.data.repositories.StockTakeRepositoryImpl
 import com.example.learncompose303.data.repositories.StudentRepository
 import dagger.Module
 import dagger.Provides
@@ -88,7 +91,7 @@ object AppModule {
             AppDatabase::class.java,
             AppDatabase.DATABASE_NAME
         )
-//            .addMigrations(MIGRATION_34_35) // Add your migrations here
+            .addMigrations(MIGRATION_1_2)
             .build()
     }
 
@@ -100,8 +103,16 @@ object AppModule {
 
 //    Provide daoS here
 
-    fun provideShoeBrandDao(appDatabase: AppDatabase): ShoeBrandDao =
-        appDatabase.shoeBrandDao()
+    fun provideStockTakeDao(appDatabase: AppDatabase): StockTakeDao = appDatabase.stockTakeDao()
+
+    @Provides
+    @Singleton
+    fun provideStockTakeRepository(appDatabase: AppDatabase): StockTakeRepository {
+        return StockTakeRepositoryImpl(appDatabase.stockTakeDao())
+    }
+
+
+    fun provideShoeBrandDao(appDatabase: AppDatabase): ShoeBrandDao = appDatabase.shoeBrandDao()
 
     fun provideShoeSizeDao(appDatabase: AppDatabase): ShoeSizeDao =
         appDatabase.shoeSizeDao()

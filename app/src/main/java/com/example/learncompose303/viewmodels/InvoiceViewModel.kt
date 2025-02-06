@@ -22,6 +22,7 @@ import com.example.learncompose303.data.entities.PriceList
 import com.example.learncompose303.data.entities.Products
 import com.example.learncompose303.data.entities.ShoeBrand
 import com.example.learncompose303.data.entities.ShoeSize
+import com.example.learncompose303.data.entities.StockTake
 import com.example.learncompose303.data.entities.User
 import com.example.learncompose303.data.repositories.AuthRepository
 import com.example.learncompose303.data.repositories.CartItemRepository
@@ -36,6 +37,7 @@ import com.example.learncompose303.data.repositories.ProductDayReportRepository
 import com.example.learncompose303.data.repositories.ProductRepository
 import com.example.learncompose303.data.repositories.ShoeBrandRepository
 import com.example.learncompose303.data.repositories.ShoeSizeRepository
+import com.example.learncompose303.data.repositories.StockTakeRepository
 import com.example.learncompose303.data.repositories.StudentRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -71,7 +73,8 @@ class InvoiceViewModel @Inject constructor(
     private val shoeBrandRepository: ShoeBrandRepository,
     private val authRepository: AuthRepository,
     private val dayReportRepository: DayReportsRepository,
-    private val productDayReportRepository: ProductDayReportRepository
+    private val productDayReportRepository: ProductDayReportRepository,
+    private val stockTakeRepository: StockTakeRepository
 ) : ViewModel() {
 
     private val _shoeSizes = MutableStateFlow(emptyList<ShoeSize>())
@@ -171,6 +174,12 @@ class InvoiceViewModel @Inject constructor(
         insertInitialCurrencies()
         fetchCurrencies()
         // Now insert initial products
+    }
+
+    fun insertStockTake(stockTake: StockTake) {
+        viewModelScope.launch {
+            stockTakeRepository.insertStockTake(stockTake)
+        }
     }
 
     fun getShoeSizeById(shoeSizeId: Long): StateFlow<ShoeSize?> {

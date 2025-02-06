@@ -162,9 +162,6 @@ fun ProductSelectionScreen(
                         for (product in rowItems) {
                             val isSelected = selectedProducts.contains(product)
                             val price = viewModel.getPricelistById(product.productId)
-                            val shoeSize =
-                                viewModel.getShoeSizeById(product.shoeSizeId).collectAsState().value
-
 
                             if (price != null) {
                                 ProductCard(
@@ -183,7 +180,6 @@ fun ProductSelectionScreen(
                                 )
                             }
                         }
-
                         // To align remaining products if rowItems is less than the chunk size
                         if (rowItems.size == 1) {
                             Spacer(modifier = Modifier.weight(1f))

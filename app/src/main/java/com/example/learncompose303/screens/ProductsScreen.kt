@@ -26,11 +26,14 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -45,12 +48,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.rememberImagePainter
@@ -71,17 +78,6 @@ fun ProductsScreen(
     var searchQuery by remember { mutableStateOf("") } // State for the search query
     var showLowStockWarning by remember { mutableStateOf(false) } // State for the popup
     var lowStockInventories by remember { mutableStateOf(emptyList<Products>()) } // List to hold low stock products
-
-//    LaunchedEffect(key1 = true) {
-//        viewModel.fetchProducts() // Fetch products when the screen is launched
-//
-//        // Check for low stock products
-//        val lowStock = products.filter { it.currentStockLevel < 10 }
-//        if (lowStock.isNotEmpty()) {
-//            lowStockInventories = lowStock // Save the low stock products
-//            showLowStockWarning = true // Trigger the popup
-//        }
-//    }
 
     LaunchedEffect(key1 = true) {
         viewModel.fetchProducts() // Fetch products when the screen is launched
@@ -148,8 +144,13 @@ fun ProductsScreen(
                                 TheProductCard(
                                     products = product,
                                     initialPrice = price.sellingPrice,
-                                    viewModel,
-                                    authViewModel
+                                    viewModel = viewModel,
+                                    authViewModel = authViewModel
+                                )
+                            } else {
+                                Log.d(
+                                    "istart",
+                                    "No price found for product ID: ${product.productId}"
                                 )
                             }
                         }
@@ -196,47 +197,62 @@ fun ProductsScreen(
 fun TheProductCard(
     products: Products,
     initialPrice: Double,
-    viewModel: InvoiceViewModel = viewModel(),
+    viewModel: InvoiceViewModel,
     authViewModel: AuthViewModel = viewModel()
 ) {
+    val userRole by authViewModel.userRole.observeAsState()
+    val isAdmin = userRole == "admin"
     val context = LocalContext.current
+    var stockLevel by remember { mutableStateOf(0L) }
     val imageUri = remember { mutableStateOf(products.imageUri?.let { Uri.parse(it) }) }
     val isEditing = remember { mutableStateOf(false) }
     var editedProductDescription by remember { mutableStateOf(products.productDescription) }
     var editedPrice by remember { mutableStateOf(initialPrice.toString()) }
     var price by remember { mutableStateOf(initialPrice) }
 
-    val imagePicker = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent(),
-        onResult = { uri ->
-            imageUri.value = uri
-            if (uri != null) {
-                viewModel.onUpdateProductImage(products, uri, context)
-            }
-            viewModel.updateProduct(products)
-        }
-    )
+    // Collect shoe size state from ViewModel
+    val shoeSizeState = viewModel.getShoeSizeById(products.shoeSizeId)
+        .collectAsState(initial = null)
 
-    var stockLevel by remember { mutableStateOf(0) }
+    val shoeSize = shoeSizeState.value?.size?.toString() ?: "N/A"
 
-    // Fetch stock level when the brandId changes
-    LaunchedEffect(products.brandID) {
-        stockLevel = viewModel.fetchStockLevel(products.brandID)
+    // Fetch stock level when productId changes
+    LaunchedEffect(products.productId) {
+        stockLevel = products.productQty
     }
 
     Card(
-        shape = RoundedCornerShape(8.dp),
+        shape = RoundedCornerShape(16.dp),
         modifier = Modifier
-            .padding(4.dp),
-        elevation = CardDefaults.cardElevation(1.dp)
+            .padding(8.dp)
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .shadow(8.dp, RoundedCornerShape(16.dp)),
+        elevation = CardDefaults.cardElevation(6.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(4.dp), // Adjusted padding
+                .padding(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-
+            // Product Image Placeholder
+            Box(
+                modifier = Modifier
+                    .size(80.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.ShoppingCart,
+                    contentDescription = "Product Image",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(48.dp)
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
             // Product Description
             if (isEditing.value) {
                 OutlinedTextField(
@@ -248,45 +264,33 @@ fun TheProductCard(
             } else {
                 Text(
                     text = products.productDescription,
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.fillMaxWidth()
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                    textAlign = TextAlign.Center,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
-            Spacer(modifier = Modifier.height(4.dp)) // Reduced spacing
-
-            // Box to overlay the stock level on the product image
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(
+                text = "Size: $shoeSize",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+            )
+            Spacer(modifier = Modifier.height(10.dp))
+            // Stock Level
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .padding(horizontal = 8.dp),
+                contentAlignment = Alignment.CenterEnd
             ) {
-                // Product Image
-                val currentImageUri = imageUri.value ?: products.imageUri?.let { Uri.parse(it) }
-                val painter = rememberImagePainter(data = currentImageUri ?: R.drawable.meat7)
-
-                Image(
-                    painter = painter,
-                    contentDescription = products.productDescription,
-                    modifier = Modifier
-                        .size(90.dp)
-                        .fillMaxWidth()
-                        .clip(CircleShape)
-                        .clickable { imagePicker.launch("image/*") },
-                    contentScale = ContentScale.Crop
-                )
-
-                // Stock Level Overlay
                 Text(
-                    modifier = Modifier
-                        .align(Alignment.TopEnd) // Align to the top end of the box
-                        .background(Color.White, shape = RoundedCornerShape(8.dp))
-                        .padding(2.dp),
-                    text = stockLevel.toString(),
-                    style = MaterialTheme.typography.bodySmall, // Smaller text style
-                    color = Color.Red,
-                    fontWeight = FontWeight.Bold
+                    text = "Stock: $stockLevel",
+                    style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                    color = if (stockLevel > 0) MaterialTheme.colorScheme.primary else Color.Red
                 )
             }
-
+            Spacer(modifier = Modifier.height(6.dp))
             // Price Display or Edit Field
             if (isEditing.value) {
                 OutlinedTextField(
@@ -299,15 +303,12 @@ fun TheProductCard(
             } else {
                 Text(
                     "\$${"%.2f".format(price)}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Bold
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
 
-            Spacer(modifier = Modifier.height(4.dp)) // Reduced spacing
-
-            val userRole by authViewModel.userRole.observeAsState()
-            val isAdmin = userRole == "admin"
+            Spacer(modifier = Modifier.height(10.dp))
 
             Button(
                 modifier = Modifier.fillMaxWidth(),
@@ -371,3 +372,4 @@ fun TheProductCard(
         }
     }
 }
+
