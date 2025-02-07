@@ -2,6 +2,8 @@ package com.example.learncompose303.screens
 
 import android.widget.Toast
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -39,13 +41,18 @@ import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import com.example.learncompose303.R
 import com.example.learncompose303.data.entities.ShoeBrand
 import com.example.learncompose303.data.entities.ShoeSize
 
@@ -62,8 +69,8 @@ fun LoadStockScreen(
     val context = LocalContext.current
     val shoeSizes by viewModel.shoeSizes.collectAsState()
     val shoeBrands by viewModel.shoeBrands.collectAsState()
-    val shoeSizeList = shoeSizes.map { it.size.toString() }  // Extract only sizes
     val shoeBrandList = shoeBrands.map { it.brandName }      // Extract only brand names
+    val shoeSizeList = shoeSizes.map { it.size.toString() }  // Extract only sizes
     var selectedShoeSize by remember { mutableStateOf<ShoeSize?>(null) }
     var selectedShoeBrand by remember { mutableStateOf<ShoeBrand?>(null) }
     var shoeSize by remember { mutableStateOf("6") } // Default size -> 6
@@ -208,46 +215,35 @@ fun LoadStockScreen(
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        OutlinedTextField(
-            value = productName,
-            onValueChange = { productName = it },
-            label = { Text("Product Name") },
-            modifier = Modifier.fillMaxWidth()
-        )
-        Spacer(modifier = Modifier.height(8.dp))
+        // New Shoe Size | New Shoe Brand Card
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(100.dp)
+                .clickable {
+                    navController.navigate(Destinations.ShoeManagement.route) // Navigate to ShoeMgtScreen
+                },
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = androidx.compose.material3.MaterialTheme.colorScheme.primaryContainer),
+            elevation = CardDefaults.cardElevation(8.dp)
+        ) {
+            Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                Text(
+                    stringResource(R.string.shoe_mgt),
+                    style = androidx.compose.material3.MaterialTheme.typography.titleMedium
+                )
+            }
+        }
 
-        OutlinedTextField(
-            value = currentStockLevel,
-            onValueChange = { currentStockLevel = it },
-            label = { Text("Current Stock Level") },
-            modifier = Modifier.fillMaxWidth(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-
-        OutlinedTextField(
-            value = unitCost,
-            onValueChange = { unitCost = it },
-            label = { Text("Unit Cost") },
-            modifier = Modifier.fillMaxWidth(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-
-        OutlinedTextField(
-            value = sellingPrice,
-            onValueChange = { sellingPrice = it },
-            label = { Text("Selling Price") },
-            modifier = Modifier.fillMaxWidth(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
-        )
         Spacer(modifier = Modifier.height(16.dp))
+//        dropdowns section
         Row(
             modifier = Modifier.fillMaxWidth()
         ) {
             // Shoe Size Dropdown
             Box(
                 modifier = Modifier
+                    .fillMaxWidth()
                     .weight(1f)
             ) {
                 // Anchor for the dropdown
@@ -290,6 +286,7 @@ fun LoadStockScreen(
             // Shoe Brand Dropdown
             Box(
                 modifier = Modifier
+                    .fillMaxWidth()
                     .weight(1f)
             ) {
                 // Anchor for the dropdown
@@ -328,6 +325,41 @@ fun LoadStockScreen(
             }
 
         }
+
+        OutlinedTextField(
+            value = productName,
+            onValueChange = { productName = it },
+            label = { Text("Product Name") },
+            modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+
+        OutlinedTextField(
+            value = currentStockLevel,
+            onValueChange = { currentStockLevel = it },
+            label = { Text("Current Stock Level") },
+            modifier = Modifier.fillMaxWidth(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+
+        OutlinedTextField(
+            value = unitCost,
+            onValueChange = { unitCost = it },
+            label = { Text("Unit Cost") },
+            modifier = Modifier.fillMaxWidth(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+
+        OutlinedTextField(
+            value = sellingPrice,
+            onValueChange = { sellingPrice = it },
+            label = { Text("Selling Price") },
+            modifier = Modifier.fillMaxWidth(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
+        )
+
         Spacer(modifier = Modifier.height(16.dp))
         Button(
             onClick = {

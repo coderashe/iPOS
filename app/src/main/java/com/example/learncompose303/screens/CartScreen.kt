@@ -7,6 +7,7 @@ import android.graphics.pdf.PdfDocument
 import android.os.Environment
 import android.util.Log
 import android.widget.Toast
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.snapping.SnapPosition
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,12 +24,15 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -117,6 +121,9 @@ fun CartScreen(
     } else {
         0.0
     }
+
+    var theCurrency by remember { mutableStateOf("United States Dollar") } // Default currency -> USD
+
     // Load price details for selected products when the screen is entered
     LaunchedEffect(selectedProducts) {
         viewModel.getPriceDetailsForSelectedProducts(selectedProducts, productQuantities)
@@ -141,15 +148,37 @@ fun CartScreen(
             ) {
                 // Currency Dropdown
                 Box(modifier = Modifier.fillMaxWidth()) {
-                    Text("Select Currency")
-                    Button(onClick = { expanded = true }) {
-                        Text(selectedCurrency?.name ?: "Select Currency")
-                    }
-                    DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+//                    Text("Select Currency")
+//
+//                    Button(onClick = { expanded = true }) {
+//                        Text(selectedCurrency?.name ?: "Select Currency")
+//                    }
+                    OutlinedTextField(
+                        value = theCurrency,
+                        onValueChange = {},
+                        label = { Text(selectedCurrency?.name ?: "Select Currency") },
+                        readOnly = true,
+                        modifier = Modifier
+                            .clickable { expanded = true },
+                        trailingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.ArrowDropDown,
+                                contentDescription = null,
+                                modifier = Modifier.clickable {
+                                    expanded = !expanded
+                                } // Also toggle using the icon
+                            )
+                        }
+                    )
+                    DropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false }
+                    ) {
                         currencies.forEach { currency ->
                             DropdownMenuItem(
                                 text = { Text(currency.name) },
                                 onClick = {
+                                    theCurrency = currency.name
                                     viewModel.selectCurrency(currency)
                                     expanded = false
                                 }

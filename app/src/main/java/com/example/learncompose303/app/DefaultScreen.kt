@@ -123,7 +123,9 @@ import kotlinx.coroutines.launch
 import android.content.Intent
 import android.net.Uri
 import com.example.learncompose303.screens.AddCurrencyScreen
+import com.example.learncompose303.screens.ShoeManagementScreen
 import com.example.learncompose303.screens.StockTakingScreen
+import com.example.learncompose303.viewmodels.ShoeViewModel
 
 
 @Composable
@@ -183,6 +185,7 @@ fun InDriveTopBottomNavigation() {
     val expenseViewModel: ExpenseViewModel = viewModel()
     val businessPerformanceViewModel: BusinessPerformanceViewModel = viewModel()
     val viewModel: InvoiceViewModel = viewModel()
+    val shoeViewModel: ShoeViewModel = viewModel()
     val navController = rememberNavController()
     val scaffoldState = rememberScaffoldState()
     val coroutineScope = rememberCoroutineScope()
@@ -360,6 +363,14 @@ fun InDriveTopBottomNavigation() {
                         viewModel = viewModel,
                         authViewModel = authViewModel,
                         navController = navController
+                    )
+                }
+
+                //                for ShoeManagementScreen
+                composable(Destinations.ShoeManagement.route) {
+                    ShoeManagementScreen(
+                        shoeViewModel = shoeViewModel,
+                        viewModel = viewModel
                     )
                 }
 

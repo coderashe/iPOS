@@ -57,6 +57,7 @@
     <string name="load_stocks">LOAD STOCKS</string>
     <string name="load_stocks1">Load Stocks</string>
     <string name="invoicing">INVOICING</string>
+    <string name="shoe_mgt">ADD NEW SHOE SIZE | NEW SHOE BRAND</string>
     <string name="navinvoicing">invoicing</string>
     <string name="navinvoices">invoices</string>
     <string name="reports">REPORTS</string>
