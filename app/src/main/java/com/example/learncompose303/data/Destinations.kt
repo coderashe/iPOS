@@ -21,6 +21,7 @@ sealed class Destinations(val route: String) {
     data object IncomeStatement : Destinations("incomestatement")
     data object Invoice : Destinations("invoicing")
     data object Login : Destinations("login")
+    data object MultiCurrency : Destinations("multicurrency")
     data object Order : Destinations("order")
     data object OrderReports : Destinations("orderReports")
     data object OrderReportDetail : Destinations("order_report/{id}") {

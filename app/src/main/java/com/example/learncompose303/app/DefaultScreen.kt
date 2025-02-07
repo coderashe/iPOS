@@ -123,6 +123,7 @@ import kotlinx.coroutines.launch
 import android.content.Intent
 import android.net.Uri
 import com.example.learncompose303.screens.AddCurrencyScreen
+import com.example.learncompose303.screens.MultiCurrencyScreen
 import com.example.learncompose303.screens.ShoeManagementScreen
 import com.example.learncompose303.screens.StockTakingScreen
 import com.example.learncompose303.viewmodels.ShoeViewModel
@@ -482,6 +483,14 @@ fun InDriveTopBottomNavigation() {
                     LoginScreen(viewModel = viewModel, navController)
                 }
 
+//                For MultiCurrency
+                composable(Destinations.MultiCurrency.route) {
+                    MultiCurrencyScreen(
+                        viewModel = viewModel,
+                        navController
+                    )
+                }
+
                 composable(Destinations.LoadStocks.route) {
                     LoadStockScreen(viewModel = viewModel, navController) {}
                 }
@@ -498,7 +507,8 @@ fun InDriveTopBottomNavigation() {
                             navController.navigate(
                                 Destinations.InvoiceDetail.createRoute(invoiceId)  // Use invoiceId
                             )
-                        }
+                        },
+                        navController = navController
                     )
                 }
 

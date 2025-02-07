@@ -173,6 +173,7 @@ class InvoiceViewModel @Inject constructor(
         fetchProducts()
         insertInitialCurrencies()
         fetchCurrencies()
+        fetchCurrencyTotals()
         // Now insert initial products
     }
 
@@ -194,12 +195,6 @@ class InvoiceViewModel @Inject constructor(
         return productRepository.getProductByNameAndSize(productName, shoeSizeId)
     }
 
-    // Fetch all currencies
-    fun fetchCurrencies() = viewModelScope.launch {
-        invoiceRepository.getAllCurrencies().collectLatest { currencyList ->
-            _currencies.value = currencyList
-        }
-    }
 
     private val _brandNameCache = mutableMapOf<Long, String>()
 
@@ -220,6 +215,20 @@ class InvoiceViewModel @Inject constructor(
     // Fetch current stock by brandID
     suspend fun getCurrentStockByBrand(brandID: Long): Int {
         return shoeSizeRepository.getTotalQuantityByBrand(brandID)
+    }
+
+    // Fetch all currencies
+    fun fetchCurrencyTotals() = viewModelScope.launch {
+        invoiceRepository.getAllInvoices().collect { invoices ->
+            _invoiceList.value = invoices
+        }
+    }
+
+    // Fetch all currencies
+    fun fetchCurrencies() = viewModelScope.launch {
+        invoiceRepository.getAllCurrencies().collectLatest { currencyList ->
+            _currencies.value = currencyList
+        }
     }
 
     // Fetch all shoe sizes

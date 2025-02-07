@@ -66,6 +66,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.learncompose303.R
+import com.example.learncompose303.data.Destinations
 import com.example.learncompose303.data.entities.Invoice
 import com.example.learncompose303.data.entities.InvoiceLine
 import com.example.learncompose303.ui.theme.GreenColor
@@ -80,6 +81,7 @@ import java.util.Date
 fun ReportsScreen(
     viewModel: InvoiceViewModel = viewModel(),
     onInvoiceClick: (Long) -> Unit,
+    navController: NavController
 ) {
     // State for filter option
     var filterOption by remember { mutableStateOf("Today") }
@@ -120,6 +122,28 @@ fun ReportsScreen(
                 }
             )
             Spacer(modifier = Modifier.height(8.dp))
+
+            // New Shoe Size | New Shoe Brand Card
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(100.dp)
+                    .clickable {
+                        navController.navigate(Destinations.MultiCurrency.route) // Navigate to ShoeMgtScreen
+                    },
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = androidx.compose.material3.MaterialTheme.colorScheme.primaryContainer),
+                elevation = CardDefaults.cardElevation(8.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                    Text(
+                        stringResource(R.string.multi_currency),
+                        style = androidx.compose.material3.MaterialTheme.typography.titleMedium
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
 
             // Display filtered invoices
             if (filteredInvoices.isEmpty()) {
@@ -276,3 +300,11 @@ fun InvoiceCard(invoice: Invoice, onClick: () -> Unit) {
         }
     }
 }
+
+//Multi-Currency Report – Shows sales in different currencies.
+//Stock Value Report – Displays total stock value.
+//Sales by Person Report – Lists sales per salesperson.
+//Top Performing Salesman – Highlights the best-performing salesperson.
+//Tax Revenue Report – Calculates 15% tax on sales.
+//Daily Sales Report – Shows sales and transactions for today.
+//Other relevant reports like Profit Report, Customer Purchase Trends, and Monthly Revenue Breakdown.

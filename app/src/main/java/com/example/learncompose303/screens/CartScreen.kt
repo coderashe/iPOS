@@ -128,6 +128,8 @@ fun CartScreen(
     LaunchedEffect(selectedProducts) {
         viewModel.getPriceDetailsForSelectedProducts(selectedProducts, productQuantities)
     }
+
+
     Column(
         modifier = Modifier
             .fillMaxSize()

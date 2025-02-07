@@ -12,6 +12,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
 interface InvoiceRepository {
@@ -27,6 +28,8 @@ interface InvoiceRepository {
     suspend fun insertCurrencies(currencies: List<Currency>)
     suspend fun insertCurrency(currency: Currency)
     suspend fun getAllCurrenciesOnce(): List<Currency>
+    suspend fun getTotalSalesPerCurrency(): Flow<Map<String, Double>>
+
 
 }
 
@@ -34,6 +37,14 @@ class InvoiceRepositoryImpl @Inject constructor(
     private val invoiceDao: InvoiceDao,
     private val currencyDao: CurrencyDao
 ) : InvoiceRepository {
+
+    override suspend fun getTotalSalesPerCurrency(): Flow<Map<String, Double>> {
+        return getAllInvoices().map { invoices ->
+            invoices.groupBy { it.currencyCode }.mapValues { entry ->
+                entry.value.sumOf { it.totalAmount }
+            }
+        }
+    }
 
     override suspend fun insertCurrency(currency: Currency) {
         currencyDao.insertCurrency(currency)
