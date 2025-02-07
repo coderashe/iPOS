@@ -258,23 +258,26 @@ class InvoiceViewModel @Inject constructor(
             val existingProducts = productRepository.getAllProductsOnce()
 
             // Create a map to track existing products by their description
-            val existingProductMap = existingProducts.associateBy { it.productDescription }
+            val existingProductMap = existingProducts.associateBy { it.productCode }
 
             val duplicateCount = 0
 
             for (productCsv in productsFromCsv) {
-                val existingProduct = existingProductMap[productCsv.productDescription]
+                val existingProduct = existingProductMap[productCsv.productCode]
 
                 // If the product exists, update its details
                 if (existingProduct != null) {
                     // Update the existing product details
                     val updatedProduct = existingProduct.copy(
+                        productQty = productCsv.productQty,
+                        brandID = productCsv.brandID,
+                        shoeSizeId = productCsv.shoeSizeId,
                         saleable = productCsv.saleable,
                         purchasable = productCsv.purchasable,
                         averageCost = productCsv.averageCost,
                         standardCost = productCsv.standardCost ?: existingProduct.standardCost,
                         salesTaxCode = productCsv.salesTaxCode,
-                        productCode = "",
+                        productCode = productCsv.productCode,
                         inclusiveTaxed = productCsv.inclusiveTaxed,
                         imageUri = productCsv.imageUri
                             ?: existingProduct.imageUri // Retain existing image URI if null
@@ -310,16 +313,16 @@ class InvoiceViewModel @Inject constructor(
                     // Create a new product entity
                     val newProducts = Products(
                         productDescription = productCsv.productDescription,
+                        productQty = productCsv.productQty,
+                        brandID = productCsv.brandID,
+                        shoeSizeId = productCsv.shoeSizeId,
                         saleable = productCsv.saleable,
                         purchasable = productCsv.purchasable,
                         averageCost = productCsv.averageCost,
                         standardCost = standardCost,
                         salesTaxCode = productCsv.salesTaxCode,
-                        productCode = "",
+                        productCode = productCsv.productCode,
                         inclusiveTaxed = productCsv.inclusiveTaxed,
-                        shoeSizeId = 1,
-                        brandID = 1,
-                        productQty = productCsv.currentStockLevel.toLong(),
                         imageUri = imageUri
                     )
 

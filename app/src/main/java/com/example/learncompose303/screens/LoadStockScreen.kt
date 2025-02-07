@@ -1,6 +1,9 @@
 package com.example.learncompose303.screens
 
+import android.net.Uri
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -84,6 +87,18 @@ fun LoadStockScreen(
         viewModel.fetchShoeBrands()
         viewModel.fetchShoeSizes()
     }
+
+    val requestFileLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let {
+            val inputStream = context.contentResolver.openInputStream(it)
+            inputStream?.let {
+                viewModel.uploadProductsFromCsv(it, context)
+            }
+        }
+    }
+
 //
 
     // When showing the dialog, launch a coroutine to check for duplicates
@@ -215,27 +230,59 @@ fun LoadStockScreen(
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        // New Shoe Size | New Shoe Brand Card
-        Card(
+
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(100.dp)
-                .clickable {
-                    navController.navigate(Destinations.ShoeManagement.route) // Navigate to ShoeMgtScreen
-                },
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = androidx.compose.material3.MaterialTheme.colorScheme.primaryContainer),
-            elevation = CardDefaults.cardElevation(8.dp)
+                .padding(top = 8.dp, start = 8.dp)
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp) // Spacing between items
         ) {
-            Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                Text(
-                    stringResource(R.string.shoe_mgt),
-                    style = androidx.compose.material3.MaterialTheme.typography.titleMedium
-                )
+            // New Shoe Size | New Shoe Brand Card
+            Card(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .height(100.dp)
+                    .clickable {
+                        navController.navigate(Destinations.ShoeManagement.route) // Navigate to ShoeMgtScreen
+                    },
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = androidx.compose.material3.MaterialTheme.colorScheme.primaryContainer),
+                elevation = CardDefaults.cardElevation(8.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                    Text(
+                        stringResource(R.string.shoe_mgt),
+                        style = androidx.compose.material3.MaterialTheme.typography.titleMedium
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            // Upload Products From Template
+            Card(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .height(100.dp)
+                    .clickable {
+                        requestFileLauncher.launch("*/*")
+                    },
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = androidx.compose.material3.MaterialTheme.colorScheme.primaryContainer),
+                elevation = CardDefaults.cardElevation(8.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                    Text(
+                        stringResource(R.string.uploadProducts),
+                        style = androidx.compose.material3.MaterialTheme.typography.titleMedium
+                    )
+                }
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+//
+        Spacer(modifier = Modifier.height(12.dp))
 //        dropdowns section
         Row(
             modifier = Modifier.fillMaxWidth()

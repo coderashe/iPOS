@@ -17,28 +17,32 @@ class CsvParser {
         while (reader.readLine().also { line = it } != null) {
             line?.let {
                 val tokens = it.split(",")
-                if (tokens.size >= 10) {
+                if (tokens.size >= 12) {
                     val productDescription = tokens[0]
-                    val currentStockLevel = tokens[1].toDouble()
-                    val saleable = tokens[2].toBoolean()
-                    val purchasable = tokens[3].toBoolean()
-                    val averageCost = tokens[4].toDouble()
-                    val standardCost = tokens[5].toDouble()
-                    val salesTaxCode = tokens[6].ifBlank { null }
-                    val purchasableTaxCode = tokens[7].ifBlank { null }
-                    val inclusiveTaxed = tokens[8].toBoolean()
-                    val imageUri = tokens[9].toString()
+                    val productQty = tokens[1].toLong()
+                    val brandID = tokens[2].toLong()
+                    val shoeSizeId = tokens[3].toLong()
+                    val saleable = tokens[4].toBoolean()
+                    val purchasable = tokens[5].toBoolean()
+                    val averageCost = tokens[6].toDouble()
+                    val standardCost = tokens[7].toDouble()
+                    val salesTaxCode = tokens[8].ifBlank { null }
+                    val productCode = tokens[9]
+                    val inclusiveTaxed = tokens[10].toBoolean()
+                    val imageUri = tokens[11]
 
                     productList.add(
                         ProductCsvModel(
                             productDescription,
-                            currentStockLevel,
+                            productQty,
+                            brandID,
+                            shoeSizeId,
                             saleable,
                             purchasable,
                             averageCost,
                             standardCost,
                             salesTaxCode,
-                            purchasableTaxCode,
+                            productCode,
                             inclusiveTaxed,
                             imageUri = imageUri
                         )
