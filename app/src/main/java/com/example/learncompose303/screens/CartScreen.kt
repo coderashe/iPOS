@@ -256,6 +256,7 @@ fun CartScreen(
                                     productQuantitiesMap,
                                     cashierEmail
                                 )
+
                                 // Code for sharing the invoice message...
                                 val message = "RECEIPT: ${Date(System.currentTimeMillis())}\n\n" +
                                         "CUSTOMER DETAILS\n" +

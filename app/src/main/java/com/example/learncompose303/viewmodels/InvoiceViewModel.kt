@@ -1256,9 +1256,6 @@ class InvoiceViewModel @Inject constructor(
                 val taxPercentage = 0.15 // Example tax percentage
                 val discountPercentage = 0.0 // Example discount percentage
 
-                // Log the start of the operation
-                Log.d("Invoice", "Starting invoice submission for customerId: $customerId")
-
                 // Fetch customer details
                 val customer = customerRepository.getCustomerById(customerId)
                 if (customer == null) {
@@ -1267,21 +1264,12 @@ class InvoiceViewModel @Inject constructor(
                 }
 
                 // Fetch selected products and calculate total amount based on quantities
+                val exchangeRate = _selectedCurrency.value?.rateToBase ?: 1.0
                 val selectedProductsWithDetails = _selectedProducts.value.map { product ->
                     val quantitySold = productQuantities[product.productId] ?: 1
-                    // Fetch the corresponding price from the PriceList entity
-                    val priceList =
-                        priceListRepository.getPriceListByProductId(product.productId)
+                    val priceList = priceListRepository.getPriceListByProductId(product.productId)
                     val basePrice = priceList?.sellingPrice ?: 0.0
-                    val taxAmount = basePrice * taxPercentage
-                    val stockLeft = productQuantities[product.productId]?.let {
-                        product.productQty.minus(
-                            it
-                        )
-                    }
-                    Log.d("Invoice", "Qty left is: $stockLeft")
-
-                    val finalPrice = basePrice
+                    val finalPrice = basePrice * exchangeRate  // Apply the exchange rate
                     totalAmount += finalPrice * quantitySold // Use product-specific quantity for calculations
 
                     Triple(
