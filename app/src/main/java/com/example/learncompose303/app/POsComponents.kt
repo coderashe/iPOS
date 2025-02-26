@@ -342,10 +342,13 @@ fun SalesmanInfoCard(
     shopName: String,
     viewModel: InvoiceViewModel = viewModel()
 ) {
-    LaunchedEffect(key1 = true) {
-        viewModel.getTodaySalesInfo()
+    val invoiceList by viewModel.invoiceList.collectAsState()
+    val (oldSalesTotal, numberOfTransactions) = viewModel.getTodaySalesInfo()
+
+    // Group invoices by currency and sum totals
+    val currencyTotals = invoiceList.groupBy { it.currencyCode }.mapValues { entry ->
+        entry.value.sumOf { it.totalAmount }
     }
-    val (currentSalesTotal, numberOfTransactions) = viewModel.getTodaySalesInfo()
 
     Card(
         modifier = Modifier
@@ -372,27 +375,29 @@ fun SalesmanInfoCard(
                 style = MaterialTheme.typography.bodySmall,
                 color = Gray1
             )
-
             Divider(
-                modifier = Modifier.padding(vertical = 8.dp),
+                modifier = Modifier.padding(vertical = 4.dp),
                 color = MaterialTheme.colorScheme.primary
             )
-
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                // Current sales total
+
+                // Display Sales Totals by Currency
                 Column {
                     Text(
-                        text = "SALES TOTAL",
-                        style = MaterialTheme.typography.titleSmall,
+                        text = "SALES TOTALS",
+                        style = MaterialTheme.typography.titleSmall
                     )
-                    Text(
-                        text = "$${String.format("%.2f", currentSalesTotal)}",
-                        style = MaterialTheme.typography.titleSmall,
-                        color = MediumGreen
-                    )
+
+                    currencyTotals.forEach { (currencyCode, totalAmount) ->
+                        Text(
+                            text = "$currencyCode: ${String.format("%.2f", totalAmount)}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MediumGreen
+                        )
+                    }
                 }
 
                 // Number of transactions

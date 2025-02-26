@@ -37,18 +37,7 @@ import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-
     private val NOTIFICATION_PERMISSION_REQUEST_CODE = 1001
-
-    // Register the permission request launcher
-    private val requestBluetoothPermissionLauncher =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
-            if (isGranted) {
-                // Your printing code/method HERE
-            } else {
-                // Handle the permission denied case
-            }
-        }
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -65,8 +54,6 @@ class MainActivity : ComponentActivity() {
                 1
             )
         }
-
-
         // Request notification permission for Android 13 and above
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
@@ -79,15 +66,6 @@ class MainActivity : ComponentActivity() {
                 )
             }
         }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val permissions = arrayOf(
-                Manifest.permission.BLUETOOTH_SCAN,
-                Manifest.permission.BLUETOOTH_CONNECT
-            )
-            requestPermissions(permissions, 100)
-        }
-
-
         setContent {
             LearnCompose303Theme {
                 Surface(
@@ -98,7 +76,6 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-
 
     // Handle the result of the permission request
     override fun onRequestPermissionsResult(
@@ -121,4 +98,21 @@ class MainActivity : ComponentActivity() {
 }
 
 
+//    // Register the permission request launcher
+//    private val requestBluetoothPermissionLauncher =
+//        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+//            if (isGranted) {
+//                // Your printing code/method HERE
+//            } else {
+//                // Handle the permission denied case
+//            }
+//        }
 
+
+//if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+//            val permissions = arrayOf(
+//                Manifest.permission.BLUETOOTH_SCAN,
+//                Manifest.permission.BLUETOOTH_CONNECT
+//            )
+//            requestPermissions(permissions, 100)
+//        }

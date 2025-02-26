@@ -81,7 +81,7 @@ fun LoadStockScreen(
     var sizeExpanded by remember { mutableStateOf(false) }     // Dropdown Menu state
     var brandExpanded by remember { mutableStateOf(false) }     // Dropdown Menu state
     var showDialog by remember { mutableStateOf(false) } // Show confirmation dialog
-    var errorMessage by remember { mutableStateOf<String?>(null) } // Error message for duplicate check
+    var errorMessage by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) {
         viewModel.fetchShoeBrands()
@@ -192,7 +192,7 @@ fun LoadStockScreen(
                         } else {
                             Toast.makeText(
                                 context,
-                                "Please enter valid details",
+                                "Enter all details",
                                 Toast.LENGTH_SHORT
                             ).show()
                         }

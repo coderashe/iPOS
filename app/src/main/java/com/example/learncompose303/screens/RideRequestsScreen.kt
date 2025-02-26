@@ -106,8 +106,8 @@ fun RideRequestsScreen(
             .verticalScroll(rememberScrollState())
     ) {
         SalesmanInfoCard(
-            salesmanName = currentUser?.userFullName ?: "Simba Start",
-            shopName = currentUser?.storeID ?: "ISTART CAPITAL",
+            salesmanName = currentUser?.userFullName ?: "iSTART",
+            shopName = currentUser?.storeID ?: "ISTART CAPITAL STORE",
             viewModel = viewModel
         )
         SpacerHeight()

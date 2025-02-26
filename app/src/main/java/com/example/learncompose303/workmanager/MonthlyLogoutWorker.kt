@@ -4,21 +4,38 @@ import android.content.Context
 import androidx.work.Worker
 import androidx.work.WorkerParameters
 import android.util.Log
+import androidx.work.Constraints
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.NetworkType
 import java.util.Calendar
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.google.firebase.auth.FirebaseAuth
+import dagger.hilt.android.qualifiers.ApplicationContext
 import java.util.concurrent.TimeUnit
+import javax.inject.Inject
 
-class MonthlyLogoutWorker(context: Context, workerParams: WorkerParameters) :
-    Worker(context, workerParams) {
+
+class MonthlyLogoutWorker @Inject constructor(
+    @ApplicationContext context: Context,
+    workerParams: WorkerParameters
+) : Worker(context, workerParams) {
 
     override fun doWork(): Result {
-        // Check if today is the 1st of the month
         val calendar = Calendar.getInstance()
-        if (calendar.get(Calendar.DAY_OF_MONTH) == 1) {
-            Log.d("MonthlyLogoutWorker", "Logging out user on the 1st of the month.")
-            logoutUser()  // Call your logout function here
+        val currentDay = calendar.get(Calendar.DAY_OF_MONTH)
+
+        if (currentDay == 1) {
+            val sharedPreferences =
+                applicationContext.getSharedPreferences("AppPrefs", Context.MODE_PRIVATE)
+            val lastLogoutDate = sharedPreferences.getInt("lastLogoutDay", -1)
+
+            if (lastLogoutDate != 1) {
+                logoutUser()
+                sharedPreferences.edit().putInt("lastLogoutDay", 1).apply()
+            } else {
+                Log.d("MonthlyLogoutWorker", "User already logged out today, skipping.")
+            }
         } else {
             Log.d("MonthlyLogoutWorker", "Not the 1st of the month, skipping logout.")
         }
@@ -27,18 +44,7 @@ class MonthlyLogoutWorker(context: Context, workerParams: WorkerParameters) :
     }
 
     private fun logoutUser() {
-        // Perform Firebase logout
         FirebaseAuth.getInstance().signOut()
         Log.d("MonthlyLogoutWorker", "User successfully logged out.")
-    }
-
-    private fun scheduleMonthlyLogout() {
-        // Create a PeriodicWorkRequest to run daily
-        val logoutWorkRequest =
-            PeriodicWorkRequestBuilder<MonthlyLogoutWorker>(1, TimeUnit.DAYS) // Repeat every day
-                .build()
-
-        // Enqueue the work with WorkManager
-        WorkManager.getInstance(applicationContext).enqueue(logoutWorkRequest)
     }
 }

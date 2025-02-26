@@ -1,5 +1,6 @@
 package com.example.learncompose303.screens
 
+import android.content.Context
 import android.content.Intent
 import android.graphics.Canvas
 import android.graphics.Paint
@@ -55,11 +56,15 @@ import com.example.learncompose303.data.entities.Customer
 import com.example.learncompose303.viewmodels.InvoiceViewModel
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.FileProvider
 import com.example.learncompose303.app.utils.BluetoothPrinterScanner
+import com.example.learncompose303.screens.auth.AuthState
 import com.example.learncompose303.screens.auth.AuthViewModel
+import com.google.firebase.auth.FirebaseAuth
 import java.io.File
 import java.io.FileOutputStream
 import java.util.Date
@@ -236,19 +241,22 @@ fun CartScreen(
                 modifier = Modifier
                     .align(Alignment.CenterVertically)
             ) {
+                // Observe auth state and navigate to sign-in page when unauthenticated
+                val authState by authViewModel.authState.observeAsState()
+
                 Button(
                     onClick = {
                         val tenderedAmount = amountTendered.toDoubleOrNull()
-//                if (amountTendered.isNotEmpty() && tenderedAmount != null && tenderedAmount > 0) {
-                        if (tenderedAmount != null && tenderedAmount >= convertedTotalPrice) {
 
-                            if (tenderedAmount >= convertedTotalPrice) {
+                        if (tenderedAmount != null && tenderedAmount >= convertedTotalPrice) {
+                            if (authState == AuthState.Authenticated) {
                                 // Use the actual quantities from productQuantities map
                                 val productQuantitiesMap: Map<Long, Int> =
                                     selectedProducts.associate { product ->
                                         product.productId to (productQuantities[product.productId]
                                             ?: 1)
                                     }
+
                                 // Submit the invoice with individual product quantities
                                 viewModel.submitInvoice(
                                     customer.customerId,
@@ -257,7 +265,7 @@ fun CartScreen(
                                     cashierEmail
                                 )
 
-                                // Code for sharing the invoice message...
+                                // Share the invoice message...
                                 val message = "RECEIPT: ${Date(System.currentTimeMillis())}\n\n" +
                                         "CUSTOMER DETAILS\n" +
                                         "${customer.name}: ${customer.phone}\n\n" +
@@ -268,108 +276,194 @@ fun CartScreen(
                                         "Tendered:   ${selectedCurrency?.code ?: "$"}$amountTendered\n" +
                                         "Change:     ${selectedCurrency?.code ?: "$"}${amountTendered.toDouble() - convertedTotalPrice}\n\n" +
                                         "THANK YOU!.. @iSTARTk \u00A92025"
+
                                 // Start scanning
                                 BluetoothPrinterScanner(context).connectToHardcodedPrinter(message)
-                                try {
-                                    // Create a PDF document
-                                    val pdfDocument = PdfDocument()
-                                    val pageInfo =
-                                        PdfDocument.PageInfo.Builder(300, 600, 1).create()
-                                    val page = pdfDocument.startPage(pageInfo)
 
-                                    // Draw the invoice content on the page
-                                    val canvas: Canvas = page.canvas
-                                    val paint = Paint().apply { textSize = 12f }
-                                    var yPosition = 20
-                                    message.split("\n").forEach { line ->
-                                        canvas.drawText(line, 10f, yPosition.toFloat(), paint)
-                                        yPosition += 20
-                                    }
-                                    pdfDocument.finishPage(page)
-                                    // Save the PDF file
-                                    val pdfFile = File(
-                                        context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS),
-                                        "Invoice_${System.currentTimeMillis()}.pdf"
-                                    )
-                                    pdfDocument.writeTo(FileOutputStream(pdfFile))
-                                    pdfDocument.close()
+                                // Generate and save the PDF
+                                generateInvoicePdf(message, context)
 
-                                    // Share the PDF
-                                    val uri = androidx.core.content.FileProvider.getUriForFile(
-                                        context,
-                                        "${context.packageName}.fileprovider",
-                                        pdfFile
-                                    )
-                                    val sendIntent = Intent(Intent.ACTION_SEND).apply {
-                                        type = "application/pdf"
-                                        putExtra(Intent.EXTRA_STREAM, uri)
-                                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                    }
-                                    try {
-
-                                        val chooserIntent = Intent.createChooser(
-                                            sendIntent,
-                                            "Send via WhatsApp or WhatsApp Business"
-                                        )
-                                        chooserIntent.resolveActivity(context.packageManager)?.let {
-                                            context.startActivity(chooserIntent)
-                                        } ?: run {
-                                            Toast.makeText(
-                                                context,
-                                                "No messaging app found",
-                                                Toast.LENGTH_SHORT
-                                            ).show()
-                                        }
-                                    } catch (e: Exception) {
-                                        Log.e("Error*", "${e.message}")
-                                        Toast.makeText(
-                                            context,
-                                            "Error: ${e.message}",
-                                            Toast.LENGTH_SHORT
-                                        )
-                                            .show()
-                                    }
-
-                                } catch (e: Exception) {
-                                    Toast.makeText(
-                                        context,
-                                        "Error: ${e.message}",
-                                        Toast.LENGTH_SHORT
-                                    )
-                                        .show()
-                                }
+                                // Navigate to CustomerSelectionScreen after successful invoice
                                 navController.navigate(Destinations.CustomerSelection.route) {
                                     popUpTo(Destinations.Rides.route) {
                                         inclusive = true
                                     }
                                 }
+
                                 Toast.makeText(
                                     context,
                                     "Invoice paid successfully",
                                     Toast.LENGTH_SHORT
-                                )
-                                    .show()
+                                ).show()
                             } else {
+                                // Log out and navigate to SignIn screen if not authenticated
+                                FirebaseAuth.getInstance().signOut()
+                                navController.navigate(Destinations.SignIn.route) {
+                                    popUpTo(Destinations.SignIn.route) { inclusive = true }
+                                }
+                                Log.d("AuthViewModel", "Auth status is $authState")
+
                                 Toast.makeText(
                                     context,
-                                    "Amount tendered must be greater than or equal to total price",
+                                    "You are not authenticated. Please sign in.",
                                     Toast.LENGTH_SHORT
                                 ).show()
                             }
                         } else {
                             Toast.makeText(
                                 context,
-                                "Please enter valid details",
+                                "Amount tendered must be greater than or equal to total price",
                                 Toast.LENGTH_SHORT
-                            )
-                                .show()
+                            ).show()
                         }
                     },
-//            modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text("PAY")
                 }
             }
+
+//            Column(
+//                modifier = Modifier
+//                    .align(Alignment.CenterVertically)
+//            ) {
+//                // Observe auth state and navigate to sign-in page when unauthenticated
+//                Button(
+//                    onClick = {
+//                        val tenderedAmount = amountTendered.toDoubleOrNull()
+////                if (amountTendered.isNotEmpty() && tenderedAmount != null && tenderedAmount > 0) {
+//                        if (tenderedAmount != null && tenderedAmount >= convertedTotalPrice) {
+//
+//                            if (tenderedAmount >= convertedTotalPrice) {
+//                                // Use the actual quantities from productQuantities map
+//                                val productQuantitiesMap: Map<Long, Int> =
+//                                    selectedProducts.associate { product ->
+//                                        product.productId to (productQuantities[product.productId]
+//                                            ?: 1)
+//                                    }
+//                                // Submit the invoice with individual product quantities
+//                                viewModel.submitInvoice(
+//                                    customer.customerId,
+//                                    tenderedAmount,
+//                                    productQuantitiesMap,
+//                                    cashierEmail
+//                                )
+//
+//                                // Code for sharing the invoice message...
+//                                val message = "RECEIPT: ${Date(System.currentTimeMillis())}\n\n" +
+//                                        "CUSTOMER DETAILS\n" +
+//                                        "${customer.name}: ${customer.phone}\n\n" +
+//                                        "PRODUCTS PURCHASED\n" +
+//                                        "$productDetails\n\n" +
+//                                        "SALES TOTALS\n" +
+//                                        "Total Cost: ${selectedCurrency?.code ?: "$"}$convertedTotalPrice\n" +
+//                                        "Tendered:   ${selectedCurrency?.code ?: "$"}$amountTendered\n" +
+//                                        "Change:     ${selectedCurrency?.code ?: "$"}${amountTendered.toDouble() - convertedTotalPrice}\n\n" +
+//                                        "THANK YOU!.. @iSTARTk \u00A92025"
+//                                // Start scanning
+//                                BluetoothPrinterScanner(context).connectToHardcodedPrinter(message)
+//                                try {
+//                                    // Create a PDF document
+//                                    val pdfDocument = PdfDocument()
+//                                    val pageInfo =
+//                                        PdfDocument.PageInfo.Builder(300, 600, 1).create()
+//                                    val page = pdfDocument.startPage(pageInfo)
+//
+//                                    // Draw the invoice content on the page
+//                                    val canvas: Canvas = page.canvas
+//                                    val paint = Paint().apply { textSize = 12f }
+//                                    var yPosition = 20
+//                                    message.split("\n").forEach { line ->
+//                                        canvas.drawText(line, 10f, yPosition.toFloat(), paint)
+//                                        yPosition += 20
+//                                    }
+//                                    pdfDocument.finishPage(page)
+//                                    // Save the PDF file
+//                                    val pdfFile = File(
+//                                        context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS),
+//                                        "Invoice_${System.currentTimeMillis()}.pdf"
+//                                    )
+//                                    pdfDocument.writeTo(FileOutputStream(pdfFile))
+//                                    pdfDocument.close()
+//
+//                                    // Share the PDF
+//                                    val uri = androidx.core.content.FileProvider.getUriForFile(
+//                                        context,
+//                                        "${context.packageName}.fileprovider",
+//                                        pdfFile
+//                                    )
+//                                    val sendIntent = Intent(Intent.ACTION_SEND).apply {
+//                                        type = "application/pdf"
+//                                        putExtra(Intent.EXTRA_STREAM, uri)
+//                                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+//                                    }
+//                                    try {
+//
+//                                        val chooserIntent = Intent.createChooser(
+//                                            sendIntent,
+//                                            "Send via WhatsApp or WhatsApp Business"
+//                                        )
+//                                        chooserIntent.resolveActivity(context.packageManager)?.let {
+//                                            context.startActivity(chooserIntent)
+//                                        } ?: run {
+//                                            Toast.makeText(
+//                                                context,
+//                                                "No messaging app found",
+//                                                Toast.LENGTH_SHORT
+//                                            ).show()
+//                                        }
+//                                    } catch (e: Exception) {
+//                                        Log.e("Error*", "${e.message}")
+//                                        Toast.makeText(
+//                                            context,
+//                                            "Error: ${e.message}",
+//                                            Toast.LENGTH_SHORT
+//                                        )
+//                                            .show()
+//                                    }
+//
+//                                } catch (e: Exception) {
+//                                    Toast.makeText(
+//                                        context,
+//                                        "Error: ${e.message}",
+//                                        Toast.LENGTH_SHORT
+//                                    )
+//                                        .show()
+//                                }
+//                                navController.navigate(Destinations.CustomerSelection.route) {
+//                                    popUpTo(Destinations.Rides.route) {
+//                                        inclusive = true
+//                                    }
+//                                }
+//                                Toast.makeText(
+//                                    context,
+//                                    "Invoice paid successfully",
+//                                    Toast.LENGTH_SHORT
+//                                )
+//                                    .show()
+//
+//                            } else {
+//                                Toast.makeText(
+//                                    context,
+//                                    "Amount tendered must be greater than or equal to total price",
+//                                    Toast.LENGTH_SHORT
+//                                ).show()
+//                            }
+//                        } else {
+//                            Toast.makeText(
+//                                context,
+//                                "Please enter valid details",
+//                                Toast.LENGTH_SHORT
+//                            )
+//                                .show()
+//                        }
+//                    },
+////            modifier = Modifier.fillMaxWidth(),
+//                ) {
+//                    Text("PAY")
+//                }
+//            }
+
+
         }
         Divider(
             modifier = Modifier.padding(vertical = 2.dp),
@@ -443,5 +537,63 @@ fun CartScreen(
             }
         }
         Spacer(modifier = Modifier.height(8.dp))
+    }
+}
+
+private fun generateInvoicePdf(message: String, context: Context) {
+
+    try {
+        val pdfDocument = PdfDocument()
+        val pageInfo = PdfDocument.PageInfo.Builder(300, 600, 1).create()
+        val page = pdfDocument.startPage(pageInfo)
+
+        // Draw the invoice content on the page
+        val canvas: Canvas = page.canvas
+        val paint = Paint().apply { textSize = 12f }
+        var yPosition = 20
+        message.split("\n").forEach { line ->
+            canvas.drawText(line, 10f, yPosition.toFloat(), paint)
+            yPosition += 20
+        }
+        pdfDocument.finishPage(page)
+
+        // Save the PDF file
+        val pdfFile = File(
+            context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS),
+            "Invoice_${System.currentTimeMillis()}.pdf"
+        )
+        pdfDocument.writeTo(FileOutputStream(pdfFile))
+        pdfDocument.close()
+
+        // Share the PDF
+        val uri = FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.fileprovider",
+            pdfFile
+        )
+        val sendIntent = Intent(Intent.ACTION_SEND).apply {
+            type = "application/pdf"
+            putExtra(Intent.EXTRA_STREAM, uri)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        val chooserIntent = Intent.createChooser(
+            sendIntent,
+            "Send via WhatsApp or WhatsApp Business"
+        )
+        chooserIntent.resolveActivity(context.packageManager)?.let {
+            context.startActivity(chooserIntent)
+        } ?: run {
+            Toast.makeText(
+                context,
+                "No messaging app found",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+    } catch (e: Exception) {
+        Toast.makeText(
+            context,
+            "Error: ${e.message}",
+            Toast.LENGTH_SHORT
+        ).show()
     }
 }

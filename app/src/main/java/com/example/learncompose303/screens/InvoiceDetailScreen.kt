@@ -14,9 +14,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.AlertDialog
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Undo
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
@@ -24,6 +27,7 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -35,6 +39,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -42,6 +47,8 @@ import androidx.navigation.NavController
 import com.example.learncompose303.app.CustomHeadingMedium
 import com.example.learncompose303.data.Destinations
 import com.example.learncompose303.data.entities.InvoiceLine
+import com.example.learncompose303.data.entities.PriceList
+import com.example.learncompose303.data.entities.Products
 import com.example.learncompose303.ui.theme.GreenColor
 import com.example.learncompose303.viewmodels.InvoiceViewModel
 import java.util.Date
@@ -52,6 +59,9 @@ fun InvoiceDetailScreen(
     viewModel: InvoiceViewModel = viewModel(),
     navController: NavController
 ) {
+    var showDialog by remember { mutableStateOf(false) } // Show confirmation dialog
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+
     // Trigger fetching invoiceLines based on the invoiceId
     LaunchedEffect(key1 = invoiceId) {
         viewModel.fetchAllInvoiceLines()
@@ -68,6 +78,69 @@ fun InvoiceDetailScreen(
     val linesDetails = invoiceLines.joinToString("\n") { invoiceLine ->
         "${invoiceLine.productName},     Qty: ${invoiceLine.productQtySold},     $${invoiceLine.productPrice}"
     }
+
+//
+    if (showDialog) {
+
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            title = { Text(text = "Confirm Adding Shoe") },
+            text = {
+                Column {
+                    Text("Are you sure you want to reverse this transaction?")
+                    if (errorMessage != null) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(text = errorMessage ?: "", color = Color.Red)
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        // Handle creditNote a product logic
+                        // Check if the invoice line is not null and the status is not "Credit Note"
+                        if (invoiceLine != null && invoiceLine.invoiceStatus != "Credit Note") {
+                            if (isFabEnabled) {
+                                // Trigger the reverseInvoice function
+                                viewModel.reverseInvoice(invoiceId)
+                                Toast.makeText(
+                                    context,
+                                    "Credit Note Successful!",
+                                    Toast.LENGTH_SHORT
+                                )
+                                    .show()
+
+                                // Disable the FAB once clicked
+                                isFabEnabled = false
+                                navController.navigate(Destinations.Reports.route)
+                            }
+                        }
+
+                        // Close dialog after attempting to add
+                        showDialog = false
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = androidx.compose.material.MaterialTheme.colors.primary)
+                ) {
+                    Text("Yes", fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showDialog = false
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = Color.Red)
+                ) {
+                    Text("No", fontWeight = FontWeight.Bold)
+                }
+            },
+            backgroundColor = Color.White,
+            contentColor = Color.Black,
+            shape = RoundedCornerShape(16.dp),
+            modifier = Modifier.fillMaxWidth(0.9f)
+        )
+    }
+//
 
     Box(modifier = Modifier.fillMaxSize()) {
 
@@ -145,16 +218,19 @@ fun InvoiceDetailScreen(
             // Show the FAB if the invoice status is not "Credit Note"
             FloatingActionButton(
                 onClick = {
-                    if (isFabEnabled) {
-                        // Trigger the reverseInvoice function
-                        viewModel.reverseInvoice(invoiceId)
-                        Toast.makeText(context, "Credit Note Successful!", Toast.LENGTH_SHORT)
-                            .show()
+//                    if (isFabEnabled) {
+//                        // Trigger the reverseInvoice function
+//                        viewModel.reverseInvoice(invoiceId)
+//                        Toast.makeText(context, "Credit Note Successful!", Toast.LENGTH_SHORT)
+//                            .show()
+//
+//                        // Disable the FAB once clicked
+//                        isFabEnabled = false
+//                        navController.navigate(Destinations.Reports.route)
+//                    }
+                    // Show confirmation dialog before reversing transaction
+                    showDialog = true
 
-                        // Disable the FAB once clicked
-                        isFabEnabled = false
-                        navController.navigate(Destinations.Reports.route)
-                    }
                 },
                 modifier = Modifier
                     .align(Alignment.BottomStart)

@@ -2,6 +2,7 @@ package com.example.learncompose303.app.di
 
 import android.content.Context
 import androidx.room.Room
+import androidx.work.WorkManager
 import com.example.learncompose303.daos.ItemDao
 import com.example.learncompose303.data.AppDatabase
 import com.example.learncompose303.data.MIGRATION_1_2
@@ -93,6 +94,13 @@ object AppModule {
         )
             .addMigrations(MIGRATION_1_2)
             .build()
+    }
+
+    // Provide WorkManager instance
+    @Provides
+    @Singleton
+    fun provideWorkManager(@ApplicationContext context: Context): WorkManager {
+        return WorkManager.getInstance(context)
     }
 
     @Provides
