@@ -265,6 +265,8 @@ fun CartScreen(
                                     cashierEmail
                                 )
 
+                                Log.d("cartScreen", "Submitted qty is  ${productQuantitiesMap}")
+
                                 // Share the invoice message...
                                 val message = "RECEIPT: ${Date(System.currentTimeMillis())}\n\n" +
                                         "CUSTOMER DETAILS\n" +

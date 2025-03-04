@@ -12,9 +12,6 @@ import dagger.hilt.android.HiltAndroidApp
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
-//@HiltAndroidApp
-//class MyApplication : Application()
-
 @HiltAndroidApp
 class MyApplication : Application() {
 
@@ -23,7 +20,6 @@ class MyApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
-
         // Schedule the worker
         scheduleMonthlyLogout()
     }

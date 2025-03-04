@@ -9,6 +9,7 @@ import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.learncompose303.R
+import com.example.learncompose303.data.Destinations
 import com.example.learncompose303.data.StudentEntity
 import com.example.learncompose303.data.entities.CartItem
 import com.example.learncompose303.data.entities.CsvParser
@@ -235,7 +236,7 @@ class InvoiceViewModel @Inject constructor(
     fun fetchShoeSizes() = viewModelScope.launch {
         shoeSizeRepository.getAllShoeSizes().collectLatest { shoeSizesList ->
             _shoeSizes.value = shoeSizesList
-            Log.d("istart", "Updated Shoe size list: $shoeSizesList")
+            Log.d("viewmodel", "Updated Shoe size list: $shoeSizesList")
         }
     }
 
@@ -243,7 +244,7 @@ class InvoiceViewModel @Inject constructor(
     fun fetchShoeBrands() = viewModelScope.launch {
         shoeBrandRepository.getAllShoeBrands().collectLatest { shoeBrandsList ->
             _shoeBrands.value = shoeBrandsList
-            Log.d("istart", "Updated Shoe brand list: $shoeBrandsList")
+            Log.d("viewmodel", "Updated Shoe brand list: $shoeBrandsList")
         }
     }
 
@@ -336,25 +337,48 @@ class InvoiceViewModel @Inject constructor(
                     )
 
                     // Insert new product into the repository
-                    val productId = productRepository.insertProduct(newProducts)
+                    insertTheProduct(newProducts) { productId ->
+                        // Insert into PriceList for the new product
+                        val sellingPrice = standardCost * 1 // Adjust as needed
+                        val markupPercentage = ((sellingPrice - standardCost) / standardCost) * 100
+                        val grossProfitPercentage =
+                            ((sellingPrice - productCsv.averageCost) / sellingPrice) * 100
 
-                    // Insert into PriceList for the new product
-                    val sellingPrice = standardCost * 1 // Adjust as needed
-                    val markupPercentage = ((sellingPrice - standardCost) / standardCost) * 100
-                    val grossProfitPercentage =
-                        ((sellingPrice - productCsv.averageCost) / sellingPrice) * 100
+                        Log.d("TestUpload", "Upload Products + ShoeSize success")
+                        val newPriceList = PriceList(
+                            productId = productId,
+                            productDescription = productCsv.productDescription,
+                            unitCost = standardCost,
+                            sellingPrice = sellingPrice,
+                            markupPercentage = markupPercentage,
+                            grossProfitPercentage = grossProfitPercentage
+                        )
+                        insertPriceList(newPriceList)
+                        Log.d("TestUpload", "Upload Pricelist success")
 
-                    val priceList = PriceList(
-                        productId = productId,
-                        productDescription = productCsv.productDescription,
-                        unitCost = standardCost,
-                        sellingPrice = sellingPrice,
-                        markupPercentage = markupPercentage,
-                        grossProfitPercentage = grossProfitPercentage
-                    )
+                    }
+                    Log.d("TestUpload", "Upload All success, moving forward")
 
-                    // Insert the price list for the new product
-                    priceListRepository.insertPriceList(priceList)
+//                            // Insert new product into the repository
+//                    val productId = productRepository.insertProduct(newProducts)
+
+//                    // Insert into PriceList for the new product
+//                    val sellingPrice = standardCost * 1 // Adjust as needed
+//                    val markupPercentage = ((sellingPrice - standardCost) / standardCost) * 100
+//                    val grossProfitPercentage =
+//                        ((sellingPrice - productCsv.averageCost) / sellingPrice) * 100
+//
+//                    val priceList = PriceList(
+//                        productId = productId,
+//                        productDescription = productCsv.productDescription,
+//                        unitCost = standardCost,
+//                        sellingPrice = sellingPrice,
+//                        markupPercentage = markupPercentage,
+//                        grossProfitPercentage = grossProfitPercentage
+//                    )
+//
+//                    // Insert the price list for the new product
+//                    priceListRepository.insertPriceList(priceList)
                 }
             }
 
@@ -371,121 +395,6 @@ class InvoiceViewModel @Inject constructor(
             }
         }
     }
-
-//    fun uploadProductsFromCsv(inputStream: InputStream, context: Context) {
-//        viewModelScope.launch {
-//            val parser = CsvParser()
-//            val productsFromCsv = parser.parseProductCsv(inputStream)
-//
-//            // Retrieve existing products from the database using the once method
-//            val existingProducts = productRepository.getAllProductsOnce()
-//
-//            // Create a map to track existing products by their description
-//            val existingProductMap = existingProducts.associateBy { it.productCode }
-//
-//            val duplicateCount = 0
-//
-//            for (productCsv in productsFromCsv) {
-//                val existingProduct = existingProductMap[productCsv.productCode]
-//
-//                // If the product exists, update its details
-//                if (existingProduct != null) {
-//                    // Update the existing product details
-//                    val updatedProduct = existingProduct.copy(
-//                        productQty = productCsv.productQty,
-//                        brandID = productCsv.brandID,
-//                        shoeSizeId = productCsv.shoeSizeId,
-//                        saleable = productCsv.saleable,
-//                        purchasable = productCsv.purchasable,
-//                        averageCost = productCsv.averageCost,
-//                        standardCost = productCsv.standardCost ?: existingProduct.standardCost,
-//                        salesTaxCode = productCsv.salesTaxCode,
-//                        productCode = productCsv.productCode,
-//                        inclusiveTaxed = productCsv.inclusiveTaxed,
-//                        imageUri = productCsv.imageUri
-//                            ?: existingProduct.imageUri // Retain existing image URI if null
-//                    )
-//
-//                    // Update the product in the repository
-//                    productRepository.updateProduct(updatedProduct)
-//
-//                    // Update the price list for the existing product
-//                    val sellingPrice = updatedProduct.standardCost * 1 // Adjust as needed
-//                    val markupPercentage =
-//                        ((sellingPrice - updatedProduct.standardCost) / updatedProduct.standardCost) * 100
-//                    val grossProfitPercentage =
-//                        ((sellingPrice - updatedProduct.averageCost) / sellingPrice) * 100
-//
-//                    val priceList = PriceList(
-//                        productId = updatedProduct.productId, // Use the existing productId
-//                        productDescription = updatedProduct.productDescription,
-//                        unitCost = updatedProduct.standardCost,
-//                        sellingPrice = sellingPrice,
-//                        markupPercentage = markupPercentage,
-//                        grossProfitPercentage = grossProfitPercentage
-//                    )
-//
-//                    // Update the price list in the repository
-//                    priceListRepository.updatePriceList(priceList)
-//
-//                } else {
-//                    // Product does not exist, add it
-//                    val imageUri = productCsv.imageUri ?: getDefaultImageUri(context)
-//                    val standardCost = productCsv.standardCost ?: 0.0
-//
-//                    // Create a new product entity
-//                    val newProducts = Products(
-//                        productDescription = productCsv.productDescription,
-//                        productQty = productCsv.productQty,
-//                        brandID = productCsv.brandID,
-//                        shoeSizeId = productCsv.shoeSizeId,
-//                        saleable = productCsv.saleable,
-//                        purchasable = productCsv.purchasable,
-//                        averageCost = productCsv.averageCost,
-//                        standardCost = standardCost,
-//                        salesTaxCode = productCsv.salesTaxCode,
-//                        productCode = productCsv.productCode,
-//                        inclusiveTaxed = productCsv.inclusiveTaxed,
-//                        imageUri = imageUri
-//                    )
-//
-//                    // Insert new product into the repository
-//                    val productId = productRepository.insertProduct(newProducts)
-//
-//                    // Insert into PriceList for the new product
-//                    val sellingPrice = standardCost * 1 // Adjust as needed
-//                    val markupPercentage = ((sellingPrice - standardCost) / standardCost) * 100
-//                    val grossProfitPercentage =
-//                        ((sellingPrice - productCsv.averageCost) / sellingPrice) * 100
-//
-//                    val priceList = PriceList(
-//                        productId = productId, // Use the newly inserted productId
-//                        productDescription = productCsv.productDescription,
-//                        unitCost = standardCost,
-//                        sellingPrice = sellingPrice,
-//                        markupPercentage = markupPercentage,
-//                        grossProfitPercentage = grossProfitPercentage
-//                    )
-//
-//                    // Insert the price list for the new product
-//                    priceListRepository.insertPriceList(priceList)
-//                }
-//            }
-//
-//            // Show toast notification
-//            if (duplicateCount > 0) {
-//                Toast.makeText(
-//                    context,
-//                    "$duplicateCount duplicate products were found and skipped.",
-//                    Toast.LENGTH_SHORT
-//                ).show()
-//            } else {
-//                Toast.makeText(context, "Products uploaded successfully.", Toast.LENGTH_SHORT)
-//                    .show()
-//            }
-//        }
-//    }
-
 
     // Function to get default image URI from drawable resources
     fun getDefaultImageUri(context: Context): String {
@@ -562,9 +471,9 @@ class InvoiceViewModel @Inject constructor(
 
     // Fetch invoiceLines by invoiceId from repository
     fun fetchInvoiceLinesByInvoiceId(invoiceId: Long) = viewModelScope.launch {
-        Log.e("istartlogs", "Fetching invoice lines for invoiceId: $invoiceId")
+        Log.e("viewmodellogs", "Fetching invoice lines for invoiceId: $invoiceId")
         val invoiceLineList = invoiceLineRepository.getInvoiceLinesByInvoiceId(invoiceId)
-        Log.e("istartlogs", "Fetched invoice lines: $invoiceLineList")
+        Log.e("viewmodellogs", "Fetched invoice lines: $invoiceLineList")
         _invoiceLines.value = invoiceLineList
     }
 
@@ -588,7 +497,7 @@ class InvoiceViewModel @Inject constructor(
                 Customer(3, "John Doe", "jane@example.com", "987654321", "State House"),
                 Customer(4, "Amy Petersen", "jane@example.com", "987654321", "State House"),
                 Customer(5, "Amara Brown", "jane@example.com", "987654321", "State House"),
-                Customer(6, "walkInCustomer", "cashsale@istart.com", "0776815030", null),
+                Customer(6, "walkInCustomer", "cashsale@viewmodel.com", "0776815030", null),
             )
             customerRepository.insertCustomers(initialCustomers)
         }
@@ -621,7 +530,7 @@ class InvoiceViewModel @Inject constructor(
                 userContact = "0776815030",
                 userRole = "admin",
                 userPassword = "password",
-                storeID = "ISTART01",
+                storeID = "viewmodel01",
                 userEmail = "dr.simbastart@gmail.com",
                 userAddress = "3 Maywood St, Kwekwe, Zimbabwe"
             )
@@ -1051,14 +960,14 @@ class InvoiceViewModel @Inject constructor(
 
             // Check if the product exists
             if (product == null) {
-                Log.e("StockUpdateError", "Product not found with productId: $productId")
+                Log.e("viewmodel", "Product not found with productId: $productId")
                 return
             }
 
             // Check if the product is saleable
             if (!product.saleable) {
                 Log.e(
-                    "StockUpdateError",
+                    "viewmodel",
                     "Product with productId: $productId is not saleable"
                 )
                 return
@@ -1070,7 +979,7 @@ class InvoiceViewModel @Inject constructor(
 
             if (shoeBrand == null || shoeSize == null) {
                 Log.e(
-                    "StockUpdateError",
+                    "viewmodel",
                     "ShoeBrand or ShoeSize not found for productId: $productId"
                 )
                 return
@@ -1082,7 +991,7 @@ class InvoiceViewModel @Inject constructor(
             // Check if there is enough stock to sell the desired quantity
             if (totalStockLevel < quantitySold) {
                 Log.e(
-                    "StockUpdateError",
+                    "viewmodel",
                     "Insufficient stock for product: ${product.productDescription}. " +
                             "Available: $totalStockLevel, Required: $quantitySold"
                 )
@@ -1106,7 +1015,7 @@ class InvoiceViewModel @Inject constructor(
 
         } catch (e: Exception) {
             Log.e(
-                "StockUpdateError",
+                "viewmodel",
                 "Error while updating stock for productId: $productId: ${e.message}"
             )
         }
@@ -1119,13 +1028,13 @@ class InvoiceViewModel @Inject constructor(
 
             // Check if the product exists
             if (product == null) {
-                Log.e("StockUpdateError", "Product not found with productId: $productId")
+                Log.e("viewmodel", "Product not found with productId: $productId")
                 return
             }
 
             // Check if the product is saleable
             if (!product.saleable) {
-                Log.e("StockUpdateError", "Product with productId: $productId is not saleable")
+                Log.e("viewmodel", "Product with productId: $productId is not saleable")
                 return
             }
 
@@ -1135,7 +1044,7 @@ class InvoiceViewModel @Inject constructor(
 
             if (shoeBrand == null || shoeSize == null) {
                 Log.e(
-                    "StockUpdateError",
+                    "viewmodel",
                     "ShoeBrand or ShoeSize not found for productId: $productId"
                 )
                 return
@@ -1147,7 +1056,7 @@ class InvoiceViewModel @Inject constructor(
 
             if (totalStockLevel < quantitySold) {
                 Log.e(
-                    "StockUpdateError",
+                    "viewmodel",
                     "Insufficient stock for product: ${product.productDescription}. " +
                             "Available: $totalStockLevel, Required: $quantitySold"
                 )
@@ -1157,15 +1066,19 @@ class InvoiceViewModel @Inject constructor(
             // Deduct stock from Product
             val newProductStock = product.productQty - quantitySold
             if (newProductStock < 0) {
-                Log.e("StockUpdateError", "Product stock would be negative. Aborting update.")
+                Log.e("viewmodel", "Product stock would be negative. Aborting update.")
                 return
             }
             productRepository.updateProductQuantity(productId, newProductStock)
+            Log.e(
+                "viewmodel",
+                "Product stock updated success with ${productId} & ${newProductStock}"
+            )
 
             // Deduct stock from ShoeSize
             val newShoeSizeStock = shoeSize.quantity - quantitySold
             if (newShoeSizeStock < 0) {
-                Log.e("StockUpdateError", "Shoe size stock would be negative. Aborting update.")
+                Log.e("viewmodel", "Shoe size stock would be negative. Aborting update.")
                 return
             }
             shoeSizeRepository.updateShoeSizeQuantity(shoeSize.shoeSizeId, newShoeSizeStock)
@@ -1376,8 +1289,6 @@ class InvoiceViewModel @Inject constructor(
             try {
                 val currencyCode = _selectedCurrency.value?.code ?: "USD"
                 var totalAmount = 0.0
-                val taxPercentage = 0.15 // Example tax percentage
-                val discountPercentage = 0.0 // Example discount percentage
 
                 // Fetch customer details
                 val customer = customerRepository.getCustomerById(customerId)
@@ -1474,22 +1385,22 @@ class InvoiceViewModel @Inject constructor(
                             invoiceDate = System.currentTimeMillis()
                         )
 
-                        Log.d("istart Invoice", "Inserting this invoiceLine: $invoiceLine")
+                        Log.d("viewmodel", "Inserting this invoiceLine: $invoiceLine")
                         invoiceLineRepository.insertInvoiceLine(invoiceLine)
-                        Log.d("istart Invoice", "Succesfully Inserted this invoiceLine:")
+                        Log.d("viewmodel", "Succesfully Inserted this invoiceLine:")
                     }
 
                     // Clear the selected products list after invoice submission
                     _selectedProducts.value = emptyList()
-                    Log.d("istart", "Cleared selected products for customer: $customerId")
+                    Log.d("viewmodel", "Cleared selected products for customer: $customerId")
                 } else {
                     Log.e(
-                        "istart",
+                        "viewmodel",
                         "No valid selected products to invoice or total amount is 0"
                     )
                 }
             } catch (e: Exception) {
-                Log.e("istart", "Error during invoice submission: ${e.message}")
+                Log.e("viewmodel", "Error during invoice submission: ${e.message}")
             }
         }
 
@@ -1589,7 +1500,7 @@ class InvoiceViewModel @Inject constructor(
                     val updatedProduct = product.copy(updatedStockLevel)
 
                     Log.d(
-                        "istart",
+                        "viewmodel",
                         "CurrentStockLevel is $updatedProduct \n and $updatedStockLevel"
                     )
 
@@ -1602,16 +1513,16 @@ class InvoiceViewModel @Inject constructor(
                     )
                 } else {
                     Log.e(
-                        "StockUpdateError",
+                        "viewmodel",
                         "ShoeBrand or ShoeSize not found for product ID: $productId"
                     )
                 }
             } else {
-                Log.e("StockUpdateError", "Product not found with ID: $productId")
+                Log.e("viewmodel", "Product not found with ID: $productId")
             }
         } catch (e: Exception) {
             Log.e(
-                "StockUpdateError",
+                "viewmodel",
                 "Error updating stock for product ID: $productId, ${e.message}"
             )
         }
@@ -1635,11 +1546,11 @@ class InvoiceViewModel @Inject constructor(
 //                    "Successfully added $quantity to product ID: $productId"
 //                )
 //            } else {
-//                Log.e("StockUpdateError", "Product not found with ID: $productId")
+//                Log.e("viewmodel", "Product not found with ID: $productId")
 //            }
 //        } catch (e: Exception) {
 //            Log.e(
-//                "StockUpdateError",
+//                "viewmodel",
 //                "Error updating stock for product ID: $productId, ${e.message}"
 //            )
 //        }
@@ -1837,14 +1748,14 @@ class InvoiceViewModel @Inject constructor(
 //
 //            // Check if the product exists
 //            if (product == null) {
-//                Log.e("StockUpdateError", "Product not found with productId: $productId")
+//                Log.e("viewmodel", "Product not found with productId: $productId")
 //                return
 //            }
 //
 //            // Check if the product is saleable
 //            if (!product.saleable) {
 //                Log.e(
-//                    "StockUpdateError",
+//                    "viewmodel",
 //                    "Product with productId: $productId is not saleable"
 //                )
 //                return
@@ -1856,7 +1767,7 @@ class InvoiceViewModel @Inject constructor(
 //
 //            if (shoeBrand == null || shoeSize == null) {
 //                Log.e(
-//                    "StockUpdateError",
+//                    "viewmodel",
 //                    "ShoeBrand or ShoeSize not found for productId: $productId"
 //                )
 //                return
@@ -1869,7 +1780,7 @@ class InvoiceViewModel @Inject constructor(
 //            // Check if there is enough stock to sell the desired quantity
 //            if (totalStockLevel < quantitySold) {
 //                Log.e(
-//                    "StockUpdateError",
+//                    "viewmodel",
 //                    "Insufficient stock for product: ${product.productDescription}. " +
 //                            "Available: $totalStockLevel, Required: $quantitySold"
 //                )

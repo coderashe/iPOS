@@ -77,34 +77,19 @@ fun ProductsScreen(
     val products by viewModel.productList.collectAsState()
     var searchQuery by remember { mutableStateOf("") } // State for the search query
     var showLowStockWarning by remember { mutableStateOf(false) } // State for the popup
-    var lowStockInventories by remember { mutableStateOf(emptyList<Products>()) } // List to hold low stock products
 
-    LaunchedEffect(key1 = true) {
-        viewModel.fetchProducts() // Fetch products when the screen is launched
-
-        val updatedProducts = products.map { product ->
-            val currentStock =
-                viewModel.getCurrentStockByBrand(product.brandID) // Fetch current stock
-            product.copy(
-                productDescription = product.productDescription, // Keep other fields intact
-                brandID = product.brandID,
-                shoeSizeId = product.shoeSizeId,
-                productQty = product.productQty
-                // Optionally, add the current stock to a custom field in the Product entity or manage it separately
-            )
+    // Compute low-stock inventories when `products` updates
+    val lowStockInventories = remember(products) {
+        products.filter { product ->
+            product.productQty < 10 // Using productQty directly
         }
+    }
 
-        // Check for low stock products
-        val lowStock = updatedProducts.filter { product ->
-            // Replace the condition with your low stock logic (e.g., based on size or quantity)
-            val currentStock = viewModel.getCurrentStockByBrand(product.brandID)
-            currentStock < 10
-        }
-
-        if (lowStock.isNotEmpty()) {
-            lowStockInventories = lowStock
-            Log.d("istart", "Check for lowStocks --- $lowStock")
-            showLowStockWarning = true
+    // Show low-stock warning only when there are low-stock products
+    LaunchedEffect(lowStockInventories) {
+        showLowStockWarning = lowStockInventories.isNotEmpty()
+        if (showLowStockWarning) {
+            Log.d("productScreen", "Low stock products detected: $lowStockInventories")
         }
     }
 
@@ -149,7 +134,7 @@ fun ProductsScreen(
                                 )
                             } else {
                                 Log.d(
-                                    "istart",
+                                    "productScreen",
                                     "No price found for product ID: ${product.productId}"
                                 )
                             }
@@ -180,7 +165,10 @@ fun ProductsScreen(
                     Text("The following products have low stock:")
                     Spacer(modifier = Modifier.height(8.dp))
                     lowStockInventories.forEach { product ->
-                        Text("- ${product.productDescription} (Stock: ---)")
+                        Text(
+                            text = "- ${product.productDescription} : ${product.productQty}",
+                            color = Color.Red
+                        )
                     }
                 }
             },
@@ -191,6 +179,7 @@ fun ProductsScreen(
             }
         )
     }
+
 }
 
 @Composable
