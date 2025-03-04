@@ -157,7 +157,7 @@ fun StockTakingScreen(
     Button(
         onClick = {
             stockTakes.forEach { viewModel.insertStockTake(it) }
-            Toast.makeText(context, "Stock updated!", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Stock recorded!", Toast.LENGTH_SHORT).show()
             navController.navigate(Destinations.Rides.route) {
                 popUpTo(Destinations.Rides.route) {
                     inclusive = true
@@ -165,6 +165,6 @@ fun StockTakingScreen(
             }
         }
     ) {
-        Text("UPDATE STOCK")
+        Text("CONFIRM")
     }
 }

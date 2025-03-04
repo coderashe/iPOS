@@ -60,6 +60,7 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
 import androidx.core.content.FileProvider
 import com.example.learncompose303.app.utils.BluetoothPrinterScanner
 import com.example.learncompose303.screens.auth.AuthState
@@ -134,20 +135,13 @@ fun CartScreen(
         viewModel.getPriceDetailsForSelectedProducts(selectedProducts, productQuantities)
     }
 
-
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
     ) {
         Row(modifier = Modifier.fillMaxWidth()) {
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .align(Alignment.CenterVertically)
-            ) {
-                Text(customer.name, fontWeight = FontWeight.Bold)
-            }
+            //
             Column(
                 modifier = Modifier
                     .weight(1f)
@@ -155,11 +149,6 @@ fun CartScreen(
             ) {
                 // Currency Dropdown
                 Box(modifier = Modifier.fillMaxWidth()) {
-//                    Text("Select Currency")
-//
-//                    Button(onClick = { expanded = true }) {
-//                        Text(selectedCurrency?.name ?: "Select Currency")
-//                    }
                     OutlinedTextField(
                         value = theCurrency,
                         onValueChange = {},
@@ -194,6 +183,7 @@ fun CartScreen(
                     }
                 }
             }
+            //
             Column(
                 modifier = Modifier
                     .align(Alignment.CenterVertically)
@@ -206,9 +196,22 @@ fun CartScreen(
                     }",
                     style = MaterialTheme.typography.titleLarge,
                     color = Color.Black,
+//                    modifier = Modifier.align(Alignment.End)
+                )
+            }
+            //
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .align(Alignment.CenterVertically)
+            ) {
+                Text(
+                    customer.name,
+                    fontWeight = FontWeight.Bold,
                     modifier = Modifier.align(Alignment.End)
                 )
             }
+            //
         }
         Divider(
             modifier = Modifier.padding(vertical = 2.dp),
@@ -233,7 +236,7 @@ fun CartScreen(
             ) {
                 Text(
                     text = "Change: ${selectedCurrency?.code ?: "$"}${"%.2f".format(changeBalance)}",
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.titleMedium,
                     color = Color.Black,
                 )
             }
