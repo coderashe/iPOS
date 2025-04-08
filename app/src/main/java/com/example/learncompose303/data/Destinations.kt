@@ -14,7 +14,7 @@ sealed class Destinations(val route: String) {
         fun createRoute(invoiceId: Long) = "invoice_detail/$invoiceId"
     }
 
-    data object Rides : Destinations("rides")
+    data object Dashboard : Destinations("dashboard")
     data object SignIn : Destinations("signIn")
     data object Products : Destinations("products")
     data object SignUp : Destinations("signup")

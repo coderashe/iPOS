@@ -200,8 +200,8 @@ fun ButcherCartScreen(
                         }
 
                         // Navigate and show success message
-                        navController.navigate(Destinations.Rides.route) {
-                            popUpTo(Destinations.Rides.route) {
+                        navController.navigate(Destinations.Dashboard.route) {
+                            popUpTo(Destinations.Dashboard.route) {
                                 inclusive = true
                             }
                         }

@@ -44,7 +44,6 @@ import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -187,7 +186,7 @@ fun LoadStockScreen(
                                 sellingPrice = ""
                                 selectedShoeSize = null
                                 selectedShoeBrand = null
-                                navController.navigate(Destinations.Rides.route)
+                                navController.navigate(Destinations.Dashboard.route)
                             }
                         } else {
                             Toast.makeText(

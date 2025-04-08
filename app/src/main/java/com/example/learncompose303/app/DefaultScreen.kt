@@ -3,12 +3,10 @@ package com.example.learncompose303.app
 import android.os.Build
 import android.util.Log
 import android.widget.Toast
-import androidx.activity.compose.BackHandler
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -65,7 +63,6 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.autoSaver
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -107,7 +104,7 @@ import com.example.learncompose303.screens.PriorityScreen
 import com.example.learncompose303.screens.ProductSelectionScreen
 import com.example.learncompose303.screens.ProductsScreen
 import com.example.learncompose303.screens.ReportsScreen
-import com.example.learncompose303.screens.RideRequestsScreen
+import com.example.learncompose303.screens.DashboardScreen
 import com.example.learncompose303.screens.SignInPage
 import com.example.learncompose303.screens.SignUpPage
 import com.example.learncompose303.screens.WalletScreen
@@ -115,8 +112,6 @@ import com.example.learncompose303.screens.auth.AuthState
 import com.example.learncompose303.screens.auth.AuthViewModel
 import com.example.learncompose303.screens.expenses.ExpenseViewModel
 import com.example.learncompose303.screens.performance.BusinessPerformanceViewModel
-import com.example.learncompose303.ui.theme.Green2
-import com.example.learncompose303.ui.theme.MyBlueish
 import com.example.learncompose303.ui.theme.MyGray
 import com.example.learncompose303.viewmodels.InvoiceViewModel
 import kotlinx.coroutines.launch
@@ -293,7 +288,7 @@ fun InDriveTopBottomNavigation() {
                                 onCancel = {
                                     showPinDialog = false
                                     isPinCorrect = false
-                                    navController.navigate(Destinations.Rides.route)
+                                    navController.navigate(Destinations.Dashboard.route)
                                 }
                             )
                         } else {
@@ -309,9 +304,9 @@ fun InDriveTopBottomNavigation() {
                             }
                         }
                     } else {
-                        // If not admin, redirect to Rides screen
-                        navController.navigate(Destinations.Rides.route) {
-                            popUpTo(Destinations.Rides.route) { inclusive = true }
+                        // If not admin, redirect to Dashboard screen
+                        navController.navigate(Destinations.Dashboard.route) {
+                            popUpTo(Destinations.Dashboard.route) { inclusive = true }
                         }
                     }
                 }
@@ -327,8 +322,8 @@ fun InDriveTopBottomNavigation() {
                 composable(Destinations.SignIn.route) {
                     SignInPage(navController, authViewModel)
                 }
-                composable(Destinations.Rides.route) {
-                    RideRequestsScreen(navController, viewModel, authViewModel)
+                composable(Destinations.Dashboard.route) {
+                    DashboardScreen(navController, viewModel, authViewModel)
                 }
                 composable(Destinations.Income.route) {
                     MyIncomeScreen(viewModel, navController)
@@ -427,15 +422,6 @@ fun InDriveTopBottomNavigation() {
                     }
 
                     if (customer != null) {
-                        // Handle back button press
-//                        BackHandler {
-//                            navController.navigate(Destinations.Rides.route) {
-//                                popUpTo(Destinations.Cart.route) {
-//                                    inclusive = true
-//                                } // Remove CartScreen from the back stack
-//                            }
-//                        }
-
                         CartScreen(
                             customer = customer,
                             navController,
@@ -460,7 +446,7 @@ fun InDriveTopBottomNavigation() {
                     if (customer != null) {
                         // Handle back button press
 //                        BackHandler {
-//                            navController.navigate(Destinations.Rides.route) {
+//                            navController.navigate(Destinations.Dashboard.route) {
 //                                popUpTo(Destinations.ButcherCart.route) {
 //                                    inclusive = true
 //                                } // Remove CartScreen from the back stack
@@ -690,7 +676,7 @@ fun IndriveDrawerBody(navController: NavController, scaffoldState: ScaffoldState
                 .fillMaxWidth()
                 .padding(16.dp)
                 .clickable {
-                    navController.navigate(Destinations.Rides.route)
+                    navController.navigate(Destinations.Dashboard.route)
                     coroutineScope.launch { scaffoldState.drawerState.close() }
                 }
         ) {
@@ -897,8 +883,8 @@ fun IndriveBottomNavigation(
             val isAdmin = userRole == "admin"
 
             BottomNavigationItem(
-                selected = currentDestination?.route == Destinations.Rides.route,
-                onClick = { navController.navigate(Destinations.Rides.route) },
+                selected = currentDestination?.route == Destinations.Dashboard.route,
+                onClick = { navController.navigate(Destinations.Dashboard.route) },
                 icon = { Icon(Icons.Default.Home, contentDescription = null) },
                 label = { Text(text = stringResource(id = R.string.navhome), color = Color.Black) }
             )

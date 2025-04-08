@@ -29,7 +29,6 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -41,7 +40,6 @@ import com.example.learncompose303.data.Destinations
 import com.example.learncompose303.data.entities.StockTake
 import com.example.learncompose303.screens.auth.AuthViewModel
 import com.example.learncompose303.viewmodels.InvoiceViewModel
-import java.util.Date
 
 @Composable
 fun StockTakingScreen(
@@ -158,8 +156,8 @@ fun StockTakingScreen(
         onClick = {
             stockTakes.forEach { viewModel.insertStockTake(it) }
             Toast.makeText(context, "Stock recorded!", Toast.LENGTH_SHORT).show()
-            navController.navigate(Destinations.Rides.route) {
-                popUpTo(Destinations.Rides.route) {
+            navController.navigate(Destinations.Dashboard.route) {
+                popUpTo(Destinations.Dashboard.route) {
                     inclusive = true
                 }
             }
