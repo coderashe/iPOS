@@ -549,8 +549,8 @@ class InvoiceViewModel @Inject constructor(
             val initialCurrencies = listOf(
                 Currency("USD", "United States Dollar", 1.0),
                 Currency("ZAR", "South African Rand", 18.5),
-                Currency("ZiG", "Zimbabwe Gold", 13.0),
-                Currency("Ecocash", "Ecocash Mobile Money", 1.0)
+                Currency("ZiG", "Zimbabwe Gold", 28.6776),
+                Currency("ECO", "Ecocash Mobile Money", 1.0)
             )
             invoiceRepository.insertCurrencies(initialCurrencies)
         }

@@ -138,7 +138,18 @@ fun MultiCurrencyScreen(
 
 // Extension function to format currency values
 fun Double.formatAsCurrency(currencyCode: String): String {
-    return NumberFormat.getCurrencyInstance().apply {
-        currency = Currency.getInstance(currencyCode)
-    }.format(this)
+    // Check if the code is a valid 3-letter code
+    if (currencyCode.length != 3 || !currencyCode.all { it.isLetter() }) {
+        // Return a fallback format if invalid
+        return "%.2f".format(this)
+    }
+
+    return try {
+        NumberFormat.getCurrencyInstance().apply {
+            currency = Currency.getInstance(currencyCode)
+        }.format(this)
+    } catch (e: IllegalArgumentException) {
+        // Handle exception by returning a simple format
+        "%.2f".format(this)
+    }
 }
