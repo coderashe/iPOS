@@ -516,15 +516,46 @@ fun CartScreen(
                                 value = if (quantitySold == 0) "" else quantitySold.toString(), // Show empty if quantity is 0
                                 onValueChange = { newValue ->
                                     // Handle empty input and valid integers
-                                    val newQuantity =
-                                        newValue.toIntOrNull()?.takeIf { it >= 0 } ?: 0
-                                    productQuantities[product.productId] = newQuantity
+                                    val newQuantity = newValue.toIntOrNull()?.takeIf { it >= 0 } ?: 0
+
+                                    // Get the current product's stock level
+                                    val currentProduct = productWithPriceDetails.find { it.first.productId == product.productId }?.first
+                                    val stockAvailable = currentProduct?.productQty ?: 0
+
+                                    // Make sure both values are of the same type (Int)
+                                    val validQuantity = if (newQuantity > stockAvailable) stockAvailable else newQuantity
+
+                                    // Update the quantity map with the validated value
+                                    productQuantities[product.productId] = validQuantity.toInt()
+
+                                    // Optional: Show toast if user tried to enter more than stock
+                                    if (newQuantity > stockAvailable) {
+                                        Toast.makeText(
+                                            context,
+                                            "Only $stockAvailable units available in stock",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    }
                                 },
                                 label = { Text("Quantity") },
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                 shape = RoundedCornerShape(8.dp),
                                 singleLine = true
                             )
+//                            OutlinedTextField(
+//                                value = if (quantitySold == 0) "" else quantitySold.toString(), // Show empty if quantity is 0
+//                                onValueChange = { newValue ->
+//                                    // Handle empty input and valid integers
+//                                    val newQuantity =
+//                                        newValue.toIntOrNull()?.takeIf { it >= 0 } ?: 0
+//                                    productQuantities[product.productId] = newQuantity
+//                                },
+//                                label = { Text("Quantity") },
+//                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+//                                shape = RoundedCornerShape(8.dp),
+//                                singleLine = true
+//                            )
+
                             // Display SubTotal
                             Text(
                                 text = "SubTotal: \$${"%.2f".format(productTotalPrice)}", // Ensure proper formatting of price

@@ -34,10 +34,6 @@ interface InvoiceDao {
     @Query("SELECT SUM(totalAmount) FROM invoice")
     fun getTotalSales(): Flow<Double>
 
-
-//    @Query("SELECT strftime('%m', invoiceDate / 1000, 'unixepoch') AS month, SUM(totalAmount) AS totalSales FROM invoice GROUP BY month")
-//    fun getSalesPerMonth(): Flow<List<MonthlySales>>
-
     @Query(
         """
     SELECT strftime('%m', invoiceDate / 1000, 'unixepoch') AS monthNumber, 
