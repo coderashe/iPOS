@@ -17,7 +17,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.learncompose303"
-        minSdk = 21
+        minSdk = 28
         targetSdk = 34
         versionCode = 1
         versionName = "iPOS_1.0"
@@ -131,5 +131,9 @@ dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.2")
 
     implementation("com.github.DantSu:ESCPOS-ThermalPrinter-Android:3.2.0")
+
+//    charts/graphs
+//    implementation ("com.github.PhilJay:MPAndroidChart:v3.1.0")
+    implementation ("com.github.fracassi-marco:JetChart:1.4.1")
 
 }

@@ -55,7 +55,12 @@ import java.io.FileOutputStream
 import java.io.IOException
 import java.io.InputStream
 import java.time.DayOfWeek
+import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.time.temporal.TemporalAdjusters
 import java.util.Calendar
 import javax.inject.Inject
 
@@ -732,62 +737,52 @@ class InvoiceViewModel @Inject constructor(
 
     // Function to compute today's sales total and number of transactions
     @RequiresApi(Build.VERSION_CODES.O)
-    fun getTodaySalesInfo(): Pair<Double, Int> {
+    fun getTodaySalesInfo(): Pair<Map<String, Double>, Int> {
         val today = LocalDate.now()
 
-        // Log the current date for reference
+        // Log the date
         Log.d("InvoiceViewModel", "Today's Date: $today")
-
-        // Log the entire invoice list for debugging
-        Log.d("InvoiceViewModel", "Invoice List: ${_invoiceList.value}")
 
         // Filter invoices for today
         val todayInvoices = _invoiceList.value.filter { invoice ->
-            // Convert the invoiceDate timestamp (assuming it's in milliseconds) to LocalDate
-            val invoiceDate =
-                LocalDate.ofEpochDay(invoice.invoiceDate / (24 * 60 * 60 * 1000)) // Ensure this is in milliseconds
-
+            val invoiceDate = LocalDate.ofEpochDay(invoice.invoiceDate / (24 * 60 * 60 * 1000))
             // Log each invoice date being checked
-            Log.d(
-                "InvoiceViewModel",
-                "Invoice Date: ${invoice.invoiceDate}, LocalDate: $invoiceDate"
-            )
-
-            // Check if the invoice date matches today
-            invoiceDate == today
+            Log.d("InvoiceViewModel", "Invoice Date: $invoiceDate")
+            invoiceDate.isEqual(today)
         }
 
-        // Calculate total sales and transaction count
-        val totalSales = todayInvoices.sumOf { it.totalAmount }
+        // Group invoices by currency and sum totals
+        val currencyTotals = todayInvoices.groupBy { it.currencyCode }
+            .mapValues { entry -> entry.value.sumOf { it.totalAmount } }
+
+        // Count total number of transactions for today
         val transactionCount = todayInvoices.size
 
         // Log the filtered invoices for debugging
         Log.d("InvoiceViewModel", "Today's Invoices: $todayInvoices")
         Log.d(
             "InvoiceViewModel",
-            "Total Sales: $totalSales, Transaction Count: $transactionCount"
+            "Currency Totals: $currencyTotals, Transaction Count: $transactionCount"
         )
 
-        return totalSales to transactionCount
+        return currencyTotals to transactionCount
     }
 
+    //    new
     @RequiresApi(Build.VERSION_CODES.O)
-    fun getWeeklySalesInfo(): Pair<Double, Int> {
+    fun getWeeklySalesInfo(): Pair<Map<String, Double>, Int> {
         val today = LocalDate.now()
-        val startOfWeek = today.with(DayOfWeek.MONDAY)
-        val endOfWeek = today.with(DayOfWeek.SUNDAY)
+        val startOfWeek = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+        val endOfWeek = today.with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY))
 
         // Log the week range
         Log.d("InvoiceViewModel", "Week Range: $startOfWeek to $endOfWeek")
 
         // Filter invoices for the current week
         val weeklyInvoices = _invoiceList.value.filter { invoice ->
-            val invoiceDate =
-                LocalDate.ofEpochDay(invoice.invoiceDate / (24 * 60 * 60 * 1000))
-
+            val invoiceDate = LocalDate.ofEpochDay(invoice.invoiceDate / (24 * 60 * 60 * 1000))
             // Log each invoice date being checked
             Log.d("InvoiceViewModel", "Invoice Date: $invoiceDate")
-
             invoiceDate.isAfter(startOfWeek.minusDays(1)) && invoiceDate.isBefore(
                 endOfWeek.plusDays(
                     1
@@ -795,22 +790,25 @@ class InvoiceViewModel @Inject constructor(
             )
         }
 
-        // Calculate total sales and transaction count
-        val totalSales = weeklyInvoices.sumOf { it.totalAmount }
+        // Group invoices by currency and sum totals
+        val currencyTotals = weeklyInvoices.groupBy { it.currencyCode }
+            .mapValues { entry -> entry.value.sumOf { it.totalAmount } }
+
+        // Count total number of transactions for the week
         val transactionCount = weeklyInvoices.size
 
         // Log the filtered invoices for debugging
         Log.d("InvoiceViewModel", "Weekly Invoices: $weeklyInvoices")
         Log.d(
             "InvoiceViewModel",
-            "Total Sales: $totalSales, Transaction Count: $transactionCount"
+            "Currency Totals: $currencyTotals, Transaction Count: $transactionCount"
         )
 
-        return totalSales to transactionCount
+        return currencyTotals to transactionCount
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
-    fun getMonthlySalesInfo(): Pair<Double, Int> {
+    fun getMonthlySalesInfo(): Pair<Map<String, Double>, Int> {
         val today = LocalDate.now()
         val startOfMonth = today.withDayOfMonth(1)
         val endOfMonth = today.withDayOfMonth(today.lengthOfMonth())
@@ -820,12 +818,9 @@ class InvoiceViewModel @Inject constructor(
 
         // Filter invoices for the current month
         val monthlyInvoices = _invoiceList.value.filter { invoice ->
-            val invoiceDate =
-                LocalDate.ofEpochDay(invoice.invoiceDate / (24 * 60 * 60 * 1000))
-
+            val invoiceDate = LocalDate.ofEpochDay(invoice.invoiceDate / (24 * 60 * 60 * 1000))
             // Log each invoice date being checked
             Log.d("InvoiceViewModel", "Invoice Date: $invoiceDate")
-
             invoiceDate.isAfter(startOfMonth.minusDays(1)) && invoiceDate.isBefore(
                 endOfMonth.plusDays(
                     1
@@ -833,20 +828,22 @@ class InvoiceViewModel @Inject constructor(
             )
         }
 
-        // Calculate total sales and transaction count
-        val totalSales = monthlyInvoices.sumOf { it.totalAmount }
+        // Group invoices by currency and sum totals
+        val currencyTotals = monthlyInvoices.groupBy { it.currencyCode }
+            .mapValues { entry -> entry.value.sumOf { it.totalAmount } }
+
+        // Count total number of transactions for the month
         val transactionCount = monthlyInvoices.size
 
         // Log the filtered invoices for debugging
         Log.d("InvoiceViewModel", "Monthly Invoices: $monthlyInvoices")
         Log.d(
             "InvoiceViewModel",
-            "Total Sales: $totalSales, Transaction Count: $transactionCount"
+            "Currency Totals: $currencyTotals, Transaction Count: $transactionCount"
         )
 
-        return totalSales to transactionCount
+        return currencyTotals to transactionCount
     }
-
 
     fun getInvoiceLineById(invoiceID: Long?): InvoiceLine? {
         return invoiceLineList.value.firstOrNull { it.invoiceId == invoiceID }

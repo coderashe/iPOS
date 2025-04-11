@@ -387,9 +387,4 @@ fun getCurrentTimestamp(): String {
     return sdf.format(Date())
 }
 
-@Preview(showBackground = true)
-@Composable
-fun PreviewGradientAndSolidProgressBars() {
-    PriorityScreen()
-}
 

@@ -77,7 +77,10 @@ import kotlinx.coroutines.coroutineScope
 import coil.compose.AsyncImage
 import coil.size.Scale
 import com.example.learncompose303.ui.theme.MediumGreen
+import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.time.temporal.TemporalAdjusters
 
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -418,91 +421,191 @@ fun SalesmanInfoCard(
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun SalesmanWeeklyInfoCard(
+    salesmanName: String,
+    shopName: String,
+    viewModel: InvoiceViewModel = viewModel()
+) {
+    val invoiceList by viewModel.invoiceList.collectAsState()
+
+    // Get current week's date range (Monday to Sunday)
+    val today = LocalDate.now()
+    val startOfWeek = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+    val endOfWeek = today.with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY))
+
+    // Filter invoices for the current week
+    val weeklyInvoices = invoiceList.filter { invoice ->
+        val invoiceDate = LocalDate.ofEpochDay(invoice.invoiceDate / (24 * 60 * 60 * 1000))
+        invoiceDate.isAfter(startOfWeek.minusDays(1)) && invoiceDate.isBefore(endOfWeek.plusDays(1))
+    }
+
+    // Group invoices by currency and sum totals
+    val currencyTotals = weeklyInvoices.groupBy { it.currencyCode }
+        .mapValues { entry -> entry.value.sumOf { it.totalAmount } }
+
+    // Count total number of transactions for the week
+    val numberOfTransactions = weeklyInvoices.size
+
+    Card(
+        modifier = Modifier.fillMaxWidth().padding(16.dp),
+        shape = RoundedCornerShape(12.dp),
+        elevation = CardDefaults.cardElevation(8.dp),
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp).fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            // Name of Salesman
+            Text(
+                text = salesmanName,
+                style = MaterialTheme.typography.titleMedium,
+            )
+            // The Shop
+            Text(
+                text = "@$shopName",
+                style = MaterialTheme.typography.bodySmall,
+                color = Gray1
+            )
+            // Date range
+            Text(
+                text = "${startOfWeek.format(DateTimeFormatter.ofPattern("MMM d"))} - ${endOfWeek.format(DateTimeFormatter.ofPattern("MMM d, yyyy"))}",
+                style = MaterialTheme.typography.bodySmall,
+                color = Gray1
+            )
+            Divider(
+                modifier = Modifier.padding(vertical = 4.dp),
+                color = MaterialTheme.colorScheme.primary
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                // Display Sales Totals by Currency
+                Column {
+                    Text(
+                        text = "WEEKLY SALES",
+                        style = MaterialTheme.typography.titleSmall
+                    )
+                    currencyTotals.forEach { (currencyCode, totalAmount) ->
+                        Text(
+                            text = "$currencyCode: ${String.format("%.2f", totalAmount)}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MediumGreen
+                        )
+                    }
+                }
+                // Number of transactions
+                Column {
+                    Text(
+                        text = "no.",
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                    Text(
+                        text = "$numberOfTransactions",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MediumGreen
+                    )
+                }
+            }
+        }
+    }
+}
+
 
 // monthly sales
-//@RequiresApi(Build.VERSION_CODES.O)
-//@Composable
-//fun SalesmanInfoCard(
-//    salesmanName: String,
-//    shopName: String,
-//    viewModel: InvoiceViewModel = viewModel()
-//) {
-//    val invoiceList by viewModel.invoiceList.collectAsState()
-//    val (oldSalesTotal, numberOfTransactions) = viewModel.getTodaySalesInfo()
-//
-//    // Get current month's date range
-//    val today = LocalDate.now()
-//    val startOfMonth = today.withDayOfMonth(1)
-//    val endOfMonth = today.withDayOfMonth(today.lengthOfMonth())
-//
-//    // Filter invoices for the current month
-//    val currentMonthInvoices = invoiceList.filter { invoice ->
-//        val invoiceDate = LocalDate.ofEpochDay(invoice.invoiceDate / (24 * 60 * 60 * 1000))
-//        invoiceDate.isAfter(startOfMonth.minusDays(1)) && invoiceDate.isBefore(endOfMonth.plusDays(1))
-//    }
-//
-//    // Group invoices by currency and sum totals - now using filtered list
-//    val currencyTotals = currentMonthInvoices.groupBy { it.currencyCode }
-//        .mapValues { entry -> entry.value.sumOf { it.totalAmount } }
-//
-//    Card(
-//        modifier = Modifier.fillMaxWidth().padding(16.dp),
-//        shape = RoundedCornerShape(12.dp),
-//        elevation = CardDefaults.cardElevation(8.dp),
-//    ) {
-//        Column(
-//            modifier = Modifier.padding(16.dp).fillMaxWidth(),
-//            verticalArrangement = Arrangement.spacedBy(8.dp)
-//        ) {
-//            // Name of Salesman
-//            Text(
-//                text = salesmanName,
-//                style = MaterialTheme.typography.titleMedium,
-//            )
-//            // The Shop
-//            Text(
-//                text = "@$shopName",
-//                style = MaterialTheme.typography.bodySmall,
-//                color = Gray1
-//            )
-//            Divider(
-//                modifier = Modifier.padding(vertical = 4.dp),
-//                color = MaterialTheme.colorScheme.primary
-//            )
-//            Row(
-//                modifier = Modifier.fillMaxWidth(),
-//                horizontalArrangement = Arrangement.SpaceBetween
-//            ) {
-//                // Display Sales Totals by Currency
-//                Column {
-//                    Text(
-//                        text = "SALES TOTALS",
-//                        style = MaterialTheme.typography.titleSmall
-//                    )
-//                    currencyTotals.forEach { (currencyCode, totalAmount) ->
-//                        Text(
-//                            text = "$currencyCode: ${String.format("%.2f", totalAmount)}",
-//                            style = MaterialTheme.typography.bodyMedium,
-//                            color = MediumGreen
-//                        )
-//                    }
-//                }
-//                // Number of transactions
-//                Column {
-//                    Text(
-//                        text = "no.",
-//                        style = MaterialTheme.typography.bodyMedium,
-//                    )
-//                    Text(
-//                        text = "$numberOfTransactions",
-//                        style = MaterialTheme.typography.titleSmall,
-//                        color = MediumGreen
-//                    )
-//                }
-//            }
-//        }
-//    }
-//}
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun SalesmanMonthlyInfoCard(
+    salesmanName: String,
+    shopName: String,
+    viewModel: InvoiceViewModel = viewModel()
+) {
+    val invoiceList by viewModel.invoiceList.collectAsState()
+
+    // Get current month's date range
+    val today = LocalDate.now()
+    val startOfMonth = today.withDayOfMonth(1)
+    val endOfMonth = today.withDayOfMonth(today.lengthOfMonth())
+
+    // Filter invoices for the current month
+    val monthlyInvoices = invoiceList.filter { invoice ->
+        val invoiceDate = LocalDate.ofEpochDay(invoice.invoiceDate / (24 * 60 * 60 * 1000))
+        invoiceDate.isAfter(startOfMonth.minusDays(1)) && invoiceDate.isBefore(endOfMonth.plusDays(1))
+    }
+
+    // Group invoices by currency and sum totals
+    val currencyTotals = monthlyInvoices.groupBy { it.currencyCode }
+        .mapValues { entry -> entry.value.sumOf { it.totalAmount } }
+
+    // Count total number of transactions for the month
+    val numberOfTransactions = monthlyInvoices.size
+
+    Card(
+        modifier = Modifier.fillMaxWidth().padding(16.dp),
+        shape = RoundedCornerShape(12.dp),
+        elevation = CardDefaults.cardElevation(8.dp),
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp).fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            // Name of Salesman
+            Text(
+                text = salesmanName,
+                style = MaterialTheme.typography.titleMedium,
+            )
+            // The Shop
+            Text(
+                text = "@$shopName",
+                style = MaterialTheme.typography.bodySmall,
+                color = Gray1
+            )
+            // Month and year
+            Text(
+                text = today.format(DateTimeFormatter.ofPattern("MMMM yyyy")),
+                style = MaterialTheme.typography.bodySmall,
+                color = Gray1
+            )
+            Divider(
+                modifier = Modifier.padding(vertical = 4.dp),
+                color = MaterialTheme.colorScheme.primary
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                // Display Sales Totals by Currency
+                Column {
+                    Text(
+                        text = "MONTHLY SALES",
+                        style = MaterialTheme.typography.titleSmall
+                    )
+                    currencyTotals.forEach { (currencyCode, totalAmount) ->
+                        Text(
+                            text = "$currencyCode: ${String.format("%.2f", totalAmount)}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MediumGreen
+                        )
+                    }
+                }
+                // Number of transactions
+                Column {
+                    Text(
+                        text = "no.",
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                    Text(
+                        text = "$numberOfTransactions",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MediumGreen
+                    )
+                }
+            }
+        }
+    }
+}
 
 @Composable
 fun SpacerHeight() {

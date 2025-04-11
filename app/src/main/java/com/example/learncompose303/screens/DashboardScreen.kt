@@ -24,6 +24,8 @@ import com.example.learncompose303.R
 import com.example.learncompose303.app.AutoSlidingCarousel
 import com.example.learncompose303.app.CustomHeadingMedium
 import com.example.learncompose303.app.SalesmanInfoCard
+import com.example.learncompose303.app.SalesmanMonthlyInfoCard
+import com.example.learncompose303.app.SalesmanWeeklyInfoCard
 import com.example.learncompose303.app.SpacerHeight
 import com.example.learncompose303.data.Destinations
 import com.example.learncompose303.screens.auth.AuthState
@@ -74,6 +76,8 @@ fun DashboardScreen(
             .verticalScroll(rememberScrollState())
     ) {
         SalesmanInfoCard(
+//        SalesmanWeeklyInfoCard(
+//        SalesmanMonthlyInfoCard(
             salesmanName = currentUser?.userFullName ?: "iSTART",
             shopName = currentUser?.storeID ?: "ISTART CAPITAL STORE",
             viewModel = viewModel
