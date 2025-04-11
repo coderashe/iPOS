@@ -346,19 +346,17 @@ fun SalesmanInfoCard(
     val invoiceList by viewModel.invoiceList.collectAsState()
     val (oldSalesTotal, numberOfTransactions) = viewModel.getTodaySalesInfo()
 
-    // Get current month's date range
+    // Get today's date
     val today = LocalDate.now()
-    val startOfMonth = today.withDayOfMonth(1)
-    val endOfMonth = today.withDayOfMonth(today.lengthOfMonth())
 
-    // Filter invoices for the current month
-    val currentMonthInvoices = invoiceList.filter { invoice ->
+    // Filter invoices for today only
+    val todayInvoices = invoiceList.filter { invoice ->
         val invoiceDate = LocalDate.ofEpochDay(invoice.invoiceDate / (24 * 60 * 60 * 1000))
-        invoiceDate.isAfter(startOfMonth.minusDays(1)) && invoiceDate.isBefore(endOfMonth.plusDays(1))
+        invoiceDate.isEqual(today)
     }
 
-    // Group invoices by currency and sum totals - now using filtered list
-    val currencyTotals = currentMonthInvoices.groupBy { it.currencyCode }
+    // Group invoices by currency and sum totals - now using today's filtered list
+    val currencyTotals = todayInvoices.groupBy { it.currencyCode }
         .mapValues { entry -> entry.value.sumOf { it.totalAmount } }
 
     Card(
@@ -392,7 +390,7 @@ fun SalesmanInfoCard(
                 // Display Sales Totals by Currency
                 Column {
                     Text(
-                        text = "SALES TOTALS",
+                        text = "TODAY'S SALES",
                         style = MaterialTheme.typography.titleSmall
                     )
                     currencyTotals.forEach { (currencyCode, totalAmount) ->
@@ -420,6 +418,8 @@ fun SalesmanInfoCard(
     }
 }
 
+
+// monthly sales
 //@RequiresApi(Build.VERSION_CODES.O)
 //@Composable
 //fun SalesmanInfoCard(
@@ -430,22 +430,28 @@ fun SalesmanInfoCard(
 //    val invoiceList by viewModel.invoiceList.collectAsState()
 //    val (oldSalesTotal, numberOfTransactions) = viewModel.getTodaySalesInfo()
 //
-//    // Group invoices by currency and sum totals
-//    val currencyTotals = invoiceList.groupBy { it.currencyCode }.mapValues { entry ->
-//        entry.value.sumOf { it.totalAmount }
+//    // Get current month's date range
+//    val today = LocalDate.now()
+//    val startOfMonth = today.withDayOfMonth(1)
+//    val endOfMonth = today.withDayOfMonth(today.lengthOfMonth())
+//
+//    // Filter invoices for the current month
+//    val currentMonthInvoices = invoiceList.filter { invoice ->
+//        val invoiceDate = LocalDate.ofEpochDay(invoice.invoiceDate / (24 * 60 * 60 * 1000))
+//        invoiceDate.isAfter(startOfMonth.minusDays(1)) && invoiceDate.isBefore(endOfMonth.plusDays(1))
 //    }
 //
+//    // Group invoices by currency and sum totals - now using filtered list
+//    val currencyTotals = currentMonthInvoices.groupBy { it.currencyCode }
+//        .mapValues { entry -> entry.value.sumOf { it.totalAmount } }
+//
 //    Card(
-//        modifier = Modifier
-//            .fillMaxWidth()
-//            .padding(16.dp),
+//        modifier = Modifier.fillMaxWidth().padding(16.dp),
 //        shape = RoundedCornerShape(12.dp),
 //        elevation = CardDefaults.cardElevation(8.dp),
 //    ) {
 //        Column(
-//            modifier = Modifier
-//                .padding(16.dp)
-//                .fillMaxWidth(),
+//            modifier = Modifier.padding(16.dp).fillMaxWidth(),
 //            verticalArrangement = Arrangement.spacedBy(8.dp)
 //        ) {
 //            // Name of Salesman
@@ -453,7 +459,6 @@ fun SalesmanInfoCard(
 //                text = salesmanName,
 //                style = MaterialTheme.typography.titleMedium,
 //            )
-//
 //            // The Shop
 //            Text(
 //                text = "@$shopName",
@@ -468,14 +473,12 @@ fun SalesmanInfoCard(
 //                modifier = Modifier.fillMaxWidth(),
 //                horizontalArrangement = Arrangement.SpaceBetween
 //            ) {
-//
 //                // Display Sales Totals by Currency
 //                Column {
 //                    Text(
 //                        text = "SALES TOTALS",
 //                        style = MaterialTheme.typography.titleSmall
 //                    )
-//
 //                    currencyTotals.forEach { (currencyCode, totalAmount) ->
 //                        Text(
 //                            text = "$currencyCode: ${String.format("%.2f", totalAmount)}",
@@ -484,7 +487,6 @@ fun SalesmanInfoCard(
 //                        )
 //                    }
 //                }
-//
 //                // Number of transactions
 //                Column {
 //                    Text(
