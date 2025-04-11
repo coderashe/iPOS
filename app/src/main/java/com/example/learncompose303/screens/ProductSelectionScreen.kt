@@ -60,181 +60,6 @@ import com.example.learncompose303.data.entities.Products
 import com.example.learncompose303.ui.theme.Blue1
 import com.example.learncompose303.viewmodels.InvoiceViewModel
 
-
-//@Composable
-//fun ProductSelectionScreen(
-//    customer: Customer,
-//    onProceedToCart: () -> Unit,
-//    navController: NavController,
-//    viewModel: InvoiceViewModel = viewModel()
-//) {
-//    val products by viewModel.productList.collectAsState()
-//    val selectedProducts by viewModel.selectedProducts.collectAsState() // Get selected products
-//    var showLowStockWarning by remember { mutableStateOf(false) } // State for the popup
-//    var lowStockInventories by remember { mutableStateOf(emptyList<Products>()) } // List to hold low stock products
-//    var showNoSelectionWarning by remember { mutableStateOf(false) } // State for no product selected warning
-//
-//    var searchQuery by remember { mutableStateOf("") } // State for the search query
-//
-//    LaunchedEffect(key1 = true) {
-//        viewModel.fetchProducts() // Fetch products when the screen is launched
-//
-//        val updatedProducts = products.map { product ->
-//            product.copy(
-//                productDescription = product.productDescription, // Keep other fields intact
-//                brandID = product.brandID,
-//                shoeSizeId = product.shoeSizeId,
-//                productQty = product.productQty
-//                // Optionally, add the current stock to a custom field in the Product entity or manage it separately
-//            )
-//        }
-//
-//        // Check for low stock products
-//        val lowStock = products.filter { product ->
-//            product.productQty < 10 // Use actual product stock field
-//        }
-//
-//
-//        if (lowStock.isNotEmpty()) {
-//            lowStockInventories = lowStock
-//            Log.d("productScreen", "Check for lowStocks --- $lowStock")
-//            showLowStockWarning = true
-//        }
-//    }
-//
-//    // Filter products based on the search query
-//    val filteredProducts = products.filter { product ->
-//        product.productDescription.contains(searchQuery, ignoreCase = true)
-//    }
-//    val configuration = LocalConfiguration.current
-//    val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
-//
-//    val chunkSize = if (isPortrait) 5 else 9  // Set chunk size based on orientation
-//
-//
-//    Column(
-//        modifier = Modifier
-//            .fillMaxSize()
-//            .padding(16.dp)
-//    ) {
-//        Row {
-//            Text(
-//                "Customer: ${customer.name}",
-//                fontWeight = FontWeight.Bold,
-//                fontSize = 18.sp,
-//                modifier = Modifier.weight(1f)
-//            )
-//            Spacer(modifier = Modifier.width(16.dp))
-//            Button(
-//                onClick = {
-//                    if (selectedProducts.isNotEmpty()) {
-//                        onProceedToCart() // Proceed if products are selected
-//                    } else {
-//                        showNoSelectionWarning = true // Show warning if no products selected
-//                    }
-//                }
-//            ) {
-//                Text("Proceed to Cart")
-//            }
-//        }
-//        Spacer(modifier = Modifier.height(16.dp))
-//        SearchBar(
-//            query = searchQuery,
-//            onQueryChanged = { searchQuery = it } // Update the search query
-//        )
-//        Spacer(modifier = Modifier.height(8.dp))
-//
-//        // Group products by brand
-//        val groupedProducts = filteredProducts.groupBy { it.brandID }
-//
-//        if (filteredProducts.isNotEmpty()) {
-//            LazyColumn {
-//                items(filteredProducts.chunked(chunkSize)) { rowItems ->
-//                    Row(
-//                        modifier = Modifier
-//                            .fillMaxWidth()
-//                            .horizontalScroll(rememberScrollState()),
-//                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-//                    ) {
-//                        for (product in rowItems) {
-//                            val isSelected = selectedProducts.contains(product)
-//                            val price = viewModel.getPricelistById(product.productId)
-//
-//                            if (price != null) {
-//                                ProductCard(
-//                                    products = product,
-//                                    isSelected = isSelected,
-//                                    onAddProduct = {
-//                                        viewModel.addProductToCart(product)
-//                                    },
-//                                    price = price.sellingPrice,
-//                                    viewModel = viewModel // Pass ViewModel directly
-//                                )
-//                            } else {
-//                                Log.d(
-//                                    "productScreen",
-//                                    "No price found for product ID: ${product.productId}"
-//                                )
-//                            }
-//                        }
-//                        // To align remaining products if rowItems is less than the chunk size
-//                        if (rowItems.size == 1) {
-//                            Spacer(modifier = Modifier.weight(1f))
-//                        }
-//                    }
-//                }
-//            }
-//        } else {
-//            Text(
-//                text = "No products found",
-//                modifier = Modifier.align(Alignment.CenterHorizontally)
-//            )
-//        }
-//
-//
-//        Spacer(modifier = Modifier.height(16.dp))
-//    }
-//
-//    // Show a popup warning for low stock products
-//    if (showLowStockWarning) {
-//        AlertDialog(
-//            onDismissRequest = { showLowStockWarning = false },
-//            title = { Text("Low Stock Warning") },
-//            text = {
-//                Column {
-//                    Text("The following products have low stock:")
-//                    Spacer(modifier = Modifier.height(8.dp))
-//                    lowStockInventories.forEach { product ->
-//                        Text(
-//                            text = "- ${product.productDescription} : ${product.productQty}",
-//                            color = Color.Red
-//                        )
-//                    }
-//                }
-//            },
-//            confirmButton = {
-//                Button(onClick = { showLowStockWarning = false }) {
-//                    Text("OK")
-//                }
-//            }
-//        )
-//    }
-//
-//    // Show a warning if no products are selected
-//    if (showNoSelectionWarning) {
-//        AlertDialog(
-//            onDismissRequest = { showNoSelectionWarning = false },
-//            title = { Text("No Products Selected") },
-//            text = { Text("Please select at least one product before proceeding to the cart.") },
-//            confirmButton = {
-//                Button(onClick = { showNoSelectionWarning = false }) {
-//                    Text("OK")
-//                }
-//            }
-//        )
-//    }
-//}
-
 @Composable
 fun ProductSelectionScreen(
     customer: Customer,
@@ -243,6 +68,7 @@ fun ProductSelectionScreen(
     viewModel: InvoiceViewModel = viewModel()
 ) {
     val products by viewModel.productList.collectAsState()
+    val withBranProducts by viewModel.withBrandProductList.collectAsState()
     val selectedProducts by viewModel.selectedProducts.collectAsState()
     var showLowStockWarning by remember { mutableStateOf(false) }
     var lowStockInventories by remember { mutableStateOf(emptyList<Products>()) }
@@ -258,15 +84,25 @@ fun ProductSelectionScreen(
         }
     }
 
-    val filteredProducts = products.filter {
-        it.productDescription.contains(searchQuery, ignoreCase = true)
+    val query = searchQuery.trim().lowercase()
+    val filteredProducts = withBranProducts.filter {
+        it.product.productDescription.lowercase().contains(query) ||
+                it.brand.brandName.lowercase().contains(query)
     }
+
+//    old logic
+//    val filteredProducts = products.filter {
+//        it.productDescription.contains(searchQuery, ignoreCase = true)
+//    }
+
     val configuration = LocalConfiguration.current
     val chunkSize = if (configuration.orientation == Configuration.ORIENTATION_PORTRAIT) 5 else 9
 
-    Column(modifier = Modifier
-        .fillMaxSize()
-        .padding(16.dp)) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
         Row {
             Text(
                 "Customer: ${customer.name}",
@@ -298,14 +134,14 @@ fun ProductSelectionScreen(
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         rowItems.forEach { product ->
-                            val isSelected = selectedProducts.contains(product)
-                            val price = viewModel.getPricelistById(product.productId)
+                            val isSelected = selectedProducts.contains(product.product)
+                            val price = viewModel.getPricelistById(product.product.productId)
 
                             price?.let {
                                 ProductCard(
-                                    products = product,
+                                    products = product.product,
                                     isSelected = isSelected,
-                                    onAddProduct = { viewModel.addProductToCart(product) },
+                                    onAddProduct = { viewModel.addProductToCart(product.product) },
                                     price = it.sellingPrice,
                                     viewModel = viewModel
                                 )

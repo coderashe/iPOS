@@ -11,6 +11,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.learncompose303.R
 import com.example.learncompose303.data.Destinations
 import com.example.learncompose303.data.StudentEntity
+import com.example.learncompose303.data.domain.ProductWithBrand
 import com.example.learncompose303.data.entities.CartItem
 import com.example.learncompose303.data.entities.CsvParser
 import com.example.learncompose303.data.entities.Currency
@@ -155,6 +156,9 @@ class InvoiceViewModel @Inject constructor(
     private val _selectedCurrency = MutableStateFlow<Currency?>(null)
     val selectedCurrency: StateFlow<Currency?> = _selectedCurrency
 
+    private val _withBrandProductList = MutableStateFlow<List<ProductWithBrand>>(emptyList())
+    val withBrandProductList = _withBrandProductList.asStateFlow()
+
     init {
         // Essential db operations to load data
         insertDefaultUser()
@@ -175,7 +179,14 @@ class InvoiceViewModel @Inject constructor(
         insertInitialCurrencies()
         fetchCurrencies()
         fetchCurrencyTotals()
+        fetchBrandProducts()
         // Now insert initial products
+    }
+
+    fun fetchBrandProducts() {
+        viewModelScope.launch {
+            _withBrandProductList.value = productRepository.getProductsWithBrand()
+        }
     }
 
     fun insertStockTake(stockTake: StockTake) {
@@ -496,7 +507,7 @@ class InvoiceViewModel @Inject constructor(
                 Customer(3, "John Doe", "jane@example.com", "987654321", "State House"),
                 Customer(4, "Amy Petersen", "jane@example.com", "987654321", "State House"),
                 Customer(5, "Amara Brown", "jane@example.com", "987654321", "State House"),
-                Customer(6, "walkInCustomer", "cashsale@viewmodel.com", "0776815030", null),
+                Customer(6, "walk in customer", "cashsale@viewmodel.com", "0", "Mbizo"),
             )
             customerRepository.insertCustomers(initialCustomers)
         }

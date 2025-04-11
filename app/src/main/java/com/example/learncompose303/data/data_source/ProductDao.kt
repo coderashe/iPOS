@@ -5,15 +5,17 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Update
+import com.example.learncompose303.data.domain.ProductWithBrand
 import com.example.learncompose303.data.entities.Products
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface ProductDao {
-//    @Query("SELECT * FROM products WHERE productDescription = :productName AND shoeSizeId = :shoeSizeId LIMIT 1")
-//    fun getProductByNameAndSize(productName: String, shoeSizeId: Long): Products?
-
+    @Transaction
+    @Query("SELECT * FROM products")
+    suspend fun getProductsWithBrand(): List<ProductWithBrand>
 
     //    handles case-sensitive
     @Query("SELECT * FROM products WHERE LOWER(productDescription) = LOWER(:productName) AND shoeSizeId = :shoeSizeId LIMIT 1")

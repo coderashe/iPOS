@@ -1,6 +1,7 @@
 package com.example.learncompose303.data.repositories
 
 import com.example.learncompose303.data.data_source.ProductDao
+import com.example.learncompose303.data.domain.ProductWithBrand
 import com.example.learncompose303.data.entities.Products
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -8,6 +9,8 @@ import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
 interface ProductRepository {
+    suspend fun getProductsWithBrand(): List<ProductWithBrand>
+
     suspend fun getProductByNameAndSize(productName: String, shoeSizeId: Long): Products?
     suspend fun updateProductQuantity(productId: Long, newQty: Long)
     fun getAllProducts(): Flow<List<Products>>
@@ -31,6 +34,12 @@ interface ProductRepository {
 class ProductRepositoryImpl @Inject constructor(
     private val productDao: ProductDao
 ) : ProductRepository {
+    override suspend fun getProductsWithBrand(): List<ProductWithBrand> {
+        return withContext(Dispatchers.IO) {
+            productDao.getProductsWithBrand()
+        }
+    }
+
 
     override suspend fun updateProductQuantity(productId: Long, newQty: Long) {
         return withContext(Dispatchers.IO) {
@@ -122,10 +131,3 @@ class ProductRepositoryImpl @Inject constructor(
     }
 
 }
-
-
-//    override suspend fun insertProduct(products: Products): Long {
-//        return withContext(Dispatchers.IO) {
-//            productDao.insertProduct(products)
-//        }
-//    }
