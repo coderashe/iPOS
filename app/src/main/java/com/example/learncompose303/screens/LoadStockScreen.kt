@@ -339,7 +339,7 @@ fun LoadStockScreen(
                 OutlinedTextField(
                     value = shoeBrand,
                     onValueChange = {},
-                    label = { Text("Shoe Brand") },
+                    label = { Text("Product Code") },
                     readOnly = true,
                     modifier = Modifier
                         .clickable { brandExpanded = true },
@@ -375,7 +375,7 @@ fun LoadStockScreen(
         OutlinedTextField(
             value = productName,
             onValueChange = { productName = it },
-            label = { Text("Product Name") },
+            label = { Text("Product Description") },
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(8.dp))
