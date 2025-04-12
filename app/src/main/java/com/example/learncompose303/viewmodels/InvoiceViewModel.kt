@@ -637,6 +637,7 @@ class InvoiceViewModel @Inject constructor(
             }
 
             onProductInserted(productId)
+            fetchBrandProducts()
         }
 
 
