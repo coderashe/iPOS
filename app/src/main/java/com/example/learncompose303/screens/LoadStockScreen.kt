@@ -75,8 +75,8 @@ fun LoadStockScreen(
     val shoeSizeList = shoeSizes.map { it.size.toString() }  // Extract only sizes
     var selectedShoeSize by remember { mutableStateOf<ShoeSize?>(null) }
     var selectedShoeBrand by remember { mutableStateOf<ShoeBrand?>(null) }
-    var shoeSize by remember { mutableStateOf("6") } // Default size -> 6
-    var shoeBrand by remember { mutableStateOf("Nike") } // Default Brand -> "Nike"
+    var shoeSize by remember { mutableStateOf("3.0") } // Default size -> 6
+    var shoeBrand by remember { mutableStateOf("OLDSTOCK") } // Default Brand -> "Nike"
     var sizeExpanded by remember { mutableStateOf(false) }     // Dropdown Menu state
     var brandExpanded by remember { mutableStateOf(false) }     // Dropdown Menu state
     var showDialog by remember { mutableStateOf(false) } // Show confirmation dialog

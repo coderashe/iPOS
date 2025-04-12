@@ -1,7 +1,9 @@
 package com.example.learncompose303.app
 
+import android.app.Activity
 import androidx.lifecycle.viewmodel.compose.viewModel
 import android.app.DatePickerDialog
+import android.content.Context
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
@@ -40,6 +42,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -57,6 +60,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
 import coil.compose.rememberAsyncImagePainter
 import com.example.learncompose303.R
 import com.example.learncompose303.data.Destinations
@@ -82,31 +87,63 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalAdjusters
 
-
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun SwipeRefreshLayout() {
-    // State to manage the refresh status
+fun SwipeRefreshLayout(
+    navController: NavHostController
+) {
     var isRefreshing by remember { mutableStateOf(false) }
+    var reloadTrigger by remember { mutableStateOf(0) }
 
-    // SwipeRefresh composable from Accompanist
     SwipeRefresh(
         state = rememberSwipeRefreshState(isRefreshing),
         onRefresh = {
-            // Perform refresh logic here
             isRefreshing = true
 
-            // Simulate loading and recomposition
-            // You can add your actual refresh logic here (like fetching new data)
+            // Only clear backstack if graph is initialized
+            if (navController.currentBackStackEntry != null) {
+                navController.popBackStack(
+                    navController.graph.startDestinationId,
+                    inclusive = false
+                )
+            }
+
             Handler(Looper.getMainLooper()).postDelayed({
-                isRefreshing = false  // Stop refreshing after some time
+                isRefreshing = false
+                reloadTrigger++
             }, 1000)
-        }
+        },
     ) {
-        // The content to be refreshed
-        ShopLandingScreen()
+        key(reloadTrigger) {
+            ShopLandingScreen()
+        }
     }
 }
+
+//@RequiresApi(Build.VERSION_CODES.O)
+//@Composable
+//fun SwipeRefreshLayout() {
+//    // State to manage the refresh status
+//    var isRefreshing by remember { mutableStateOf(false) }
+//
+//    // SwipeRefresh composable from Accompanist
+//    SwipeRefresh(
+//        state = rememberSwipeRefreshState(isRefreshing),
+//        onRefresh = {
+//            // Perform refresh logic here
+//            isRefreshing = true
+//
+//            // create logic to reload the app and recompose i.e remove everything from backstack
+//            // You can add your actual refresh logic here (like fetching new data)
+//            Handler(Looper.getMainLooper()).postDelayed({
+//                isRefreshing = false  // Stop refreshing after some time
+//            }, 1000)
+//        }
+//    ) {
+//        // The content to be refreshed
+//        ShopLandingScreen()
+//    }
+//}
 
 //@Composable
 //fun AutoSlidingCarousel(
@@ -363,12 +400,16 @@ fun SalesmanInfoCard(
         .mapValues { entry -> entry.value.sumOf { it.totalAmount } }
 
     Card(
-        modifier = Modifier.fillMaxWidth().padding(16.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
         shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.cardElevation(8.dp),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp).fillMaxWidth(),
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             // Name of Salesman
@@ -449,12 +490,16 @@ fun SalesmanWeeklyInfoCard(
     val numberOfTransactions = weeklyInvoices.size
 
     Card(
-        modifier = Modifier.fillMaxWidth().padding(16.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
         shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.cardElevation(8.dp),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp).fillMaxWidth(),
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             // Name of Salesman
@@ -470,7 +515,11 @@ fun SalesmanWeeklyInfoCard(
             )
             // Date range
             Text(
-                text = "${startOfWeek.format(DateTimeFormatter.ofPattern("MMM d"))} - ${endOfWeek.format(DateTimeFormatter.ofPattern("MMM d, yyyy"))}",
+                text = "${startOfWeek.format(DateTimeFormatter.ofPattern("MMM d"))} - ${
+                    endOfWeek.format(
+                        DateTimeFormatter.ofPattern("MMM d, yyyy")
+                    )
+                }",
                 style = MaterialTheme.typography.bodySmall,
                 color = Gray1
             )
@@ -543,12 +592,16 @@ fun SalesmanMonthlyInfoCard(
     val numberOfTransactions = monthlyInvoices.size
 
     Card(
-        modifier = Modifier.fillMaxWidth().padding(16.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
         shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.cardElevation(8.dp),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp).fillMaxWidth(),
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             // Name of Salesman

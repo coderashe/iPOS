@@ -68,10 +68,12 @@ class MainActivity : ComponentActivity() {
         }
         setContent {
             LearnCompose303Theme {
+                // Create navController at the root level
+                val navController = rememberNavController()
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                 ) {
-                    SwipeRefreshLayout()
+                    SwipeRefreshLayout(navController)
                 }
             }
         }
@@ -96,23 +98,3 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
-
-
-//    // Register the permission request launcher
-//    private val requestBluetoothPermissionLauncher =
-//        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
-//            if (isGranted) {
-//                // Your printing code/method HERE
-//            } else {
-//                // Handle the permission denied case
-//            }
-//        }
-
-
-//if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-//            val permissions = arrayOf(
-//                Manifest.permission.BLUETOOTH_SCAN,
-//                Manifest.permission.BLUETOOTH_CONNECT
-//            )
-//            requestPermissions(permissions, 100)
-//        }
