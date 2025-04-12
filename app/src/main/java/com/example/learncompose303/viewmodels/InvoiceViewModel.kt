@@ -972,6 +972,10 @@ class InvoiceViewModel @Inject constructor(
         return invoiceList.value.firstOrNull { it.invoiceId == invoiceId }
     }
 
+    fun getBrandById(brandId: Long): Flow<ShoeBrand?> {
+        return shoeBrandRepository.getBrandById(brandId)
+    }
+
     suspend fun deductButcherQuantityAndUpdateStock(productId: Long, quantitySold: Double) {
         try {
             // Fetch the product from the repository

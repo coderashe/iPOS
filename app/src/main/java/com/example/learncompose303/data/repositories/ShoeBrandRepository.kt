@@ -17,7 +17,9 @@ interface ShoeBrandRepository {
     suspend fun getAllShoeBrands(): Flow<List<ShoeBrand>>
     suspend fun getAllShoeBrandsOnce(): List<ShoeBrand>
     suspend fun getBrandNameById(brandId: Long): ShoeBrand?
+    fun getBrandById(brandId: Long): Flow<ShoeBrand?>
 }
+
 class ShoeBrandRepositoryImpl @Inject constructor(
     private val shoeBrandDao: ShoeBrandDao
 ) : ShoeBrandRepository {
@@ -44,6 +46,10 @@ class ShoeBrandRepositoryImpl @Inject constructor(
         return withContext(Dispatchers.IO) {
             shoeBrandDao.getShoeBrandById(id)
         }
+    }
+
+    override fun getBrandById(brandId: Long): Flow<ShoeBrand?> {
+        return shoeBrandDao.getBrandById(brandId)
     }
 
     override suspend fun insertShoeBrand(shoeBrand: ShoeBrand): Long {

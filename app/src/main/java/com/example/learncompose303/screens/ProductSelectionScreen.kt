@@ -43,7 +43,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.RenderEffect
+import androidx.compose.ui.graphics.Shader
+import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -57,6 +63,7 @@ import androidx.navigation.NavController
 import com.example.learncompose303.R
 import com.example.learncompose303.data.entities.Customer
 import com.example.learncompose303.data.entities.Products
+import com.example.learncompose303.data.entities.ShoeBrand
 import com.example.learncompose303.ui.theme.Blue1
 import com.example.learncompose303.viewmodels.InvoiceViewModel
 
@@ -189,7 +196,6 @@ fun ProductSelectionScreen(
     }
 }
 
-
 @Composable
 fun ProductCard(
     products: Products,
@@ -205,7 +211,17 @@ fun ProductCard(
     val shoeSizeState = viewModel.getShoeSizeById(products.shoeSizeId)
         .collectAsState(initial = null)
 
+    var brand by remember { mutableStateOf<ShoeBrand?>(null) }
+
+    // Use LaunchedEffect to collect the Flow in a coroutine
+    LaunchedEffect(products.brandID) {
+        viewModel.getBrandById(products.brandID).collect { fetchedBrand ->
+            brand = fetchedBrand
+        }
+    }
+
     val shoeSize = shoeSizeState.value?.size?.toString() ?: "N/A"
+    val brandName = brand?.brandName ?: "Unknown Brand"
 
     // Fetch stock level when productId changes
     LaunchedEffect(products.productId) {
@@ -270,10 +286,22 @@ fun ProductCard(
             Spacer(modifier = Modifier.height(6.dp))
 
             Text(
-                text = "Size: $shoeSize",
-                style = MaterialTheme.typography.bodyMedium,
+                text = "$brandName :- $shoeSize",
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    shadow = Shadow(
+                        color = Color.Black.copy(alpha = 0.3f),
+                        offset = Offset(2f, 2f),
+                        blurRadius = 4f
+                    )
+                ),
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
             )
+
+//            Text(
+//                text = "$brandName :- $shoeSize",
+//                style = MaterialTheme.typography.bodyMedium,
+//                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+//            )
 
             Spacer(modifier = Modifier.height(10.dp))
 
@@ -328,3 +356,143 @@ fun ProductCard(
         }
     }
 }
+
+
+//@Composable
+//fun ProductCard(
+//    products: Products,
+//    isSelected: Boolean,
+//    onAddProduct: (Products) -> Unit,
+//    price: Double,
+//    viewModel: InvoiceViewModel
+//) {
+//    val context = LocalContext.current
+//    var stockLevel by remember { mutableStateOf(0L) }
+//
+//    // Collect shoe size state from ViewModel
+//    val shoeSizeState = viewModel.getShoeSizeById(products.shoeSizeId)
+//        .collectAsState(initial = null)
+//
+//    val shoeSize = shoeSizeState.value?.size?.toString() ?: "N/A"
+//
+//    // Fetch stock level when productId changes
+//    LaunchedEffect(products.productId) {
+//        stockLevel = products.productQty
+//    }
+//
+//    Card(
+//        shape = RoundedCornerShape(16.dp),
+//        modifier = Modifier
+//            .padding(8.dp)
+//            .fillMaxWidth()
+//            .background(MaterialTheme.colorScheme.surfaceVariant)
+//            .shadow(8.dp, RoundedCornerShape(16.dp))
+//            .clickable {
+//                if (stockLevel > 0) {
+//                    onAddProduct(products)
+//                } else {
+//                    Toast
+//                        .makeText(
+//                            context,
+//                            "${products.productDescription} is out of stock!",
+//                            Toast.LENGTH_SHORT
+//                        )
+//                        .show()
+//                }
+//            },
+//        elevation = CardDefaults.cardElevation(6.dp),
+//        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+//    ) {
+//        Column(
+//            modifier = Modifier
+//                .fillMaxSize()
+//                .padding(12.dp),
+//            horizontalAlignment = Alignment.CenterHorizontally
+//        ) {
+//            // Product Image Placeholder
+//            Box(
+//                modifier = Modifier
+//                    .size(80.dp)
+//                    .clip(RoundedCornerShape(12.dp))
+//                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
+//                contentAlignment = Alignment.Center
+//            ) {
+//                Icon(
+//                    imageVector = Icons.Default.ShoppingCart,
+//                    contentDescription = "Product Image",
+//                    tint = MaterialTheme.colorScheme.primary,
+//                    modifier = Modifier.size(48.dp)
+//                )
+//            }
+//
+//            Spacer(modifier = Modifier.height(8.dp))
+//
+//            Text(
+//                text = products.productDescription,
+//                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+//                textAlign = TextAlign.Center,
+//                maxLines = 2,
+//                overflow = TextOverflow.Ellipsis
+//            )
+//
+//            Spacer(modifier = Modifier.height(6.dp))
+//
+//            Text(
+//                text = "Size: $shoeSize",
+//                style = MaterialTheme.typography.bodyMedium,
+//                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+//            )
+//
+//            Spacer(modifier = Modifier.height(10.dp))
+//
+//            // Stock Level
+//            Box(
+//                modifier = Modifier
+//                    .fillMaxWidth()
+//                    .padding(horizontal = 8.dp),
+//                contentAlignment = Alignment.CenterEnd
+//            ) {
+//                Text(
+//                    text = "Stock: $stockLevel",
+//                    style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
+//                    color = if (stockLevel > 0) MaterialTheme.colorScheme.primary else Color.Red
+//                )
+//            }
+//
+//            Spacer(modifier = Modifier.height(6.dp))
+//
+//            Text(
+//                text = "$${"%.2f".format(price)}",
+//                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+//                color = MaterialTheme.colorScheme.primary
+//            )
+//
+//            Spacer(modifier = Modifier.height(10.dp))
+//
+//            Button(
+//                onClick = {
+//                    if (stockLevel > 0) {
+//                        onAddProduct(products)
+//                    } else {
+//                        Toast.makeText(
+//                            context,
+//                            "${products.productDescription} is out of stock!",
+//                            Toast.LENGTH_SHORT
+//                        ).show()
+//                    }
+//                },
+//                colors = ButtonDefaults.buttonColors(
+//                    containerColor = if (isSelected) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.primary,
+//                    contentColor = Color.White
+//                ),
+//                shape = RoundedCornerShape(12.dp),
+//                modifier = Modifier.fillMaxWidth(0.8f)
+//            ) {
+//                Text(
+//                    text = if (isSelected) stringResource(R.string.added) else stringResource(R.string.addToCart),
+//                    fontWeight = FontWeight.Bold
+//                )
+//            }
+//        }
+//    }
+//}

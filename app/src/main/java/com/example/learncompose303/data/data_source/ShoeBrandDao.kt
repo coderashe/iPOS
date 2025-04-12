@@ -23,6 +23,8 @@ interface ShoeBrandDao {
     @Query("SELECT * FROM shoeBrand WHERE brandID = :id")
     suspend fun getShoeBrandById(id: Long): ShoeBrand?
 
+    @Query("SELECT * FROM shoeBrand WHERE brandID = :brandId")
+    fun getBrandById(brandId: Long): Flow<ShoeBrand?>
 
     @Query("SELECT * FROM shoeBrand WHERE brandId = :brandId LIMIT 1")
     suspend fun getBrandNameById(brandId: Long): ShoeBrand?
