@@ -68,11 +68,12 @@ fun IncomeStatementScreen(
     viewModel: BusinessPerformanceViewModel = viewModel()
 ) {
     // Observe the states from the ViewModel
-    val totalSalesState = viewModel.totalSales.observeAsState(0.0) // Observe total sales
+//    val totalSalesState = viewModel.totalSales.observeAsState(0.0) // Observe total sales
+    val totalSalesState = viewModel.totalSalesInUsd.observeAsState(null)
     val totalExpensesState = viewModel.totalExpenses.observeAsState(0.0) // Observe total expenses
 
     // Safely handle potential null values by using default 0.0
-    val totalSales = totalSalesState.value
+    val totalSales = totalSalesState.value ?: 0.0
     val totalExpenses = totalExpensesState.value
 
     // Calculate Profit/Loss

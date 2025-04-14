@@ -70,11 +70,12 @@ fun BusinessPerformanceScreen(
 ) {
     // Observe the states, and assign them to variables
     val totalExpensesState = viewModel.totalExpenses.observeAsState(null)
-    val totalSalesState = viewModel.totalSales.observeAsState(null)
+//    val totalSalesState = viewModel.totalSales.observeAsState(null)
+    val totalSalesState = viewModel.totalSalesInUsd.observeAsState(null)
 
+    val totalSales = totalSalesState.value ?: 0.0
     // Safely handle potential null values by using Elvis operator here
     val totalExpenses = totalExpensesState.value ?: 0.0
-    val totalSales = totalSalesState.value ?: 0.0
 
     val topPerformingProducts by viewModel.topPerformingProducts.observeAsState(emptyList())
     val peakHours by viewModel.peakHours.observeAsState(emptyList())

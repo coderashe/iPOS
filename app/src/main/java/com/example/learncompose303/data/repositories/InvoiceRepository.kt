@@ -12,6 +12,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
@@ -37,6 +38,33 @@ class InvoiceRepositoryImpl @Inject constructor(
     private val invoiceDao: InvoiceDao,
     private val currencyDao: CurrencyDao
 ) : InvoiceRepository {
+
+    override suspend fun getSalesPerMonth(): Flow<List<MonthlySales>> {
+        return withContext(Dispatchers.IO) {
+            val currenciesFlow = currencyDao.getAllCurrencies()
+
+            invoiceDao.getSalesPerMonthWithCurrency()
+                .combine(currenciesFlow) { sales, currencies ->
+                    val currencyMap = currencies.associateBy { it.code }
+
+                    // Group by month and sum converted amounts
+                    sales.groupBy { it.monthNumber }
+                        .map { (month, salesInMonth) ->
+                            val convertedTotal = salesInMonth.sumOf { sale ->
+                                if (sale.currencyCode == "USD") {
+                                    sale.totalAmount
+                                } else {
+                                    val rate = currencyMap[sale.currencyCode]?.rateToBase ?: 1.0
+                                    sale.totalAmount / rate // Convert to USD
+                                }
+                            }
+
+                            MonthlySales(month, convertedTotal)
+                        }
+                        .sortedBy { it.monthNumber }
+                }
+        }
+    }
 
     override suspend fun getTotalSalesPerCurrency(): Flow<Map<String, Double>> {
         return getAllInvoices().map { invoices ->
@@ -76,11 +104,11 @@ class InvoiceRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun getSalesPerMonth(): Flow<List<MonthlySales>> {
-        return withContext(Dispatchers.IO) {
-            invoiceDao.getSalesPerMonth()
-        }
-    }
+//    override suspend fun getOldSalesPerMonth(): Flow<List<MonthlySales>> {
+//        return withContext(Dispatchers.IO) {
+//            invoiceDao.getSalesPerMonth()
+//        }
+//    }
 
     override suspend fun updateInvoice(invoice: Invoice) {
         return withContext(Dispatchers.IO) {
@@ -114,46 +142,26 @@ class InvoiceRepositoryImpl @Inject constructor(
 
 }
 
-//    for FireStore
-//    suspend fun syncInvoiceWithFirestore(invoice: Invoice)
+data class MonthlySales(
+    val monthNumber: String,
+    val totalSales: Double,
+    val monthName: String = getMonthName(monthNumber)
+)
 
-//    private val firestore = FirebaseFirestore.getInstance()
-//    override suspend fun insertInvoice(invoice: Invoice): Long {
-//        return withContext(Dispatchers.IO) {
-//            val id = invoiceDao.insertInvoice(invoice)
-//            // Sync with Firestore
-//            syncInvoiceWithFirestore(invoice)
-//            id
-//        }
-//    }
-//
-//    override suspend fun updateInvoice(invoice: Invoice) {
-//        return withContext(Dispatchers.IO) {
-//            invoiceDao.updateInvoice(invoice)
-//            // Sync updated invoice with Firestore
-//            syncInvoiceWithFirestore(invoice)
-//        }
-//    }
-//
-//    override suspend fun deleteInvoice(invoice: Invoice) {
-//        return withContext(Dispatchers.IO) {
-//            invoiceDao.deleteInvoice(invoice)
-//            // Remove from Firestore
-//            firestore.collection("invoices").document(invoice.invoiceId.toString())
-//                .delete()
-//        }
-//    }
-//    override suspend fun syncInvoiceWithFirestore(invoice: Invoice) {
-//        return withContext(Dispatchers.IO) {
-//            val invoiceData = mapInvoiceToFirestore(invoice)
-//            firestore.collection("invoices")
-//                .document(invoice.invoiceId.toString())
-//                .set(invoiceData)
-//                .addOnSuccessListener {
-//                    Log.d("FirestoreSync", "Invoice synced successfully")
-//                }
-//                .addOnFailureListener { e ->
-//                    Log.e("FirestoreSync", "Failed to sync invoice", e)
-//                }
-//        }
-//    }
+private fun getMonthName(monthNumber: String): String {
+    return when (monthNumber) {
+        "01" -> "January"
+        "02" -> "February"
+        "03" -> "March"
+        "04" -> "April"
+        "05" -> "May"
+        "06" -> "June"
+        "07" -> "July"
+        "08" -> "August"
+        "09" -> "September"
+        "10" -> "October"
+        "11" -> "November"
+        "12" -> "December"
+        else -> "Unknown"
+    }
+}

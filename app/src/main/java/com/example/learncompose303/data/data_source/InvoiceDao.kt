@@ -7,12 +7,17 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import com.example.learncompose303.data.entities.Invoice
+import com.example.learncompose303.data.entities.InvoiceWithCurrency
 import com.example.learncompose303.data.entities.MonthlySales
+import com.example.learncompose303.data.entities.MonthlySalesWithCurrency
 
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface InvoiceDao {
+    @Query("SELECT i.totalAmount, i.currencyCode FROM invoice i")
+    fun getInvoicesWithCurrency(): Flow<List<InvoiceWithCurrency>>
+
     @Query("SELECT * FROM invoice WHERE invoiceId = :id")
     suspend fun getInvoiceById(id: Long): Invoice?
 
@@ -44,4 +49,12 @@ interface InvoiceDao {
     )
     fun getSalesPerMonth(): Flow<List<MonthlySales>>
 
+    @Query("""
+    SELECT 
+        strftime('%m', invoiceDate / 1000, 'unixepoch') AS monthNumber,
+        totalAmount,
+        currencyCode
+    FROM invoice
+""")
+    fun getSalesPerMonthWithCurrency(): Flow<List<MonthlySalesWithCurrency>>
 }

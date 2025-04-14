@@ -17,6 +17,18 @@ data class Invoice(
     val isArchived: Boolean = false
 )
 
+data class InvoiceWithCurrency(
+    val totalAmount: Double,
+    val currencyCode: String
+)
+
+data class MonthlySalesWithCurrency(
+    val monthNumber: String,
+    val totalAmount: Double,
+    val currencyCode: String
+)
+
+
 fun mapInvoiceToFirestore(invoice: Invoice): Map<String, Any?> {
     return hashMapOf(
         "invoiceId" to invoice.invoiceId,

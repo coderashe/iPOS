@@ -185,7 +185,8 @@ object AppModule {
         return BusinessRepositoryImpl(
             appDatabase.expenseDao(),
             appDatabase.invoiceDao(),
-            appDatabase.invoiceLineDao()
+            appDatabase.invoiceLineDao(),
+            appDatabase.currencyDao()
         )
     }
 //
