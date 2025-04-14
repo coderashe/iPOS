@@ -288,7 +288,7 @@ fun InvoiceCard(invoice: Invoice, onClick: () -> Unit) {
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "$${invoice.totalAmount}",
+                text = "$${"%.2f".format(invoice.totalAmount)}",
                 style = MaterialTheme.typography.bodyMedium
             )
             Spacer(modifier = Modifier.height(4.dp))

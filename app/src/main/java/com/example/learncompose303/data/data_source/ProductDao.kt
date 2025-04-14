@@ -15,7 +15,7 @@ import kotlinx.coroutines.flow.Flow
 interface ProductDao {
     @Transaction
     @Query("SELECT * FROM products")
-    suspend fun getProductsWithBrand(): List<ProductWithBrand>
+    fun getProductsWithBrand(): Flow<List<ProductWithBrand>>
 
     //    handles case-sensitive
     @Query("SELECT * FROM products WHERE LOWER(productDescription) = LOWER(:productName) AND shoeSizeId = :shoeSizeId LIMIT 1")

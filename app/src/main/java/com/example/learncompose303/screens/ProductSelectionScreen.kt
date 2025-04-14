@@ -84,6 +84,7 @@ fun ProductSelectionScreen(
 
     LaunchedEffect(key1 = true) {
         viewModel.fetchProducts()
+        viewModel. fetchBrandProducts()
         val lowStock = products.filter { it.productQty < 10 }
         if (lowStock.isNotEmpty()) {
             lowStockInventories = lowStock
@@ -297,12 +298,6 @@ fun ProductCard(
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
             )
 
-//            Text(
-//                text = "$brandName :- $shoeSize",
-//                style = MaterialTheme.typography.bodyMedium,
-//                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-//            )
-
             Spacer(modifier = Modifier.height(10.dp))
 
             // Stock Level
@@ -356,143 +351,3 @@ fun ProductCard(
         }
     }
 }
-
-
-//@Composable
-//fun ProductCard(
-//    products: Products,
-//    isSelected: Boolean,
-//    onAddProduct: (Products) -> Unit,
-//    price: Double,
-//    viewModel: InvoiceViewModel
-//) {
-//    val context = LocalContext.current
-//    var stockLevel by remember { mutableStateOf(0L) }
-//
-//    // Collect shoe size state from ViewModel
-//    val shoeSizeState = viewModel.getShoeSizeById(products.shoeSizeId)
-//        .collectAsState(initial = null)
-//
-//    val shoeSize = shoeSizeState.value?.size?.toString() ?: "N/A"
-//
-//    // Fetch stock level when productId changes
-//    LaunchedEffect(products.productId) {
-//        stockLevel = products.productQty
-//    }
-//
-//    Card(
-//        shape = RoundedCornerShape(16.dp),
-//        modifier = Modifier
-//            .padding(8.dp)
-//            .fillMaxWidth()
-//            .background(MaterialTheme.colorScheme.surfaceVariant)
-//            .shadow(8.dp, RoundedCornerShape(16.dp))
-//            .clickable {
-//                if (stockLevel > 0) {
-//                    onAddProduct(products)
-//                } else {
-//                    Toast
-//                        .makeText(
-//                            context,
-//                            "${products.productDescription} is out of stock!",
-//                            Toast.LENGTH_SHORT
-//                        )
-//                        .show()
-//                }
-//            },
-//        elevation = CardDefaults.cardElevation(6.dp),
-//        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-//    ) {
-//        Column(
-//            modifier = Modifier
-//                .fillMaxSize()
-//                .padding(12.dp),
-//            horizontalAlignment = Alignment.CenterHorizontally
-//        ) {
-//            // Product Image Placeholder
-//            Box(
-//                modifier = Modifier
-//                    .size(80.dp)
-//                    .clip(RoundedCornerShape(12.dp))
-//                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
-//                contentAlignment = Alignment.Center
-//            ) {
-//                Icon(
-//                    imageVector = Icons.Default.ShoppingCart,
-//                    contentDescription = "Product Image",
-//                    tint = MaterialTheme.colorScheme.primary,
-//                    modifier = Modifier.size(48.dp)
-//                )
-//            }
-//
-//            Spacer(modifier = Modifier.height(8.dp))
-//
-//            Text(
-//                text = products.productDescription,
-//                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
-//                textAlign = TextAlign.Center,
-//                maxLines = 2,
-//                overflow = TextOverflow.Ellipsis
-//            )
-//
-//            Spacer(modifier = Modifier.height(6.dp))
-//
-//            Text(
-//                text = "Size: $shoeSize",
-//                style = MaterialTheme.typography.bodyMedium,
-//                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-//            )
-//
-//            Spacer(modifier = Modifier.height(10.dp))
-//
-//            // Stock Level
-//            Box(
-//                modifier = Modifier
-//                    .fillMaxWidth()
-//                    .padding(horizontal = 8.dp),
-//                contentAlignment = Alignment.CenterEnd
-//            ) {
-//                Text(
-//                    text = "Stock: $stockLevel",
-//                    style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
-//                    color = if (stockLevel > 0) MaterialTheme.colorScheme.primary else Color.Red
-//                )
-//            }
-//
-//            Spacer(modifier = Modifier.height(6.dp))
-//
-//            Text(
-//                text = "$${"%.2f".format(price)}",
-//                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-//                color = MaterialTheme.colorScheme.primary
-//            )
-//
-//            Spacer(modifier = Modifier.height(10.dp))
-//
-//            Button(
-//                onClick = {
-//                    if (stockLevel > 0) {
-//                        onAddProduct(products)
-//                    } else {
-//                        Toast.makeText(
-//                            context,
-//                            "${products.productDescription} is out of stock!",
-//                            Toast.LENGTH_SHORT
-//                        ).show()
-//                    }
-//                },
-//                colors = ButtonDefaults.buttonColors(
-//                    containerColor = if (isSelected) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.primary,
-//                    contentColor = Color.White
-//                ),
-//                shape = RoundedCornerShape(12.dp),
-//                modifier = Modifier.fillMaxWidth(0.8f)
-//            ) {
-//                Text(
-//                    text = if (isSelected) stringResource(R.string.added) else stringResource(R.string.addToCart),
-//                    fontWeight = FontWeight.Bold
-//                )
-//            }
-//        }
-//    }
-//}

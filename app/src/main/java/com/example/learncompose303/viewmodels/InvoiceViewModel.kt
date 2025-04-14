@@ -161,7 +161,10 @@ class InvoiceViewModel @Inject constructor(
     private val _selectedCurrency = MutableStateFlow<Currency?>(null)
     val selectedCurrency: StateFlow<Currency?> = _selectedCurrency
 
-    private val _withBrandProductList = MutableStateFlow<List<ProductWithBrand>>(emptyList())
+//    private val _withBrandProductList = MutableStateFlow<List<ProductWithBrand>>(emptyList())
+//    val withBrandProductList = _withBrandProductList.asStateFlow()
+
+    private val _withBrandProductList = MutableStateFlow(emptyList<ProductWithBrand>())
     val withBrandProductList = _withBrandProductList.asStateFlow()
 
     init {
@@ -188,11 +191,17 @@ class InvoiceViewModel @Inject constructor(
         // Now insert initial products
     }
 
-    fun fetchBrandProducts() {
-        viewModelScope.launch {
-            _withBrandProductList.value = productRepository.getProductsWithBrand()
+    fun fetchBrandProducts() = viewModelScope.launch {
+        productRepository.getProductsWithBrand().collectLatest { branProductList ->
+            _withBrandProductList.value = branProductList
         }
     }
+
+//    fun fetchBrandProducts() {
+//        viewModelScope.launch {
+//            _withBrandProductList.value = productRepository.getProductsWithBrand()
+//        }
+//    }
 
     fun insertStockTake(stockTake: StockTake) {
         viewModelScope.launch {
@@ -507,11 +516,11 @@ class InvoiceViewModel @Inject constructor(
         val existingCustomers = customerRepository.getAllCustomersOnce()
         if (existingCustomers.isEmpty()) {
             val initialCustomers = listOf(
-                Customer(1, "Simba Start", "john@example.com", "123456789", "State House"),
-                Customer(2, "Jane Smith", "jane@example.com", "987654321", "State House"),
-                Customer(3, "John Doe", "jane@example.com", "987654321", "State House"),
-                Customer(4, "Amy Petersen", "jane@example.com", "987654321", "State House"),
-                Customer(5, "Amara Brown", "jane@example.com", "987654321", "State House"),
+                Customer(1, "Simba Start", "simba@istart.com", "123456789", "State House"),
+                Customer(2, "Jane Smith", "jane@istart.com", "987654321", "State House"),
+                Customer(3, "John Doe", "john@istart.com", "987654321", "State House"),
+                Customer(4, "Amy Petersen", "amy@istart.com", "987654321", "State House"),
+                Customer(5, "Amara Brown", "amara@istart.com", "987654321", "State House"),
                 Customer(6, "walkin", "i@start.com", "000", "State House"),
             )
             customerRepository.insertCustomers(initialCustomers)

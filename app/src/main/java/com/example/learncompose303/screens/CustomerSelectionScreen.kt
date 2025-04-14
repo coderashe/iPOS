@@ -87,6 +87,7 @@ fun CustomerSelectionScreen(
             ) {
                 Row {
 
+
                     Text(
                         modifier = Modifier
                             .weight(1f),

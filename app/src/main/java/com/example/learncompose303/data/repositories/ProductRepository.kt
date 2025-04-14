@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
 interface ProductRepository {
-    suspend fun getProductsWithBrand(): List<ProductWithBrand>
+    fun getProductsWithBrand(): Flow<List<ProductWithBrand>>
 
     suspend fun getProductByNameAndSize(productName: String, shoeSizeId: Long): Products?
     suspend fun updateProductQuantity(productId: Long, newQty: Long)
@@ -34,12 +34,14 @@ interface ProductRepository {
 class ProductRepositoryImpl @Inject constructor(
     private val productDao: ProductDao
 ) : ProductRepository {
-    override suspend fun getProductsWithBrand(): List<ProductWithBrand> {
-        return withContext(Dispatchers.IO) {
-            productDao.getProductsWithBrand()
-        }
+    override fun getProductsWithBrand(): Flow<List<ProductWithBrand>> {
+        return productDao.getProductsWithBrand()
+
     }
 
+    override fun getAllProducts(): Flow<List<Products>> {
+        return productDao.getAllProducts()
+    }
 
     override suspend fun updateProductQuantity(productId: Long, newQty: Long) {
         return withContext(Dispatchers.IO) {
@@ -59,10 +61,6 @@ class ProductRepositoryImpl @Inject constructor(
             )
             productId
         }
-    }
-
-    override fun getAllProducts(): Flow<List<Products>> {
-        return productDao.getAllProducts()
     }
 
     override suspend fun getProductById(id: Long): Products? {
