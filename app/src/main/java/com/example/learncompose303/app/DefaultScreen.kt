@@ -895,7 +895,7 @@ fun IndriveBottomNavigation(
                 icon = { Icon(Icons.Default.MonetizationOn, contentDescription = null) },
                 label = {
                     Text(
-                        text = stringResource(id = R.string.navreports),
+                        text = stringResource(id = R.string.navincome),
                         color = Color.Black
                     )
                 }

@@ -729,15 +729,17 @@ class InvoiceViewModel @Inject constructor(
 
         if (existingSizes.isEmpty()) {
             val initialSizes = listOf(
-                ShoeSize(1, 1, 3.0, 0),
-                ShoeSize(2, 1, 4.0, 0),
-                ShoeSize(3, 1, 5.0, 0),
-                ShoeSize(4, 1, 6.0, 0),
-                ShoeSize(5, 1, 7.0, 0),
-                ShoeSize(6, 1, 8.0, 0),
-                ShoeSize(7, 1, 9.0, 0),
-                ShoeSize(8, 1, 10.0, 0),
-                ShoeSize(9, 1, 11.0, 0),
+                ShoeSize(1, 1, 1.0, 0),
+                ShoeSize(2, 1, 2.0, 0),
+                ShoeSize(3, 1, 3.0, 0),
+                ShoeSize(4, 1, 4.0, 0),
+                ShoeSize(5, 1, 5.0, 0),
+                ShoeSize(6, 1, 6.0, 0),
+                ShoeSize(7, 1, 7.0, 0),
+                ShoeSize(8, 1, 8.0, 0),
+                ShoeSize(9, 1, 9.0, 0),
+                ShoeSize(10, 1, 10.0, 0),
+                ShoeSize(11, 1, 11.0, 0),
             )
             shoeSizeRepository.insertShoeSizes(initialSizes)
         }

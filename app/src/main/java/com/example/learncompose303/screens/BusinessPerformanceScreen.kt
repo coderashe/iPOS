@@ -111,7 +111,7 @@ fun BusinessPerformanceScreen(
         Row {
             // Revenue (Total Sales)
             Text(
-                text = "Revenue (Total Sales)",
+                text = stringResource(R.string.total_sales_in_usd),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.primary
             )
@@ -269,7 +269,7 @@ fun BusinessPerformanceScreen(
         // Display Sales Per Month
         Text(
             color = Color.Black,
-            text = "TOTAL FOR THE MONTH",
+            text = "TOTAL in USD FOR THE MONTH OF:",
             style = MaterialTheme.typography.headlineSmall
         )
         salesPerMonth.forEach { (month, sales) ->
