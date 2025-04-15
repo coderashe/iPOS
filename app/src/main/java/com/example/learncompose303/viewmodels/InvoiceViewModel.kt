@@ -592,7 +592,9 @@ class InvoiceViewModel @Inject constructor(
                 ShoeSize(4, 1, 6.0, 0),
                 ShoeSize(5, 1, 7.0, 0),
                 ShoeSize(6, 1, 8.0, 0),
-                ShoeSize(7, 1, 9.0, 0)
+                ShoeSize(7, 1, 9.0, 0),
+                ShoeSize(8, 1, 10.0, 0),
+                ShoeSize(9, 1, 11.0, 0),
             )
             shoeSizeRepository.insertShoeSizes(initialSizes)
         }
@@ -620,7 +622,21 @@ class InvoiceViewModel @Inject constructor(
                 ShoeBrand(14, "N05-1"),
                 ShoeBrand(15, "NF07-7"),
                 ShoeBrand(16, "NF07-9"),
-                ShoeBrand(17, "202588-3")
+                ShoeBrand(17, "202588-3"),
+                ShoeBrand(18, "T18"),
+                ShoeBrand(19, "W24050D"),
+                ShoeBrand(20, "RR17-5"),
+                ShoeBrand(21, "RR17-6"),
+                ShoeBrand(22, "RR17-1"),
+                ShoeBrand(23, "RR17-7"),
+                ShoeBrand(24, "NF25-2"),
+                ShoeBrand(25, "RR17-4"),
+                ShoeBrand(26, "6620"),
+                ShoeBrand(27, "NF256"),
+                ShoeBrand(28, "NF164"),
+                ShoeBrand(29, "N04-3"),
+                ShoeBrand(30, "N04-1"),
+                ShoeBrand(31, "2893"),
             )
             shoeBrandRepository.insertShoeBrands(initialBrands)
         }
