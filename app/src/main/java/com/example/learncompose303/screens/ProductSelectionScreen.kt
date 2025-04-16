@@ -232,7 +232,7 @@ fun ProductCard(
     Card(
         shape = RoundedCornerShape(16.dp),
         modifier = Modifier
-            .padding(8.dp)
+            .padding(6.dp)
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.surfaceVariant)
             .shadow(8.dp, RoundedCornerShape(16.dp))
@@ -255,26 +255,26 @@ fun ProductCard(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(12.dp),
+                .padding(8.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Product Image Placeholder
-            Box(
-                modifier = Modifier
-                    .size(80.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.ShoppingCart,
-                    contentDescription = "Product Image",
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(48.dp)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
+//            Box(
+//                modifier = Modifier
+//                    .size(80.dp)
+//                    .clip(RoundedCornerShape(12.dp))
+//                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
+//                contentAlignment = Alignment.Center
+//            ) {
+//                Icon(
+//                    imageVector = Icons.Default.ShoppingCart,
+//                    contentDescription = "Product Image",
+//                    tint = MaterialTheme.colorScheme.primary,
+//                    modifier = Modifier.size(48.dp)
+//                )
+//            }
+//
+//            Spacer(modifier = Modifier.height(8.dp))
 
             Text(
                 text = products.productDescription,
@@ -284,7 +284,7 @@ fun ProductCard(
                 overflow = TextOverflow.Ellipsis
             )
 
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(3.dp))
 
             Text(
                 text = "$brandName :- $shoeSize",
@@ -298,7 +298,7 @@ fun ProductCard(
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
             )
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             // Stock Level
             Box(
@@ -310,11 +310,12 @@ fun ProductCard(
                 Text(
                     text = "Stock: $stockLevel",
                     style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
-                    color = if (stockLevel > 0) MaterialTheme.colorScheme.primary else Color.Red
+                    color = if (stockLevel > 0) MaterialTheme.colorScheme.primary else Color.Red,
+                    modifier = Modifier.background(Color.White)
                 )
             }
 
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
             Text(
                 text = "$${"%.2f".format(price)}",
@@ -322,7 +323,7 @@ fun ProductCard(
                 color = MaterialTheme.colorScheme.primary
             )
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
             Button(
                 onClick = {
