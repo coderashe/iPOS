@@ -889,17 +889,19 @@ fun IndriveBottomNavigation(
                 label = { Text(text = stringResource(id = R.string.navhome), color = Color.Black) }
             )
 
-            BottomNavigationItem(
-                selected = currentDestination?.route == Destinations.Income.route,
-                onClick = { navController.navigate(Destinations.Income.route) },
-                icon = { Icon(Icons.Default.MonetizationOn, contentDescription = null) },
-                label = {
-                    Text(
-                        text = stringResource(id = R.string.navincome),
-                        color = Color.Black
-                    )
-                }
-            )
+            if (isAdmin) {
+                BottomNavigationItem(
+                    selected = currentDestination?.route == Destinations.Income.route,
+                    onClick = { navController.navigate(Destinations.Income.route) },
+                    icon = { Icon(Icons.Default.MonetizationOn, contentDescription = null) },
+                    label = {
+                        Text(
+                            text = stringResource(id = R.string.navincome),
+                            color = Color.Black
+                        )
+                    }
+                )
+            }
 
             if (isAdmin) {
                 BottomNavigationItem(

@@ -193,7 +193,7 @@ fun BusinessPerformanceScreen(
                 Text(
                     modifier = Modifier.weight(1f),
                     color = Color.Black,
-                    text = product.productName,
+                    text = product.productName, // add productCode
                     style = MaterialTheme.typography.bodyMedium
                 )
 

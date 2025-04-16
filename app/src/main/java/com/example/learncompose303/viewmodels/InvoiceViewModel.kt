@@ -784,6 +784,14 @@ class InvoiceViewModel @Inject constructor(
                 ShoeBrand(31, "2893"),
                 ShoeBrand(32, "6610-2"),
                 ShoeBrand(33, "6610-4"),
+                ShoeBrand(34, "005"),
+                ShoeBrand(35, "NF24-1"),
+                ShoeBrand(36, "NF24-2"),
+                ShoeBrand(37, "NF24-5"),
+                ShoeBrand(38, "NF24-4"),
+                ShoeBrand(39, "NF24-3"),
+                ShoeBrand(40, "M265"),
+                ShoeBrand(41, "M256")
             )
             shoeBrandRepository.insertShoeBrands(initialBrands)
         }
