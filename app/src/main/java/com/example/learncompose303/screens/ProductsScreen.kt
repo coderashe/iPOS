@@ -4,11 +4,7 @@ import android.content.res.Configuration
 import android.net.Uri
 import android.util.Log
 import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -49,7 +45,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -64,6 +62,7 @@ import coil.compose.rememberImagePainter
 import com.example.learncompose303.R
 import com.example.learncompose303.data.entities.PriceList
 import com.example.learncompose303.data.entities.Products
+import com.example.learncompose303.data.entities.ShoeBrand
 import com.example.learncompose303.screens.auth.AuthViewModel
 import com.example.learncompose303.ui.theme.Blue1
 import com.example.learncompose303.viewmodels.InvoiceViewModel
@@ -75,11 +74,13 @@ fun ProductsScreen(
     authViewModel: AuthViewModel = viewModel()
 ) {
     val products by viewModel.productList.collectAsState()
+    val withBranProducts by viewModel.withBrandProductList.collectAsState()
     var searchQuery by remember { mutableStateOf("") } // State for the search query
     var showLowStockWarning by remember { mutableStateOf(false) } // State for the popup
 
     // Compute low-stock inventories when `products` updates
     val lowStockInventories = remember(products) {
+        viewModel.fetchBrandProducts()
         products.filter { product ->
             product.productQty < 10 // Using productQty directly
         }
@@ -94,9 +95,16 @@ fun ProductsScreen(
     }
 
     // Filter products based on the search query
-    val filteredProducts = products.filter { product ->
-        product.productDescription.contains(searchQuery, ignoreCase = true)
+    val query = searchQuery.trim().lowercase()
+    val filteredProducts = withBranProducts.filter {
+        it.product.productDescription.lowercase().contains(query) ||
+                it.brand.brandName.lowercase().contains(query)
     }
+
+//    old logic
+//    val filteredProducts = products.filter { product ->
+//        product.productDescription.contains(searchQuery, ignoreCase = true)
+//    }
 
     val configuration = LocalConfiguration.current
     val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
@@ -124,10 +132,10 @@ fun ProductsScreen(
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         for (product in rowItems) {
-                            val price = viewModel.getPricelistById(product.productId)
+                            val price = viewModel.getPricelistById(product.product.productId)
                             if (price != null) {
                                 TheProductCard(
-                                    products = product,
+                                    products = product.product,
                                     initialPrice = price.sellingPrice,
                                     viewModel = viewModel,
                                     authViewModel = authViewModel
@@ -135,7 +143,7 @@ fun ProductsScreen(
                             } else {
                                 Log.d(
                                     "productScreen",
-                                    "No price found for product ID: ${product.productId}"
+                                    "No price found for product ID: ${product.product.productId}"
                                 )
                             }
                         }
@@ -203,6 +211,14 @@ fun TheProductCard(
     val shoeSizeState = viewModel.getShoeSizeById(products.shoeSizeId)
         .collectAsState(initial = null)
 
+    var brand by remember { mutableStateOf<ShoeBrand?>(null) }
+    // Use LaunchedEffect to collect the Flow in a coroutine
+    LaunchedEffect(products.brandID) {
+        viewModel.getBrandById(products.brandID).collect { fetchedBrand ->
+            brand = fetchedBrand
+        }
+    }
+    val brandName = brand?.brandName ?: "Unknown Brand"
     val shoeSize = shoeSizeState.value?.size?.toString() ?: "N/A"
 
     // Fetch stock level when productId changes
@@ -260,9 +276,20 @@ fun TheProductCard(
                 )
             }
             Spacer(modifier = Modifier.height(6.dp))
+//            Text(
+//                text = "Size: $shoeSize",
+//                style = MaterialTheme.typography.bodyMedium,
+//                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+//            )
             Text(
-                text = "Size: $shoeSize",
-                style = MaterialTheme.typography.bodyMedium,
+                text = "$brandName :- $shoeSize",
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    shadow = Shadow(
+                        color = Color.Black.copy(alpha = 0.3f),
+                        offset = Offset(2f, 2f),
+                        blurRadius = 4f
+                    )
+                ),
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
             )
             Spacer(modifier = Modifier.height(10.dp))

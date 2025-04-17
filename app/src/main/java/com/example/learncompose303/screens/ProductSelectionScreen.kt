@@ -213,16 +213,15 @@ fun ProductCard(
         .collectAsState(initial = null)
 
     var brand by remember { mutableStateOf<ShoeBrand?>(null) }
-
     // Use LaunchedEffect to collect the Flow in a coroutine
     LaunchedEffect(products.brandID) {
         viewModel.getBrandById(products.brandID).collect { fetchedBrand ->
             brand = fetchedBrand
         }
     }
+    val brandName = brand?.brandName ?: "Unknown Brand"
 
     val shoeSize = shoeSizeState.value?.size?.toString() ?: "N/A"
-    val brandName = brand?.brandName ?: "Unknown Brand"
 
     // Fetch stock level when productId changes
     LaunchedEffect(products.productId) {

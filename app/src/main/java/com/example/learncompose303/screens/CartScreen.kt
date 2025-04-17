@@ -58,6 +58,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.FileProvider
 import com.example.learncompose303.app.utils.BluetoothPrinterScanner
+import com.example.learncompose303.data.entities.ShoeBrand
 import com.example.learncompose303.screens.auth.AuthState
 import com.example.learncompose303.screens.auth.AuthViewModel
 import com.google.firebase.auth.FirebaseAuth
@@ -343,6 +344,15 @@ fun CartScreen(
                 LaunchedEffect(quantitySold) {
                     productQuantities[product.productId] = quantitySold
                 }
+//                for brandName
+                var brand by remember { mutableStateOf<ShoeBrand?>(null) }
+                // Use LaunchedEffect to collect the Flow in a coroutine
+                LaunchedEffect(product.brandID) {
+                    viewModel.getBrandById(product.brandID).collect { fetchedBrand ->
+                        brand = fetchedBrand
+                    }
+                }
+                val brandName = brand?.brandName ?: "Unknown Brand"
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -359,7 +369,8 @@ fun CartScreen(
                             modifier = Modifier.weight(1f)
                         ) {
                             Text(
-                                product.productDescription,
+                                "${product.productDescription} - ( $brandName )",
+//                                product.productDescription ,
                                 style = MaterialTheme.typography.titleMedium
                             )
                             Text(

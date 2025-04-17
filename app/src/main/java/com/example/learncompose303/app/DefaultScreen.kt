@@ -883,7 +883,7 @@ fun IndriveBottomNavigation(
             val isAdmin = userRole == "admin"
 
             BottomNavigationItem(
-                selected = currentDestination?.route == Destinations.Dashboard.route,
+                selected = currentDestination.route == Destinations.Dashboard.route,
                 onClick = { navController.navigate(Destinations.Dashboard.route) },
                 icon = { Icon(Icons.Default.Home, contentDescription = null) },
                 label = { Text(text = stringResource(id = R.string.navhome), color = Color.Black) }
@@ -891,7 +891,7 @@ fun IndriveBottomNavigation(
 
             if (isAdmin) {
                 BottomNavigationItem(
-                    selected = currentDestination?.route == Destinations.Income.route,
+                    selected = currentDestination.route == Destinations.Income.route,
                     onClick = { navController.navigate(Destinations.Income.route) },
                     icon = { Icon(Icons.Default.MonetizationOn, contentDescription = null) },
                     label = {
@@ -905,7 +905,7 @@ fun IndriveBottomNavigation(
 
             if (isAdmin) {
                 BottomNavigationItem(
-                    selected = currentDestination?.route == Destinations.BusinessPerformance.route,
+                    selected = currentDestination.route == Destinations.BusinessPerformance.route,
                     onClick = { navController.navigate(Destinations.BusinessPerformance.route) },
                     icon = { Icon(Icons.Default.AutoGraph, contentDescription = null) },
                     label = {
@@ -918,7 +918,7 @@ fun IndriveBottomNavigation(
             }
 
             BottomNavigationItem(
-                selected = currentDestination?.route == Destinations.ExpenseReport.route,
+                selected = currentDestination.route == Destinations.ExpenseReport.route,
                 onClick = { navController.navigate(Destinations.ExpenseReport.route) },
                 icon = { Icon(Icons.Default.Favorite, contentDescription = null) },
                 label = {
@@ -931,7 +931,7 @@ fun IndriveBottomNavigation(
 
             if (isAdmin) {
                 BottomNavigationItem(
-                    selected = currentDestination?.route == Destinations.Products.route,
+                    selected = currentDestination.route == Destinations.Products.route,
                     onClick = { navController.navigate(Destinations.Products.route) },
                     icon = {
                         Icon(
@@ -949,7 +949,7 @@ fun IndriveBottomNavigation(
             }
 
             BottomNavigationItem(
-                selected = currentDestination?.route == Destinations.CustomerSelection.route,
+                selected = currentDestination.route == Destinations.CustomerSelection.route,
                 onClick = { navController.navigate(Destinations.CustomerSelection.route) },
                 icon = { Icon(Icons.Default.ProductionQuantityLimits, contentDescription = null) },
                 label = {
