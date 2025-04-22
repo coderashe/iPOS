@@ -947,7 +947,6 @@ fun IndriveBottomNavigation(
                     }
                 )
             }
-
             BottomNavigationItem(
                 selected = currentDestination.route == Destinations.CustomerSelection.route,
                 onClick = { navController.navigate(Destinations.CustomerSelection.route) },

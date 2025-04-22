@@ -211,6 +211,7 @@ fun TheProductCard(
     val shoeSizeState = viewModel.getShoeSizeById(products.shoeSizeId)
         .collectAsState(initial = null)
 
+//    fetch brandName
     var brand by remember { mutableStateOf<ShoeBrand?>(null) }
     // Use LaunchedEffect to collect the Flow in a coroutine
     LaunchedEffect(products.brandID) {
@@ -290,7 +291,8 @@ fun TheProductCard(
                         blurRadius = 4f
                     )
                 ),
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                modifier = Modifier.background(Color.White)
             )
             Spacer(modifier = Modifier.height(10.dp))
             // Stock Level

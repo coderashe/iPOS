@@ -84,7 +84,7 @@ fun ProductSelectionScreen(
 
     LaunchedEffect(key1 = true) {
         viewModel.fetchProducts()
-        viewModel. fetchBrandProducts()
+        viewModel.fetchBrandProducts()
         val lowStock = products.filter { it.productQty < 10 }
         if (lowStock.isNotEmpty()) {
             lowStockInventories = lowStock
@@ -211,6 +211,7 @@ fun ProductCard(
     // Collect shoe size state from ViewModel
     val shoeSizeState = viewModel.getShoeSizeById(products.shoeSizeId)
         .collectAsState(initial = null)
+    val shoeSize = shoeSizeState.value?.size?.toString() ?: "N/A"
 
     var brand by remember { mutableStateOf<ShoeBrand?>(null) }
     // Use LaunchedEffect to collect the Flow in a coroutine
@@ -220,8 +221,6 @@ fun ProductCard(
         }
     }
     val brandName = brand?.brandName ?: "Unknown Brand"
-
-    val shoeSize = shoeSizeState.value?.size?.toString() ?: "N/A"
 
     // Fetch stock level when productId changes
     LaunchedEffect(products.productId) {
@@ -294,7 +293,9 @@ fun ProductCard(
                         blurRadius = 4f
                     )
                 ),
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+//                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                color = Color.Red,
+                modifier = Modifier.background(Color.White)
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -310,7 +311,7 @@ fun ProductCard(
                     text = "Stock: $stockLevel",
                     style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
                     color = if (stockLevel > 0) MaterialTheme.colorScheme.primary else Color.Red,
-                    modifier = Modifier.background(Color.White)
+//                    modifier = Modifier.background(Color.White)
                 )
             }
 

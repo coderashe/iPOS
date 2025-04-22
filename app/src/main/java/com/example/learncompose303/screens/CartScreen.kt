@@ -8,6 +8,7 @@ import android.graphics.pdf.PdfDocument
 import android.os.Environment
 import android.util.Log
 import android.widget.Toast
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -54,7 +55,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.FileProvider
 import com.example.learncompose303.app.utils.BluetoothPrinterScanner
@@ -344,6 +347,12 @@ fun CartScreen(
                 LaunchedEffect(quantitySold) {
                     productQuantities[product.productId] = quantitySold
                 }
+
+                // Collect shoe size state from ViewModel
+                val shoeSizeState = viewModel.getShoeSizeById(product.shoeSizeId)
+                    .collectAsState(initial = null)
+                val shoeSize = shoeSizeState.value?.size?.toString() ?: "N/A"
+
 //                for brandName
                 var brand by remember { mutableStateOf<ShoeBrand?>(null) }
                 // Use LaunchedEffect to collect the Flow in a coroutine
@@ -369,9 +378,21 @@ fun CartScreen(
                             modifier = Modifier.weight(1f)
                         ) {
                             Text(
-                                "${product.productDescription} - ( $brandName )",
-//                                product.productDescription ,
-                                style = MaterialTheme.typography.titleMedium
+                                product.productDescription,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "$brandName :- $shoeSize",
+                                style = MaterialTheme.typography.bodyMedium.copy(
+                                    shadow = Shadow(
+                                        color = Color.Black.copy(alpha = 0.3f),
+                                        offset = Offset(2f, 2f),
+                                        blurRadius = 4f
+                                    )
+                                ),
+                                color = Color.Red,
+                                modifier = Modifier.background(Color.White)
                             )
                             Text(
                                 "\$${productPrice}",
@@ -456,29 +477,29 @@ private fun generateInvoicePdf(message: String, context: Context) {
         pdfDocument.close()
 
         // Share the PDF
-        val uri = FileProvider.getUriForFile(
-            context,
-            "${context.packageName}.fileprovider",
-            pdfFile
-        )
-        val sendIntent = Intent(Intent.ACTION_SEND).apply {
-            type = "application/pdf"
-            putExtra(Intent.EXTRA_STREAM, uri)
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        }
-        val chooserIntent = Intent.createChooser(
-            sendIntent,
-            "Send via WhatsApp or WhatsApp Business"
-        )
-        chooserIntent.resolveActivity(context.packageManager)?.let {
-            context.startActivity(chooserIntent)
-        } ?: run {
-            Toast.makeText(
-                context,
-                "No messaging app found",
-                Toast.LENGTH_SHORT
-            ).show()
-        }
+//        val uri = FileProvider.getUriForFile(
+//            context,
+//            "${context.packageName}.fileprovider",
+//            pdfFile
+//        )
+//        val sendIntent = Intent(Intent.ACTION_SEND).apply {
+//            type = "application/pdf"
+//            putExtra(Intent.EXTRA_STREAM, uri)
+//            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+//        }
+//        val chooserIntent = Intent.createChooser(
+//            sendIntent,
+//            "Send via WhatsApp or WhatsApp Business"
+//        )
+//        chooserIntent.resolveActivity(context.packageManager)?.let {
+//            context.startActivity(chooserIntent)
+//        } ?: run {
+//            Toast.makeText(
+//                context,
+//                "No messaging app found",
+//                Toast.LENGTH_SHORT
+//            ).show()
+//        }
     } catch (e: Exception) {
         Toast.makeText(
             context,
