@@ -3,6 +3,7 @@ package com.example.learncompose303.data.repositories
 import com.example.learncompose303.data.data_source.ProductDao
 import com.example.learncompose303.data.domain.ProductWithBrand
 import com.example.learncompose303.data.entities.Products
+import com.example.learncompose303.data.entities.ShoeBrand
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.Flow
@@ -28,6 +29,8 @@ interface ProductRepository {
         brandID: Long,
         shoeSizeId: Long
     ): List<Products>
+
+    fun getSingleProductById(productID: Long): Flow<Products?>
 
 }
 
@@ -67,6 +70,10 @@ class ProductRepositoryImpl @Inject constructor(
         return withContext(Dispatchers.IO) {
             productDao.getProductById(id)
         }
+    }
+
+    override fun getSingleProductById(productID: Long): Flow<Products?> {
+        return productDao.getSingleProductById(productID)
     }
 
     override suspend fun getProductByNameAndSize(productName: String, shoeSizeId: Long): Products? {

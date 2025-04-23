@@ -1147,9 +1147,8 @@ class InvoiceViewModel @Inject constructor(
         }
     }
 
-    // Fetch specific invoice by ID
-    fun getInvoiceById(invoiceId: Long): Invoice? {
-        return invoiceList.value.firstOrNull { it.invoiceId == invoiceId }
+    fun getSingleProductById(productId: Long): Flow<Products?> {
+        return productRepository.getSingleProductById(productId)
     }
 
     fun getBrandById(brandId: Long): Flow<ShoeBrand?> {

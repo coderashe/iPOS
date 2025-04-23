@@ -37,7 +37,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -49,6 +51,8 @@ import com.example.learncompose303.data.Destinations
 import com.example.learncompose303.data.entities.InvoiceLine
 import com.example.learncompose303.data.entities.PriceList
 import com.example.learncompose303.data.entities.Products
+import com.example.learncompose303.data.entities.ShoeBrand
+import com.example.learncompose303.data.entities.ShoeSize
 import com.example.learncompose303.ui.theme.GreenColor
 import com.example.learncompose303.viewmodels.InvoiceViewModel
 import java.util.Date
@@ -203,7 +207,10 @@ fun InvoiceDetailScreen(
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         items(invoiceLines) { invoiceLine ->
-                            TheInvoiceCard(invoiceLine = invoiceLine)
+                            TheInvoiceCard(
+                                invoiceLine = invoiceLine,
+                                viewModel = viewModel
+                            )
                         }
                     }
                 } else {
@@ -295,7 +302,42 @@ fun InvoiceDetailScreen(
 @Composable
 fun TheInvoiceCard(
     invoiceLine: InvoiceLine,
+    viewModel: InvoiceViewModel
 ) {
+    // First, fetch the actual product using the productID from invoiceLine
+    var product by remember { mutableStateOf<Products?>(null) }
+
+    // Get the product using productID
+    LaunchedEffect(invoiceLine.productID) {
+        viewModel.getSingleProductById(invoiceLine.productID).collect { fetchedProduct ->
+            product = fetchedProduct
+        }
+    }
+
+    // Now that we have the product, we can access its brandID and shoeSizeId
+    var brand by remember { mutableStateOf<ShoeBrand?>(null) }
+    var shoeSize by remember { mutableStateOf<ShoeSize?>(null) }
+
+    // Once we have the product, fetch the brand using its brandID
+    LaunchedEffect(product?.brandID) {
+        product?.brandID?.let { brandId ->
+            viewModel.getBrandById(brandId).collect { fetchedBrand ->
+                brand = fetchedBrand
+            }
+        }
+    }
+
+    // Once we have the product, fetch the shoe size using its shoeSizeId
+    LaunchedEffect(product?.shoeSizeId) {
+        product?.shoeSizeId?.let { sizeId ->
+            viewModel.getShoeSizeById(sizeId).collect { fetchedSize ->
+                shoeSize = fetchedSize
+            }
+        }
+    }
+
+    val brandName = brand?.brandName ?: "Unknown Brand"
+    val sizeValue = shoeSize?.size?.toString() ?: "N/A"
 
     Column(
         modifier = Modifier.padding(16.dp)
@@ -305,21 +347,75 @@ fun TheInvoiceCard(
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.primary
         )
+
         Spacer(modifier = Modifier.height(8.dp))
+
+        // Display brand name and shoe size
+        Text(
+            text = "$brandName :- $sizeValue",
+            style = MaterialTheme.typography.bodySmall.copy(
+                shadow = Shadow(
+                    color = Color.Black.copy(alpha = 0.3f),
+                    offset = Offset(2f, 2f),
+                    blurRadius = 4f
+                )
+            ),
+            color = Color.Red,
+            modifier = Modifier.background(Color.White)
+        )
+
+        Spacer(modifier = Modifier.height(4.dp))
+
         Text(
             text = "Price: ${invoiceLine.productPrice}",
             style = MaterialTheme.typography.bodySmall
         )
+
         Spacer(modifier = Modifier.height(4.dp))
+
         Text(
             text = "Qty Sold: ${invoiceLine.productQtySold}",
             style = MaterialTheme.typography.bodySmall
         )
+
         Spacer(modifier = Modifier.height(8.dp))
+
         Divider(
             modifier = Modifier.padding(vertical = 8.dp),
             color = MaterialTheme.colorScheme.primary
         )
     }
-
 }
+
+
+//@Composable
+//fun TheInvoiceCard(
+//    invoiceLine: InvoiceLine,
+//) {
+//
+//    Column(
+//        modifier = Modifier.padding(16.dp)
+//    ) {
+//        Text(
+//            text = invoiceLine.productName,
+//            style = MaterialTheme.typography.bodyMedium,
+//            color = MaterialTheme.colorScheme.primary
+//        )
+//        Spacer(modifier = Modifier.height(8.dp))
+//        Text(
+//            text = "Price: ${invoiceLine.productPrice}",
+//            style = MaterialTheme.typography.bodySmall
+//        )
+//        Spacer(modifier = Modifier.height(4.dp))
+//        Text(
+//            text = "Qty Sold: ${invoiceLine.productQtySold}",
+//            style = MaterialTheme.typography.bodySmall
+//        )
+//        Spacer(modifier = Modifier.height(8.dp))
+//        Divider(
+//            modifier = Modifier.padding(vertical = 8.dp),
+//            color = MaterialTheme.colorScheme.primary
+//        )
+//    }
+//
+//}

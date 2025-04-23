@@ -362,6 +362,8 @@ fun CartScreen(
                     }
                 }
                 val brandName = brand?.brandName ?: "Unknown Brand"
+
+
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()

@@ -9,6 +9,7 @@ import androidx.room.Transaction
 import androidx.room.Update
 import com.example.learncompose303.data.domain.ProductWithBrand
 import com.example.learncompose303.data.entities.Products
+import com.example.learncompose303.data.entities.ShoeBrand
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -24,6 +25,9 @@ interface ProductDao {
 
     @Query("SELECT * FROM products WHERE productId = :id")
     suspend fun getProductById(id: Long): Products?
+
+    @Query("SELECT * FROM products WHERE productId = :productID")
+    fun getSingleProductById(productID: Long): Flow<Products?>
 
     @Query("SELECT * FROM products")
     fun getAllProducts(): Flow<List<Products>>
