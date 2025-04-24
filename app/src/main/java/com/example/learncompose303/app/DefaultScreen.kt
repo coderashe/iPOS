@@ -295,6 +295,7 @@ fun InDriveTopBottomNavigation() {
                             // Show the BusinessPerformanceScreen if PIN is correct
                             BusinessPerformanceScreen(
                                 viewModel = businessPerformanceViewModel,
+                                invoiceViewModel = viewModel,
                                 navController = navController
                             )
 

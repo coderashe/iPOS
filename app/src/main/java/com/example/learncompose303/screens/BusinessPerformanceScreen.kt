@@ -58,6 +58,9 @@ import androidx.compose.ui.text.style.TextAlign
 import com.example.learncompose303.R
 import com.example.learncompose303.app.utils.exportDatabase
 import com.example.learncompose303.data.AppDatabase
+import com.example.learncompose303.data.entities.Products
+import com.example.learncompose303.data.entities.ShoeBrand
+import com.example.learncompose303.data.entities.ShoeSize
 import com.example.learncompose303.screens.performance.BusinessPerformanceViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -66,6 +69,7 @@ import java.util.Locale
 @Composable
 fun BusinessPerformanceScreen(
     viewModel: BusinessPerformanceViewModel = viewModel(),
+    invoiceViewModel: InvoiceViewModel,
     navController: NavController
 ) {
     // Observe the states, and assign them to variables
@@ -184,6 +188,41 @@ fun BusinessPerformanceScreen(
 
         Spacer(modifier = Modifier.height(2.dp))
         topPerformingProducts.forEach { product ->
+            // Initialize nowProduct with the current product from topPerformingProducts
+            var nowProduct by remember { mutableStateOf<Products?>(null) }
+
+            // Get the product using productID from the performance data
+            LaunchedEffect(product.productID) {  // Change key to product.productId instead of nowProduct?.productId
+                invoiceViewModel.getSingleProductById(product.productID).collect { fetchedProduct ->
+                    nowProduct = fetchedProduct
+                }
+            }
+
+            // Now that we have the product, we can access its brandID and shoeSizeId
+            var brand by remember { mutableStateOf<ShoeBrand?>(null) }
+            var shoeSize by remember { mutableStateOf<ShoeSize?>(null) }
+
+            // Once we have the product, fetch the brand using its brandID
+            LaunchedEffect(nowProduct?.brandID) {
+                nowProduct?.brandID?.let { brandId ->
+                    invoiceViewModel.getBrandById(brandId).collect { fetchedBrand ->
+                        brand = fetchedBrand
+                    }
+                }
+            }
+
+            // Once we have the product, fetch the shoe size using its shoeSizeId
+            LaunchedEffect(nowProduct?.shoeSizeId) {
+                nowProduct?.shoeSizeId?.let { sizeId ->
+                    invoiceViewModel.getShoeSizeById(sizeId).collect { fetchedSize ->
+                        shoeSize = fetchedSize
+                    }
+                }
+            }
+
+            val brandName = brand?.brandName ?: "Unknown Brand"
+            val sizeValue = shoeSize?.size?.toString() ?: "N/A"
+
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -193,7 +232,7 @@ fun BusinessPerformanceScreen(
                 Text(
                     modifier = Modifier.weight(1f),
                     color = Color.Black,
-                    text = product.productName, // add productCode
+                    text = "${product.productName} | ($brandName) | Size: $sizeValue ", // add productCode
                     style = MaterialTheme.typography.bodyMedium
                 )
 
