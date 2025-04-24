@@ -7,6 +7,7 @@ import android.content.Context
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animate
@@ -83,7 +84,9 @@ import coil.compose.AsyncImage
 import coil.size.Scale
 import com.example.learncompose303.ui.theme.MediumGreen
 import java.time.DayOfWeek
+import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalAdjusters
 
@@ -376,7 +379,7 @@ fun AutoSlidingCarousel(
     }
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
+//@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun SalesmanInfoCard(
     salesmanName: String,
@@ -386,18 +389,35 @@ fun SalesmanInfoCard(
     val invoiceList by viewModel.invoiceList.collectAsState()
     val (oldSalesTotal, numberOfTransactions) = viewModel.getTodaySalesInfo()
 
+    // Log raw invoice list
+    Log.d("todays", "RAW INVOICE LIST: ${invoiceList.size} invoices")
+    invoiceList.forEach { invoice ->
+        Log.d(
+            "todays",
+            "Invoice ID: ${invoice.invoiceId}, Date: ${invoice.invoiceDate}, Amount: ${invoice.totalAmount}"
+        )
+    }
+
     // Get today's date
     val today = LocalDate.now()
+    Log.d("todays", "TODAY'S DATE: $today")
 
-    // Filter invoices for today only
+    // Filter invoices for today only - FIXED VERSION
     val todayInvoices = invoiceList.filter { invoice ->
-        val invoiceDate = LocalDate.ofEpochDay(invoice.invoiceDate / (24 * 60 * 60 * 1000))
+        val invoiceDate = Instant.ofEpochMilli(invoice.invoiceDate)
+            .atZone(ZoneId.systemDefault())
+            .toLocalDate()
+        println("Converted invoice date: $invoiceDate")
         invoiceDate.isEqual(today)
     }
+
+    Log.d("todays", "TODAY'S INVOICES COUNT: ${todayInvoices.size}")
 
     // Group invoices by currency and sum totals - now using today's filtered list
     val currencyTotals = todayInvoices.groupBy { it.currencyCode }
         .mapValues { entry -> entry.value.sumOf { it.totalAmount } }
+
+    Log.d("todays", "CURRENCY TOTALS: $currencyTotals")
 
     Card(
         modifier = Modifier

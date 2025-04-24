@@ -928,7 +928,6 @@ class InvoiceViewModel @Inject constructor(
 
 
     // Function to compute today's sales total and number of transactions
-    @RequiresApi(Build.VERSION_CODES.O)
     fun getTodaySalesInfo(): Pair<Map<String, Double>, Int> {
         val today = LocalDate.now()
 
@@ -939,9 +938,11 @@ class InvoiceViewModel @Inject constructor(
         val todayInvoices = _invoiceList.value.filter { invoice ->
             val invoiceDate = LocalDate.ofEpochDay(invoice.invoiceDate / (24 * 60 * 60 * 1000))
             // Log each invoice date being checked
-            Log.d("InvoiceViewModel", "Invoice Date: $invoiceDate")
+            Log.d("todays", "Invoice Date: $invoiceDate")
             invoiceDate.isEqual(today)
         }
+
+        Log.d("todays", "DEBUG - getTodaySalesInfo found ${todayInvoices.size} invoices")
 
         // Group invoices by currency and sum totals
         val currencyTotals = todayInvoices.groupBy { it.currencyCode }
@@ -961,7 +962,6 @@ class InvoiceViewModel @Inject constructor(
     }
 
     //    new
-    @RequiresApi(Build.VERSION_CODES.O)
     fun getWeeklySalesInfo(): Pair<Map<String, Double>, Int> {
         val today = LocalDate.now()
         val startOfWeek = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
