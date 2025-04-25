@@ -20,16 +20,3 @@ data class User(
     val userEmail: String,
     val userAddress: String?
 )
-
-
-//@Entity(tableName = "user", indices = [Index(value = ["userEmail"], unique = true)])
-//data class User(
-//    @PrimaryKey(autoGenerate = true) val userId: Long = 0,
-//    val userFullName: String,
-//    val userContact: String,
-//    val userRole: String,  // cashier/businessman/admin
-//    val userPassword: String,
-//    val storeID: String,
-//    val userEmail: String,
-//    val userAddress: String?
-//)
