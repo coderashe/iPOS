@@ -11,7 +11,8 @@ import androidx.room.PrimaryKey
     ]
 )
 data class User(
-    @PrimaryKey(autoGenerate = true) val userId: Long = 0,
+    @PrimaryKey(autoGenerate = true)
+    val userId: Long = 0,
     val userFullName: String,
     val userContact: String,
     val userRole: String,  // e.g., cashier/businessman/admin

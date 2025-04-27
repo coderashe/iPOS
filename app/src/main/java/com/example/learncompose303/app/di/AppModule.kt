@@ -70,11 +70,16 @@ import com.example.learncompose303.data.repositories.ShoeSizeRepositoryImpl
 import com.example.learncompose303.data.repositories.StockTakeRepository
 import com.example.learncompose303.data.repositories.StockTakeRepositoryImpl
 import com.example.learncompose303.data.repositories.StudentRepository
+import com.example.learncompose303.network.UserApiService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import okhttp3.OkHttpClient
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
+import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
 
 //
@@ -105,8 +110,11 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideAuthRepository(appDatabase: AppDatabase): AuthRepository {
-        return AuthRepositoryImpl(appDatabase.userDao())
+    fun provideAuthRepository(
+        appDatabase: AppDatabase,
+        userApiService: UserApiService
+    ): AuthRepository {
+        return AuthRepositoryImpl(appDatabase.userDao(), userApiService)
     }
 
 //    Provide daoS here
