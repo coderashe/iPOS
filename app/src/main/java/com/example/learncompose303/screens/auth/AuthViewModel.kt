@@ -185,47 +185,48 @@ class AuthViewModel @Inject constructor(
                                         userAddress = address
                                     )
 //                                    Save to localDB
-//                                    authRepository.signUpUser(newUser)
+                                    authRepository.signUpUser(newUser)
+                                    _authState.value = AuthState.SignUpSuccess
 
-                                    try {
-                                        // Convert local User entity to UserDto for API
-                                        val userDto = UserDto(
-                                            name = fullName,
-                                            contact = contact,
-                                            role = role,
-                                            password = password,
-                                            email = email,
-                                            store = storeID,
-                                            address = address
-                                        )
-                                        val result = authRepository.saveUserRemote(userDto)
-                                        when (result) {
-                                            is NetworkResult.Success -> {
-//                                                Save to localDB
-                                                authRepository.signUpUser(newUser)
-                                                _authState.value = AuthState.SignUpSuccess
-                                            }
-
-                                            is NetworkResult.Error -> {
-                                                _authState.value = AuthState.Error(result.message)
-                                            }
-
-                                            else -> {
-                                                Log.e(
-                                                    "UsersData",
-                                                    "Failed to save user remotely"
-                                                )
-                                            }
-                                        }
-                                    } catch (e: Exception) {
-                                        // Handle network exceptions
-                                        Log.e(
-                                            "UsersData",
-                                            "Network error saving user remotely",
-                                            e
-                                        )
-                                        // Optionally handle retry logic or queue work for later sync
-                                    }
+//                                    connect to server and save to remote db
+//                                    try {
+//                                        // Convert local User entity to UserDto for API
+//                                        val userDto = UserDto(
+//                                            name = fullName,
+//                                            contact = contact,
+//                                            role = role,
+//                                            password = password,
+//                                            email = email,
+//                                            store = storeID,
+//                                            address = address
+//                                        )
+//                                        val result = authRepository.saveUserRemote(userDto)
+//                                        when (result) {
+//                                            is NetworkResult.Success -> {
+//                                                _authState.value = AuthState.SignUpSuccess
+//                                            }
+//
+//                                            is NetworkResult.Error -> {
+//                                                _authState.value = AuthState.Error(result.message)
+//                                            }
+//
+//                                            else -> {
+//                                                Log.e(
+//                                                    "UsersData",
+//                                                    "Failed to save user remotely"
+//                                                )
+//                                            }
+//                                        }
+//                                    } catch (e: Exception) {
+//                                        // Handle network exceptions
+//                                        Log.e(
+//                                            "UsersData",
+//                                            "Network error saving user remotely",
+//                                            e
+//                                        )
+//                                        // Optionally handle retry logic or queue work for later sync
+//                                    }
+//                                    end of remote save
                                 }
                             }
                         } else {

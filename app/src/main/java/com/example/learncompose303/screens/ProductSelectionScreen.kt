@@ -285,7 +285,7 @@ fun ProductCard(
             Spacer(modifier = Modifier.height(3.dp))
 
             Text(
-                text = "$brandName :- $shoeSize",
+                text = "($brandName) : Size - $shoeSize",
                 style = MaterialTheme.typography.bodyMedium.copy(
                     shadow = Shadow(
                         color = Color.Black.copy(alpha = 0.3f),

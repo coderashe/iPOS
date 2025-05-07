@@ -17,6 +17,7 @@ interface AuthRepository {
     suspend fun getAllUsersOnce(): List<User>
     suspend fun fetchAllUsers(): NetworkResult<List<UserDto>>
     suspend fun saveUserRemote(userDto: UserDto): NetworkResult<UserDto>
+    suspend fun fetchAndSyncAllUsers()
 }
 
 // Implement AuthRepository
@@ -76,33 +77,37 @@ class AuthRepositoryImpl @Inject constructor(
     }
 
     // Optional: Fetch and sync to local database
-//    suspend fun fetchAndSyncAllUsers() {
-//        when (val result = fetchAllUsers()) {
-//            is NetworkResult.Success -> {
-//                // Convert DTOs to local entities and save to database
-//                val localUsers = result.data.map { dto ->
-//                    User(
-//                        userId = dto.id ?: 0,  // Handle null ID if needed
-//                        userFullName = dto.name,
-//                        userContact = dto.contact,
-//                        userRole = dto.role,
-//                        userPassword = dto.password,
-//                        userEmail = dto.email,
-//                        storeID = dto.store ?: "iSTART001",
-//                        userAddress = dto.address
-//                    )
-//                }
-//
-//                // Insert all users to local database
-//                authRepository.insertAllUsers(localUsers)
-//            }
-//
-//            is NetworkResult.Error -> {
-//                // Handle error - log, show message, etc.
-//                Log.e("AuthRepository", "Failed to fetch users: ${result.message}")
-//            }
-//        }
-//    }
+    override suspend fun fetchAndSyncAllUsers() {
+        when (val result = fetchAllUsers()) {
+            is NetworkResult.Success -> {
+                // Convert DTOs to local entities and save to database
+                val localUsers = result.data.map { dto ->
+                    User(
+                        userId = dto.id ?: 0,  // Handle null ID if needed
+                        userFullName = dto.name,
+                        userContact = dto.contact,
+                        userRole = dto.role,
+                        userPassword = dto.password,
+                        userEmail = dto.email,
+                        storeID = dto.store ?: "iSTART001",
+                        userAddress = dto.address
+                    )
+                }
+
+                // Insert all users to local database
+                userDao.insertAllUsers(localUsers)
+            }
+
+            is NetworkResult.Error -> {
+                // Handle error - log, show message, etc.
+                Log.e("UsersData", "Failed to fetch users: ${result.message}")
+            }
+
+            else -> {
+                Log.e("UsersData", "Failed to fetch users: ***")
+            }
+        }
+    }
 
     // Fetch all users once (for initial check)
     override suspend fun getAllUsersOnce(): List<User> {

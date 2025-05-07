@@ -64,7 +64,7 @@ fun InvoiceDetailScreen(
     navController: NavController
 ) {
     var showDialog by remember { mutableStateOf(false) } // Show confirmation dialog
-    var errorMessage by remember { mutableStateOf<String?>(null) }
+    val errorMessage by remember { mutableStateOf<String?>(null) }
 
     // Trigger fetching invoiceLines based on the invoiceId
     LaunchedEffect(key1 = invoiceId) {
@@ -161,23 +161,21 @@ fun InvoiceDetailScreen(
                 CustomHeadingMedium(
                     heading = "INVOICE RECEIPT",
                 )
-                Spacer(modifier = Modifier.height(8.dp))
-
                 if (invoiceLine != null) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(8.dp)
+                            .padding(2.dp)
                     ) {
                         Text(
                             modifier = Modifier.weight(1f),
-                            text = invoiceLine.customerName,
+                            text = "Customer: ${invoiceLine.customerName} | Cashier: ${invoiceLine.cashier}",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.primary
                         )
                         Text(
                             modifier = Modifier.weight(1f),
-                            text = "${invoiceLine.customerPhone}",
+                            text = "${Date(invoiceLine.invoiceDate)}",
                             style = MaterialTheme.typography.bodySmall
                         )
                         Text(
@@ -185,26 +183,11 @@ fun InvoiceDetailScreen(
                             style = MaterialTheme.typography.bodySmall
                         )
                     }
-                    Text(
-                        modifier = Modifier.padding(8.dp),
-                        text = "${Date(invoiceLine.invoiceDate)}", // Formatting date can be customized
-                        style = MaterialTheme.typography.bodySmall,
-                        textAlign = TextAlign.End
-                    )
-                    Text(
-                        modifier = Modifier.padding(8.dp),
-                        text = "Cashier: ${invoiceLine.cashier}",
-                        style = MaterialTheme.typography.bodySmall,
-                        textAlign = TextAlign.End,
-                        color = MaterialTheme.colorScheme.primary
-                    )
                 }
-                Spacer(modifier = Modifier.height(4.dp))
-
                 if (invoiceLines.isNotEmpty()) {
                     // Display the invoice lines using LazyColumn
                     LazyColumn(
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                        verticalArrangement = Arrangement.spacedBy(2.dp)
                     ) {
                         items(invoiceLines) { invoiceLine ->
                             TheInvoiceCard(
@@ -340,19 +323,11 @@ fun TheInvoiceCard(
     val sizeValue = shoeSize?.size?.toString() ?: "N/A"
 
     Column(
-        modifier = Modifier.padding(16.dp)
+        modifier = Modifier.padding(4.dp)
     ) {
-        Text(
-            text = invoiceLine.productName,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.primary
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
         // Display brand name and shoe size
         Text(
-            text = "$brandName :- $sizeValue",
+            text = "($brandName) : Size - $sizeValue",
             style = MaterialTheme.typography.bodySmall.copy(
                 shadow = Shadow(
                     color = Color.Black.copy(alpha = 0.3f),
@@ -363,22 +338,12 @@ fun TheInvoiceCard(
             color = Color.Red,
             modifier = Modifier.background(Color.White)
         )
-
         Spacer(modifier = Modifier.height(4.dp))
-
         Text(
-            text = "Price: ${invoiceLine.productPrice}",
-            style = MaterialTheme.typography.bodySmall
+            text = " ${invoiceLine.productName} || Amount: $${invoiceLine.productPrice} || Sold: ${invoiceLine.productQtySold}",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.primary
         )
-
-        Spacer(modifier = Modifier.height(4.dp))
-
-        Text(
-            text = "Qty Sold: ${invoiceLine.productQtySold}",
-            style = MaterialTheme.typography.bodySmall
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
 
         Divider(
             modifier = Modifier.padding(vertical = 8.dp),
@@ -386,36 +351,3 @@ fun TheInvoiceCard(
         )
     }
 }
-
-
-//@Composable
-//fun TheInvoiceCard(
-//    invoiceLine: InvoiceLine,
-//) {
-//
-//    Column(
-//        modifier = Modifier.padding(16.dp)
-//    ) {
-//        Text(
-//            text = invoiceLine.productName,
-//            style = MaterialTheme.typography.bodyMedium,
-//            color = MaterialTheme.colorScheme.primary
-//        )
-//        Spacer(modifier = Modifier.height(8.dp))
-//        Text(
-//            text = "Price: ${invoiceLine.productPrice}",
-//            style = MaterialTheme.typography.bodySmall
-//        )
-//        Spacer(modifier = Modifier.height(4.dp))
-//        Text(
-//            text = "Qty Sold: ${invoiceLine.productQtySold}",
-//            style = MaterialTheme.typography.bodySmall
-//        )
-//        Spacer(modifier = Modifier.height(8.dp))
-//        Divider(
-//            modifier = Modifier.padding(vertical = 8.dp),
-//            color = MaterialTheme.colorScheme.primary
-//        )
-//    }
-//
-//}

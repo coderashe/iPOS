@@ -108,8 +108,8 @@ fun SignInPage(
         Button(
             onClick = {
 //                Test fetchAllUsers
-                authViewModel.loadAllUsers()
-//                authViewModel.login(email, password)
+//                authViewModel.loadAllUsers()
+                authViewModel.login(email, password)
             },
             enabled = authState.value != AuthState.Loading
         ) {

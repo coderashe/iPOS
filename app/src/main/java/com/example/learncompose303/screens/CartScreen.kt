@@ -386,7 +386,7 @@ fun CartScreen(
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                text = "$brandName :- $shoeSize",
+                                text = "$brandName : Size - $shoeSize",
                                 style = MaterialTheme.typography.bodyMedium.copy(
                                     shadow = Shadow(
                                         color = Color.Black.copy(alpha = 0.3f),

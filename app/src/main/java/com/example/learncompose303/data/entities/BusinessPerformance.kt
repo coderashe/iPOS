@@ -47,8 +47,3 @@ data class MonthlySales(
         }
 }
 
-
-//data class MonthlySales(
-//    val month: String,
-//    val totalSales: Double
-//)
