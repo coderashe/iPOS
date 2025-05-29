@@ -70,16 +70,14 @@ import com.example.learncompose303.data.repositories.ShoeSizeRepositoryImpl
 import com.example.learncompose303.data.repositories.StockTakeRepository
 import com.example.learncompose303.data.repositories.StockTakeRepositoryImpl
 import com.example.learncompose303.data.repositories.StudentRepository
+import com.example.learncompose303.network.BusinessApiService
+import com.example.learncompose303.network.InvoiceApiService
 import com.example.learncompose303.network.UserApiService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import okhttp3.OkHttpClient
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
-import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
 
 //
@@ -107,6 +105,13 @@ object AppModule {
     fun provideWorkManager(@ApplicationContext context: Context): WorkManager {
         return WorkManager.getInstance(context)
     }
+
+    @Provides
+    fun provideInvoiceDao(appDatabase: AppDatabase): InvoiceDao = appDatabase.invoiceDao()
+
+    @Provides
+    fun provideUserDao(appDatabase: AppDatabase): UserDao =
+        appDatabase.userDao()
 
     @Provides
     @Singleton
@@ -148,9 +153,6 @@ object AppModule {
     @Provides
     fun provideCartItemDao(database: AppDatabase): CartItemDao = database.cartItemDao()
 
-    @Provides
-    fun provideInvoiceDao(database: AppDatabase): InvoiceDao = database.invoiceDao()
-
 
     // Provide ItemDao from AppDatabase
     @Provides
@@ -173,9 +175,6 @@ object AppModule {
         return ProductDayReportRepositoryImpl(appDatabase.productDayReportDao())
     }
 
-    fun provideUserDao(appDatabase: AppDatabase): UserDao =
-        appDatabase.userDao()
-
     //
     fun provideExpenseDao(appDatabase: AppDatabase): ExpenseDao =
         appDatabase.expenseDao()
@@ -189,12 +188,16 @@ object AppModule {
     //
     @Provides
     @Singleton
-    fun provideBusinessRepository(appDatabase: AppDatabase): BusinessRepository {
+    fun provideBusinessRepository(
+        appDatabase: AppDatabase,
+        apiService: BusinessApiService
+    ): BusinessRepository {
         return BusinessRepositoryImpl(
             appDatabase.expenseDao(),
             appDatabase.invoiceDao(),
             appDatabase.invoiceLineDao(),
-            appDatabase.currencyDao()
+            appDatabase.currencyDao(),
+            apiService
         )
     }
 //
@@ -231,8 +234,15 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideInvoiceRepository(appDatabase: AppDatabase): InvoiceRepository {
-        return InvoiceRepositoryImpl(appDatabase.invoiceDao(), appDatabase.currencyDao())
+    fun provideInvoiceRepository(
+        appDatabase: AppDatabase,
+        invoiceApiService: InvoiceApiService,
+    ): InvoiceRepository {
+        return InvoiceRepositoryImpl(
+            appDatabase.invoiceDao(),
+            appDatabase.currencyDao(),
+            invoiceApiService,
+        )
     }
 
     //    currencies

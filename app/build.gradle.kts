@@ -59,6 +59,19 @@ android {
 }
 
 dependencies {
+// Hilt Core
+    implementation("com.google.dagger:hilt-android:2.48")
+    kapt("com.google.dagger:hilt-compiler:2.48")
+
+    // Hilt + WorkManager integration
+    implementation("androidx.hilt:hilt-work:1.0.0")
+    kapt("androidx.hilt:hilt-compiler:1.0.0")
+
+    // WorkManager
+    val work_version = "2.9.1"
+    implementation("androidx.work:work-runtime:$work_version")
+    implementation("androidx.work:work-runtime-ktx:$work_version")
+
     // Coil for image loading
     implementation("io.coil-kt:coil:2.7.0")
     implementation("io.coil-kt:coil-compose:2.1.0")
@@ -74,7 +87,6 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-android:1.7.2")
-    implementation("androidx.hilt:hilt-common:1.2.0")
 
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
@@ -84,12 +96,6 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 
-    // Dagger Hilt
-    implementation("com.google.dagger:hilt-android:2.48")
-    kapt("com.google.dagger:hilt-compiler:2.48")
-
-    // WorkManager + Hilt integration
-//    implementation ("androidx.hilt:hilt-work:1.2.0")
 
     val room_version = "2.6.1"
     implementation("androidx.room:room-runtime:$room_version")
@@ -122,10 +128,6 @@ dependencies {
 
     implementation("androidx.compose.runtime:runtime-livedata:1.7.2")
     implementation("com.google.android.material:material:1.12.0")
-
-    val work_version = "2.9.1"
-    implementation("androidx.work:work-runtime:$work_version")
-    implementation("androidx.work:work-runtime-ktx:$work_version")
 
     // Swipe Refresh
     implementation("com.google.accompanist:accompanist-swiperefresh:0.27.0")

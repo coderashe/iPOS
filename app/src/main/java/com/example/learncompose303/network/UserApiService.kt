@@ -1,10 +1,5 @@
 package com.example.learncompose303.network
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import com.example.learncompose303.data.entities.ShoeBrand
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET

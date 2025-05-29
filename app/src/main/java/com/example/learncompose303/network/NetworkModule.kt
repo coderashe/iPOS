@@ -18,7 +18,7 @@ object NetworkModule {
     @Singleton
     fun provideRetrofit(): Retrofit {
         return Retrofit.Builder()
-            .baseUrl("http://192.168.168.135:8087/") // Use 10.0.2.2 for localhost from Android emulator
+            .baseUrl("http://192.168.163.27:8087/") // Use 10.0.2.2 for localhost from Android emulator
             .addConverterFactory(GsonConverterFactory.create())
             .client(
                 OkHttpClient.Builder()
@@ -33,5 +33,17 @@ object NetworkModule {
     @Singleton
     fun provideUserApiService(retrofit: Retrofit): UserApiService {
         return retrofit.create(UserApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideBusinessApiService(retrofit: Retrofit): BusinessApiService {
+        return retrofit.create(BusinessApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideInvoiceApiService(retrofit: Retrofit): InvoiceApiService {
+        return retrofit.create(InvoiceApiService::class.java)
     }
 }

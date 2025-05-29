@@ -3,26 +3,11 @@ package com.example.learncompose303.network
 import android.content.Context
 import android.util.Log
 import androidx.hilt.work.HiltWorker
-import androidx.work.BackoffPolicy
-import androidx.work.Configuration
 import androidx.work.CoroutineWorker
-import androidx.work.ExistingWorkPolicy
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.WorkManager
 import androidx.work.WorkerParameters
-import androidx.work.workDataOf
 import com.example.learncompose303.data.data_source.UserDao
-import com.example.learncompose303.data.entities.User
-import dagger.Module
-import dagger.Provides
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
-import dagger.hilt.InstallIn
-import dagger.hilt.android.qualifiers.ApplicationContext
-import dagger.hilt.components.SingletonComponent
-import java.util.concurrent.TimeUnit
-import javax.inject.Inject
-import javax.inject.Singleton
 
 @HiltWorker
 class SyncUserWorker @AssistedInject constructor(
@@ -77,23 +62,3 @@ class SyncUserWorker @AssistedInject constructor(
         }
     }
 }
-
-//@Module
-//@InstallIn(SingletonComponent::class)
-//object WorkManagerModule {
-//
-//    @Provides
-//    @Singleton
-//    fun provideWorkManager(
-//        @ApplicationContext context: Context,
-//        workerFactory: HiltFactoryWorker
-//    ): WorkManager {
-//        val config = Configuration.Builder()
-//            .setWorkerFactory(workerFactory)
-//            .build()
-//
-//        // Initialize WorkManager with custom configuration
-//        WorkManager.initialize(context, config)
-//        return WorkManager.getInstance(context)
-//    }
-//}

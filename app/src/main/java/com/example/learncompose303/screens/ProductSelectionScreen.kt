@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -146,7 +147,8 @@ fun ProductSelectionScreen(
                             val price = viewModel.getPricelistById(product.product.productId)
 
                             price?.let {
-                                ProductCard(
+//                                ProductCard(
+                                NewProductCard(
                                     products = product.product,
                                     isSelected = isSelected,
                                     onAddProduct = { viewModel.addProductToCart(product.product) },
@@ -348,6 +350,150 @@ fun ProductCard(
                     text = if (isSelected) stringResource(R.string.added) else stringResource(R.string.addToCart),
                     fontWeight = FontWeight.Bold
                 )
+            }
+        }
+    }
+}
+
+@Composable
+fun NewProductCard(
+    products: Products,
+    isSelected: Boolean,
+    onAddProduct: (Products) -> Unit,
+    price: Double,
+    viewModel: InvoiceViewModel
+) {
+    val context = LocalContext.current
+    var stockLevel by remember { mutableStateOf(0L) }
+
+    // Collect shoe size state from ViewModel
+    val shoeSizeState = viewModel.getShoeSizeById(products.shoeSizeId)
+        .collectAsState(initial = null)
+    val shoeSize = shoeSizeState.value?.size?.toString() ?: "N/A"
+
+    var brand by remember { mutableStateOf<ShoeBrand?>(null) }
+    // Use LaunchedEffect to collect the Flow in a coroutine
+    LaunchedEffect(products.brandID) {
+        viewModel.getBrandById(products.brandID).collect { fetchedBrand ->
+            brand = fetchedBrand
+        }
+    }
+    val brandName = brand?.brandName ?: "Unknown Brand"
+
+    // Fetch stock level when productId changes
+    LaunchedEffect(products.productId) {
+        stockLevel = products.productQty
+    }
+
+    Card(
+        shape = RoundedCornerShape(8.dp),
+        modifier = Modifier
+            .padding(2.dp)
+            .fillMaxWidth()
+            .height(100.dp)
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .clickable {
+                if (stockLevel > 0) {
+                    onAddProduct(products)
+                } else {
+                    Toast
+                        .makeText(
+                            context,
+                            "${products.productDescription} is out of stock!",
+                            Toast.LENGTH_SHORT
+                        )
+                        .show()
+                }
+            },
+        elevation = CardDefaults.cardElevation(4.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(4.dp),
+        ) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.Start
+            ) {
+
+                Button(
+                    onClick = {
+                        if (stockLevel > 0) {
+                            onAddProduct(products)
+                        } else {
+                            Toast.makeText(
+                                context,
+                                "${products.productDescription} is out of stock!",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (isSelected) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.primary,
+                        contentColor = Color.White
+                    ),
+                    shape = RoundedCornerShape(8.dp),
+//                modifier = Modifier.fillMaxWidth(0.8f)
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                ) {
+                    Text(
+                        text = if (isSelected) stringResource(R.string.added) else stringResource(R.string.addToCart),
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+//                price
+                Text(
+                    text = "$${"%.2f".format(price)}",
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.primary,
+                )
+
+            }
+            // Text Content
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.Start
+            ) {
+                Text(
+                    text = "($brandName) : Size - $shoeSize",
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        shadow = Shadow(
+                            color = Color.Black.copy(alpha = 0.3f),
+                            offset = Offset(2f, 2f),
+                            blurRadius = 4f
+                        )
+                    ),
+                    color = Color.Red,
+                    modifier = Modifier.background(Color.White)
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = products.productDescription,
+                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                    textAlign = TextAlign.Center,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                // Stock Level
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 2.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "left: $stockLevel",
+                        style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                        color = if (stockLevel > 0) MaterialTheme.colorScheme.primary else Color.Red,
+                        modifier = Modifier.background(Color.White)
+                    )
+                }
+                Spacer(modifier = Modifier.height(2.dp))
             }
         }
     }

@@ -5,6 +5,7 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Update
 import com.example.learncompose303.data.entities.Invoice
 import com.example.learncompose303.data.entities.InvoiceWithCurrency
@@ -49,12 +50,21 @@ interface InvoiceDao {
     )
     fun getSalesPerMonth(): Flow<List<MonthlySales>>
 
-    @Query("""
+    @Query(
+        """
     SELECT 
         strftime('%m', invoiceDate / 1000, 'unixepoch') AS monthNumber,
         totalAmount,
         currencyCode
     FROM invoice
-""")
+"""
+    )
     fun getSalesPerMonthWithCurrency(): Flow<List<MonthlySalesWithCurrency>>
+
+    @Query("SELECT * FROM invoice WHERE lastUpdated IS NULL ORDER BY invoiceDate DESC LIMIT :limit")
+    suspend fun getUnsyncedInvoices(limit: Int): List<Invoice>
+
+    @Query("SELECT COUNT(*) FROM invoice WHERE lastUpdated IS NULL")
+    fun getUnsyncedCount(): Flow<Int>
+
 }

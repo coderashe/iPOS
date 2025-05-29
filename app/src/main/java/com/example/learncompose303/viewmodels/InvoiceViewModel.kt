@@ -3,13 +3,15 @@ package com.example.learncompose303.viewmodels
 import android.content.Context
 import android.net.Uri
 import android.os.Build
-import android.util.Log
 import android.widget.Toast
 import androidx.annotation.RequiresApi
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.work.WorkInfo
+import androidx.work.WorkManager
 import com.example.learncompose303.R
-import com.example.learncompose303.data.Destinations
 import com.example.learncompose303.data.StudentEntity
 import com.example.learncompose303.data.domain.ProductWithBrand
 import com.example.learncompose303.data.entities.CartItem
@@ -56,14 +58,20 @@ import java.io.FileOutputStream
 import java.io.IOException
 import java.io.InputStream
 import java.time.DayOfWeek
-import java.time.Instant
 import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalAdjusters
 import java.util.Calendar
 import javax.inject.Inject
+import android.util.Log
+import androidx.work.BackoffPolicy
+import androidx.work.Constraints
+import androidx.work.ExistingWorkPolicy
+import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.workDataOf
+import com.example.learncompose303.network.SyncInvoiceWorker
+import kotlinx.coroutines.flow.first
+import java.util.concurrent.TimeUnit
 
 
 @HiltViewModel
@@ -82,7 +90,8 @@ class InvoiceViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val dayReportRepository: DayReportsRepository,
     private val productDayReportRepository: ProductDayReportRepository,
-    private val stockTakeRepository: StockTakeRepository
+    private val stockTakeRepository: StockTakeRepository,
+    private val workManager: WorkManager
 ) : ViewModel() {
 
     private val _shoeSizes = MutableStateFlow(emptyList<ShoeSize>())
@@ -162,11 +171,23 @@ class InvoiceViewModel @Inject constructor(
     private val _selectedCurrency = MutableStateFlow<Currency?>(null)
     val selectedCurrency: StateFlow<Currency?> = _selectedCurrency
 
-//    private val _withBrandProductList = MutableStateFlow<List<ProductWithBrand>>(emptyList())
-//    val withBrandProductList = _withBrandProductList.asStateFlow()
-
     private val _withBrandProductList = MutableStateFlow(emptyList<ProductWithBrand>())
     val withBrandProductList = _withBrandProductList.asStateFlow()
+
+    // State for unsynced count
+    private val _unsyncedCount = MutableStateFlow(0)
+    val notsyncedCount: StateFlow<Int> = _unsyncedCount.asStateFlow()
+    private var unsyncedCount = 0
+
+    // Track sync status
+    private val _syncStatus = MutableLiveData<String>("Idle")
+    val syncStatus: LiveData<String> = _syncStatus
+
+    companion object {
+        private const val TAG = "InvoiceViewModel"
+        private const val SYNC_BATCH_SIZE = 5
+        private const val BATCH_SYNC_WORK_NAME = "invoice_batch_sync"
+    }
 
     init {
         // Essential db operations to load data
@@ -192,17 +213,43 @@ class InvoiceViewModel @Inject constructor(
         // Now insert initial products
     }
 
+    private fun monitorUnsyncedCount() {
+        viewModelScope.launch {
+            invoiceRepository.getUnsyncedCount().collectLatest { count ->
+                _unsyncedCount.value = count
+            }
+        }
+    }
+
+    private fun monitorSyncStatus() {
+        // Monitor batch sync work
+        workManager.getWorkInfosForUniqueWorkLiveData("invoice_batch_sync")
+            .observeForever { workInfoList ->
+                if (workInfoList.isNotEmpty()) {
+                    val workInfo = workInfoList[0]
+                    _syncStatus.value = when (workInfo.state) {
+                        WorkInfo.State.RUNNING -> "Syncing..."
+                        WorkInfo.State.SUCCEEDED -> "Sync Completed"
+                        WorkInfo.State.FAILED -> "Sync Failed"
+                        WorkInfo.State.BLOCKED -> "Sync Waiting"
+                        WorkInfo.State.ENQUEUED -> "Sync Scheduled"
+                        WorkInfo.State.CANCELLED -> "Sync Cancelled"
+                    }
+                }
+            }
+    }
+
+    fun syncAllInvoices() {
+        viewModelScope.launch {
+            syncAllNow()
+        }
+    }
+
     fun fetchBrandProducts() = viewModelScope.launch {
         productRepository.getProductsWithBrand().collectLatest { branProductList ->
             _withBrandProductList.value = branProductList
         }
     }
-
-//    fun fetchBrandProducts() {
-//        viewModelScope.launch {
-//            _withBrandProductList.value = productRepository.getProductsWithBrand()
-//        }
-//    }
 
     fun insertStockTake(stockTake: StockTake) {
         viewModelScope.launch {
@@ -438,130 +485,6 @@ class InvoiceViewModel @Inject constructor(
 
         insertPriceList(priceList)
     }
-//    fun uploadProductsFromCsv(inputStream: InputStream, context: Context) {
-//        viewModelScope.launch {
-//            val parser = CsvParser()
-//            val productsFromCsv = parser.parseProductCsv(inputStream)
-//
-//            // Retrieve existing products from the database using the once method
-//            val existingProducts = productRepository.getAllProductsOnce()
-//
-//            // Create a map to track existing products by their description and shoe size
-//            val existingProductMap =
-//                existingProducts.associateBy { it.productDescription to it.shoeSizeId to it.brandID }
-//
-//            var duplicateCount = 0
-//
-//            for (productCsv in productsFromCsv) {
-//                val existingProduct =
-//                    existingProductMap[productCsv.productDescription to productCsv.shoeSizeId to productCsv.brandID]
-//
-//                if (existingProduct != null) {
-//                    // If the product exists, update its details
-//                    val updatedProduct = existingProduct.copy(
-//                        productQty = productCsv.productQty,
-//                        brandID = productCsv.brandID,
-//                        shoeSizeId = productCsv.shoeSizeId,
-//                        saleable = productCsv.saleable,
-//                        purchasable = productCsv.purchasable,
-//                        averageCost = productCsv.averageCost,
-//                        standardCost = productCsv.standardCost ?: existingProduct.standardCost,
-//                        salesTaxCode = productCsv.salesTaxCode,
-//                        productCode = productCsv.productCode,
-//                        inclusiveTaxed = productCsv.inclusiveTaxed,
-//                        imageUri = productCsv.imageUri ?: existingProduct.imageUri
-//                    )
-//
-//                    // Update the product in the repository
-//                    productRepository.updateProduct(updatedProduct)
-//
-//                    // Update the price list for the existing product
-//                    val sellingPrice = updatedProduct.standardCost * 1 // Adjust as needed
-//                    val markupPercentage =
-//                        ((sellingPrice - updatedProduct.standardCost) / updatedProduct.standardCost) * 100
-//                    val grossProfitPercentage =
-//                        ((sellingPrice - updatedProduct.averageCost) / sellingPrice) * 100
-//
-//                    val priceList = PriceList(
-//                        productId = updatedProduct.productId,
-//                        productDescription = updatedProduct.productDescription,
-//                        unitCost = updatedProduct.standardCost,
-//                        sellingPrice = sellingPrice,
-//                        markupPercentage = markupPercentage,
-//                        grossProfitPercentage = grossProfitPercentage
-//                    )
-//
-//                    // Update the price list in the repository
-//                    priceListRepository.updatePriceList(priceList)
-//                } else {
-//                    // Product does not exist, add it
-//                    val imageUri = productCsv.imageUri ?: getDefaultImageUri(context)
-//                    val standardCost = productCsv.standardCost ?: 0.0
-//
-//                    // Check for duplicates before inserting
-//                    val existingDuplicate = productRepository.getProductByNameAndSize(
-//                        productCsv.productDescription,
-//                        productCsv.shoeSizeId
-//                    )
-//                    if (existingDuplicate != null) {
-//                        duplicateCount++
-//                        continue // Skip inserting duplicate
-//                    }
-//
-//                    // Create a new product entity
-//                    val newProducts = Products(
-//                        productDescription = productCsv.productDescription,
-//                        productQty = productCsv.productQty,
-//                        brandID = productCsv.brandID,
-//                        shoeSizeId = productCsv.shoeSizeId,
-//                        saleable = productCsv.saleable,
-//                        purchasable = productCsv.purchasable,
-//                        averageCost = productCsv.averageCost,
-//                        standardCost = standardCost,
-//                        salesTaxCode = productCsv.salesTaxCode,
-//                        productCode = productCsv.productCode,
-//                        inclusiveTaxed = productCsv.inclusiveTaxed,
-//                        imageUri = imageUri
-//                    )
-//
-//                    // Insert new product into the repository
-//                    insertTheProduct(newProducts) { productId ->
-//                        // Insert into PriceList for the new product
-//                        val sellingPrice = standardCost * 1 // Adjust as needed
-//                        val markupPercentage = ((sellingPrice - standardCost) / standardCost) * 100
-//                        val grossProfitPercentage =
-//                            ((sellingPrice - productCsv.averageCost) / sellingPrice) * 100
-//
-//                        Log.d("TestUpload", "Upload Products + ShoeSize success")
-//                        val newPriceList = PriceList(
-//                            productId = productId,
-//                            productDescription = productCsv.productDescription,
-//                            unitCost = standardCost,
-//                            sellingPrice = sellingPrice,
-//                            markupPercentage = markupPercentage,
-//                            grossProfitPercentage = grossProfitPercentage
-//                        )
-//                        insertPriceList(newPriceList)
-//                        Log.d("TestUpload", "Upload Pricelist success")
-//
-//                    }
-//                    Log.d("TestUpload", "Upload All success, moving forward")
-//                }
-//            }
-//
-//            // Show toast notification
-//            if (duplicateCount > 0) {
-//                Toast.makeText(
-//                    context,
-//                    "$duplicateCount duplicate products were found and skipped.",
-//                    Toast.LENGTH_SHORT
-//                ).show()
-//            } else {
-//                Toast.makeText(context, "Products uploaded successfully.", Toast.LENGTH_SHORT)
-//                    .show()
-//            }
-//        }
-//    }
 
     // Function to get default image URI from drawable resources
     fun getDefaultImageUri(context: Context): String {
@@ -696,7 +619,7 @@ class InvoiceViewModel @Inject constructor(
                 userContact = "0776815030",
                 userRole = "admin",
                 userPassword = "password",
-                storeID = "viewmodel01",
+                storeID = "istart01",
                 userEmail = "dr.simbastart@gmail.com",
                 userAddress = "3 Maywood St, Kwekwe, Zimbabwe"
             )
@@ -791,7 +714,37 @@ class InvoiceViewModel @Inject constructor(
                 ShoeBrand(38, "NF24-4"),
                 ShoeBrand(39, "NF24-3"),
                 ShoeBrand(40, "M265"),
-                ShoeBrand(41, "M256")
+                ShoeBrand(41, "M256"),
+                ShoeBrand(42, "831"),
+                ShoeBrand(43, "836-2"),
+                ShoeBrand(44, "827-2"),
+                ShoeBrand(45, "NF29-1"),
+                ShoeBrand(46, "NF29-2"),
+                ShoeBrand(47, "NF29-3"),
+                ShoeBrand(48, "206-3"),
+                ShoeBrand(49, "W24145A"),
+                ShoeBrand(50, "2088-1"),
+                ShoeBrand(51, "N05-3"),
+                ShoeBrand(52, "15010-9"),
+                ShoeBrand(53, "206-4"),
+                ShoeBrand(54, "913"),
+                ShoeBrand(55, "M23085F"),
+                ShoeBrand(56, "X-9956"),
+                ShoeBrand(57, "NF51-1"),
+                ShoeBrand(58, "NF51-2"),
+                ShoeBrand(59, "NF51-3"),
+                ShoeBrand(60, "NF51-4"),
+                ShoeBrand(61, "NF51-5"),
+                ShoeBrand(62, "NF50-1"),
+                ShoeBrand(63, "NF50-2"),
+                ShoeBrand(64, "NF50-3"),
+                ShoeBrand(65, "NF50-4"),
+                ShoeBrand(66, "NF50-5"),
+                ShoeBrand(67, "NF50-6"),
+                ShoeBrand(68, "NF06-1"),
+                ShoeBrand(69, "NF06-2"),
+                ShoeBrand(70, "NF06-4"),
+                ShoeBrand(71, "NF06-7")
             )
             shoeBrandRepository.insertShoeBrands(initialBrands)
         }
@@ -1363,6 +1316,7 @@ class InvoiceViewModel @Inject constructor(
                 )
 
                 val invoiceId = invoiceRepository.insertInvoice(invoice)
+                onInvoiceCreatedOrUpdated(invoice)
 
                 Log.d("Invoice", "Inserted Invoice with id: $invoiceId")
 
@@ -1483,6 +1437,7 @@ class InvoiceViewModel @Inject constructor(
 
                 // Insert the invoice and get the invoiceId
                 val invoiceId = invoiceRepository.insertInvoice(invoice)
+                onInvoiceCreatedOrUpdated(invoice)
 
                 Log.d("submitInvoice", "Inserted Invoice with id: $invoiceId")
 
@@ -1550,7 +1505,7 @@ class InvoiceViewModel @Inject constructor(
 
                 // Clear the selected products list after invoice submission
                 _selectedProducts.value = emptyList()
-                Log.d("submitInvoice", "Cleared selected products for customer: $customerId")
+                _selectedProducts.value = emptyList()
             } else {
                 Log.e(
                     "submitInvoice",
@@ -1686,33 +1641,93 @@ class InvoiceViewModel @Inject constructor(
         }
     }
 
-//    fun addQuantityBackToStock(productId: Long, quantity: Double) = viewModelScope.launch {
-//        try {
-//            // Fetch the product by productId
-//            val product = productRepository.getProductById(productId)
-//
-//            if (product != null) {
-//                // Update the stock level by adding the quantity back
-//                val updatedStockLevel = product.currentStockLevel + quantity
-//                val updatedProduct = product.copy(currentStockLevel = updatedStockLevel)
-//
-//                // Save the updated product back to the repository
-//                productRepository.updateProduct(updatedProduct)
-//
-//                Log.d(
-//                    "StockUpdate",
-//                    "Successfully added $quantity to product ID: $productId"
-//                )
-//            } else {
-//                Log.e("viewmodel", "Product not found with ID: $productId")
-//            }
-//        } catch (e: Exception) {
-//            Log.e(
-//                "viewmodel",
-//                "Error updating stock for product ID: $productId, ${e.message}"
-//            )
-//        }
-//    }
+    //    syncInvoice
+    private suspend fun onInvoiceCreatedOrUpdated(invoice: Invoice) {
+        unsyncedCount++
+        scheduleSingleInvoiceSync(invoice)
+
+        if (unsyncedCount >= SYNC_BATCH_SIZE) {
+            scheduleBatchSync()
+            unsyncedCount = 0
+        }
+    }
+
+    private fun scheduleSingleInvoiceSync(invoice: Invoice) {
+        Log.d(TAG, "Scheduling sync for invoice ${invoice.invoiceId}")
+
+        val syncWorkRequest = OneTimeWorkRequestBuilder<SyncInvoiceWorker>()
+            .setInputData(
+                workDataOf(
+                    SyncInvoiceWorker.KEY_INVOICE_ID to invoice.invoiceId,
+                    SyncInvoiceWorker.KEY_RETRY to true
+                )
+            )
+            .setBackoffCriteria(
+                BackoffPolicy.EXPONENTIAL,
+                15,
+                TimeUnit.MINUTES
+            )
+            .setConstraints(
+                Constraints.Builder()
+                    .setRequiredNetworkType(NetworkType.CONNECTED)
+                    .build()
+            )
+            .build()
+
+        workManager.enqueueUniqueWork(
+            "sync_invoice_${invoice.invoiceId}",
+            ExistingWorkPolicy.REPLACE,
+            syncWorkRequest
+        )
+
+        viewModelScope.launch {
+            checkAndScheduleBatchSyncIfNeeded()
+        }
+    }
+
+    private suspend fun checkAndScheduleBatchSyncIfNeeded() {
+        val currentUnsyncedCount = invoiceRepository.getUnsyncedCount().first()
+        if (currentUnsyncedCount >= SYNC_BATCH_SIZE) {
+            scheduleBatchSync()
+            unsyncedCount = 0
+        }
+    }
+
+    fun syncAllNow() {
+        scheduleBatchSync()
+        unsyncedCount = 0
+    }
+
+    private fun scheduleBatchSync() {
+        Log.d(TAG, "Scheduling batch sync for invoices")
+
+        val batchSyncWorkRequest = OneTimeWorkRequestBuilder<SyncInvoiceWorker>()
+            .setInputData(
+                workDataOf(
+                    SyncInvoiceWorker.KEY_BATCH_SYNC to true,
+                    SyncInvoiceWorker.KEY_RETRY to true
+                )
+            )
+            .setBackoffCriteria(
+                BackoffPolicy.EXPONENTIAL,
+                15,
+                TimeUnit.MINUTES
+            )
+            .setConstraints(
+                Constraints.Builder()
+                    .setRequiredNetworkType(NetworkType.CONNECTED)
+                    .build()
+            )
+            .build()
+
+        workManager.enqueueUniqueWork(
+            BATCH_SYNC_WORK_NAME,
+            ExistingWorkPolicy.REPLACE,
+            batchSyncWorkRequest
+        )
+    }
+
+//    end syncInvoice
 
 
     private val _studentDetailsList = MutableStateFlow(emptyList<StudentEntity>())

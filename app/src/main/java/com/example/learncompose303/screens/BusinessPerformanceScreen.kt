@@ -319,15 +319,28 @@ fun BusinessPerformanceScreen(
         }
         val context = LocalContext.current
 
-        Button(
-            onClick = {
-                exportDatabase(context, AppDatabase.DATABASE_NAME)
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
-            Text(text = "Export Database")
+        Row {
+
+            Button(
+                onClick = { viewModel.syncToBackend() },
+                modifier = Modifier
+//                    .fillMaxWidth()
+                    .padding(top = 16.dp)
+            ) {
+                Text("Sync to Backend")
+            }
+
+            Button(
+                onClick = {
+                    exportDatabase(context, AppDatabase.DATABASE_NAME)
+                },
+                modifier = Modifier
+//                    .fillMaxWidth()
+                    .padding(16.dp)
+            ) {
+                Text(text = "Export Database")
+            }
+
         }
 
     }

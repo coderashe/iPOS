@@ -98,6 +98,7 @@ fun CustomerSelectionScreen(
 
                     Button(
                         onClick = {
+//                            viewModel.selectedProducts
                             if (walkInCustomer != null) {
                                 onCustomerSelected(walkInCustomer)
                             }

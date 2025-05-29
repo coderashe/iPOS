@@ -53,4 +53,5 @@ class MonthlyLogoutWorker @Inject constructor(
         FirebaseAuth.getInstance().signOut()
         Log.d("MonthlyLogoutWorker", "User successfully logged out.")
     }
+
 }

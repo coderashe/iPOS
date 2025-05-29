@@ -8,36 +8,41 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.compose.rememberNavController
-import com.example.learncompose303.screens.ShopLandingScreen
-import com.example.learncompose303.screens.SignUpPage
 import com.example.learncompose303.ui.theme.LearnCompose303Theme
 import com.example.learncompose303.viewmodels.InvoiceViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import android.Manifest
-import android.os.Handler
-import android.os.Looper
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.platform.LocalContext
+import androidx.navigation.compose.rememberNavController
 import com.example.learncompose303.app.SwipeRefreshLayout
-import com.example.learncompose303.app.utils.BluetoothPrinterScanner
-import com.google.accompanist.swiperefresh.SwipeRefresh
-import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
+import androidx.work.Constraints
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.NetworkType
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.workDataOf
+import com.example.learncompose303.network.SyncInvoiceWorker
+import com.example.learncompose303.workmanager.MonthlyLogoutWorker
+import java.util.concurrent.TimeUnit
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     private val NOTIFICATION_PERMISSION_REQUEST_CODE = 1001
+    private var isWorkScheduled = false
+
+    override fun onStart() {
+        super.onStart()
+
+        if (!isWorkScheduled) {
+            setupPeriodicSync()
+            scheduleMonthlyLogout()
+            isWorkScheduled = true
+        }
+    }
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -70,14 +75,44 @@ class MainActivity : ComponentActivity() {
             LearnCompose303Theme {
                 // Create navController at the root level
                 val navController = rememberNavController()
+                val viewModel: InvoiceViewModel = viewModel()
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                 ) {
-                    SwipeRefreshLayout(navController)
+                    SwipeRefreshLayout(viewModel, navController)
                 }
             }
         }
     }
+    /**
+     * Setup periodic sync to ensure nothing is missed
+     */
+    fun setupPeriodicSync() {
+        val periodicSyncRequest = PeriodicWorkRequestBuilder<SyncInvoiceWorker>(
+            30, TimeUnit.MINUTES
+        )
+            .setInputData(
+                workDataOf(
+                    SyncInvoiceWorker.KEY_BATCH_SYNC to true,
+                    SyncInvoiceWorker.KEY_RETRY to true
+                )
+            )
+            .setConstraints(
+                Constraints.Builder()
+                    .setRequiredNetworkType(NetworkType.CONNECTED)
+                    .build()
+            )
+            .build()
+
+//        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+        WorkManager.getInstance(applicationContext).enqueueUniquePeriodicWork(
+            "invoice_periodic_sync",
+            ExistingPeriodicWorkPolicy.KEEP,
+            periodicSyncRequest
+        )
+        Log.d("SyncInvoiceWorker", "SyncInvoiceWorker scheduled.")
+    }
+
 
     // Handle the result of the permission request
     override fun onRequestPermissionsResult(
@@ -97,4 +132,26 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
+    private fun scheduleMonthlyLogout() {
+        val workRequest = PeriodicWorkRequestBuilder<MonthlyLogoutWorker>(1, TimeUnit.DAYS)
+            .setConstraints(
+                Constraints.Builder()
+                    .setRequiredNetworkType(NetworkType.CONNECTED)
+                    .build()
+            )
+            .build()
+
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+            "MonthlyLogoutWorker",
+            ExistingPeriodicWorkPolicy.UPDATE,
+            workRequest
+        )
+
+        Log.d("MyApplication", "Monthly logout worker scheduled.")
+    }
+
 }
+
+
+

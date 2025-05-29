@@ -6,6 +6,8 @@ import com.example.learncompose303.data.data_source.InvoiceDao
 import com.example.learncompose303.data.data_source.InvoiceLineDao
 import com.example.learncompose303.data.entities.HourPerformance
 import com.example.learncompose303.data.entities.ProductPerformance
+import com.example.learncompose303.network.BusinessApiService
+import com.example.learncompose303.network.dto.BusinessPerformanceRequest
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -18,14 +20,21 @@ interface BusinessRepository {
     fun getTopPerformingProducts(): Flow<List<ProductPerformance>>
     fun getPeakHours(): Flow<List<HourPerformance>>
     fun getSalesPerMonth(): Flow<Map<String, Double>>
+    suspend fun syncBusinessPerformance(request: BusinessPerformanceRequest)
+
 }
 
 class BusinessRepositoryImpl @Inject constructor(
     private val expenseDao: ExpenseDao,
     private val invoiceDao: InvoiceDao,
     private val invoiceLineDao: InvoiceLineDao,
-    private val currencyDao: CurrencyDao
+    private val currencyDao: CurrencyDao,
+    private val apiService: BusinessApiService
 ) : BusinessRepository {
+
+    override suspend fun syncBusinessPerformance(request: BusinessPerformanceRequest) {
+        apiService.syncBusinessPerformance(request)
+    }
 
     override fun getTotalSalesInUsd(): Flow<Double> {
         return invoiceDao.getInvoicesWithCurrency().map { invoices ->

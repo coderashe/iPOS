@@ -82,6 +82,7 @@ import coil.request.ImageRequest
 import kotlinx.coroutines.coroutineScope
 import coil.compose.AsyncImage
 import coil.size.Scale
+import com.example.learncompose303.screens.performance.BusinessPerformanceViewModel
 import com.example.learncompose303.ui.theme.MediumGreen
 import java.time.DayOfWeek
 import java.time.Instant
@@ -90,9 +91,9 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalAdjusters
 
-@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun SwipeRefreshLayout(
+    viewModel: InvoiceViewModel,
     navController: NavHostController
 ) {
     var isRefreshing by remember { mutableStateOf(false) }
@@ -102,19 +103,14 @@ fun SwipeRefreshLayout(
         state = rememberSwipeRefreshState(isRefreshing),
         onRefresh = {
             isRefreshing = true
-
-            // Only clear backstack if graph is initialized
-            if (navController.currentBackStackEntry != null) {
-                navController.popBackStack(
-                    navController.graph.startDestinationId,
-                    inclusive = false
-                )
-            }
-
+//            sync Invoices
+//            viewModel.syncAllInvoices()
+            viewModel.syncAllNow()
+//            set delay
             Handler(Looper.getMainLooper()).postDelayed({
                 isRefreshing = false
                 reloadTrigger++
-            }, 1000)
+            }, 5000)
         },
     ) {
         key(reloadTrigger) {
@@ -122,109 +118,13 @@ fun SwipeRefreshLayout(
         }
     }
 }
-
-//@RequiresApi(Build.VERSION_CODES.O)
-//@Composable
-//fun SwipeRefreshLayout() {
-//    // State to manage the refresh status
-//    var isRefreshing by remember { mutableStateOf(false) }
-//
-//    // SwipeRefresh composable from Accompanist
-//    SwipeRefresh(
-//        state = rememberSwipeRefreshState(isRefreshing),
-//        onRefresh = {
-//            // Perform refresh logic here
-//            isRefreshing = true
-//
-//            // create logic to reload the app and recompose i.e remove everything from backstack
-//            // You can add your actual refresh logic here (like fetching new data)
-//            Handler(Looper.getMainLooper()).postDelayed({
-//                isRefreshing = false  // Stop refreshing after some time
-//            }, 1000)
-//        }
-//    ) {
-//        // The content to be refreshed
-//        ShopLandingScreen()
-//    }
-//}
-
-//@Composable
-//fun AutoSlidingCarousel(
-//    modifier: Modifier = Modifier,
-//    navController: NavController,
-//    viewModel: InvoiceViewModel = viewModel()
-//) {
-//    val products by viewModel.productList.collectAsState(initial = emptyList())
-//    val productDescriptions = products.take(3).map { it.productDescription }
-//    val productImages = products.take(3).map { it.imageUri } // Get image URIs as Strings
-//    val pageCount = if (productDescriptions.isNotEmpty()) productDescriptions.size else 1
-//    val coroutineScope = rememberCoroutineScope()
-//    val pagerState = rememberPagerState(pageCount = { pageCount })
-//
-//    if (pageCount > 1) {
-//        LaunchedEffect(pagerState) {
-//            while (true) {
-//                yield()
-//                delay(5000L)
-//                val nextPage = (pagerState.currentPage + 1) % pageCount
-//                pagerState.animateScrollToPage(
-//                    page = nextPage,
-//                    animationSpec = tween(
-//                        durationMillis = 600,
-//                        easing = FastOutSlowInEasing
-//                    )
+// Only clear backstack if graph is initialized
+//            if (navController.currentBackStackEntry != null) {
+//                navController.popBackStack(
+//                    navController.graph.startDestinationId,
+//                    inclusive = false
 //                )
 //            }
-//        }
-//    }
-//
-//    Column(
-//        modifier = Modifier.fillMaxWidth(),
-//        horizontalAlignment = Alignment.CenterHorizontally
-//    ) {
-//        HorizontalPager(
-//            state = pagerState,
-//            modifier = Modifier.fillMaxWidth()
-//        ) { page ->
-//            if (productDescriptions.isNotEmpty()) {
-//                CarouselCard(
-//                    headingText = productDescriptions[page],
-//                    taglineText = "Explore our amazing products.",
-//                    buttonText = "View Product",
-//                    imageUrl = productImages[page], // Pass String? URI here
-//                    onButtonClick = {
-//                        navController.navigate(Destinations.CustomerSelection.route)
-//                    }
-//                )
-//            }
-//        }
-//
-//        Spacer(modifier = Modifier.height(16.dp))
-//        Row(
-//            modifier = Modifier.fillMaxWidth(),
-//            horizontalArrangement = Arrangement.Center
-//        ) {
-//            repeat(pageCount) { index ->
-//                Box(
-//                    modifier = Modifier
-//                        .size(10.dp)
-//                        .background(
-//                            if (pagerState.currentPage == index) Green1 else Color.Gray,
-//                            shape = RoundedCornerShape(50)
-//                        )
-//                        .padding(4.dp)
-//                        .clickable {
-//                            coroutineScope.launch {
-//                                pagerState.scrollToPage(index)
-//                            }
-//                        }
-//                )
-//                Spacer(modifier = Modifier.width(8.dp))
-//            }
-//        }
-//    }
-//}
-
 
 //working working but large image loading error
 @Composable
