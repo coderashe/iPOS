@@ -1,5 +1,10 @@
 package com.example.learncompose303.screens
 
+import android.net.Uri
+import android.util.Log
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -21,6 +26,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddShoppingCart
 import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.InsertDriveFile
 import androidx.compose.material.icons.filled.More
 import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material3.Button
@@ -35,6 +41,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -46,10 +53,10 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.learncompose303.R
 import com.example.learncompose303.data.Destinations
+import com.example.learncompose303.viewmodels.InvoiceViewModel
 
 @Composable
 fun MainDashboardScreen(navController: NavController) {
-
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -150,14 +157,41 @@ fun RecentSalesSection() {
 }
 
 @Composable
-fun QuickAccessButtons(navController: NavController) {
+fun QuickAccessButtons(
+    navController: NavController,
+    viewModel: InvoiceViewModel
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(top = 8.dp, start = 8.dp)
             .horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(8.dp) // Spacing between items
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
+        val context = LocalContext.current
+        val requestFileLauncher = rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.GetContent()
+        ) { uri: Uri? ->
+            uri?.let {
+                try {
+                    val csvContent =
+                        context.contentResolver.openInputStream(it)?.use { inputStream ->
+                            inputStream.bufferedReader().use { reader ->
+                                reader.readText()
+                            }
+                        }
+                    csvContent?.let { content ->
+                        viewModel.processCsvInvoices(content, "dr.simbastart@gmail.com")
+                        Log.e("debugCsv", "Reading csv $content")
+                    }
+                } catch (e: Exception) {
+                    Log.e("debugCsv", "Error reading CSV file", e)
+                    // Optionally show error to user
+                    Toast.makeText(context, "Error reading CSV file", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+
         QuickAccessCard(
             label = stringResource(R.string.invoicing),
             subTitle = "---",
@@ -193,6 +227,12 @@ fun QuickAccessButtons(navController: NavController) {
             subTitle = "---",
             icon = Icons.Default.AttachMoney,
             onClick = { navController.navigate(Destinations.StockTaking.route)             /* Navigate to OrderReports Screen */ }
+        )
+        QuickAccessCard(
+            label = stringResource(R.string.bstchInvoicing),
+            subTitle = "---",
+            icon = Icons.Default.InsertDriveFile,
+            onClick = { requestFileLauncher.launch("*/*") }
         )
 
     }

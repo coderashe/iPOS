@@ -6,6 +6,7 @@ import androidx.work.WorkManager
 import com.example.learncompose303.daos.ItemDao
 import com.example.learncompose303.data.AppDatabase
 import com.example.learncompose303.data.MIGRATION_1_2
+import com.example.learncompose303.data.MIGRATION_2_3
 import com.example.learncompose303.data.data_source.CartItemDao
 import com.example.learncompose303.data.data_source.CurrencyDao
 import com.example.learncompose303.data.data_source.CustomerDao
@@ -71,8 +72,10 @@ import com.example.learncompose303.data.repositories.StockTakeRepository
 import com.example.learncompose303.data.repositories.StockTakeRepositoryImpl
 import com.example.learncompose303.data.repositories.StudentRepository
 import com.example.learncompose303.network.BusinessApiService
+import com.example.learncompose303.network.ErrorHandler
 import com.example.learncompose303.network.InvoiceApiService
 import com.example.learncompose303.network.UserApiService
+import com.google.gson.Gson
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -95,7 +98,7 @@ object AppModule {
             AppDatabase::class.java,
             AppDatabase.DATABASE_NAME
         )
-            .addMigrations(MIGRATION_1_2)
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
             .build()
     }
 
@@ -105,6 +108,14 @@ object AppModule {
     fun provideWorkManager(@ApplicationContext context: Context): WorkManager {
         return WorkManager.getInstance(context)
     }
+
+    @Provides
+    @Singleton
+    fun provideGson(): Gson = Gson()
+
+    @Provides
+    @Singleton
+    fun provideErrorHandler(gson: Gson): ErrorHandler = ErrorHandler(gson)
 
     @Provides
     fun provideInvoiceDao(appDatabase: AppDatabase): InvoiceDao = appDatabase.invoiceDao()

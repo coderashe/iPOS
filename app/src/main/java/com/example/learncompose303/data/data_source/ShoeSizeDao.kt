@@ -22,6 +22,13 @@ interface ShoeSizeDao {
     @Query("SELECT * FROM shoe_sizes WHERE shoeSizeId = :id")
     suspend fun getShoeSizeById(id: Long): ShoeSize?
 
+    // Add to ShoeSizeDao
+    @Query("SELECT * FROM shoe_sizes WHERE size = :size LIMIT 1")
+    suspend fun getSizeByValue(size: Double): ShoeSize?
+
+    @Query("SELECT * FROM shoe_sizes WHERE brandID = :brandId AND size = :size LIMIT 1")
+    suspend fun getSizeByBrandAndValue(brandId: Long, size: Double): ShoeSize?
+
     @Query("SELECT SUM(quantity) FROM shoe_sizes WHERE brandID = :brandId")
     suspend fun getTotalQuantityByBrand(brandId: Long): Int
 

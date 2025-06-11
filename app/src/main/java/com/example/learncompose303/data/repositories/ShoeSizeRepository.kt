@@ -19,15 +19,29 @@ interface ShoeSizeRepository {
     fun getAllShoeSizes(): Flow<List<ShoeSize>>
     suspend fun getTotalQuantityByBrand(brandId: Long): Int
     suspend fun getAllShoeSizesOnce(): List<ShoeSize>
+    suspend fun findSizeByBrandAndValue(brandId: Long, size: Double): ShoeSize?
+    suspend fun findSizeByValue(size: Double): ShoeSize?
 }
 
 class ShoeSizeRepositoryImpl @Inject constructor(
     private val shoeSizeDao: ShoeSizeDao
 ) : ShoeSizeRepository {
 
+    override suspend fun findSizeByValue(size: Double): ShoeSize? {
+        return withContext(Dispatchers.IO) {
+            shoeSizeDao.getSizeByValue(size)
+        }
+    }
+
     override suspend fun getShoeSizeById(id: Long): ShoeSize? {
         return withContext(Dispatchers.IO) {
             shoeSizeDao.getShoeSizeById(id)
+        }
+    }
+
+    override suspend fun findSizeByBrandAndValue(brandId: Long, size: Double): ShoeSize? {
+        return withContext(Dispatchers.IO) {
+            shoeSizeDao.getSizeByBrandAndValue(brandId, size)
         }
     }
 

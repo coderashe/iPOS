@@ -24,13 +24,6 @@ import dagger.multibindings.IntoMap
 import dagger.assisted.AssistedFactory
 import kotlin.jvm.JvmSuppressWildcards
 
-@Module
-@InstallIn(SingletonComponent::class)
-interface WorkerModule {
-    @Binds
-    fun bindSyncInvoiceWorkerFactory(factory: SyncInvoiceWorker.Factory): WorkerAssistedFactory<out ListenableWorker>
-}
-
 @Singleton
 class HiltWorkerFactory @Inject constructor(
     private val workerFactories: Map<String, @JvmSuppressWildcards Provider<WorkerAssistedFactory<*>>>

@@ -44,7 +44,8 @@ class CsvParser {
                             salesTaxCode,
                             productCode,
                             inclusiveTaxed,
-                            imageUri = imageUri
+                            imageUri = imageUri,
+                            lastUpdated = System.currentTimeMillis()
                         )
                     )
                 }

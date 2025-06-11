@@ -64,6 +64,7 @@
     <string name="reports1">Reports</string>
     <string name="orders">ORDERS</string>
     <string name="stockTaking">STOCK TAKE</string>
+    <string name="bstchInvoicing">BATCH INVOICING</string>
     <string name="orders1">Orders</string>
     <string name="navorders">orders</string>
     <string name="navexpenses">expenses</string>

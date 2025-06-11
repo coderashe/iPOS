@@ -41,6 +41,7 @@ data class Products(
     val salesTaxCode: String?, // Tax code for sales
     val productCode: String, // Unique product code (storeID + productId)
     val inclusiveTaxed: Boolean, // Indicates if the price is inclusive of tax
-    val imageUri: String? = null // Optional URI for product image
+    val imageUri: String? = null, // Optional URI for product image
+    val lastUpdated: Long? = null
 )
 

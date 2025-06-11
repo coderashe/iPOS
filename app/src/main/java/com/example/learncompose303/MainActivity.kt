@@ -26,6 +26,7 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
 import com.example.learncompose303.network.SyncInvoiceWorker
+import com.example.learncompose303.network.SyncProductWorker
 import com.example.learncompose303.workmanager.MonthlyLogoutWorker
 import java.util.concurrent.TimeUnit
 
@@ -38,6 +39,7 @@ class MainActivity : ComponentActivity() {
         super.onStart()
 
         if (!isWorkScheduled) {
+            setupPeriodicProductSync()
             setupPeriodicSync()
             scheduleMonthlyLogout()
             isWorkScheduled = true
@@ -84,6 +86,7 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
     /**
      * Setup periodic sync to ensure nothing is missed
      */
@@ -111,6 +114,32 @@ class MainActivity : ComponentActivity() {
             periodicSyncRequest
         )
         Log.d("SyncInvoiceWorker", "SyncInvoiceWorker scheduled.")
+    }
+
+    // In your MainActivity or wherever you schedule the invoice sync
+    fun setupPeriodicProductSync() {
+        val periodicSyncRequest = PeriodicWorkRequestBuilder<SyncProductWorker>(
+            30, TimeUnit.MINUTES
+        )
+            .setInputData(
+                workDataOf(
+                    SyncProductWorker.KEY_BATCH_SYNC to true,
+                    SyncProductWorker.KEY_RETRY to true
+                )
+            )
+            .setConstraints(
+                Constraints.Builder()
+                    .setRequiredNetworkType(NetworkType.CONNECTED)
+                    .build()
+            )
+            .build()
+
+        WorkManager.getInstance(applicationContext).enqueueUniquePeriodicWork(
+            "product_periodic_sync",
+            ExistingPeriodicWorkPolicy.KEEP,
+            periodicSyncRequest
+        )
+        Log.d("SyncProductWorker", "SyncProductWorker scheduled.")
     }
 
 

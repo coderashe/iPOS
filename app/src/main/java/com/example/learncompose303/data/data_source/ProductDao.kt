@@ -22,6 +22,51 @@ interface ProductDao {
     @Query("SELECT * FROM products WHERE LOWER(productDescription) = LOWER(:productName) AND shoeSizeId = :shoeSizeId LIMIT 1")
     suspend fun getProductByNameAndSize(productName: String, shoeSizeId: Long): Products?
 
+    @Query(
+        """
+    SELECT * FROM products 
+    WHERE brandID = :brandId 
+    AND shoeSizeId = :shoeSizeId 
+    AND productDescription = :description 
+    LIMIT 1
+"""
+    )
+    suspend fun getProductByExactMatch(
+        brandId: Long,
+        shoeSizeId: Long,
+        description: String
+    ): Products?
+
+    @Query(
+        """
+    SELECT * FROM products 
+    WHERE brandID = :brandId 
+    AND shoeSizeId = :shoeSizeId 
+    AND LOWER(productDescription) = LOWER(:description) 
+    LIMIT 1
+"""
+    )
+    suspend fun getProductByCaseInsensitiveMatch(
+        brandId: Long,
+        shoeSizeId: Long,
+        description: String
+    ): Products?
+
+    @Query(
+        """
+    SELECT * FROM products 
+    WHERE brandID = :brandId 
+    AND shoeSizeId = :shoeSizeId 
+    AND productDescription LIKE '%' || :description || '%' 
+    LIMIT 1
+"""
+    )
+    suspend fun getProductByContainsMatch(
+        brandId: Long,
+        shoeSizeId: Long,
+        description: String
+    ): Products?
+
 
     @Query("SELECT * FROM products WHERE productId = :id")
     suspend fun getProductById(id: Long): Products?
@@ -68,4 +113,19 @@ interface ProductDao {
         brandID: Long,
         shoeSizeId: Long
     ): List<Products>
+
+    @Query(
+        """
+    SELECT * FROM Products 
+    WHERE lastUpdated IS NULL 
+    AND productDescription IS NOT NULL 
+    AND productDescription != ''
+    AND productCode IS NOT NULL 
+    AND productCode != ''
+    ORDER BY productId DESC 
+    LIMIT :limit
+"""
+    )
+    suspend fun getUnsyncedProducts(limit: Int): List<Products>
+
 }

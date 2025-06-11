@@ -103,8 +103,8 @@ fun SwipeRefreshLayout(
         state = rememberSwipeRefreshState(isRefreshing),
         onRefresh = {
             isRefreshing = true
+//            viewModel.insertInitialShoeBrands()
 //            sync Invoices
-//            viewModel.syncAllInvoices()
             viewModel.syncAllNow()
 //            set delay
             Handler(Looper.getMainLooper()).postDelayed({

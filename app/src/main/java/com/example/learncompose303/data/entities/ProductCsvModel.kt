@@ -12,5 +12,6 @@ data class ProductCsvModel(
     val salesTaxCode: String?,
     val productCode: String,
     val inclusiveTaxed: Boolean,
-    val imageUri: String? // Now using String to represent URI
+    val imageUri: String?,
+    val lastUpdated: Long? = null
 )

@@ -18,6 +18,9 @@ interface ShoeBrandRepository {
     suspend fun getAllShoeBrandsOnce(): List<ShoeBrand>
     suspend fun getBrandNameById(brandId: Long): ShoeBrand?
     fun getBrandById(brandId: Long): Flow<ShoeBrand?>
+    suspend fun findBrandByName(brandName: String): ShoeBrand?
+    suspend fun findBrandByNameExact(brandName: String): ShoeBrand?
+    suspend fun findBrandByNameCaseInsensitive(brandName: String): ShoeBrand?
 }
 
 class ShoeBrandRepositoryImpl @Inject constructor(
@@ -27,6 +30,24 @@ class ShoeBrandRepositoryImpl @Inject constructor(
     override suspend fun getBrandNameById(brandId: Long): ShoeBrand? {
         return withContext(Dispatchers.IO) {
             shoeBrandDao.getBrandNameById(brandId)
+        }
+    }
+
+    override suspend fun findBrandByName(brandName: String): ShoeBrand? {
+        return withContext(Dispatchers.IO) {
+            shoeBrandDao.getBrandByName(brandName)
+        }
+    }
+
+    override suspend fun findBrandByNameExact(brandName: String): ShoeBrand? {
+        return withContext(Dispatchers.IO) {
+            shoeBrandDao.getBrandByNameExact(brandName)
+        }
+    }
+
+    override suspend fun findBrandByNameCaseInsensitive(brandName: String): ShoeBrand? {
+        return withContext(Dispatchers.IO) {
+            shoeBrandDao.getBrandByNameCaseInsensitive(brandName)
         }
     }
 

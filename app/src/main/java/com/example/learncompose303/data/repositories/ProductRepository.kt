@@ -10,6 +10,12 @@ import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
 interface ProductRepository {
+    suspend fun findProductByAttributes(
+        brandId: Long,
+        shoeSizeId: Long,
+        description: String
+    ): Products?
+
     fun getProductsWithBrand(): Flow<List<ProductWithBrand>>
 
     suspend fun getProductByNameAndSize(productName: String, shoeSizeId: Long): Products?
@@ -32,11 +38,75 @@ interface ProductRepository {
 
     fun getSingleProductById(productID: Long): Flow<Products?>
 
+    suspend fun getProductByExactMatch(
+        brandId: Long,
+        shoeSizeId: Long,
+        description: String
+    ): Products?
+
+    suspend fun getProductByCaseInsensitiveMatch(
+        brandId: Long,
+        shoeSizeId: Long,
+        description: String
+    ): Products?
+
+    suspend fun getProductByContainsMatch(
+        brandId: Long,
+        shoeSizeId: Long,
+        description: String
+    ): Products?
+
 }
 
 class ProductRepositoryImpl @Inject constructor(
     private val productDao: ProductDao
 ) : ProductRepository {
+
+
+    override suspend fun getProductByContainsMatch(
+        brandId: Long,
+        shoeSizeId: Long,
+        description: String
+    ): Products? {
+        return withContext(Dispatchers.IO) {
+            productDao.getProductByContainsMatch(brandId, shoeSizeId, description)
+                ?.takeIf { it.brandID == brandId }
+        }
+    }
+
+    override suspend fun getProductByCaseInsensitiveMatch(
+        brandId: Long,
+        shoeSizeId: Long,
+        description: String
+    ): Products? {
+        return withContext(Dispatchers.IO) {
+            productDao.getProductByCaseInsensitiveMatch(brandId, shoeSizeId, description)
+                ?.takeIf { it.brandID == brandId }
+        }
+    }
+
+    override suspend fun getProductByExactMatch(
+        brandId: Long,
+        shoeSizeId: Long,
+        description: String
+    ): Products? {
+        return withContext(Dispatchers.IO) {
+            productDao.getProductByExactMatch(brandId, shoeSizeId, description)
+                ?.takeIf { it.brandID == brandId }
+        }
+    }
+
+    override suspend fun findProductByAttributes(
+        brandId: Long,
+        shoeSizeId: Long,
+        description: String
+    ): Products? {
+        return withContext(Dispatchers.IO) {
+            productDao.getProductByNameAndSize(description, shoeSizeId)
+                ?.takeIf { it.brandID == brandId }
+        }
+    }
+
     override fun getProductsWithBrand(): Flow<List<ProductWithBrand>> {
         return productDao.getProductsWithBrand()
 

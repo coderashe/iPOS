@@ -1,0 +1,79 @@
+package com.example.learncompose303.network
+
+import com.example.learncompose303.data.entities.Products
+import retrofit2.Response
+import retrofit2.http.*
+
+// Product DTO for API communication
+data class ProductDto(
+    val productId: Long = 0,
+    val productDescription: String,
+    val productQty: Long,
+    val brandId: Long,
+    val shoeSizeId: Long,
+    val saleable: Boolean,
+    val purchasable: Boolean,
+    val averageCost: Double,
+    val standardCost: Double,
+    val salesTaxCode: String?,
+    val productCode: String,
+    val inclusiveTaxed: Boolean,
+    val imageUri: String?,
+    val lastUpdated: Long? = null
+)
+
+interface ProductApiService {
+    @POST("/api/products")
+    suspend fun saveProduct(@Body product: ProductDto): Response<ProductDto>
+
+    @GET("/api/products/{id}")
+    suspend fun getProductById(@Path("id") id: Long): Response<ProductDto>
+
+    @GET("/api/products")
+    suspend fun getAllProducts(): Response<List<ProductDto>>
+
+    @DELETE("/api/products/{id}")
+    suspend fun deleteProduct(@Path("id") id: Long): Response<Void>
+
+    @PUT("/api/products/{id}")
+    suspend fun updateProduct(@Path("id") id: Long, @Body product: ProductDto): Response<ProductDto>
+}
+
+// Extension functions for conversion between domain model and DTO
+fun Products.toDto(): ProductDto {
+    return ProductDto(
+        productId = this.productId,
+        productDescription = this.productDescription,
+        productQty = this.productQty,
+        brandId = this.brandID,
+        shoeSizeId = this.shoeSizeId,
+        saleable = this.saleable,
+        purchasable = this.purchasable,
+        averageCost = this.averageCost,
+        standardCost = this.standardCost,
+        salesTaxCode = this.salesTaxCode,
+        productCode = this.productCode,
+        inclusiveTaxed = this.inclusiveTaxed,
+        imageUri = this.imageUri,
+        lastUpdated = this.lastUpdated
+    )
+}
+
+fun ProductDto.toEntity(): Products {
+    return Products(
+        productId = this.productId,
+        productDescription = this.productDescription,
+        productQty = this.productQty,
+        brandID = this.brandId,
+        shoeSizeId = this.shoeSizeId,
+        saleable = this.saleable,
+        purchasable = this.purchasable,
+        averageCost = this.averageCost,
+        standardCost = this.standardCost,
+        salesTaxCode = this.salesTaxCode,
+        productCode = this.productCode,
+        inclusiveTaxed = this.inclusiveTaxed,
+        imageUri = this.imageUri,
+        lastUpdated = this.lastUpdated
+    )
+}

@@ -29,6 +29,15 @@ interface ShoeBrandDao {
     @Query("SELECT * FROM shoeBrand WHERE brandId = :brandId LIMIT 1")
     suspend fun getBrandNameById(brandId: Long): ShoeBrand?
 
+    @Query("SELECT * FROM shoeBrand WHERE LOWER(brandName) = LOWER(:brandName) LIMIT 1")
+    suspend fun getBrandByName(brandName: String): ShoeBrand?
+
+    @Query("SELECT * FROM shoeBrand WHERE brandName = :brandName COLLATE NOCASE LIMIT 1")
+    suspend fun getBrandByNameExact(brandName: String): ShoeBrand?
+
+    @Query("SELECT * FROM shoeBrand WHERE LOWER(brandName) = LOWER(:brandName) LIMIT 1")
+    suspend fun getBrandByNameCaseInsensitive(brandName: String): ShoeBrand?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertShoeBrand(shoeBrand: ShoeBrand): Long
 

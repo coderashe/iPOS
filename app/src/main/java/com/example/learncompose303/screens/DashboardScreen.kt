@@ -83,7 +83,7 @@ fun DashboardScreen(
             viewModel = viewModel
         )
         SpacerHeight()
-        QuickAccessButtons(navController)
+        QuickAccessButtons(navController,viewModel)
         SpacerHeight()
         CustomHeadingMedium(
             heading = stringResource(R.string.popular_products)

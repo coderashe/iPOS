@@ -60,7 +60,7 @@ import com.example.learncompose303.data.entities.User
         TradeReceivables::class, DiscountsReceived::class, Currency::class,
         CashFlow::class, ShoeBrand::class, ShoeSize::class, StockTake::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -116,52 +116,9 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
         )
     }
 }
-
-
-//val MIGRATION_34_35 = object : Migration(34, 35) {
-//    override fun migrate(db: SupportSQLiteDatabase) {
-//        // Create the TradeReceivables table
-//        db.execSQL(
-//            """
-//            CREATE TABLE IF NOT EXISTS `tradereceivables` (
-//                `receivableId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-//                `orderId` INTEGER NOT NULL,
-//                `totalAmount` REAL NOT NULL,
-//                `amountPaid` REAL NOT NULL,
-//                `creditPeriod` INTEGER NOT NULL,
-//                `dueDate` INTEGER NOT NULL,
-//                `paymentStatus` TEXT NOT NULL,
-//                `dateCreated` INTEGER NOT NULL
-//            )
-//            """.trimIndent()
-//        )
-//
-//        // Create the DiscountsReceived table
-//        db.execSQL(
-//            """
-//            CREATE TABLE IF NOT EXISTS `discountsreceived` (
-//                `discountId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-//                `orderId` INTEGER NOT NULL,
-//                `discountAmount` REAL NOT NULL,
-//                `dateReceived` INTEGER NOT NULL
-//            )
-//            """.trimIndent()
-//        )
-//
-//        // Create the CashFlow table
-//        db.execSQL(
-//            """
-//            CREATE TABLE IF NOT EXISTS `cashflow` (
-//                `cashFlowId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-//                `orderId` INTEGER NOT NULL,
-//                `amount` REAL NOT NULL,
-//                `cashOutflow` INTEGER NOT NULL,
-//                `transactionDate` INTEGER NOT NULL,
-//                `description` TEXT
-//            )
-//            """.trimIndent()
-//        )
-//    }
-//}
-
-
+val MIGRATION_2_3 = object : Migration(2, 3) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        // Add the lastUpdated column to Products table
+        db.execSQL("ALTER TABLE Products ADD COLUMN lastUpdated INTEGER")
+    }
+}
