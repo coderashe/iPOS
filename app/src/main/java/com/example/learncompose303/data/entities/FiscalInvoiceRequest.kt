@@ -47,3 +47,10 @@ data class FiscalInvoiceRequest(
     val receiptLines: List<ReceiptLine>,
     val receiptPayments: List<ReceiptPayment>
 )
+
+data class FiscalItem(
+    val productName: String,
+    val quantity: Int,
+    val price: Double,
+    val taxAmount: Double?
+)
