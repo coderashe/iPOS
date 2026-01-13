@@ -27,6 +27,7 @@ import com.example.learncompose303.app.SalesmanInfoCard
 import com.example.learncompose303.app.SalesmanMonthlyInfoCard
 import com.example.learncompose303.app.SalesmanWeeklyInfoCard
 import com.example.learncompose303.app.SpacerHeight
+import com.example.learncompose303.app.SyncStatusCard
 import com.example.learncompose303.data.Destinations
 import com.example.learncompose303.screens.auth.AuthState
 import com.example.learncompose303.screens.auth.AuthViewModel
@@ -89,6 +90,8 @@ fun DashboardScreen(
             heading = stringResource(R.string.popular_products)
         )
         AutoSlidingCarousel(modifier = Modifier, navController, viewModel)
+        SpacerHeight()
+        SyncStatusCard(viewModel = viewModel)
         SpacerHeight()
     }
 }

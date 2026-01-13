@@ -217,6 +217,8 @@ class InvoiceViewModel @Inject constructor(
         fetchCurrencies()
         fetchCurrencyTotals()
         fetchBrandProducts()
+        // Monitor unsynced count
+        monitorUnsyncedInvoiceLineCount()
         // Now insert initial products
     }
 
@@ -224,6 +226,15 @@ class InvoiceViewModel @Inject constructor(
         viewModelScope.launch {
             invoiceRepository.getUnsyncedCount().collectLatest { count ->
                 _unsyncedCount.value = count
+            }
+        }
+    }
+
+    private fun monitorUnsyncedInvoiceLineCount() {
+        viewModelScope.launch {
+            invoiceLineRepository.getAllInvoiceLines().collectLatest { invoiceLines ->
+                val unsyncedCount = invoiceLines.count { !it.synced }
+                _unsyncedCount.value = unsyncedCount
             }
         }
     }
