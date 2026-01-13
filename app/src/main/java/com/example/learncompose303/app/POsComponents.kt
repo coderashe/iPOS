@@ -103,15 +103,19 @@ fun SwipeRefreshLayout(
         state = rememberSwipeRefreshState(isRefreshing),
         onRefresh = {
             isRefreshing = true
+            Log.d("backIntCheck", "SwipeRefresh triggered - starting sync operations")
 //            sync shoeBrands
-            viewModel.insertInitialShoeBrands()
+//            viewModel.insertInitialShoeBrands()
 //            sync invoiceLines
+            Log.d("backIntCheck", "Starting invoice lines sync")
             viewModel.syncInvoiceLines()
+            Log.d("backIntCheck", "Invoice lines sync call completed")
 //            end of sync invoiceLines
 //            sync Invoices
-            viewModel.syncAllNow()
+//            viewModel.syncAllNow()
 //            set delay
             Handler(Looper.getMainLooper()).postDelayed({
+                Log.d("backIntCheck", "Refresh delay completed - stopping refresh indicator")
                 isRefreshing = false
                 reloadTrigger++
             }, 5000)

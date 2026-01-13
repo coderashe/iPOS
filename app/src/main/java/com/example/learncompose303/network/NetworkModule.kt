@@ -18,8 +18,8 @@ object NetworkModule {
     @Singleton
     fun provideRetrofit(): Retrofit {
         return Retrofit.Builder()
-            .baseUrl("http://10.0.2.2:5249/") // Use 10.0.2.2 for localhost from Android emulator
-//            .baseUrl("https://fiscalization.codedev.co.zw/") // Use 10.0.2.2 for localhost from Android emulator
+            .baseUrl("http://192.168.222.202:5249/") // Use actual IP for physical device
+//            .baseUrl("http://10.0.2.2:5249/") // Use 10.0.2.2 for localhost from Android emulator
             .addConverterFactory(GsonConverterFactory.create())
             .client(
                 OkHttpClient.Builder()

@@ -189,7 +189,7 @@ class InvoiceViewModel @Inject constructor(
     val syncStatus: LiveData<String> = _syncStatus
 
     companion object {
-        private const val TAG = "InvoiceViewModel"
+        private const val TAG = "backIntCheck"
         private const val SYNC_BATCH_SIZE = 50
         private const val BATCH_SYNC_WORK_NAME = "invoice_batch_sync"
         const val PRODUCT_BATCH_SYNC_WORK_NAME = "product_batch_sync_work"
@@ -1934,36 +1934,59 @@ class InvoiceViewModel @Inject constructor(
     }
 
     fun syncInvoiceLines() {
+        Log.d(TAG, "syncInvoiceLines() called - Starting invoice lines sync")
         scheduleInvoiceLineBatchSync()
+        Log.d(TAG, "syncInvoiceLines() completed - Batch sync scheduled")
     }
 
     private fun scheduleInvoiceLineBatchSync() {
-        Log.d(TAG, "Scheduling batch sync for invoice lines")
-
-        val batchSyncWorkRequest = OneTimeWorkRequestBuilder<SyncInvoiceLineWorker>()
-            .setInputData(
-                workDataOf(
-                    SyncInvoiceLineWorker.KEY_BATCH_SYNC to true,
-                    SyncInvoiceLineWorker.KEY_RETRY to true
-                )
-            )
-            .setBackoffCriteria(
-                BackoffPolicy.EXPONENTIAL,
-                15,
-                TimeUnit.MINUTES
-            )
-            .setConstraints(
-                Constraints.Builder()
-                    .setRequiredNetworkType(NetworkType.CONNECTED)
+        Log.d(TAG, "scheduleInvoiceLineBatchSync() called - Starting to schedule batch sync")
+        
+        viewModelScope.launch {
+            try {
+                val invoiceLineCount = invoiceLineRepository.getUnsyncedInvoiceLines().size
+                Log.d(TAG, "Found $invoiceLineCount invoice lines to sync")
+                
+                if (invoiceLineCount == 0) {
+                    Log.d(TAG, "No invoice lines to sync, skipping")
+                    return@launch
+                }
+                
+                Log.d(TAG, "Creating WorkRequest for invoice line batch sync")
+                
+                val batchSyncWorkRequest = OneTimeWorkRequestBuilder<SyncInvoiceLineWorker>()
+                    .setInputData(
+                        workDataOf(
+                            SyncInvoiceLineWorker.KEY_BATCH_SYNC to true,
+                            SyncInvoiceLineWorker.KEY_RETRY to true
+                        )
+                    )
+                    .setBackoffCriteria(
+                        BackoffPolicy.EXPONENTIAL,
+                        15,
+                        TimeUnit.MINUTES
+                    )
+                    .setConstraints(
+                        Constraints.Builder()
+                            .setRequiredNetworkType(NetworkType.CONNECTED)
+                            .build()
+                    )
                     .build()
-            )
-            .build()
 
-        workManager.enqueueUniqueWork(
-            INVOICE_LINE_BATCH_SYNC_WORK_NAME,
-            ExistingWorkPolicy.REPLACE,
-            batchSyncWorkRequest
-        )
+                Log.d(TAG, "Enqueueing work request with name: $INVOICE_LINE_BATCH_SYNC_WORK_NAME")
+                
+                workManager.enqueueUniqueWork(
+                    INVOICE_LINE_BATCH_SYNC_WORK_NAME,
+                    ExistingWorkPolicy.REPLACE,
+                    batchSyncWorkRequest
+                )
+                
+                Log.d(TAG, "Invoice line batch sync work enqueued successfully")
+                
+            } catch (e: Exception) {
+                Log.e(TAG, "Error in scheduleInvoiceLineBatchSync: ${e.message}", e)
+            }
+        }
     }
 
 //    end syncInvoice

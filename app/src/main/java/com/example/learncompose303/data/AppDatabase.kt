@@ -60,7 +60,7 @@ import com.example.learncompose303.data.entities.User
         TradeReceivables::class, DiscountsReceived::class, Currency::class,
         CashFlow::class, ShoeBrand::class, ShoeSize::class, StockTake::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -120,5 +120,12 @@ val MIGRATION_2_3 = object : Migration(2, 3) {
     override fun migrate(db: SupportSQLiteDatabase) {
         // Add the lastUpdated column to Products table
         db.execSQL("ALTER TABLE Products ADD COLUMN lastUpdated INTEGER")
+    }
+}
+
+val MIGRATION_3_4 = object : Migration(3, 4) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        // Add the synced column to invoice_lines table
+        db.execSQL("ALTER TABLE invoice_lines ADD COLUMN synced INTEGER NOT NULL DEFAULT 0")
     }
 }

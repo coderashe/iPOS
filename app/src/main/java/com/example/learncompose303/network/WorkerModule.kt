@@ -15,7 +15,4 @@ interface WorkerModule {
 
     @Binds
     fun bindSyncProductWorkerFactory(factory: SyncProductWorker.Factory): WorkerAssistedFactory<out ListenableWorker>
-
-    @Binds
-    fun bindSyncInvoiceLineWorkerFactory(factory: SyncInvoiceLineWorker.Factory): WorkerAssistedFactory<out ListenableWorker>
 }

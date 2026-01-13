@@ -19,8 +19,11 @@ interface InvoiceLineDao {
     @Query("SELECT * FROM invoice_lines")
     fun getAllInvoiceLines(): Flow<List<InvoiceLine>>
 
-    @Query("SELECT * FROM invoice_lines")
-    suspend fun getAllInvoiceLinesOnce(): List<InvoiceLine>
+    @Query("SELECT * FROM invoice_lines WHERE synced = 0")
+    suspend fun getUnsyncedInvoiceLines(): List<InvoiceLine>
+
+    @Query("UPDATE invoice_lines SET synced = 1 WHERE id = :id")
+    suspend fun markAsSynced(id: Int)
 
     @Query("SELECT * FROM invoice_lines WHERE invoiceId = :id")
     suspend fun getInvoiceLineById(id: Long): InvoiceLine?

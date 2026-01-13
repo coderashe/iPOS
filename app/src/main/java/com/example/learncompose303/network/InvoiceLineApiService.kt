@@ -51,7 +51,7 @@ interface InvoiceLineApiService {
 // Extension functions to convert between domain model and DTO
 fun InvoiceLine.toDto(): InvoiceLineDto {
     return InvoiceLineDto(
-        id = this.id,
+        id = 0, // Let backend auto-generate ID
         invoiceId = this.invoiceId,
         invoiceStatus = this.invoiceStatus,
         productID = this.productID,

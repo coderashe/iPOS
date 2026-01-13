@@ -24,5 +24,6 @@ data class InvoiceLine(
     val taxAmount: Double? = null,
     val currentStock: Double,
     val createdAt: Long = System.currentTimeMillis(),
-    val updatedAt: Long? = null
+    val updatedAt: Long? = null,
+    val synced: Boolean = false
 )
