@@ -103,7 +103,11 @@ fun SwipeRefreshLayout(
         state = rememberSwipeRefreshState(isRefreshing),
         onRefresh = {
             isRefreshing = true
-//            viewModel.insertInitialShoeBrands()
+//            sync shoeBrands
+            viewModel.insertInitialShoeBrands()
+//            sync invoiceLines
+            viewModel.syncInvoiceLines()
+//            end of sync invoiceLines
 //            sync Invoices
             viewModel.syncAllNow()
 //            set delay
@@ -118,6 +122,8 @@ fun SwipeRefreshLayout(
         }
     }
 }
+
+
 // Only clear backstack if graph is initialized
 //            if (navController.currentBackStackEntry != null) {
 //                navController.popBackStack(

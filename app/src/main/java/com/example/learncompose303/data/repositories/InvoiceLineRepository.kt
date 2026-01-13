@@ -11,9 +11,11 @@ interface InvoiceLineRepository {
     suspend fun insertInvoiceLine(invoiceLine: InvoiceLine)
 
     suspend fun getAllInvoiceLines(): Flow<List<InvoiceLine>>
+    suspend fun getAllInvoiceLinesOnce(): List<InvoiceLine>
 
     // Get invoice lines by invoice ID
     suspend fun getInvoiceLineById(id: Long): InvoiceLine?
+    suspend fun getInvoiceLineByIdOnce(id: Int): InvoiceLine?
     suspend fun getInvoiceLinesByInvoiceId(invoiceId: Long): List<InvoiceLine>
     suspend fun updateInvoiceLine(invoiceLine: InvoiceLine)
 }
@@ -47,6 +49,18 @@ class InvoiceLineRepositoryImp @Inject constructor(
     override suspend fun getInvoiceLinesByInvoiceId(invoiceId: Long): List<InvoiceLine> {
         return withContext(Dispatchers.IO) {
             invoiceLineDao.getInvoiceLinesByInvoiceId(invoiceId)
+        }
+    }
+
+    override suspend fun getAllInvoiceLinesOnce(): List<InvoiceLine> {
+        return withContext(Dispatchers.IO) {
+            invoiceLineDao.getAllInvoiceLinesOnce()
+        }
+    }
+
+    override suspend fun getInvoiceLineByIdOnce(id: Int): InvoiceLine? {
+        return withContext(Dispatchers.IO) {
+            invoiceLineDao.getInvoiceLineByIdOnce(id)
         }
     }
 

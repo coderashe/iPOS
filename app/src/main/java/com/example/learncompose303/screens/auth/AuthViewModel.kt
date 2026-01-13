@@ -137,6 +137,8 @@ class AuthViewModel @Inject constructor(
                     auth.currentUser?.email?.let { fetchUserRoleByEmail(it) }
                     resetLogoutState()
                 } else {
+                    val error = task.exception?.localizedMessage ?: "Unknown error"
+                    Log.d("AuthViewModel", error)
                     _authState.value =
                         AuthState.Error(task.exception?.message ?: "Something went wrong")
                 }

@@ -74,6 +74,7 @@ import androidx.work.workDataOf
 import com.example.learncompose303.data.CsvInvoiceItem
 import com.example.learncompose303.network.SyncInvoiceWorker
 import com.example.learncompose303.network.SyncProductWorker
+import com.example.learncompose303.network.SyncInvoiceLineWorker
 import kotlinx.coroutines.flow.first
 import java.util.concurrent.TimeUnit
 
@@ -192,6 +193,7 @@ class InvoiceViewModel @Inject constructor(
         private const val SYNC_BATCH_SIZE = 50
         private const val BATCH_SYNC_WORK_NAME = "invoice_batch_sync"
         const val PRODUCT_BATCH_SYNC_WORK_NAME = "product_batch_sync_work"
+        const val INVOICE_LINE_BATCH_SYNC_WORK_NAME = "invoice_line_batch_sync_work"
     }
 
     init {
@@ -460,295 +462,6 @@ class InvoiceViewModel @Inject constructor(
             }
         }
     }
-
-//    fun uploadProductsFromCsv(inputStream: InputStream, context: Context) {
-//        viewModelScope.launch {
-//            try {
-//                Log.d("ProductUpload", "Starting CSV upload process")
-//
-//                val parser = CsvParser()
-//                val productsFromCsv = parser.parseProductCsv(inputStream)
-//                Log.d("ProductUpload", "Parsed ${productsFromCsv.size} products from CSV")
-//
-//                val existingProducts = productRepository.getAllProductsOnce()
-//                Log.d(
-//                    "ProductUpload",
-//                    "Fetched ${existingProducts.size} existing products from database"
-//                )
-//
-//                var updatedCount = 0
-//                var insertedCount = 0
-//                var errorCount = 0
-//
-//                val existingProductMap = existingProducts.associateBy {
-//                    Triple(it.productDescription, it.shoeSizeId, it.brandID)
-//                }
-//
-//                for ((index, productCsv) in productsFromCsv.withIndex()) {
-//                    try {
-//                        Log.d(
-//                            "ProductUpload",
-//                            "Processing product ${index + 1}/${productsFromCsv.size}: ${productCsv.productDescription}"
-//                        )
-//
-//                        val uniqueProductCode = if (productCsv.productCode.contains("H&P")) {
-//                            "${productCsv.productCode}_${productCsv.productDescription}_${productCsv.shoeSizeId}"
-//                        } else {
-//                            productCsv.productCode
-//                        }
-//
-//
-//                        val key = Triple(
-//                            productCsv.productDescription,
-//                            productCsv.shoeSizeId,
-//                            productCsv.brandID
-//                        )
-//
-//                        val existingProduct = existingProductMap[key]
-//
-//                        if (existingProduct != null) {
-//                            Log.d(
-//                                "ProductUpload",
-//                                "Product exists - updating: ${productCsv.productDescription}"
-//                            )
-//
-//                            val updatedProduct = existingProduct.copy(
-//                                productQty = productCsv.productQty,
-//                                brandID = productCsv.brandID,
-//                                shoeSizeId = productCsv.shoeSizeId,
-//                                saleable = productCsv.saleable,
-//                                purchasable = productCsv.purchasable,
-//                                averageCost = productCsv.averageCost,
-//                                standardCost = productCsv.standardCost
-//                                    ?: existingProduct.standardCost,
-//                                salesTaxCode = productCsv.salesTaxCode,
-//                                productCode = uniqueProductCode,
-//                                inclusiveTaxed = productCsv.inclusiveTaxed,
-//                                imageUri = productCsv.imageUri ?: existingProduct.imageUri,
-//                                lastUpdated = System.currentTimeMillis()
-//                            )
-//
-//                            productRepository.updateProduct(updatedProduct)
-//                            Log.d(
-//                                "ProductUpload",
-//                                "Updated product: ${updatedProduct.productDescription}"
-//                            )
-//                            updatedCount++
-//
-//                            updatePriceListForProduct(updatedProduct)
-//                            Log.d(
-//                                "ProductUpload",
-//                                "Updated price list for: ${updatedProduct.productDescription}"
-//                            )
-//                        } else {
-//                            Log.d(
-//                                "ProductUpload",
-//                                "Product does not exist - inserting new product: ${productCsv.productDescription}"
-//                            )
-//
-//                            val imageUri = productCsv.imageUri ?: getDefaultImageUri(context)
-//                            val standardCost = productCsv.standardCost ?: 0.0
-//
-//                            val newProduct = Products(
-//                                productDescription = productCsv.productDescription,
-//                                productQty = productCsv.productQty,
-//                                brandID = productCsv.brandID,
-//                                shoeSizeId = productCsv.shoeSizeId,
-//                                saleable = productCsv.saleable,
-//                                purchasable = productCsv.purchasable,
-//                                averageCost = productCsv.averageCost,
-//                                standardCost = standardCost,
-//                                salesTaxCode = productCsv.salesTaxCode,
-//                                productCode = uniqueProductCode,
-//                                inclusiveTaxed = productCsv.inclusiveTaxed,
-//                                imageUri = imageUri,
-//                                lastUpdated = System.currentTimeMillis()
-//                            )
-//
-//                            val productId = productRepository.insertProduct(newProduct)
-//                            Log.d(
-//                                "ProductUpload",
-//                                "Inserted product: ${newProduct.productDescription} with ID: $productId"
-//                            )
-//                            insertedCount++
-//
-//                            createPriceListForProduct(productId, newProduct)
-//                            Log.d(
-//                                "ProductUpload",
-//                                "Created price list for new product: ${newProduct.productDescription}"
-//                            )
-//                        }
-//                    } catch (e: Exception) {
-//                        errorCount++
-//                        Log.e(
-//                            "ProductUpload",
-//                            "Error processing product: ${productCsv.productDescription}",
-//                            e
-//                        )
-//                    }
-//                }
-//
-//                Log.d(
-//                    "ProductUpload",
-//                    "Upload completed - $insertedCount inserted, $updatedCount updated, $errorCount errors"
-//                )
-//
-//                withContext(Dispatchers.Main) {
-//                    Toast.makeText(
-//                        context,
-//                        "Products uploaded: $insertedCount new, $updatedCount updated, $errorCount errors",
-//                        Toast.LENGTH_LONG
-//                    ).show()
-//                }
-//            } catch (e: Exception) {
-//                Log.e("ProductUpload", "Failed to upload products", e)
-//                withContext(Dispatchers.Main) {
-//                    Toast.makeText(
-//                        context,
-//                        "Failed to upload products: ${e.message}",
-//                        Toast.LENGTH_LONG
-//                    ).show()
-//                }
-//            }
-//        }
-//    }
-
-//    fun uploadProductsFromCsv(inputStream: InputStream, context: Context) {
-//        viewModelScope.launch {
-//            try {
-//                val parser = CsvParser()
-//                val productsFromCsv = parser.parseProductCsv(inputStream)
-//
-//                // Retrieve existing products from the database using the once method
-//                val existingProducts = productRepository.getAllProductsOnce()
-//
-//                // Track stats for user feedback
-//                var updatedCount = 0
-//                var insertedCount = 0
-//                var errorCount = 0
-//
-//                // Create a map to track existing products by their description and shoe size
-//                val existingProductMap = existingProducts.associateBy {
-//                    Triple(it.productDescription, it.shoeSizeId, it.brandID)
-//                }
-//
-//                for (productCsv in productsFromCsv) {
-//                    try {
-//                        // Generate a unique product code if needed
-//                        val uniqueProductCode = if (productCsv.productCode.contains("E+")) {
-//                            // If the code is in scientific notation (like 2.13E+09), make it unique
-//                            "${productCsv.productCode}_${productCsv.productDescription}_${productCsv.shoeSizeId}"
-//                        } else {
-//                            productCsv.productCode
-//                        }
-//
-//                        val key = Triple(
-//                            productCsv.productDescription,
-//                            productCsv.shoeSizeId,
-//                            productCsv.brandID
-//                        )
-//                        val existingProduct = existingProductMap[key]
-//
-//                        if (existingProduct != null) {
-//                            // If the product exists, update its details
-//                            val updatedProduct = existingProduct.copy(
-//                                productQty = productCsv.productQty,
-//                                brandID = productCsv.brandID,
-//                                shoeSizeId = productCsv.shoeSizeId,
-//                                saleable = productCsv.saleable,
-//                                purchasable = productCsv.purchasable,
-//                                averageCost = productCsv.averageCost,
-//                                standardCost = productCsv.standardCost
-//                                    ?: existingProduct.standardCost,
-//                                salesTaxCode = productCsv.salesTaxCode,
-//                                productCode = uniqueProductCode, // Use the unique code
-//                                inclusiveTaxed = productCsv.inclusiveTaxed,
-//                                imageUri = productCsv.imageUri ?: existingProduct.imageUri,
-//                                lastUpdated = System.currentTimeMillis()
-//                            )
-//
-//                            // Update the product in the repository
-//                            productRepository.updateProduct(updatedProduct)
-//                            updatedCount++
-//
-//                            // Update the price list for the existing product
-//                            updatePriceListForProduct(updatedProduct)
-//                        } else {
-//                            // Product does not exist, add it
-//                            val imageUri = productCsv.imageUri ?: getDefaultImageUri(context)
-//                            val standardCost = productCsv.standardCost ?: 0.0
-//
-//                            // Create a new product entity
-//                            val newProduct = Products(
-//                                productDescription = productCsv.productDescription,
-//                                productQty = productCsv.productQty,
-//                                brandID = productCsv.brandID,
-//                                shoeSizeId = productCsv.shoeSizeId,
-//                                saleable = productCsv.saleable,
-//                                purchasable = productCsv.purchasable,
-//                                averageCost = productCsv.averageCost,
-//                                standardCost = standardCost,
-//                                salesTaxCode = productCsv.salesTaxCode,
-//                                productCode = uniqueProductCode, // Use the unique code
-//                                inclusiveTaxed = productCsv.inclusiveTaxed,
-//                                imageUri = imageUri,
-//                                lastUpdated = System.currentTimeMillis()
-//                            )
-//
-//                            Log.d(
-//                                "ProductUpload",
-//                                "Attempting insert: ${newProduct.productDescription}, " +
-//                                        "brandID: ${newProduct.brandID}, shoeSizeId: ${newProduct.shoeSizeId}"
-//                            )
-//
-//                            // Insert new product into the repository
-//                            val productId = productRepository.insertProduct(newProduct)
-//                            insertedCount++
-//
-//                            // Insert price list for the new product
-//                            createPriceListForProduct(productId, newProduct)
-//
-//                            Log.d(
-//                                "ProductUpload",
-//                                "Inserted product: ${newProduct.productDescription}, Size: ${newProduct.shoeSizeId}"
-//                            )
-//                        }
-//                    } catch (e: Exception) {
-//                        errorCount++
-//                        Log.e(
-//                            "ProductUpload",
-//                            "Error processing product: ${productCsv.productDescription}",
-//                            e
-//                        )
-//                    }
-//                }
-//
-//                // Log summary statistics
-//                Log.d(
-//                    "ProductUpload",
-//                    "Upload complete: $insertedCount inserted, $updatedCount updated, $errorCount errors"
-//                )
-//
-//                // Show toast notification with detailed results
-//                withContext(Dispatchers.Main) {
-//                    Toast.makeText(
-//                        context,
-//                        "Products uploaded: $insertedCount new, $updatedCount updated, $errorCount errors",
-//                        Toast.LENGTH_LONG
-//                    ).show()
-//                }
-//            } catch (e: Exception) {
-//                Log.e("ProductUpload", "Failed to upload products", e)
-//                withContext(Dispatchers.Main) {
-//                    Toast.makeText(
-//                        context,
-//                        "Failed to upload products: ${e.message}",
-//                        Toast.LENGTH_LONG
-//                    ).show()
-//                }
-//            }
-//        }
-//    }
 
     // Helper function to update price list for existing products
     private fun updatePriceListForProduct(product: Products) {
@@ -1047,7 +760,108 @@ class InvoiceViewModel @Inject constructor(
                 ShoeBrand(72, "830-5"),
                 ShoeBrand(73, "02-6"),
                 ShoeBrand(74, "09-8"),
-                ShoeBrand(75, "W22103A")
+                ShoeBrand(75, "W22103A"),
+                ShoeBrand(76, "PL2668-1"),
+                ShoeBrand(77, "NF52-1"),
+                ShoeBrand(78, "NF52-4"),
+                ShoeBrand(79, "NF52-5"),
+                ShoeBrand(80, "ZH881-2"),
+                ShoeBrand(81, "D37"),
+                ShoeBrand(82, "D38"),
+                ShoeBrand(83, "CX-114"),
+                ShoeBrand(84, "W22103W"),
+                ShoeBrand(85, "NF71-2"),
+                ShoeBrand(86, "AC14-2"),
+                ShoeBrand(87, "NF72-1"),
+                ShoeBrand(88, "NF72-4"),
+                ShoeBrand(89, "880"),
+                ShoeBrand(90, "NF92-4"),
+                ShoeBrand(91, "NFL-3014"),
+                ShoeBrand(92, "NF67-1"),
+                ShoeBrand(93, "W24024C"),
+                ShoeBrand(94, "2913-5"),
+                ShoeBrand(95, "NF108-5"),
+                ShoeBrand(96, "2422"),
+                ShoeBrand(97, "W23085C"),
+                ShoeBrand(98, "FK-67"),
+                ShoeBrand(99, "NF92-1"),
+                ShoeBrand(100, "W25022A"),
+                ShoeBrand(101, "FK60"),
+                ShoeBrand(102, "Q-7"),
+                ShoeBrand(103, "N04-4"),
+                ShoeBrand(104, "5831-4"),
+                ShoeBrand(105, "AR703-3"),
+                ShoeBrand(106, "CK-08-2"),
+                ShoeBrand(107, "NF72-3"),
+                ShoeBrand(108, "MG1123"),
+                ShoeBrand(109, "W25010B"),
+                ShoeBrand(110, "NF86-1"),
+                ShoeBrand(111, "2915-5"),
+                ShoeBrand(112, "LO67-5"),
+                ShoeBrand(113, "W25057D"),
+                ShoeBrand(114, "FK-65"),
+                ShoeBrand(115, "NF38-1"),
+                ShoeBrand(116, "M133-1"),
+                ShoeBrand(117, "W24024A"),
+                ShoeBrand(118, "FK68"),
+                ShoeBrand(119, "NF108-4"),
+                ShoeBrand(120, "NF108-1"),
+                ShoeBrand(121, "N08"),
+                ShoeBrand(122, "QY230"),
+                ShoeBrand(123, "D51G"),
+                ShoeBrand(124, "0912B-5"),
+                ShoeBrand(125, "M192-2"),
+                ShoeBrand(126, "N-15-5"),
+                ShoeBrand(127, "QY-238"),
+                ShoeBrand(128, "L90-1"),
+                ShoeBrand(129, "DY3851"),
+                ShoeBrand(130, "G69161-1"),
+                ShoeBrand(131, "L90-4"),
+                ShoeBrand(132, "M192-1"),
+                ShoeBrand(133, "0912B-4"),
+                ShoeBrand(134, "L90-6"),
+                ShoeBrand(135, "W9005"),
+                ShoeBrand(136, "M156-2"),
+                ShoeBrand(137, "NF86-4"),
+                ShoeBrand(138, "W24049A"),
+                ShoeBrand(139, "L90-5"),
+                ShoeBrand(140, "820-1"),
+                ShoeBrand(141, "D51K"),
+                ShoeBrand(142, "L90-2"),
+                ShoeBrand(143, "G69161-2"),
+                ShoeBrand(144, "WG-0005P"),
+                ShoeBrand(145, "0912B-3"),
+                ShoeBrand(146, "D51P"),
+                ShoeBrand(147, "FK-59"),
+                ShoeBrand(148, "W-37"),
+                ShoeBrand(149, "W9207"),
+                ShoeBrand(150, "FK21"),
+                ShoeBrand(151, "M156-1"),
+                ShoeBrand(152, "2913-1"),
+                ShoeBrand(153, "1820-1"),
+                ShoeBrand(154, "5160-1"),
+                ShoeBrand(155, "5160-2"),
+                ShoeBrand(156, "5160-3"),
+                ShoeBrand(157, "PL2599"),
+                ShoeBrand(158, "Z076"),
+                ShoeBrand(159, "W9193"),
+                ShoeBrand(160, "W24049B"),
+                ShoeBrand(161, "W25094C"),
+                ShoeBrand(162, "W11-1"),
+                ShoeBrand(163, "W11-2"),
+                ShoeBrand(164, "W11-3"),
+                ShoeBrand(165, "W11-4"),
+                ShoeBrand(166, "Q7"),
+                ShoeBrand(167, "W-57-3"),
+                ShoeBrand(168, "NF-15-1"),
+                ShoeBrand(169, "J1-3"),
+                ShoeBrand(170, "202588-1"),
+                ShoeBrand(171, "AC-14"),
+                ShoeBrand(172, "J1-1"),
+                ShoeBrand(173, "QY160"),
+                ShoeBrand(174, "WG-0005-1"),
+                ShoeBrand(175, "W-12-1"),
+                ShoeBrand(176, "NF-15-3")
             )
             shoeBrandRepository.insertShoeBrands(initialBrands)
         }
@@ -1217,7 +1031,7 @@ class InvoiceViewModel @Inject constructor(
         return currencyTotals to transactionCount
     }
 
-    //    new
+    //    calculate WeeklySalesInfo
     fun getWeeklySalesInfo(): Pair<Map<String, Double>, Int> {
         val today = LocalDate.now()
         val startOfWeek = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
@@ -1837,140 +1651,6 @@ class InvoiceViewModel @Inject constructor(
         }
     }
 
-//    fun submitInvoice(
-//        customerId: Long,
-//        amountTendered: Double,
-//        productQuantities: Map<Long, Int>,
-//        cashierEmail: String
-//    ) = viewModelScope.launch {
-//        try {
-//            val currencyCode = _selectedCurrency.value?.code ?: "USD"
-//            var totalAmount = 0.0
-//
-//            // Fetch customer details
-//            val customer = customerRepository.getCustomerById(customerId)
-//            if (customer == null) {
-//                Log.e("submitInvoice", "Customer not found for customerId: $customerId")
-//                return@launch
-//            }
-//
-//            // Fetch selected products and calculate total amount based on quantities
-//            val exchangeRate = _selectedCurrency.value?.rateToBase ?: 1.0
-//            val selectedProductsWithDetails = _selectedProducts.value.map { product ->
-//                val quantitySold = productQuantities[product.productId] ?: 1
-//                val priceList = priceListRepository.getPriceListByProductId(product.productId)
-//                val basePrice = priceList?.sellingPrice ?: 0.0
-//                val finalPrice = basePrice * exchangeRate  // Apply the exchange rate
-//                totalAmount += finalPrice * quantitySold // Use product-specific quantity for calculations
-//
-//                Triple(
-//                    product,
-//                    finalPrice,
-//                    quantitySold
-//                ) // Return a Triple of product, final price, and quantity
-//            }
-//
-//            // Calculate change
-//            val change = amountTendered - totalAmount
-//            if (change < 0) {
-//                Log.e("submitInvoice", "Amount tendered is less than total amount!")
-//                return@launch
-//            }
-//
-//            // Only proceed if there are valid selected products and totalAmount > 0
-//            if (selectedProductsWithDetails.isNotEmpty() && totalAmount > 0) {
-//                // Create an Invoice object
-//                val invoice = Invoice(
-//                    customerId = customerId,
-//                    totalAmount = totalAmount,
-//                    invoiceDate = System.currentTimeMillis(),
-//                    dueDate = null,
-//                    status = "Paid",
-//                    currencyCode = currencyCode
-//                )
-//
-//                // Insert the invoice and get the invoiceId
-//                val invoiceId = invoiceRepository.insertInvoice(invoice)
-//                onInvoiceCreatedOrUpdated(invoice)
-//
-//                Log.d("submitInvoice", "Inserted Invoice with id: $invoiceId")
-//
-//                // IMPORTANT: Deduct product quantities ONCE before the loop
-//                // This prevents double deduction
-//                deductProductQuantities(productQuantities)
-//
-//                // Insert CartItems, InvoiceItems for each selected product
-//                selectedProductsWithDetails.forEach { (product, finalPrice, quantitySold) ->
-//                    // Create CartItem record
-//                    val cartItem = CartItem(
-//                        customerId = customerId,
-//                        productId = product.productId,
-//                        invoiceId = invoiceId,
-//                        totalAmount = finalPrice * quantitySold,
-//                        totalAmountTendered = amountTendered,
-//                        change = change
-//                    )
-//                    cartItemRepository.insertCartItem(cartItem)
-//
-//                    // Create InvoiceItem record
-//                    val invoiceItem = InvoiceItem(
-//                        invoiceId = invoiceId,
-//                        productId = product.productId,
-//                        customerId = customerId,
-//                        quantity = quantitySold,
-//                        price = finalPrice,
-//                        total = finalPrice * quantitySold
-//                    )
-//                    invoiceItemRepository.insertInvoiceItem(invoiceItem)
-//                }
-//
-//                // Get the updated product quantities after deduction
-//                val updatedProducts = mutableMapOf<Long, Double>()
-//                for ((productId, quantitySold) in productQuantities) {
-//                    val product = productRepository.getProductById(productId)
-//                    updatedProducts[productId] = product?.productQty?.toDouble() ?: 0.0
-//                }
-//
-//                // Insert InvoiceLine records for the report
-//                selectedProductsWithDetails.forEach { (product, finalPrice, quantitySold) ->
-//                    val invoiceLine = InvoiceLine(
-//                        invoiceId = invoiceId,
-//                        invoiceStatus = invoice.status,
-//                        productID = product.productId,
-//                        productName = product.productDescription,
-//                        productPrice = finalPrice,
-//                        productQtySold = quantitySold,
-//                        cashier = cashierEmail,
-//                        customerID = customerId,
-//                        customerName = customer.name,
-//                        customerPhone = customer.phone,
-//                        totalAmount = totalAmount,
-//                        amountTendered = amountTendered,
-//                        changeBalance = change,
-//                        currentStock = updatedProducts[product.productId]
-//                            ?: 0.0,  // Use the updated stock value
-//                        invoiceDate = System.currentTimeMillis()
-//                    )
-//
-//                    Log.d("submitInvoice", "Inserting this invoiceLine: $invoiceLine")
-//                    invoiceLineRepository.insertInvoiceLine(invoiceLine)
-//                    Log.d("submitInvoice", "Successfully Inserted this invoiceLine:")
-//                }
-//
-//                // Clear the selected products list after invoice submission
-//                _selectedProducts.value = emptyList()
-//                _selectedProducts.value = emptyList()
-//            } else {
-//                Log.e(
-//                    "submitInvoice",
-//                    "No valid selected products to invoice or total amount is 0"
-//                )
-//            }
-//        } catch (e: Exception) {
-//            Log.e("submitInvoice", "Error during invoice submission", e)
-//        }
-//    }
-
     // CreditNote
     fun reverseInvoice(invoiceId: Long) = viewModelScope.launch {
         try {
@@ -2150,6 +1830,7 @@ class InvoiceViewModel @Inject constructor(
     fun syncAllNow() {
         scheduleProductBatchSync()
         scheduleBatchSync()
+        scheduleInvoiceLineBatchSync()
         unsyncedCount = 0
     }
 
@@ -2252,13 +1933,46 @@ class InvoiceViewModel @Inject constructor(
         )
     }
 
+    fun syncInvoiceLines() {
+        scheduleInvoiceLineBatchSync()
+    }
+
+    private fun scheduleInvoiceLineBatchSync() {
+        Log.d(TAG, "Scheduling batch sync for invoice lines")
+
+        val batchSyncWorkRequest = OneTimeWorkRequestBuilder<SyncInvoiceLineWorker>()
+            .setInputData(
+                workDataOf(
+                    SyncInvoiceLineWorker.KEY_BATCH_SYNC to true,
+                    SyncInvoiceLineWorker.KEY_RETRY to true
+                )
+            )
+            .setBackoffCriteria(
+                BackoffPolicy.EXPONENTIAL,
+                15,
+                TimeUnit.MINUTES
+            )
+            .setConstraints(
+                Constraints.Builder()
+                    .setRequiredNetworkType(NetworkType.CONNECTED)
+                    .build()
+            )
+            .build()
+
+        workManager.enqueueUniqueWork(
+            INVOICE_LINE_BATCH_SYNC_WORK_NAME,
+            ExistingWorkPolicy.REPLACE,
+            batchSyncWorkRequest
+        )
+    }
+
 //    end syncInvoice
 
     private fun clearSelectedProducts() {
         _selectedProducts.value = emptyList()
     }
 
-//    For invoice Batch processing
+    //    For invoice Batch processing
     fun processCsvInvoices(
         csvContent: String,
         cashierEmail: String

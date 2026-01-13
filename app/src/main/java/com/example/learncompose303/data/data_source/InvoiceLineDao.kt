@@ -19,8 +19,14 @@ interface InvoiceLineDao {
     @Query("SELECT * FROM invoice_lines")
     fun getAllInvoiceLines(): Flow<List<InvoiceLine>>
 
+    @Query("SELECT * FROM invoice_lines")
+    suspend fun getAllInvoiceLinesOnce(): List<InvoiceLine>
+
     @Query("SELECT * FROM invoice_lines WHERE invoiceId = :id")
     suspend fun getInvoiceLineById(id: Long): InvoiceLine?
+
+    @Query("SELECT * FROM invoice_lines WHERE id = :id")
+    suspend fun getInvoiceLineByIdOnce(id: Int): InvoiceLine?
 
     @Query("SELECT * FROM invoice_lines WHERE invoiceId = :invoiceId")
     suspend fun getInvoiceLinesByInvoiceId(invoiceId: Long): List<InvoiceLine>
