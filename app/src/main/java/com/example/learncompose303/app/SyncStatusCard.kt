@@ -48,18 +48,18 @@ fun SyncStatusCard(
     
     val cardColor by animateColorAsState(
         targetValue = when {
-            syncComplete -> MediumGreen.copy(alpha = 0.1f)
-            unsyncedCount > 0 -> Color.Red.copy(alpha = 0.1f)
-            else -> Color.Gray.copy(alpha = 0.1f)
+            syncComplete -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f)
+            unsyncedCount > 0 -> MaterialTheme.colorScheme.error.copy(alpha = 0.1f)
+            else -> MaterialTheme.colorScheme.surfaceVariant
         },
         animationSpec = tween(500)
     )
     
     val iconColor by animateColorAsState(
         targetValue = when {
-            syncComplete -> MediumGreen
-            unsyncedCount > 0 -> Color.Red
-            else -> Color.Gray
+            syncComplete -> MaterialTheme.colorScheme.primary
+            unsyncedCount > 0 -> MaterialTheme.colorScheme.error
+            else -> MaterialTheme.colorScheme.onSurfaceVariant
         },
         animationSpec = tween(500)
     )
@@ -161,12 +161,12 @@ fun SyncStatusCard(
                                     .offset(x = 8.dp, y = (-8).dp)
                                     .size(20.dp)
                                     .clip(CircleShape)
-                                    .background(Color.Red),
+                                    .background(MaterialTheme.colorScheme.error),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
                                     text = unsyncedCount.toString(),
-                                    color = Color.White,
+                                    color = MaterialTheme.colorScheme.onError,
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Bold
                                 )

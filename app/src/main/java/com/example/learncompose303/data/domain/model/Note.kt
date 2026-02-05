@@ -3,8 +3,8 @@ package com.example.learncompose303.data.domain.model
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.example.learncompose303.ui.theme.GreenColor
-import com.example.learncompose303.ui.theme.MyBlueish
 import com.example.learncompose303.ui.theme.MyGray
+import com.example.learncompose303.ui.theme.MyBlueish
 import com.example.learncompose303.ui.theme.MyPurple
 import com.example.learncompose303.ui.theme.Pink80
 

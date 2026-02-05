@@ -65,7 +65,6 @@ import com.example.learncompose303.R
 import com.example.learncompose303.data.entities.Customer
 import com.example.learncompose303.data.entities.Products
 import com.example.learncompose303.data.entities.ShoeBrand
-import com.example.learncompose303.ui.theme.Blue1
 import com.example.learncompose303.viewmodels.InvoiceViewModel
 
 @Composable

@@ -691,190 +691,37 @@ class InvoiceViewModel @Inject constructor(
         }
     }
 
-    // Insert initial shoe brands
+    // Insert initial shoe brands with smart upsert
     fun insertInitialShoeBrands() = viewModelScope.launch {
-        val existingBrands = shoeBrandRepository.getAllShoeBrandsOnce()
-
-        if (existingBrands.isEmpty()) {
-            val initialBrands = listOf(
-                ShoeBrand(1, "OLDSTOCK"),
-                ShoeBrand(2, "D166"),
-                ShoeBrand(3, "6610"),
-                ShoeBrand(4, "SY24023"),
-                ShoeBrand(5, "6886"),
-                ShoeBrand(6, "D159"),
-                ShoeBrand(7, "W2127A"),
-                ShoeBrand(8, "W2127J"),
-                ShoeBrand(9, "D160"),
-                ShoeBrand(10, "Z7283"),
-                ShoeBrand(11, "QY-247"),
-                ShoeBrand(12, "QY-122"),
-                ShoeBrand(13, "W23085B"),
-                ShoeBrand(14, "N05-1"),
-                ShoeBrand(15, "NF07-7"),
-                ShoeBrand(16, "NF07-9"),
-                ShoeBrand(17, "202588-3"),
-                ShoeBrand(18, "T18"),
-                ShoeBrand(19, "W24050D"),
-                ShoeBrand(20, "RR17-5"),
-                ShoeBrand(21, "RR17-6"),
-                ShoeBrand(22, "RR17-1"),
-                ShoeBrand(23, "RR17-7"),
-                ShoeBrand(24, "NF25-2"),
-                ShoeBrand(25, "RR17-4"),
-                ShoeBrand(26, "6620"),
-                ShoeBrand(27, "NF256"),
-                ShoeBrand(28, "NF164"),
-                ShoeBrand(29, "N04-3"),
-                ShoeBrand(30, "N04-1"),
-                ShoeBrand(31, "2893"),
-                ShoeBrand(32, "6610-2"),
-                ShoeBrand(33, "6610-4"),
-                ShoeBrand(34, "005"),
-                ShoeBrand(35, "NF24-1"),
-                ShoeBrand(36, "NF24-2"),
-                ShoeBrand(37, "NF24-5"),
-                ShoeBrand(38, "NF24-4"),
-                ShoeBrand(39, "NF24-3"),
-                ShoeBrand(40, "M265"),
-                ShoeBrand(41, "M256"),
-                ShoeBrand(42, "831"),
-                ShoeBrand(43, "836-2"),
-                ShoeBrand(44, "827-2"),
-                ShoeBrand(45, "NF29-1"),
-                ShoeBrand(46, "NF29-2"),
-                ShoeBrand(47, "NF29-3"),
-                ShoeBrand(48, "206-3"),
-                ShoeBrand(49, "W24145A"),
-                ShoeBrand(50, "2088-1"),
-                ShoeBrand(51, "N05-3"),
-                ShoeBrand(52, "15010-9"),
-                ShoeBrand(53, "206-4"),
-                ShoeBrand(54, "913"),
-                ShoeBrand(55, "M23085F"),
-                ShoeBrand(56, "X-9956"),
-                ShoeBrand(57, "NF51-1"),
-                ShoeBrand(58, "NF51-2"),
-                ShoeBrand(59, "NF51-3"),
-                ShoeBrand(60, "NF51-4"),
-                ShoeBrand(61, "NF51-5"),
-                ShoeBrand(62, "NF50-1"),
-                ShoeBrand(63, "NF50-2"),
-                ShoeBrand(64, "NF50-3"),
-                ShoeBrand(65, "NF50-4"),
-                ShoeBrand(66, "NF50-5"),
-                ShoeBrand(67, "NF50-6"),
-                ShoeBrand(68, "NF06-1"),
-                ShoeBrand(69, "NF06-2"),
-                ShoeBrand(70, "NF06-4"),
-                ShoeBrand(71, "NF06-7"),
-                ShoeBrand(72, "830-5"),
-                ShoeBrand(73, "02-6"),
-                ShoeBrand(74, "09-8"),
-                ShoeBrand(75, "W22103A"),
-                ShoeBrand(76, "PL2668-1"),
-                ShoeBrand(77, "NF52-1"),
-                ShoeBrand(78, "NF52-4"),
-                ShoeBrand(79, "NF52-5"),
-                ShoeBrand(80, "ZH881-2"),
-                ShoeBrand(81, "D37"),
-                ShoeBrand(82, "D38"),
-                ShoeBrand(83, "CX-114"),
-                ShoeBrand(84, "W22103W"),
-                ShoeBrand(85, "NF71-2"),
-                ShoeBrand(86, "AC14-2"),
-                ShoeBrand(87, "NF72-1"),
-                ShoeBrand(88, "NF72-4"),
-                ShoeBrand(89, "880"),
-                ShoeBrand(90, "NF92-4"),
-                ShoeBrand(91, "NFL-3014"),
-                ShoeBrand(92, "NF67-1"),
-                ShoeBrand(93, "W24024C"),
-                ShoeBrand(94, "2913-5"),
-                ShoeBrand(95, "NF108-5"),
-                ShoeBrand(96, "2422"),
-                ShoeBrand(97, "W23085C"),
-                ShoeBrand(98, "FK-67"),
-                ShoeBrand(99, "NF92-1"),
-                ShoeBrand(100, "W25022A"),
-                ShoeBrand(101, "FK60"),
-                ShoeBrand(102, "Q-7"),
-                ShoeBrand(103, "N04-4"),
-                ShoeBrand(104, "5831-4"),
-                ShoeBrand(105, "AR703-3"),
-                ShoeBrand(106, "CK-08-2"),
-                ShoeBrand(107, "NF72-3"),
-                ShoeBrand(108, "MG1123"),
-                ShoeBrand(109, "W25010B"),
-                ShoeBrand(110, "NF86-1"),
-                ShoeBrand(111, "2915-5"),
-                ShoeBrand(112, "LO67-5"),
-                ShoeBrand(113, "W25057D"),
-                ShoeBrand(114, "FK-65"),
-                ShoeBrand(115, "NF38-1"),
-                ShoeBrand(116, "M133-1"),
-                ShoeBrand(117, "W24024A"),
-                ShoeBrand(118, "FK68"),
-                ShoeBrand(119, "NF108-4"),
-                ShoeBrand(120, "NF108-1"),
-                ShoeBrand(121, "N08"),
-                ShoeBrand(122, "QY230"),
-                ShoeBrand(123, "D51G"),
-                ShoeBrand(124, "0912B-5"),
-                ShoeBrand(125, "M192-2"),
-                ShoeBrand(126, "N-15-5"),
-                ShoeBrand(127, "QY-238"),
-                ShoeBrand(128, "L90-1"),
-                ShoeBrand(129, "DY3851"),
-                ShoeBrand(130, "G69161-1"),
-                ShoeBrand(131, "L90-4"),
-                ShoeBrand(132, "M192-1"),
-                ShoeBrand(133, "0912B-4"),
-                ShoeBrand(134, "L90-6"),
-                ShoeBrand(135, "W9005"),
-                ShoeBrand(136, "M156-2"),
-                ShoeBrand(137, "NF86-4"),
-                ShoeBrand(138, "W24049A"),
-                ShoeBrand(139, "L90-5"),
-                ShoeBrand(140, "820-1"),
-                ShoeBrand(141, "D51K"),
-                ShoeBrand(142, "L90-2"),
-                ShoeBrand(143, "G69161-2"),
-                ShoeBrand(144, "WG-0005P"),
-                ShoeBrand(145, "0912B-3"),
-                ShoeBrand(146, "D51P"),
-                ShoeBrand(147, "FK-59"),
-                ShoeBrand(148, "W-37"),
-                ShoeBrand(149, "W9207"),
-                ShoeBrand(150, "FK21"),
-                ShoeBrand(151, "M156-1"),
-                ShoeBrand(152, "2913-1"),
-                ShoeBrand(153, "1820-1"),
-                ShoeBrand(154, "5160-1"),
-                ShoeBrand(155, "5160-2"),
-                ShoeBrand(156, "5160-3"),
-                ShoeBrand(157, "PL2599"),
-                ShoeBrand(158, "Z076"),
-                ShoeBrand(159, "W9193"),
-                ShoeBrand(160, "W24049B"),
-                ShoeBrand(161, "W25094C"),
-                ShoeBrand(162, "W11-1"),
-                ShoeBrand(163, "W11-2"),
-                ShoeBrand(164, "W11-3"),
-                ShoeBrand(165, "W11-4"),
-                ShoeBrand(166, "Q7"),
-                ShoeBrand(167, "W-57-3"),
-                ShoeBrand(168, "NF-15-1"),
-                ShoeBrand(169, "J1-3"),
-                ShoeBrand(170, "202588-1"),
-                ShoeBrand(171, "AC-14"),
-                ShoeBrand(172, "J1-1"),
-                ShoeBrand(173, "QY160"),
-                ShoeBrand(174, "WG-0005-1"),
-                ShoeBrand(175, "W-12-1"),
-                ShoeBrand(176, "NF-15-3")
-            )
-            shoeBrandRepository.insertShoeBrands(initialBrands)
+        val brandNames = listOf(
+            "OLDSTOCK", "D166", "6610", "SY24023", "6886", "D159", "W2127A", "W2127J", "D160", "Z7283",
+            "QY-247", "QY-122", "W23085B", "N05-1", "NF07-7", "NF07-9", "202588-3", "T18", "W24050D", "RR17-5",
+            "RR17-6", "RR17-1", "RR17-7", "NF25-2", "RR17-4", "6620", "NF256", "NF164", "N04-3", "N04-1",
+            "2893", "6610-2", "6610-4", "005", "NF24-1", "NF24-2", "NF24-5", "NF24-4", "NF24-3", "M265",
+            "M256", "831", "836-2", "827-2", "NF29-1", "NF29-2", "NF29-3", "206-3", "W24145A", "2088-1",
+            "N05-3", "15010-9", "206-4", "913", "M23085F", "X-9956", "NF51-1", "NF51-2", "NF51-3", "NF51-4",
+            "NF51-5", "NF50-1", "NF50-2", "NF50-3", "NF50-4", "NF50-5", "NF50-6", "NF06-1", "NF06-2", "NF06-4",
+            "NF06-7", "830-5", "02-6", "09-8", "W22103A", "PL2668-1", "NF52-1", "NF52-4", "NF52-5", "ZH881-2",
+            "D37", "D38", "CX-114", "W22103W", "NF71-2", "AC14-2", "NF72-1", "NF72-4", "880", "NF92-4",
+            "NFL-3014", "NF67-1", "W24024C", "2913-5", "NF108-5", "2422", "W23085C", "FK-67", "NF92-1", "W25022A",
+            "FK60", "Q-7", "N04-4", "5831-4", "AR703-3", "CK-08-2", "NF72-3", "MG1123", "W25010B", "NF86-1",
+            "2915-5", "LO67-5", "W25057D", "FK-65", "NF38-1", "M133-1", "W24024A", "FK68", "NF108-4", "NF108-1",
+            "N08", "QY230", "D51G", "0912B-5", "M192-2", "N-15-5", "QY-238", "L90-1", "DY3851", "G69161-1",
+            "L90-4", "M192-1", "0912B-4", "L90-6", "W9005", "M156-2", "NF86-4", "W24049A", "L90-5", "820-1",
+            "D51K", "L90-2", "G69161-2", "WG-0005P", "0912B-3", "D51P", "FK-59", "W-37", "W9207", "FK21",
+            "M156-1", "2913-1", "1820-1", "5160-1", "5160-2", "5160-3", "PL2599", "Z076", "W9193", "W24049B",
+            "W25094C", "W11-1", "W11-2", "W11-3", "W11-4", "Q7", "W-57-3", "NF-15-1", "J1-3", "202588-1",
+            "AC-14", "J1-1", "QY160", "WG-0005-1", "W-12-1", "NF-15-3",
+            // New brands
+            "XZ-66", "XZ-91", "M1201-6", "M1201-5", "M1201-1", "M1201-2", "M1201-8", "M1201-7", "W23085E",
+            "2895", "W-16", "FK-60", "W-16-3", "L067-1", "S9025", "AC-14-2"
+        )
+        
+        brandNames.forEach { brandName ->
+            val existingBrand = shoeBrandRepository.findBrandByName(brandName)
+            if (existingBrand == null) {
+                shoeBrandRepository.insertShoeBrand(ShoeBrand(0, brandName))
+            }
         }
     }
 
@@ -1952,19 +1799,19 @@ class InvoiceViewModel @Inject constructor(
 
     private fun scheduleInvoiceLineBatchSync() {
         Log.d(TAG, "scheduleInvoiceLineBatchSync() called - Starting to schedule batch sync")
-        
+
         viewModelScope.launch {
             try {
                 val invoiceLineCount = invoiceLineRepository.getUnsyncedInvoiceLines().size
                 Log.d(TAG, "Found $invoiceLineCount invoice lines to sync")
-                
+
                 if (invoiceLineCount == 0) {
                     Log.d(TAG, "No invoice lines to sync, skipping")
                     return@launch
                 }
-                
+
                 Log.d(TAG, "Creating WorkRequest for invoice line batch sync")
-                
+
                 val batchSyncWorkRequest = OneTimeWorkRequestBuilder<SyncInvoiceLineWorker>()
                     .setInputData(
                         workDataOf(
@@ -1985,15 +1832,15 @@ class InvoiceViewModel @Inject constructor(
                     .build()
 
                 Log.d(TAG, "Enqueueing work request with name: $INVOICE_LINE_BATCH_SYNC_WORK_NAME")
-                
+
                 workManager.enqueueUniqueWork(
                     INVOICE_LINE_BATCH_SYNC_WORK_NAME,
                     ExistingWorkPolicy.REPLACE,
                     batchSyncWorkRequest
                 )
-                
+
                 Log.d(TAG, "Invoice line batch sync work enqueued successfully")
-                
+
             } catch (e: Exception) {
                 Log.e(TAG, "Error in scheduleInvoiceLineBatchSync: ${e.message}", e)
             }

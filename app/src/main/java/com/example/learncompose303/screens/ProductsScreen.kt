@@ -64,7 +64,7 @@ import com.example.learncompose303.data.entities.PriceList
 import com.example.learncompose303.data.entities.Products
 import com.example.learncompose303.data.entities.ShoeBrand
 import com.example.learncompose303.screens.auth.AuthViewModel
-import com.example.learncompose303.ui.theme.Blue1
+import com.example.learncompose303.ui.theme.MyBlueish
 import com.example.learncompose303.viewmodels.InvoiceViewModel
 
 
@@ -378,7 +378,7 @@ fun TheProductCard(
                 },
                 enabled = isAdmin,  // Disable the button for non-admin users
                 colors = ButtonDefaults.buttonColors(
-                    if (isEditing.value) Color.Green else Blue1
+                    if (isEditing.value) Color.Green else MyBlueish
                 ),
                 shape = RoundedCornerShape(8.dp)
             ) {

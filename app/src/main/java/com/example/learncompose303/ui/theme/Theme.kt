@@ -10,39 +10,75 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
-// Theme Colors
 private val DarkColorScheme = darkColorScheme(
-    primary = Color(0xFF1B5E20),     // Deep forest green
-    secondary = Color(0xFF4CAF50),   // Subtle green for accents
-    tertiary = Color(0xFFAED581),    // Light green for tertiary accents
-    onPrimary = Color(0xFFFFFFFF),   // White text on primary
-    surface = Color(0xFF2E2E2E),     // Dark gray background
-    onSurface = Color(0xFFE1E1E1),   // Light gray text on surface
-    background = Color(0xFF121212)   // Dark background
+    primary = PrimaryGreenDark,
+    onPrimary = TextPrimaryDark,
+    primaryContainer = PrimaryGreen,
+    onPrimaryContainer = TextPrimaryDark,
+    
+    secondary = SecondaryTeal,
+    onSecondary = TextPrimaryDark,
+    secondaryContainer = SecondaryTeal,
+    onSecondaryContainer = TextPrimaryDark,
+    
+    tertiary = TertiaryAmber,
+    onTertiary = TextPrimaryLight,
+    tertiaryContainer = TertiaryAmber,
+    onTertiaryContainer = TextPrimaryLight,
+    
+    background = BackgroundDark,
+    onBackground = TextPrimaryDark,
+    
+    surface = SurfaceDark,
+    onSurface = TextPrimaryDark,
+    surfaceVariant = CardDark,
+    onSurfaceVariant = TextSecondaryDark,
+    
+    error = ErrorRed,
+    onError = TextPrimaryDark,
+    
+    outline = DividerDark
 )
 
-
-// Light Theme Colors
 private val LightColorScheme = lightColorScheme(
-    primary = Color(0xFF388E3C),     // Muted medium green
-    secondary = Color(0xFF81C784),   // Subtle green accent
-    tertiary = Color(0xFFFFD700),    // Gold for tertiary accents
-    onPrimary = Color(0xFFFFFFFF),   // White text on primary
-    surface = Color(0xFFFFFFFF),     // White background
-    onSurface = Color(0xFF2E2E2E),   // Dark text on light surface
-    background = Color(0xFFFFFFFF)   // Light background
+    primary = PrimaryGreen,
+    onPrimary = BackgroundLight,
+    primaryContainer = PrimaryGreen,
+    onPrimaryContainer = BackgroundLight,
+    
+    secondary = SecondaryTeal,
+    onSecondary = BackgroundLight,
+    secondaryContainer = SecondaryTeal,
+    onSecondaryContainer = BackgroundLight,
+    
+    tertiary = TertiaryAmber,
+    onTertiary = TextPrimaryLight,
+    tertiaryContainer = TertiaryAmber,
+    onTertiaryContainer = TextPrimaryLight,
+    
+    background = BackgroundLight,
+    onBackground = TextPrimaryLight,
+    
+    surface = SurfaceLight,
+    onSurface = TextPrimaryLight,
+    surfaceVariant = CardLight,
+    onSurfaceVariant = TextSecondaryLight,
+    
+    error = ErrorRed,
+    onError = BackgroundLight,
+    
+    outline = DividerLight
 )
 
 @Composable
 fun LearnCompose303Theme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false, // Disabled for consistent branding
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
@@ -50,7 +86,6 @@ fun LearnCompose303Theme(
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
-
         darkTheme -> DarkColorScheme
         else -> LightColorScheme
     }
@@ -59,7 +94,7 @@ fun LearnCompose303Theme(
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-            window.statusBarColor = colorScheme.primary.toArgb()
+            window.statusBarColor = colorScheme.surface.toArgb()
             WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
         }
     }
