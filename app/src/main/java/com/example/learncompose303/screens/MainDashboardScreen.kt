@@ -174,20 +174,13 @@ fun QuickAccessButtons(
         ) { uri: Uri? ->
             uri?.let {
                 try {
-                    val csvContent =
-                        context.contentResolver.openInputStream(it)?.use { inputStream ->
-                            inputStream.bufferedReader().use { reader ->
-                                reader.readText()
-                            }
-                        }
-                    csvContent?.let { content ->
-                        viewModel.processCsvInvoices(content, "dr.simbastart@gmail.com")
-                        Log.e("debugCsv", "Reading csv $content")
+                    context.contentResolver.openInputStream(it)?.let { inputStream ->
+                        viewModel.processCsvInvoices(inputStream, "dr.simbastart@gmail.com")
+                        Toast.makeText(context, "Processing invoice CSV...", Toast.LENGTH_SHORT).show()
                     }
                 } catch (e: Exception) {
-                    Log.e("debugCsv", "Error reading CSV file", e)
-                    // Optionally show error to user
-                    Toast.makeText(context, "Error reading CSV file", Toast.LENGTH_SHORT).show()
+                    Log.e("BatchInvoice", "Error reading CSV file", e)
+                    Toast.makeText(context, "Error reading CSV file: ${e.message}", Toast.LENGTH_SHORT).show()
                 }
             }
         }

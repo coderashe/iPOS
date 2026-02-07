@@ -37,6 +37,9 @@ interface PriceListDao {
     @Update
     suspend fun updatePriceList(priceList: PriceList)
 
+    @Update
+    suspend fun updatePriceLists(priceLists: List<PriceList>)
+
     @Delete
     suspend fun deletePriceList(priceList: PriceList)
 }

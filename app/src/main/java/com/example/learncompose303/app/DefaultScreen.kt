@@ -93,6 +93,7 @@ import com.example.learncompose303.screens.CustomerSelectionScreen
 import com.example.learncompose303.screens.ExpenseReportScreen
 import com.example.learncompose303.screens.ExpensesScreen
 import com.example.learncompose303.screens.FAQScreen
+import com.example.learncompose303.screens.FailedInvoicesScreen
 import com.example.learncompose303.screens.IncomeStatementScreen
 import com.example.learncompose303.screens.InvoiceDetailScreen
 import com.example.learncompose303.screens.LoadStockScreen
@@ -121,6 +122,7 @@ import com.example.learncompose303.screens.AddCurrencyScreen
 import com.example.learncompose303.screens.MultiCurrencyScreen
 import com.example.learncompose303.screens.ShoeManagementScreen
 import com.example.learncompose303.screens.StockTakingScreen
+import com.example.learncompose303.screens.OcrUploadScreen
 import com.example.learncompose303.viewmodels.ShoeViewModel
 
 
@@ -371,6 +373,11 @@ fun InDriveTopBottomNavigation() {
                     )
                 }
 
+                // OCR Upload Screen
+                composable(Destinations.OcrUpload.route) {
+                    OcrUploadScreen(navController = navController)
+                }
+
                 // Customer Selection Screen
                 composable(Destinations.CustomerSelection.route) {
                     CustomerSelectionScreen(
@@ -526,6 +533,15 @@ fun InDriveTopBottomNavigation() {
                         navController.navigate(Destinations.Order.route)
                     }
                 }
+
+                composable(Destinations.FailedInvoices.route) {
+                    val currentUserEmail by authViewModel.userEmail.observeAsState()
+                    FailedInvoicesScreen(
+                        viewModel = viewModel,
+                        cashierEmail = currentUserEmail ?: "",
+                        onBack = { navController.popBackStack() }
+                    )
+                }
             }
         }
     }
@@ -668,7 +684,9 @@ fun IndriveDrawerHeader(authViewModel: AuthViewModel = viewModel()) {
 fun IndriveDrawerBody(navController: NavController, scaffoldState: ScaffoldState) {
     val coroutineScope = rememberCoroutineScope()
     val authViewModel: AuthViewModel = viewModel()
+    val invoiceViewModel: InvoiceViewModel = viewModel()
     val context = LocalContext.current
+    val failedCount by invoiceViewModel.failedInvoiceItems.collectAsState()
 
     Column {
 
@@ -727,6 +745,20 @@ fun IndriveDrawerBody(navController: NavController, scaffoldState: ScaffoldState
             Spacer(modifier = Modifier.width(20.dp))
             Text(text = stringResource(id = R.string.load_stocks1), color = Color.Black)
         }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+                .clickable {
+                    navController.navigate(Destinations.OcrUpload.route)
+                    coroutineScope.launch { scaffoldState.drawerState.close() }
+                }
+        ) {
+            Icon(Icons.Default.Face, contentDescription = null)
+            Spacer(modifier = Modifier.width(20.dp))
+            Text(text = "OCR Invoice Upload", color = Color.Black)
+        }
 //
 
         Row(
@@ -771,6 +803,20 @@ fun IndriveDrawerBody(navController: NavController, scaffoldState: ScaffoldState
             Icon(Icons.Default.Face, contentDescription = null)
             Spacer(modifier = Modifier.width(20.dp))
             Text(text = stringResource(R.string.faq), color = Color.Black)
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+                .clickable {
+                    navController.navigate(Destinations.FailedInvoices.route)
+                    coroutineScope.launch { scaffoldState.drawerState.close() }
+                }
+        ) {
+            Icon(Icons.Default.Face, contentDescription = null)
+            Spacer(modifier = Modifier.width(20.dp))
+            Text(text = "Failed Invoices (${failedCount.size})", color = Color.Black)
         }
 //
 

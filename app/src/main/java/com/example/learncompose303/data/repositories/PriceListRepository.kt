@@ -11,11 +11,10 @@ interface PriceListRepository {
     suspend fun getPriceListById(id: Long): PriceList?
     suspend fun getPriceListByProductId(productId: Long): PriceList?
     fun getAllPriceLists(): Flow<List<PriceList>>
-    suspend fun insertPriceListsAll(priceLists: List<PriceList>): List<Long>
-
     suspend fun insertPriceList(priceList: PriceList): Long
     suspend fun insertPriceLists(priceLists: List<PriceList>)
     suspend fun updatePriceList(priceList: PriceList)
+    suspend fun updatePriceLists(priceLists: List<PriceList>)
     suspend fun deletePriceList(priceList: PriceList)
     suspend fun insertCurrentPriceList(
         price: Double,
@@ -54,9 +53,9 @@ class PriceListRepositoryImpl @Inject constructor(
         return priceListDao.getAllPriceLists()
     }
 
-    override suspend fun insertPriceListsAll(priceLists: List<PriceList>): List<Long> {
+    override suspend fun insertPriceLists(priceLists: List<PriceList>) {
         return withContext(Dispatchers.IO) {
-            priceLists.map { priceListDao.insertPriceList(it) }
+            priceListDao.insertPriceLists(priceLists)
         }
     }
 
@@ -66,9 +65,9 @@ class PriceListRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun insertPriceLists(priceLists: List<PriceList>) {
+    override suspend fun updatePriceLists(priceLists: List<PriceList>) {
         return withContext(Dispatchers.IO) {
-            priceListDao.insertPriceLists(priceLists)
+            priceListDao.updatePriceLists(priceLists)
         }
     }
 

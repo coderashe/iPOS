@@ -147,4 +147,7 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.10.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.10.0")
 
+    // ML Kit Text Recognition
+    implementation("com.google.mlkit:text-recognition:16.0.0")
+
 }
