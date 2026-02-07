@@ -8,11 +8,13 @@ import com.example.learncompose303.data.AppDatabase
 import com.example.learncompose303.data.MIGRATION_1_2
 import com.example.learncompose303.data.MIGRATION_2_3
 import com.example.learncompose303.data.MIGRATION_3_4
+import com.example.learncompose303.data.MIGRATION_4_5
 import com.example.learncompose303.data.data_source.CartItemDao
 import com.example.learncompose303.data.data_source.CurrencyDao
 import com.example.learncompose303.data.data_source.CustomerDao
 import com.example.learncompose303.data.data_source.DayReportsDao
 import com.example.learncompose303.data.data_source.ExpenseDao
+import com.example.learncompose303.data.data_source.FailedInvoiceDao
 import com.example.learncompose303.data.data_source.InvoiceDao
 import com.example.learncompose303.data.data_source.InvoiceItemDao
 import com.example.learncompose303.data.data_source.InvoiceLineDao
@@ -46,6 +48,7 @@ import com.example.learncompose303.data.repositories.DayReportsRepository
 import com.example.learncompose303.data.repositories.DayReportsRepositoryImpl
 import com.example.learncompose303.data.repositories.ExpenseRepository
 import com.example.learncompose303.data.repositories.ExpenseRepositoryImpl
+import com.example.learncompose303.data.repositories.FailedInvoiceRepository
 import com.example.learncompose303.data.repositories.InvoiceItemRepository
 import com.example.learncompose303.data.repositories.InvoiceItemRepositoryImpl
 import com.example.learncompose303.data.repositories.InvoiceLineRepository
@@ -99,7 +102,7 @@ object AppModule {
             AppDatabase::class.java,
             AppDatabase.DATABASE_NAME
         )
-            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
             .build()
     }
 
@@ -136,6 +139,17 @@ object AppModule {
 
 //    Provide daoS here
 
+    @Provides
+    fun provideFailedInvoiceDao(appDatabase: AppDatabase): FailedInvoiceDao = 
+        appDatabase.failedInvoiceDao()
+
+    @Provides
+    @Singleton
+    fun provideFailedInvoiceRepository(failedInvoiceDao: FailedInvoiceDao): FailedInvoiceRepository {
+        return FailedInvoiceRepository(failedInvoiceDao)
+    }
+
+    @Provides
     fun provideStockTakeDao(appDatabase: AppDatabase): StockTakeDao = appDatabase.stockTakeDao()
 
     @Provides

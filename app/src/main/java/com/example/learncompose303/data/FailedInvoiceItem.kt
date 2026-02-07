@@ -1,6 +1,12 @@
-package com.example.learncompose303.data
+package com.example.learncompose303.data.entities
 
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+
+@Entity(tableName = "failed_invoices")
 data class FailedInvoiceItem(
+    @PrimaryKey(autoGenerate = true)
+    val id: Long = 0,
     val rowIndex: Int,
     var brand: String,
     var size: Double,
@@ -8,5 +14,6 @@ data class FailedInvoiceItem(
     val quantity: Int,
     val amountTendered: Double,
     val customerId: Long,
-    val failureReason: String
+    val failureReason: String,
+    val timestamp: Long = System.currentTimeMillis()
 )

@@ -12,6 +12,7 @@ import com.example.learncompose303.data.data_source.CustomerDao
 import com.example.learncompose303.data.data_source.DayReportsDao
 import com.example.learncompose303.data.data_source.DiscountsReceivedDao
 import com.example.learncompose303.data.data_source.ExpenseDao
+import com.example.learncompose303.data.data_source.FailedInvoiceDao
 import com.example.learncompose303.data.data_source.InvoiceDao
 import com.example.learncompose303.data.data_source.InvoiceItemDao
 import com.example.learncompose303.data.data_source.InvoiceLineDao
@@ -35,6 +36,7 @@ import com.example.learncompose303.data.entities.Customer
 import com.example.learncompose303.data.entities.DayReports
 import com.example.learncompose303.data.entities.DiscountsReceived
 import com.example.learncompose303.data.entities.Expense
+import com.example.learncompose303.data.entities.FailedInvoiceItem
 import com.example.learncompose303.data.entities.Invoice
 import com.example.learncompose303.data.entities.InvoiceItem
 import com.example.learncompose303.data.entities.InvoiceLine
@@ -58,9 +60,10 @@ import com.example.learncompose303.data.entities.User
         Order::class, PriceList::class, ProductDayReport::class, DayReports::class,
         User::class, Expense::class,
         TradeReceivables::class, DiscountsReceived::class, Currency::class,
-        CashFlow::class, ShoeBrand::class, ShoeSize::class, StockTake::class
+        CashFlow::class, ShoeBrand::class, ShoeSize::class, StockTake::class,
+        FailedInvoiceItem::class
     ],
-    version = 4,
+    version = 5,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -85,6 +88,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun shoeBrandDao(): ShoeBrandDao
     abstract fun shoeSizeDao(): ShoeSizeDao
     abstract fun stockTakeDao(): StockTakeDao
+    abstract fun failedInvoiceDao(): FailedInvoiceDao
 
     // New DAOs
     abstract fun tradeReceivablesDao(): TradeReceivablesDao
@@ -127,5 +131,27 @@ val MIGRATION_3_4 = object : Migration(3, 4) {
     override fun migrate(db: SupportSQLiteDatabase) {
         // Add the synced column to invoice_lines table
         db.execSQL("ALTER TABLE invoice_lines ADD COLUMN synced INTEGER NOT NULL DEFAULT 0")
+    }
+}
+
+val MIGRATION_4_5 = object : Migration(4, 5) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        // Create failed_invoices table
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS `failed_invoices` (
+                `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                `rowIndex` INTEGER NOT NULL,
+                `brand` TEXT NOT NULL,
+                `size` REAL NOT NULL,
+                `description` TEXT NOT NULL,
+                `quantity` INTEGER NOT NULL,
+                `amountTendered` REAL NOT NULL,
+                `customerId` INTEGER NOT NULL,
+                `failureReason` TEXT NOT NULL,
+                `timestamp` INTEGER NOT NULL
+            )
+            """.trimIndent()
+        )
     }
 }
