@@ -94,12 +94,11 @@ fun ReportsScreen(
     val today = LocalDate.now()
     Log.d("todays", "TODAY'S DATE: $today")
 
-    // Filter invoices for today only - FIXED VERSION
+    // Filter invoices for today only
     val todayInvoices = invoiceList.filter { invoice ->
         val invoiceDate = Instant.ofEpochMilli(invoice.invoiceDate)
             .atZone(ZoneId.systemDefault())
             .toLocalDate()
-        println("Converted invoice date: $invoiceDate")
         invoiceDate.isEqual(today)
     }
 

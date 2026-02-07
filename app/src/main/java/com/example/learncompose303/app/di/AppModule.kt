@@ -9,6 +9,7 @@ import com.example.learncompose303.data.MIGRATION_1_2
 import com.example.learncompose303.data.MIGRATION_2_3
 import com.example.learncompose303.data.MIGRATION_3_4
 import com.example.learncompose303.data.MIGRATION_4_5
+import com.example.learncompose303.data.MIGRATION_5_6
 import com.example.learncompose303.data.data_source.CartItemDao
 import com.example.learncompose303.data.data_source.CurrencyDao
 import com.example.learncompose303.data.data_source.CustomerDao
@@ -102,7 +103,7 @@ object AppModule {
             AppDatabase::class.java,
             AppDatabase.DATABASE_NAME
         )
-            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
             .build()
     }
 

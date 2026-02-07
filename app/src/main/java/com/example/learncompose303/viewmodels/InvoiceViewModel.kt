@@ -44,7 +44,7 @@ import com.example.learncompose303.data.repositories.ShoeSizeRepository
 import com.example.learncompose303.data.repositories.StockTakeRepository
 import com.example.learncompose303.data.repositories.StudentRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -78,6 +78,8 @@ import com.example.learncompose303.data.repositories.FailedInvoiceRepository
 import com.example.learncompose303.network.SyncInvoiceWorker
 import com.example.learncompose303.network.SyncProductWorker
 import com.example.learncompose303.network.SyncInvoiceLineWorker
+import com.example.learncompose303.utils.StringMatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import java.util.concurrent.TimeUnit
 
@@ -1492,9 +1494,14 @@ class InvoiceViewModel @Inject constructor(
                 )
 
                 val invoiceId = invoiceRepository.insertInvoice(invoice)
-                onInvoiceCreatedOrUpdated(invoice)
-
+                
                 Log.d("submitInvoice", "Inserted Invoice with id: $invoiceId")
+                
+                // Only schedule sync if invoice was successfully inserted
+                if (invoiceId > 0) {
+                    val insertedInvoice = invoice.copy(invoiceId = invoiceId)
+                    onInvoiceCreatedOrUpdated(insertedInvoice)
+                }
 
                 deductProductQuantities(productQuantities)
 
@@ -1965,16 +1972,24 @@ class InvoiceViewModel @Inject constructor(
                 try {
                     val brand = brandMap[item.brand.lowercase()]
                     if (brand == null) {
-                        Log.w("BatchInvoice", "[${index + 1}] Brand not found: ${item.brand}")
-                        failedItems.add(FailedInvoiceItem(rowIndex = index + 1, brand = item.brand, size = item.size, description = item.description, quantity = item.quantity, amountTendered = item.amountTendered, customerId = item.customerId, failureReason = "Brand not found"))
+                        val allBrandNames = brandMap.values.map { it.brandName }
+                        val suggestions = StringMatcher.findClosestMatches(item.brand, allBrandNames)
+                        val suggestedText = if (suggestions.isNotEmpty()) suggestions.joinToString(", ") else null
+                        val reason = "Brand '${item.brand}' not found" + if (suggestions.isNotEmpty()) " → Try: ${suggestions.joinToString(", ")}" else ""
+                        
+                        Log.w("BatchInvoice", "[${index + 1}] $reason")
+                        failedItems.add(FailedInvoiceItem(rowIndex = index + 1, brand = item.brand, size = item.size, description = item.description, quantity = item.quantity, amountTendered = item.amountTendered, customerId = item.customerId, failureReason = reason, suggestedMatches = suggestedText))
                         skipped++
                         return@forEachIndexed
                     }
                     
                     val size = sizeMap[item.size]
                     if (size == null) {
-                        Log.w("BatchInvoice", "[${index + 1}] Size not found: ${item.size}")
-                        failedItems.add(FailedInvoiceItem(rowIndex = index + 1, brand = item.brand, size = item.size, description = item.description, quantity = item.quantity, amountTendered = item.amountTendered, customerId = item.customerId, failureReason = "Size not found"))
+                        val availableSizes = sizeMap.keys.sorted().take(10).joinToString(", ")
+                        val reason = "Size ${item.size} not found. Available: $availableSizes"
+                        
+                        Log.w("BatchInvoice", "[${index + 1}] $reason")
+                        failedItems.add(FailedInvoiceItem(rowIndex = index + 1, brand = item.brand, size = item.size, description = item.description, quantity = item.quantity, amountTendered = item.amountTendered, customerId = item.customerId, failureReason = reason))
                         skipped++
                         return@forEachIndexed
                     }
@@ -1982,8 +1997,10 @@ class InvoiceViewModel @Inject constructor(
                     val key = Triple(brand.brandID, size.shoeSizeId, item.description.lowercase())
                     val product = productMap[key]
                     if (product == null) {
-                        Log.w("BatchInvoice", "[${index + 1}] Product not found: Brand=${item.brand}, Size=${item.size}, Color=${item.description}")
-                        failedItems.add(FailedInvoiceItem(rowIndex = index + 1, brand = item.brand, size = item.size, description = item.description, quantity = item.quantity, amountTendered = item.amountTendered, customerId = item.customerId, failureReason = "Product not found"))
+                        val reason = "Product not found: Brand='${item.brand}', Size=${item.size}, Color='${item.description}'"
+                        
+                        Log.w("BatchInvoice", "[${index + 1}] $reason")
+                        failedItems.add(FailedInvoiceItem(rowIndex = index + 1, brand = item.brand, size = item.size, description = item.description, quantity = item.quantity, amountTendered = item.amountTendered, customerId = item.customerId, failureReason = reason))
                         skipped++
                         return@forEachIndexed
                     }
@@ -2168,7 +2185,12 @@ class InvoiceViewModel @Inject constructor(
                         cashierEmail
                     )
                     
+                    // Delete from DB first
                     failedInvoiceRepository.deleteFailedInvoice(failedItem)
+                    
+                    // Then update UI
+                    _failedInvoiceItems.value = _failedInvoiceItems.value.filter { it.id != failedItem.id }
+                    
                     Log.d("BatchInvoice", "✅ Retry successful for row ${failedItem.rowIndex}")
                     withContext(Dispatchers.Main) {
                         onResult(true, "Invoice created successfully")
@@ -2197,9 +2219,14 @@ class InvoiceViewModel @Inject constructor(
         _failedInvoiceItems.value = emptyList()
     }
     
-    private fun fetchFailedInvoices() = viewModelScope.launch {
-        failedInvoiceRepository.getAllFailedInvoices().collectLatest { items ->
-            _failedInvoiceItems.value = items
+    private var failedInvoicesJob: Job? = null
+    
+    private fun fetchFailedInvoices() {
+        failedInvoicesJob?.cancel()
+        failedInvoicesJob = viewModelScope.launch {
+            failedInvoiceRepository.getAllFailedInvoices().collectLatest { items ->
+                _failedInvoiceItems.value = items
+            }
         }
     }
     

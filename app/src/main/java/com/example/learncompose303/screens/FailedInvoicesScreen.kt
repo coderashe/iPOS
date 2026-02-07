@@ -14,6 +14,8 @@ import androidx.compose.ui.unit.dp
 import com.example.learncompose303.data.entities.FailedInvoiceItem
 import com.example.learncompose303.viewmodels.InvoiceViewModel
 import kotlinx.coroutines.launch
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.ui.text.font.FontWeight
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -74,7 +76,7 @@ fun FailedInvoicesScreen(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun FailedItemCard(
     item: FailedInvoiceItem,
@@ -107,6 +109,22 @@ fun FailedItemCard(
         Column(modifier = Modifier.padding(16.dp)) {
             Text("Row ${item.rowIndex}", style = MaterialTheme.typography.labelSmall)
             Text(item.failureReason, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+            
+            if (!item.suggestedMatches.isNullOrEmpty()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text("Suggestions:", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    item.suggestedMatches.split(", ").forEach { suggestion ->
+                        SuggestionChip(
+                            onClick = { brand = suggestion; item.brand = suggestion },
+                            label = { Text(suggestion, style = MaterialTheme.typography.bodySmall) }
+                        )
+                    }
+                }
+            }
             
             Spacer(modifier = Modifier.height(8.dp))
             

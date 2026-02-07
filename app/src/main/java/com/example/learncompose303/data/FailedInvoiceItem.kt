@@ -15,5 +15,6 @@ data class FailedInvoiceItem(
     val amountTendered: Double,
     val customerId: Long,
     val failureReason: String,
+    val suggestedMatches: String? = null,
     val timestamp: Long = System.currentTimeMillis()
 )
