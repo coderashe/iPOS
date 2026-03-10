@@ -1,0 +1,12 @@
+<div class="summary-card">
+  <div class="card-header">
+    <span class="icon">{{ icon }}</span>
+    <h3>{{ title }}</h3>
+  </div>
+  <div class="card-value">{{ value }}</div>
+  <div class="card-trend" *ngIf="trend !== undefined">
+    <span [class.positive]="trend > 0" [class.negative]="trend < 0">
+      {{ trend > 0 ? '↑' : '↓' }} {{ trend | number:'1.1-1' }}%
+    </span>
+  </div>
+</div>

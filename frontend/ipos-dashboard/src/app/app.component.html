@@ -1,0 +1,53 @@
+<div class="app-container">
+  <header class="app-header">
+    <div class="header-content">
+      <button class="menu-toggle" (click)="toggleMenu()" aria-label="Toggle menu">
+        <span class="hamburger-icon">☰</span>
+      </button>
+      <h1 class="app-title">{{ title }}</h1>
+    </div>
+  </header>
+
+  <div class="app-layout">
+    <nav class="sidebar" [class.open]="menuOpen">
+      <ul class="nav-menu">
+        <li>
+          <a routerLink="/dashboard" routerLinkActive="active" (click)="menuOpen = false">
+            <span class="nav-icon">📊</span>
+            <span class="nav-text">Dashboard</span>
+          </a>
+        </li>
+        <li>
+          <a routerLink="/sales" routerLinkActive="active" (click)="menuOpen = false">
+            <span class="nav-icon">💰</span>
+            <span class="nav-text">Sales Analytics</span>
+          </a>
+        </li>
+        <li>
+          <a routerLink="/inventory" routerLinkActive="active" (click)="menuOpen = false">
+            <span class="nav-icon">📦</span>
+            <span class="nav-text">Inventory</span>
+          </a>
+        </li>
+        <li>
+          <a routerLink="/customers" routerLinkActive="active" (click)="menuOpen = false">
+            <span class="nav-icon">👥</span>
+            <span class="nav-text">Customers</span>
+          </a>
+        </li>
+        <li>
+          <a routerLink="/financial" routerLinkActive="active" (click)="menuOpen = false">
+            <span class="nav-icon">💵</span>
+            <span class="nav-text">Financial</span>
+          </a>
+        </li>
+      </ul>
+    </nav>
+
+    <main class="main-content">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+
+  <div class="overlay" *ngIf="menuOpen" (click)="toggleMenu()"></div>
+</div>
