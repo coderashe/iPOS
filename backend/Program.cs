@@ -34,10 +34,15 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 var app = builder.Build();
 
-// Seed data
+// Ensure database is created and seed data
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    
+    // Create database if it doesn't exist
+    context.Database.EnsureCreated();
+    
+    // Seed data
     DataSeeder.SeedData(context);
 }
 

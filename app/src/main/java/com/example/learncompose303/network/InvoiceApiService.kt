@@ -14,7 +14,9 @@ data class InvoiceDto(
     val theStatus: String,
     val currencyCode: String,
     val lastUpdated: Long? = null,
-    val isArchived: Boolean = false
+    val isArchived: Boolean = false,
+    val deviceId: String? = null,  // Device identifier for multi-device tracking
+    val deviceName: String? = null  // User-friendly device name
 )
 
 // Invoice API service interface
@@ -36,7 +38,7 @@ interface InvoiceApiService {
 }
 
 // Extension function to convert between domain model and DTO
-fun Invoice.toDto(): InvoiceDto {
+fun Invoice.toDto(deviceId: String? = null, deviceName: String? = null): InvoiceDto {
     return InvoiceDto(
         invoiceId = this.invoiceId,
         customerId = this.customerId,
@@ -51,7 +53,9 @@ fun Invoice.toDto(): InvoiceDto {
         },
         currencyCode = this.currencyCode,
         lastUpdated = this.lastUpdated,
-        isArchived = this.isArchived
+        isArchived = this.isArchived,
+        deviceId = deviceId,
+        deviceName = deviceName
     )
 }
 

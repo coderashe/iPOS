@@ -32,9 +32,18 @@ public static class DataSeeder
         {
             products.Add(new Product
             {
+                Id = i,
                 Name = $"{ProductNames[random.Next(ProductNames.Length)]} {i}",
+                ProductCode = $"PROD{i:D4}",
                 Price = Math.Round((decimal)(random.NextDouble() * 999 + 10), 2),
-                CurrentStock = random.Next(0, 200)
+                CurrentStock = random.Next(0, 200),
+                Saleable = true,
+                Purchasable = true,
+                AverageCost = random.NextDouble() * 500,
+                StandardCost = random.NextDouble() * 500,
+                InclusiveTaxed = false,
+                UnitCost = random.NextDouble() * 500,
+                MarkupPercentage = random.NextDouble() * 50
             });
         }
 

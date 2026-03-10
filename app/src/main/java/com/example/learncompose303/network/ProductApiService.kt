@@ -19,7 +19,12 @@ data class ProductDto(
     val productCode: String,
     val inclusiveTaxed: Boolean,
     val imageUri: String?,
-    val lastUpdated: Long? = null
+    val sellingPrice: Double = 0.0,  // Selling price from PriceList
+    val unitCost: Double = 0.0,  // Unit cost from PriceList
+    val markupPercentage: Double = 0.0,  // Markup percentage from PriceList
+    val lastUpdated: Long? = null,
+    val deviceId: String? = null,  // Device identifier for multi-device tracking
+    val deviceName: String? = null  // User-friendly device name
 )
 
 interface ProductApiService {
@@ -40,7 +45,13 @@ interface ProductApiService {
 }
 
 // Extension functions for conversion between domain model and DTO
-fun Products.toDto(): ProductDto {
+fun Products.toDto(
+    deviceId: String? = null, 
+    deviceName: String? = null,
+    sellingPrice: Double = 0.0,
+    unitCost: Double = 0.0,
+    markupPercentage: Double = 0.0
+): ProductDto {
     return ProductDto(
         productId = this.productId,
         productDescription = this.productDescription,
@@ -55,7 +66,12 @@ fun Products.toDto(): ProductDto {
         productCode = this.productCode,
         inclusiveTaxed = this.inclusiveTaxed,
         imageUri = this.imageUri,
-        lastUpdated = this.lastUpdated
+        sellingPrice = sellingPrice,
+        unitCost = unitCost,
+        markupPercentage = markupPercentage,
+        lastUpdated = this.lastUpdated,
+        deviceId = deviceId,
+        deviceName = deviceName
     )
 }
 

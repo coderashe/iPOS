@@ -16,7 +16,8 @@ class SyncInvoiceLineWorker @AssistedInject constructor(
     @Assisted context: Context,
     @Assisted workerParams: WorkerParameters,
     private val invoiceLineRepository: InvoiceLineRepository,
-    private val invoiceLineApiService: InvoiceLineApiService
+    private val invoiceLineApiService: InvoiceLineApiService,
+    private val connectivityHelper: ConnectivityHelper
 ) : CoroutineWorker(context, workerParams) {
 
     companion object {
@@ -24,13 +25,19 @@ class SyncInvoiceLineWorker @AssistedInject constructor(
         const val KEY_INVOICE_LINE_ID = "invoice_line_id"
         const val KEY_BATCH_SYNC = "batch_sync"
         const val KEY_RETRY = "retry"
-        private const val BATCH_SIZE = 50
+        private const val BATCH_SIZE = 200
     }
 
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
         Log.d(TAG, "SyncInvoiceLineWorker.doWork() started")
         
         return@withContext try {
+            // Check network connectivity first
+            if (!connectivityHelper.isNetworkAvailable()) {
+                Log.w(TAG, "No network connection available, will retry later")
+                return@withContext Result.retry()
+            }
+
             val isBatchSync = inputData.getBoolean(KEY_BATCH_SYNC, false)
             val invoiceLineId = inputData.getInt(KEY_INVOICE_LINE_ID, -1)
             
@@ -46,6 +53,15 @@ class SyncInvoiceLineWorker @AssistedInject constructor(
                 Log.e(TAG, "No valid sync parameters provided")
                 Result.failure()
             }
+        } catch (e: java.net.UnknownHostException) {
+            Log.e(TAG, "Network error: Cannot reach server", e)
+            Result.retry()
+        } catch (e: java.net.SocketTimeoutException) {
+            Log.e(TAG, "Network timeout: Server not responding", e)
+            Result.retry()
+        } catch (e: java.io.IOException) {
+            Log.e(TAG, "Network I/O error", e)
+            Result.retry()
         } catch (e: Exception) {
             Log.e(TAG, "Sync failed with exception: ${e.message}", e)
             Result.retry()
@@ -65,9 +81,26 @@ class SyncInvoiceLineWorker @AssistedInject constructor(
                 Log.d(TAG, "Successfully synced invoice line: $invoiceLineId")
                 Result.success()
             } else {
-                Log.e(TAG, "Failed to sync invoice line: ${response.code()} - ${response.message()}")
+                val errorCode = response.code()
+                Log.e(TAG, "Failed to sync invoice line: $errorCode - ${response.message()}")
+                
+                // Don't retry on client errors (4xx)
+                if (errorCode in 400..499) {
+                    Log.e(TAG, "Client error ($errorCode), not retrying")
+                    return Result.failure()
+                }
+                
                 Result.retry()
             }
+        } catch (e: java.net.UnknownHostException) {
+            Log.e(TAG, "Cannot reach server: ${e.message}", e)
+            Result.retry()
+        } catch (e: java.net.SocketTimeoutException) {
+            Log.e(TAG, "Server timeout: ${e.message}", e)
+            Result.retry()
+        } catch (e: java.io.IOException) {
+            Log.e(TAG, "Network I/O error: ${e.message}", e)
+            Result.retry()
         } catch (e: Exception) {
             Log.e(TAG, "Error syncing single invoice line", e)
             Result.retry()
@@ -107,11 +140,18 @@ class SyncInvoiceLineWorker @AssistedInject constructor(
                         Log.d(TAG, "Response body ID: ${responseBody.id}")
                     }
                 } else {
-                    Log.e(TAG, "Failed to sync invoice line ${index + 1}: ${response.code()} - ${response.message()}")
-                    response.errorBody()?.let { errorBody ->
-                        Log.e(TAG, "Error body: ${errorBody.string()}")
+                    val errorCode = response.code()
+                    val errorBody = response.errorBody()?.string() ?: "No error details"
+                    Log.e(TAG, "Failed to sync invoice line ${index + 1}: $errorCode - $errorBody")
+                    
+                    // Don't retry on client errors (4xx) - skip this item and continue
+                    if (errorCode in 400..499) {
+                        Log.e(TAG, "Client error ($errorCode), skipping this item")
+                        // Continue to next item instead of returning
+                    } else {
+                        // Server error - retry the whole batch
+                        return Result.retry()
                     }
-                    return Result.retry()
                 }
             }
 

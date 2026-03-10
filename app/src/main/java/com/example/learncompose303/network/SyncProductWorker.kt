@@ -20,7 +20,10 @@ class SyncProductWorker @AssistedInject constructor(
     @Assisted appContext: Context,
     @Assisted params: WorkerParameters,
     private val productDao: ProductDao,
-    private val productApiService: ProductApiService
+    private val productApiService: ProductApiService,
+    private val deviceManager: com.example.learncompose303.app.core.DeviceManager,
+    private val connectivityHelper: ConnectivityHelper,
+    private val priceListDao: com.example.learncompose303.data.data_source.PriceListDao
 ) : CoroutineWorker(appContext, params) {
 
     interface Factory : WorkerAssistedFactory<SyncProductWorker>
@@ -38,6 +41,12 @@ class SyncProductWorker @AssistedInject constructor(
 
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
         try {
+            // Check network connectivity first
+            if (!connectivityHelper.isNetworkAvailable()) {
+                Log.w(TAG, "No network connection available, will retry later")
+                return@withContext Result.retry()
+            }
+
             val isBatchSync = inputData.getBoolean(KEY_BATCH_SYNC, false)
             val shouldRetry = inputData.getBoolean(KEY_RETRY, true)
 
@@ -51,6 +60,15 @@ class SyncProductWorker @AssistedInject constructor(
                 }
                 return@withContext syncSingleProduct(productId, shouldRetry)
             }
+        } catch (e: java.net.UnknownHostException) {
+            Log.e(TAG, "Network error: Cannot reach server", e)
+            return@withContext Result.retry()
+        } catch (e: java.net.SocketTimeoutException) {
+            Log.e(TAG, "Network timeout: Server not responding", e)
+            return@withContext Result.retry()
+        } catch (e: java.io.IOException) {
+            Log.e(TAG, "Network I/O error", e)
+            return@withContext Result.retry()
         } catch (e: Exception) {
             Log.e(TAG, "Error in sync worker", e)
             return@withContext if (inputData.getBoolean(KEY_RETRY, true)) {
@@ -73,7 +91,24 @@ class SyncProductWorker @AssistedInject constructor(
             return Result.failure()
         }
 
-        val productDto = product.toDto()
+        // Fetch price from PriceList
+        val priceList = priceListDao.getPriceListByProductId(productId)
+        val sellingPrice = priceList?.sellingPrice ?: 0.0
+        val unitCost = priceList?.unitCost ?: 0.0
+        val markupPercentage = priceList?.markupPercentage ?: 0.0
+
+        if (sellingPrice <= 0.0) {
+            Log.w(TAG, "Product $productId has no valid price in PriceList (price: $sellingPrice), skipping sync")
+            return Result.failure()
+        }
+
+        val productDto = product.toDto(
+            deviceId = deviceManager.getDeviceId(),
+            deviceName = deviceManager.getDeviceName(),
+            sellingPrice = sellingPrice,
+            unitCost = unitCost,
+            markupPercentage = markupPercentage
+        )
         Log.d(TAG, "Syncing product $productDto")
 
         return try {
@@ -88,10 +123,27 @@ class SyncProductWorker @AssistedInject constructor(
                 }
                 Result.success()
             } else {
-                Log.e(TAG, "Failed to sync product: ${response.code()}")
-                Log.e(TAG, "Error body: ${response.errorBody()?.string() ?: "No error details"}")
+                val errorCode = response.code()
+                val errorBody = response.errorBody()?.string() ?: "No error details"
+                Log.e(TAG, "Failed to sync product: $errorCode - $errorBody")
+
+                // Don't retry on client errors (4xx)
+                if (errorCode in 400..499) {
+                    Log.e(TAG, "Client error ($errorCode), not retrying")
+                    return Result.failure()
+                }
+
                 if (shouldRetry) Result.retry() else Result.failure()
             }
+        } catch (e: java.net.UnknownHostException) {
+            Log.e(TAG, "Cannot reach server: ${e.message}", e)
+            if (shouldRetry) Result.retry() else Result.failure()
+        } catch (e: java.net.SocketTimeoutException) {
+            Log.e(TAG, "Server timeout: ${e.message}", e)
+            if (shouldRetry) Result.retry() else Result.failure()
+        } catch (e: java.io.IOException) {
+            Log.e(TAG, "Network I/O error: ${e.message}", e)
+            if (shouldRetry) Result.retry() else Result.failure()
         } catch (e: Exception) {
             Log.e(TAG, "Error syncing product: ${e.message}", e)
             if (shouldRetry) Result.retry() else Result.failure()

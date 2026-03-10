@@ -20,7 +20,9 @@ class SyncInvoiceWorker @AssistedInject constructor(
     @Assisted appContext: Context,
     @Assisted params: WorkerParameters,
     private val invoiceDao: InvoiceDao,
-    private val invoiceApiService: InvoiceApiService
+    private val invoiceApiService: InvoiceApiService,
+    private val deviceManager: com.example.learncompose303.app.core.DeviceManager,
+    private val connectivityHelper: ConnectivityHelper
 ) : CoroutineWorker(appContext, params) {
 
     // Required companion interface
@@ -39,6 +41,12 @@ class SyncInvoiceWorker @AssistedInject constructor(
 
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
         try {
+            // Check network connectivity first
+            if (!connectivityHelper.isNetworkAvailable()) {
+                Log.w(TAG, "No network connection available, will retry later")
+                return@withContext Result.retry()
+            }
+
             // Check if this is a batch sync or single invoice sync
             val isBatchSync = inputData.getBoolean(KEY_BATCH_SYNC, false)
             val shouldRetry = inputData.getBoolean(KEY_RETRY, true)
@@ -53,6 +61,15 @@ class SyncInvoiceWorker @AssistedInject constructor(
                 }
                 return@withContext syncSingleInvoice(invoiceId, shouldRetry)
             }
+        } catch (e: java.net.UnknownHostException) {
+            Log.e(TAG, "Network error: Cannot reach server", e)
+            return@withContext Result.retry()
+        } catch (e: java.net.SocketTimeoutException) {
+            Log.e(TAG, "Network timeout: Server not responding", e)
+            return@withContext Result.retry()
+        } catch (e: java.io.IOException) {
+            Log.e(TAG, "Network I/O error", e)
+            return@withContext Result.retry()
         } catch (e: Exception) {
             Log.e(TAG, "Error in sync worker", e)
             return@withContext if (inputData.getBoolean(KEY_RETRY, true)) {
@@ -77,7 +94,10 @@ class SyncInvoiceWorker @AssistedInject constructor(
         }
 
         // Convert to DTO for API
-        val invoiceDto = invoice.toDto()
+        val invoiceDto = invoice.toDto(
+            deviceId = deviceManager.getDeviceId(),
+            deviceName = deviceManager.getDeviceName()
+        )
         Log.e(TAG, "Trying to sync invoice $invoiceDto")
 
         return try {
@@ -95,8 +115,15 @@ class SyncInvoiceWorker @AssistedInject constructor(
                 }
                 Result.success()
             } else {
-                Log.e(TAG, "Failed to sync invoice: ${response.code()}")
-                Log.e(TAG, "Error body: ${response.errorBody()?.string() ?: "No error details"}")
+                val errorCode = response.code()
+                val errorBody = response.errorBody()?.string() ?: "No error details"
+                Log.e(TAG, "Failed to sync invoice: $errorCode - $errorBody")
+
+                // Don't retry on client errors (4xx)
+                if (errorCode in 400..499) {
+                    Log.e(TAG, "Client error ($errorCode), not retrying")
+                    return Result.failure()
+                }
 
                 if (shouldRetry) {
                     Result.retry()
@@ -104,6 +131,15 @@ class SyncInvoiceWorker @AssistedInject constructor(
                     Result.failure()
                 }
             }
+        } catch (e: java.net.UnknownHostException) {
+            Log.e(TAG, "Cannot reach server: ${e.message}", e)
+            if (shouldRetry) Result.retry() else Result.failure()
+        } catch (e: java.net.SocketTimeoutException) {
+            Log.e(TAG, "Server timeout: ${e.message}", e)
+            if (shouldRetry) Result.retry() else Result.failure()
+        } catch (e: java.io.IOException) {
+            Log.e(TAG, "Network I/O error: ${e.message}", e)
+            if (shouldRetry) Result.retry() else Result.failure()
         } catch (e: Exception) {
             Log.e(TAG, "Error syncing invoice: ${e.message}", e)
             if (shouldRetry) {

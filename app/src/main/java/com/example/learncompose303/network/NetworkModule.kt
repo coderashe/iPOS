@@ -18,13 +18,15 @@ object NetworkModule {
     @Singleton
     fun provideRetrofit(): Retrofit {
         return Retrofit.Builder()
-            .baseUrl("http://192.168.222.202:5249/") // Use actual IP for physical device
-//            .baseUrl("http://10.0.2.2:5249/") // Use 10.0.2.2 for localhost from Android emulator
+            .baseUrl("http://192.168.100.5:5000/") // Backend running on port 5000
+//            .baseUrl("http://10.0.2.2:5000/") // Use 10.0.2.2 for localhost from Android emulator
             .addConverterFactory(GsonConverterFactory.create())
             .client(
                 OkHttpClient.Builder()
-                    .connectTimeout(30, TimeUnit.SECONDS)
-                    .readTimeout(30, TimeUnit.SECONDS)
+                    .connectTimeout(60, TimeUnit.SECONDS)
+                    .readTimeout(60, TimeUnit.SECONDS)
+                    .writeTimeout(60, TimeUnit.SECONDS)
+                    .retryOnConnectionFailure(true)
                     .build()
             )
             .build()
@@ -64,5 +66,17 @@ object NetworkModule {
     @Singleton
     fun provideInvoiceLineApiService(retrofit: Retrofit): InvoiceLineApiService {
         return retrofit.create(InvoiceLineApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideDeviceManager(@dagger.hilt.android.qualifiers.ApplicationContext context: android.content.Context): com.example.learncompose303.app.core.DeviceManager {
+        return com.example.learncompose303.app.core.DeviceManager(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideConnectivityHelper(@dagger.hilt.android.qualifiers.ApplicationContext context: android.content.Context): ConnectivityHelper {
+        return ConnectivityHelper(context)
     }
 }
