@@ -5,6 +5,7 @@ import { ApiService } from '../../core/services/api.service';
 import { DashboardStateService } from '../../core/services/dashboard-state.service';
 import { SummaryCardComponent } from '../../shared/components/summary-card/summary-card.component';
 import { DateRangePickerComponent } from '../../shared/components/date-range-picker/date-range-picker.component';
+import { DeviceFilterComponent } from '../../shared/components/device-filter/device-filter.component';
 import { DashboardSummary } from '../../core/models/api-models';
 
 interface SummaryCard {
@@ -17,7 +18,7 @@ interface SummaryCard {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, SummaryCardComponent, DateRangePickerComponent],
+  imports: [CommonModule, SummaryCardComponent, DateRangePickerComponent, DeviceFilterComponent],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.scss']
 })
@@ -29,8 +30,13 @@ export class DashboardComponent implements OnInit {
   summaryCards: SummaryCard[] = [];
   loading = true;
   error: string | null = null;
+  selectedDeviceId: string = '';
 
   ngOnInit(): void {
+    this.loadDashboardData();
+  }
+
+  private loadDashboardData(): void {
     // Subscribe to date range changes and reload dashboard
     this.stateService.dateRange$.pipe(
       switchMap(range => {
@@ -38,7 +44,8 @@ export class DashboardComponent implements OnInit {
         this.error = null;
         return this.apiService.getDashboardSummary(
           range.startDate.toISOString(),
-          range.endDate.toISOString()
+          range.endDate.toISOString(),
+          this.selectedDeviceId || undefined
         );
       })
     ).subscribe({
@@ -53,6 +60,11 @@ export class DashboardComponent implements OnInit {
         console.error('Dashboard error:', err);
       }
     });
+  }
+
+  onDeviceChange(deviceId: string): void {
+    this.selectedDeviceId = deviceId;
+    this.loadDashboardData();
   }
 
   private updateSummaryCards(data: DashboardSummary): void {

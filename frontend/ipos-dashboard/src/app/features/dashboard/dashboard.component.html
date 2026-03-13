@@ -4,6 +4,8 @@
   </div>
 
   <app-date-range-picker (rangeChange)="onDateRangeChange()"></app-date-range-picker>
+  
+  <app-device-filter (deviceChange)="onDeviceChange($event)"></app-device-filter>
 
   <div *ngIf="loading" class="loading">
     <div class="spinner"></div>

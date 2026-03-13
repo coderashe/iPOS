@@ -80,15 +80,23 @@ export interface DateRange {
   endDate: Date;
 }
 
+// Device DTOs
+export interface Device {
+  deviceId: string;
+  deviceName: string;
+}
+
 // API Request Parameters
 export interface SalesReportParams {
   startDate?: string;
   endDate?: string;
   groupBy?: 'day' | 'week' | 'month';
+  deviceId?: string;
 }
 
 export interface AnalyticsParams {
   startDate?: string;
   endDate?: string;
   limit?: number;
+  deviceId?: string;
 }

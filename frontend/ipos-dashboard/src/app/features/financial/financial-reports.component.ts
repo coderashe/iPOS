@@ -4,17 +4,20 @@ import { switchMap } from 'rxjs/operators';
 import { ApiService } from '../../core/services/api.service';
 import { DashboardStateService } from '../../core/services/dashboard-state.service';
 import { DateRangePickerComponent } from '../../shared/components/date-range-picker/date-range-picker.component';
+import { DeviceFilterComponent } from '../../shared/components/device-filter/device-filter.component';
 import { RevenueTrend } from '../../core/models/api-models';
 
 @Component({
   selector: 'app-financial-reports',
   standalone: true,
-  imports: [CommonModule, DateRangePickerComponent],
+  imports: [CommonModule, DateRangePickerComponent, DeviceFilterComponent],
   template: `
     <div class="financial-container">
       <h1>Financial Reports</h1>
       
       <app-date-range-picker></app-date-range-picker>
+      
+      <app-device-filter (deviceChange)="onDeviceChange($event)"></app-device-filter>
 
       <div *ngIf="loading" class="loading">
         <div class="spinner"></div>
@@ -237,8 +240,13 @@ export class FinancialReportsComponent implements OnInit {
   revenueTrend: RevenueTrend | null = null;
   loading = true;
   error: string | null = null;
+  selectedDeviceId: string = '';
 
   ngOnInit(): void {
+    this.loadFinancialData();
+  }
+
+  private loadFinancialData(): void {
     this.stateService.dateRange$.pipe(
       switchMap(range => {
         this.loading = true;
@@ -246,7 +254,8 @@ export class FinancialReportsComponent implements OnInit {
         return this.apiService.getRevenueTrends({
           startDate: range.startDate.toISOString(),
           endDate: range.endDate.toISOString(),
-          groupBy: 'day'
+          groupBy: 'day',
+          deviceId: this.selectedDeviceId || undefined
         });
       })
     ).subscribe({
@@ -260,5 +269,10 @@ export class FinancialReportsComponent implements OnInit {
         console.error('Financial reports error:', err);
       }
     });
+  }
+
+  onDeviceChange(deviceId: string): void {
+    this.selectedDeviceId = deviceId;
+    this.loadFinancialData();
   }
 }

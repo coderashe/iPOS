@@ -19,3 +19,10 @@ public class TopProductDto
     public int QuantitySold { get; set; }
     public decimal Revenue { get; set; }
 }
+
+public class DeviceDto
+{
+    public string DeviceId { get; set; } = string.Empty;
+    public string DeviceName { get; set; } = string.Empty;
+}
+

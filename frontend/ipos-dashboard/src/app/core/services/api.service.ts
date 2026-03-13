@@ -12,7 +12,8 @@ import {
   RevenueTrend,
   TopProduct,
   SalesReportParams,
-  AnalyticsParams
+  AnalyticsParams,
+  Device
 } from '../models/api-models';
 
 @Injectable({ providedIn: 'root' })
@@ -21,12 +22,21 @@ export class ApiService {
   private baseUrl = environment.apiUrl;
 
   // Dashboard endpoints
-  getDashboardSummary(startDate: string, endDate: string): Observable<DashboardSummary> {
-    const params = new HttpParams()
+  getDashboardSummary(startDate: string, endDate: string, deviceId?: string): Observable<DashboardSummary> {
+    let params = new HttpParams()
       .set('startDate', startDate)
       .set('endDate', endDate);
     
+    if (deviceId) {
+      params = params.set('deviceId', deviceId);
+    }
+    
     return this.http.get<DashboardSummary>(`${this.baseUrl}/dashboard/summary`, { params });
+  }
+
+  // Device endpoints
+  getDevices(): Observable<Device[]> {
+    return this.http.get<Device[]>(`${this.baseUrl}/dashboard/devices`);
   }
 
   // Reports endpoints
@@ -35,14 +45,19 @@ export class ApiService {
     if (params.startDate) httpParams = httpParams.set('startDate', params.startDate);
     if (params.endDate) httpParams = httpParams.set('endDate', params.endDate);
     if (params.groupBy) httpParams = httpParams.set('groupBy', params.groupBy);
+    if (params.deviceId) httpParams = httpParams.set('deviceId', params.deviceId);
     
     return this.http.get<SalesReport>(`${this.baseUrl}/reports/sales`, { params: httpParams });
   }
 
-  getSalesByCashier(startDate: string, endDate: string): Observable<SalesByCashier[]> {
-    const params = new HttpParams()
+  getSalesByCashier(startDate: string, endDate: string, deviceId?: string): Observable<SalesByCashier[]> {
+    let params = new HttpParams()
       .set('startDate', startDate)
       .set('endDate', endDate);
+    
+    if (deviceId) {
+      params = params.set('deviceId', deviceId);
+    }
     
     return this.http.get<SalesByCashier[]>(`${this.baseUrl}/reports/sales/by-cashier`, { params });
   }
@@ -76,14 +91,19 @@ export class ApiService {
     if (params.startDate) httpParams = httpParams.set('startDate', params.startDate);
     if (params.endDate) httpParams = httpParams.set('endDate', params.endDate);
     if (params.limit) httpParams = httpParams.set('limit', params.limit.toString());
+    if (params.deviceId) httpParams = httpParams.set('deviceId', params.deviceId);
     
     return this.http.get<TopProduct[]>(`${this.baseUrl}/analytics/top-products`, { params: httpParams });
   }
 
-  getCustomerInsights(startDate: string, endDate: string): Observable<CustomerInsights> {
-    const params = new HttpParams()
+  getCustomerInsights(startDate: string, endDate: string, deviceId?: string): Observable<CustomerInsights> {
+    let params = new HttpParams()
       .set('startDate', startDate)
       .set('endDate', endDate);
+    
+    if (deviceId) {
+      params = params.set('deviceId', deviceId);
+    }
     
     return this.http.get<CustomerInsights>(`${this.baseUrl}/analytics/customer-insights`, { params });
   }
@@ -93,6 +113,7 @@ export class ApiService {
     if (params.startDate) httpParams = httpParams.set('startDate', params.startDate);
     if (params.endDate) httpParams = httpParams.set('endDate', params.endDate);
     if (params.groupBy) httpParams = httpParams.set('groupBy', params.groupBy);
+    if (params.deviceId) httpParams = httpParams.set('deviceId', params.deviceId);
     
     return this.http.get<RevenueTrend>(`${this.baseUrl}/analytics/revenue-trends`, { params: httpParams });
   }

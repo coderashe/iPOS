@@ -4,17 +4,20 @@ import { switchMap } from 'rxjs/operators';
 import { ApiService } from '../../core/services/api.service';
 import { DashboardStateService } from '../../core/services/dashboard-state.service';
 import { DateRangePickerComponent } from '../../shared/components/date-range-picker/date-range-picker.component';
+import { DeviceFilterComponent } from '../../shared/components/device-filter/device-filter.component';
 import { SalesReport, SalesByCashier } from '../../core/models/api-models';
 
 @Component({
   selector: 'app-sales-analytics',
   standalone: true,
-  imports: [CommonModule, DateRangePickerComponent],
+  imports: [CommonModule, DateRangePickerComponent, DeviceFilterComponent],
   template: `
     <div class="sales-container">
       <h1>Sales Analytics</h1>
       
       <app-date-range-picker></app-date-range-picker>
+      
+      <app-device-filter (deviceChange)="onDeviceChange($event)"></app-device-filter>
 
       <div *ngIf="loading" class="loading">
         <div class="spinner"></div>
@@ -199,8 +202,13 @@ export class SalesAnalyticsComponent implements OnInit {
   salesByCashier: SalesByCashier[] = [];
   loading = true;
   error: string | null = null;
+  selectedDeviceId: string = '';
 
   ngOnInit(): void {
+    this.loadSalesData();
+  }
+
+  private loadSalesData(): void {
     this.stateService.dateRange$.pipe(
       switchMap(range => {
         this.loading = true;
@@ -208,7 +216,12 @@ export class SalesAnalyticsComponent implements OnInit {
         const startDate = range.startDate.toISOString();
         const endDate = range.endDate.toISOString();
         
-        return this.apiService.getSalesReport({ startDate, endDate, groupBy: 'day' });
+        return this.apiService.getSalesReport({ 
+          startDate, 
+          endDate, 
+          groupBy: 'day',
+          deviceId: this.selectedDeviceId || undefined
+        });
       })
     ).subscribe({
       next: (data) => {
@@ -223,11 +236,17 @@ export class SalesAnalyticsComponent implements OnInit {
     });
   }
 
+  onDeviceChange(deviceId: string): void {
+    this.selectedDeviceId = deviceId;
+    this.loadSalesData();
+  }
+
   private loadCashierData(): void {
     const range = this.stateService.getCurrentDateRange();
     this.apiService.getSalesByCashier(
       range.startDate.toISOString(),
-      range.endDate.toISOString()
+      range.endDate.toISOString(),
+      this.selectedDeviceId || undefined
     ).subscribe({
       next: (data) => {
         this.salesByCashier = data;
