@@ -11,7 +11,6 @@ import androidx.work.workDataOf
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
-
 /**
  * Centralized sync manager for handling all data synchronization operations.
  * Automatically triggers sync workers when data is created or updated.
@@ -237,15 +236,81 @@ class SyncManager @Inject constructor(
     }
 
     /**
-     * Sync all data types immediately
+     * Sync all data types immediately, including the full entity DAG.
      */
     fun syncAllNow() {
-        Log.d(TAG, "Triggering immediate sync for all data types")
-        scheduleInvoiceBatchSync()
-        scheduleProductBatchSync()
-        scheduleInvoiceLineBatchSync()
+        android.util.Log.d("backIntCheck", "SyncManager.syncAllNow() called — scheduling full DAG")
+        scheduleFullSync()
         unsyncedInvoiceCount = 0
         unsyncedProductCount = 0
+    }
+
+    /**
+     * Schedule a full DAG sync for all entities, respecting FK dependency order.
+     * Uses ExistingWorkPolicy.KEEP — won't re-queue if already running.
+     *
+     * Layer 1 (no deps):  ShoeBrand, Currency, Expense, DayReports, CashFlow, DiscountsReceived, TradeReceivables
+     * Layer 2 (after L1): ShoeSize, Customer
+     * Layer 3 (after L2): Product, PriceList
+     * Layer 4 (after L3): Invoice
+     * Layer 5 (after L4): InvoiceLine, Payment, CartItem, StockTake, ProductDayReport
+     */
+    fun scheduleFullSync() {
+        Log.d(TAG, "Scheduling full DAG sync")
+
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .build()
+
+        fun buildRequest(clazz: Class<out androidx.work.ListenableWorker>) =
+            androidx.work.OneTimeWorkRequest.Builder(clazz)
+                .setConstraints(constraints)
+                .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, SYNC_BACKOFF_DELAY, TimeUnit.MINUTES)
+                .setInputData(workDataOf(BaseSyncWorker.KEY_RETRY to true, "batchSync" to true))
+                .build()
+
+        val layer1 = listOf(
+            buildRequest(SyncShoeBrandWorker::class.java),
+            buildRequest(SyncCurrencyWorker::class.java),
+            buildRequest(SyncExpenseWorker::class.java),
+            buildRequest(SyncDayReportsWorker::class.java),
+            buildRequest(SyncCashFlowWorker::class.java),
+            buildRequest(SyncDiscountsReceivedWorker::class.java),
+            buildRequest(SyncTradeReceivablesWorker::class.java),
+            buildRequest(SyncUserWorker::class.java)
+        )
+
+        val layer2 = listOf(
+            buildRequest(SyncShoeSizeWorker::class.java),
+            buildRequest(SyncCustomerWorker::class.java)
+        )
+
+        val layer3 = listOf(
+            buildRequest(SyncProductWorker::class.java),
+            buildRequest(SyncPriceListWorker::class.java)
+        )
+
+        val layer4 = listOf(
+            buildRequest(SyncInvoiceWorker::class.java)
+        )
+
+        val layer5 = listOf(
+            buildRequest(SyncInvoiceLineWorker::class.java),
+            buildRequest(SyncPaymentWorker::class.java),
+            buildRequest(SyncCartItemWorker::class.java),
+            buildRequest(SyncStockTakeWorker::class.java),
+            buildRequest(SyncProductDayReportWorker::class.java)
+        )
+
+        workManager
+            .beginUniqueWork("full_sync", ExistingWorkPolicy.REPLACE, layer1)
+            .then(layer2)
+            .then(layer3)
+            .then(layer4)
+            .then(layer5)
+            .enqueue()
+
+        android.util.Log.d("backIntCheck", "SyncManager.scheduleFullSync() — DAG enqueued with KEEP policy")
     }
 
     /**

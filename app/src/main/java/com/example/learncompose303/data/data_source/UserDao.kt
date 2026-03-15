@@ -28,4 +28,13 @@ interface UserDao {
     @Query("SELECT * FROM user WHERE userId = :userId LIMIT 1")
     suspend fun getUserById(userId: Long): User?
 
+    @Query("SELECT * FROM user WHERE isSynced = 0 LIMIT :limit")
+    suspend fun getUnsynced(limit: Int): List<User>
+
+    @Query("UPDATE user SET isSynced = 1 WHERE userId IN (:ids)")
+    suspend fun markSynced(ids: List<Long>)
+
+    @Query("SELECT COUNT(*) FROM user WHERE isSynced = 0")
+    fun getUnsyncedCount(): Flow<Int>
+
 }
