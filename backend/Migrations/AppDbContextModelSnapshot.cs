@@ -43,6 +43,238 @@ namespace iPosApi.Migrations
                     b.ToTable("BusinessPerformances");
                 });
 
+            modelBuilder.Entity("iPosApi.Models.CartItem", b =>
+                {
+                    b.Property<long>("CartItemId")
+                        .HasColumnType("bigint");
+
+                    b.Property<double>("Change")
+                        .HasColumnType("float");
+
+                    b.Property<long>("CreatedAt")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("CustomerId")
+                        .HasColumnType("bigint");
+
+                    b.Property<double?>("DiscountAmount")
+                        .HasColumnType("float");
+
+                    b.Property<long>("InvoiceId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("ProductId")
+                        .HasColumnType("bigint");
+
+                    b.Property<double?>("TaxAmount")
+                        .HasColumnType("float");
+
+                    b.Property<double>("TotalAmount")
+                        .HasColumnType("float");
+
+                    b.Property<double>("TotalAmountTendered")
+                        .HasColumnType("float");
+
+                    b.Property<long?>("UpdatedAt")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("CartItemId");
+
+                    b.ToTable("CartItems");
+                });
+
+            modelBuilder.Entity("iPosApi.Models.CashFlow", b =>
+                {
+                    b.Property<long>("CashFlowId")
+                        .HasColumnType("bigint");
+
+                    b.Property<double>("Amount")
+                        .HasColumnType("float");
+
+                    b.Property<bool>("CashOutflow")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<long>("OrderId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("TransactionDate")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("CashFlowId");
+
+                    b.ToTable("CashFlows");
+                });
+
+            modelBuilder.Entity("iPosApi.Models.Currency", b =>
+                {
+                    b.Property<string>("Code")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<double>("RateToBase")
+                        .HasColumnType("float");
+
+                    b.HasKey("Code");
+
+                    b.ToTable("Currencies");
+                });
+
+            modelBuilder.Entity("iPosApi.Models.Customer", b =>
+                {
+                    b.Property<long>("CustomerId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Address")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CustomerType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Email")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("LoyaltyPoints")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Phone")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("TaxIdentificationNumber")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("CustomerId");
+
+                    b.ToTable("Customers");
+                });
+
+            modelBuilder.Entity("iPosApi.Models.DayReport", b =>
+                {
+                    b.Property<long>("ReportId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("EndTime")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("ReportDate")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("StartTime")
+                        .HasColumnType("bigint");
+
+                    b.Property<double>("TotalInvoiceSales")
+                        .HasColumnType("float");
+
+                    b.Property<int>("TotalInvoices")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TotalOrders")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TotalProductsSold")
+                        .HasColumnType("int");
+
+                    b.HasKey("ReportId");
+
+                    b.ToTable("DayReports");
+                });
+
+            modelBuilder.Entity("iPosApi.Models.DiscountReceived", b =>
+                {
+                    b.Property<long>("DiscountId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("DateReceived")
+                        .HasColumnType("bigint");
+
+                    b.Property<double>("DiscountAmount")
+                        .HasColumnType("float");
+
+                    b.Property<long>("OrderId")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("DiscountId");
+
+                    b.ToTable("DiscountsReceived");
+                });
+
+            modelBuilder.Entity("iPosApi.Models.Expense", b =>
+                {
+                    b.Property<long>("ExpenseId")
+                        .HasColumnType("bigint");
+
+                    b.Property<double>("Amount")
+                        .HasColumnType("float");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<long>("ExpenseDate")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("ExpenseId");
+
+                    b.ToTable("Expenses");
+                });
+
+            modelBuilder.Entity("iPosApi.Models.FailedInvoiceItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .HasColumnType("int");
+
+                    b.Property<double>("AmountTendered")
+                        .HasColumnType("float");
+
+                    b.Property<string>("Brand")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<long>("CustomerId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FailureReason")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RowIndex")
+                        .HasColumnType("int");
+
+                    b.Property<double>("Size")
+                        .HasColumnType("float");
+
+                    b.Property<string>("SuggestedMatches")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<long>("Timestamp")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("FailedInvoiceItems");
+                });
+
             modelBuilder.Entity("iPosApi.Models.Invoice", b =>
                 {
                     b.Property<long>("InvoiceId")
@@ -83,6 +315,34 @@ namespace iPosApi.Migrations
                     b.HasKey("InvoiceId");
 
                     b.ToTable("Invoices");
+                });
+
+            modelBuilder.Entity("iPosApi.Models.InvoiceItem", b =>
+                {
+                    b.Property<long>("ItemId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("CustomerId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("InvoiceId")
+                        .HasColumnType("bigint");
+
+                    b.Property<double>("Price")
+                        .HasColumnType("float");
+
+                    b.Property<long>("ProductId")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<double>("Total")
+                        .HasColumnType("float");
+
+                    b.HasKey("ItemId");
+
+                    b.ToTable("InvoiceItems");
                 });
 
             modelBuilder.Entity("iPosApi.Models.InvoiceLine", b =>
@@ -214,6 +474,58 @@ namespace iPosApi.Migrations
                     b.ToTable("OrderItems");
                 });
 
+            modelBuilder.Entity("iPosApi.Models.Payment", b =>
+                {
+                    b.Property<long>("PaymentId")
+                        .HasColumnType("bigint");
+
+                    b.Property<double>("Amount")
+                        .HasColumnType("float");
+
+                    b.Property<long>("InvoiceId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Method")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<long>("PaymentDate")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("PaymentId");
+
+                    b.ToTable("Payments");
+                });
+
+            modelBuilder.Entity("iPosApi.Models.PriceList", b =>
+                {
+                    b.Property<long>("PriceListId")
+                        .HasColumnType("bigint");
+
+                    b.Property<double>("GrossProfitPercentage")
+                        .HasColumnType("float");
+
+                    b.Property<double>("MarkupPercentage")
+                        .HasColumnType("float");
+
+                    b.Property<string>("ProductDescription")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<long>("ProductId")
+                        .HasColumnType("bigint");
+
+                    b.Property<double>("SellingPrice")
+                        .HasColumnType("float");
+
+                    b.Property<double>("UnitCost")
+                        .HasColumnType("float");
+
+                    b.HasKey("PriceListId");
+
+                    b.ToTable("PriceLists");
+                });
+
             modelBuilder.Entity("iPosApi.Models.Product", b =>
                 {
                     b.Property<long>("Id")
@@ -278,6 +590,141 @@ namespace iPosApi.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Products");
+                });
+
+            modelBuilder.Entity("iPosApi.Models.ProductDayReport", b =>
+                {
+                    b.Property<long>("ReportId")
+                        .HasColumnType("bigint");
+
+                    b.Property<double>("ClosingStock")
+                        .HasColumnType("float");
+
+                    b.Property<double>("OpeningStock")
+                        .HasColumnType("float");
+
+                    b.Property<long>("ProductId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("ProductName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("QuantitySold")
+                        .HasColumnType("int");
+
+                    b.Property<long>("ReportDate")
+                        .HasColumnType("bigint");
+
+                    b.Property<double>("TotalCost")
+                        .HasColumnType("float");
+
+                    b.Property<double>("TotalProfit")
+                        .HasColumnType("float");
+
+                    b.Property<double>("TotalSales")
+                        .HasColumnType("float");
+
+                    b.HasKey("ReportId");
+
+                    b.ToTable("ProductDayReports");
+                });
+
+            modelBuilder.Entity("iPosApi.Models.ShoeBrand", b =>
+                {
+                    b.Property<long>("BrandId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("BrandName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("BrandId");
+
+                    b.ToTable("ShoeBrands");
+                });
+
+            modelBuilder.Entity("iPosApi.Models.ShoeSize", b =>
+                {
+                    b.Property<long>("ShoeSizeId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("BrandId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("Quantity")
+                        .HasColumnType("bigint");
+
+                    b.Property<double>("Size")
+                        .HasColumnType("float");
+
+                    b.HasKey("ShoeSizeId");
+
+                    b.ToTable("ShoeSizes");
+                });
+
+            modelBuilder.Entity("iPosApi.Models.StockTake", b =>
+                {
+                    b.Property<int>("Id")
+                        .HasColumnType("int");
+
+                    b.Property<double>("CountedStock")
+                        .HasColumnType("float");
+
+                    b.Property<long>("DateRecorded")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("ProductId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("RecordedBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<long>("RecordedStock")
+                        .HasColumnType("bigint");
+
+                    b.Property<double>("Variance")
+                        .HasColumnType("float");
+
+                    b.Property<string>("VarianceReason")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("StockTakes");
+                });
+
+            modelBuilder.Entity("iPosApi.Models.TradeReceivable", b =>
+                {
+                    b.Property<long>("ReceivableId")
+                        .HasColumnType("bigint");
+
+                    b.Property<double>("AmountPaid")
+                        .HasColumnType("float");
+
+                    b.Property<int>("CreditPeriod")
+                        .HasColumnType("int");
+
+                    b.Property<long>("DateCreated")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("DueDate")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("OrderId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("PaymentStatus")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<double>("TotalAmount")
+                        .HasColumnType("float");
+
+                    b.HasKey("ReceivableId");
+
+                    b.ToTable("TradeReceivables");
                 });
 
             modelBuilder.Entity("iPosApi.Models.User", b =>

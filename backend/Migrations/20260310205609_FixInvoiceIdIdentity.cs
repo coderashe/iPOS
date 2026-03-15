@@ -10,14 +10,8 @@ namespace iPosApi.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AlterColumn<long>(
-                name: "InvoiceId",
-                table: "Invoices",
-                type: "bigint",
-                nullable: false,
-                oldClrType: typeof(long),
-                oldType: "bigint")
-                .OldAnnotation("SqlServer:Identity", "1, 1");
+            // No-op: InvoiceId IDENTITY was already removed via raw SQL in FixInvoicesTable.sql.
+            // This migration is kept for history tracking only.
         }
 
         /// <inheritdoc />
