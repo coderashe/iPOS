@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using iPosApi.Dtos;
-using iPosApi.Models;
 using iPosApi.Models.Data;
+using iPosApi.Services;
 
 namespace iPosApi.Controllers;
 
@@ -10,31 +10,20 @@ namespace iPosApi.Controllers;
 [Route("api/[controller]")]
 public class ExpensesController : ControllerBase
 {
+    private readonly ISyncService _sync;
     private readonly AppDbContext _db;
-    public ExpensesController(AppDbContext db) => _db = db;
-
-    [HttpPost("sync")]
-    public async Task<IActionResult> Sync([FromBody] List<ExpenseDto> items)
-    {
-        foreach (var dto in items)
-        {
-            var existing = await _db.Expenses.FindAsync(dto.ExpenseId);
-            if (existing == null)
-                _db.Expenses.Add(new Expense
-                {
-                    ExpenseId = dto.ExpenseId, Description = dto.Description,
-                    Amount = dto.Amount, ExpenseDate = dto.ExpenseDate, Category = dto.Category
-                });
-            else
-            {
-                existing.Description = dto.Description; existing.Amount = dto.Amount;
-                existing.ExpenseDate = dto.ExpenseDate; existing.Category = dto.Category;
-            }
-        }
-        await _db.SaveChangesAsync();
-        return Ok(new { synced = items.Count });
-    }
+    public ExpensesController(ISyncService sync, AppDbContext db) { _sync = sync; _db = db; }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll() => Ok(await _db.Expenses.ToListAsync());
+    public async Task<IActionResult> GetAll([FromQuery] string? category = null)
+    {
+        var query = _db.Expenses.AsNoTracking();
+        if (!string.IsNullOrEmpty(category))
+            query = query.Where(e => e.Category == category);
+        return Ok(await query.ToListAsync());
+    }
+
+    [HttpPost("sync")]
+    public async Task<IActionResult> Sync([FromBody] List<ExpenseDto> items) =>
+        Ok(new { synced = await _sync.SyncExpensesAsync(items) });
 }

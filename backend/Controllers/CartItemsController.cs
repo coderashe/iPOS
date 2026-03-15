@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using iPosApi.Dtos;
-using iPosApi.Models;
 using iPosApi.Models.Data;
+using iPosApi.Services;
 
 namespace iPosApi.Controllers;
 
@@ -10,35 +10,14 @@ namespace iPosApi.Controllers;
 [Route("api/[controller]")]
 public class CartItemsController : ControllerBase
 {
+    private readonly ISyncService _sync;
     private readonly AppDbContext _db;
-    public CartItemsController(AppDbContext db) => _db = db;
-
-    [HttpPost("sync")]
-    public async Task<IActionResult> Sync([FromBody] List<CartItemDto> items)
-    {
-        foreach (var dto in items)
-        {
-            var existing = await _db.CartItems.FindAsync(dto.CartItemId);
-            if (existing == null)
-                _db.CartItems.Add(new CartItem
-                {
-                    CartItemId = dto.CartItemId, CustomerId = dto.CustomerId, ProductId = dto.ProductId,
-                    InvoiceId = dto.InvoiceId, TotalAmount = dto.TotalAmount,
-                    TotalAmountTendered = dto.TotalAmountTendered, Change = dto.Change,
-                    TaxAmount = dto.TaxAmount, DiscountAmount = dto.DiscountAmount,
-                    CreatedAt = dto.CreatedAt, UpdatedAt = dto.UpdatedAt
-                });
-            else
-            {
-                existing.TotalAmount = dto.TotalAmount; existing.TotalAmountTendered = dto.TotalAmountTendered;
-                existing.Change = dto.Change; existing.TaxAmount = dto.TaxAmount;
-                existing.DiscountAmount = dto.DiscountAmount; existing.UpdatedAt = dto.UpdatedAt;
-            }
-        }
-        await _db.SaveChangesAsync();
-        return Ok(new { synced = items.Count });
-    }
+    public CartItemsController(ISyncService sync, AppDbContext db) { _sync = sync; _db = db; }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll() => Ok(await _db.CartItems.ToListAsync());
+    public async Task<IActionResult> GetAll() => Ok(await _db.CartItems.AsNoTracking().ToListAsync());
+
+    [HttpPost("sync")]
+    public async Task<IActionResult> Sync([FromBody] List<CartItemDto> items) =>
+        Ok(new { synced = await _sync.SyncCartItemsAsync(items) });
 }

@@ -1,74 +1,46 @@
 using Microsoft.AspNetCore.Mvc;
 using iPosApi.Models;
-using iPosApi.Models.Data;
+using iPosApi.Services;
 
 namespace iPosApi.Controllers;
 
 [ApiController]
-[Route("api/invoices")]
+[Route("api/[controller]")]
 public class InvoicesController : ControllerBase
 {
-    private readonly AppDbContext _context;
+    private readonly IInvoiceService _service;
 
-    public InvoicesController(AppDbContext context)
-    {
-        _context = context;
-    }
-
-    [HttpPost]
-    public IActionResult Create(Invoice invoice)
-    {
-        _context.Invoices.Add(invoice);
-        _context.SaveChanges();
-        return Ok(invoice);
-    }
+    public InvoicesController(IInvoiceService service) => _service = service;
 
     [HttpGet]
-    public IActionResult GetAll()
+    public async Task<IActionResult> GetAll([FromQuery] string? deviceId = null) =>
+        Ok(await _service.GetAllAsync(deviceId));
+
+    [HttpGet("{id:long}")]
+    public async Task<IActionResult> GetById(long id)
     {
-        return Ok(_context.Invoices.ToList());
+        var invoice = await _service.GetByIdAsync(id);
+        return invoice is null ? NotFound() : Ok(invoice);
     }
 
-    [HttpGet("{id}")]
-    public IActionResult GetById(long id)
+    /// <summary>Upsert a single invoice</summary>
+    [HttpPost]
+    public async Task<IActionResult> Upsert([FromBody] Invoice invoice) =>
+        Ok(await _service.UpsertAsync(invoice));
+
+    /// <summary>Batch sync from Android</summary>
+    [HttpPost("sync")]
+    public async Task<IActionResult> Sync([FromBody] List<Invoice> invoices)
     {
-        var invoice = _context.Invoices.Find(id);
-        if (invoice == null)
-            return NotFound();
-        return Ok(invoice);
+        foreach (var invoice in invoices)
+            await _service.UpsertAsync(invoice);
+        return Ok(new { synced = invoices.Count });
     }
 
-    [HttpPut("{id}")]
-    public IActionResult Update(long id, Invoice invoice)
+    [HttpDelete("{id:long}")]
+    public async Task<IActionResult> Delete(long id)
     {
-        var existing = _context.Invoices.Find(id);
-        if (existing == null)
-            return NotFound();
-
-        existing.CustomerId = invoice.CustomerId;
-        existing.TotalAmount = invoice.TotalAmount;
-        existing.InvoiceDate = invoice.InvoiceDate;
-        existing.DueDate = invoice.DueDate;
-        existing.TheStatus = invoice.TheStatus;
-        existing.CurrencyCode = invoice.CurrencyCode;
-        existing.LastUpdated = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-        existing.IsArchived = invoice.IsArchived;
-        existing.DeviceId = invoice.DeviceId;
-        existing.DeviceName = invoice.DeviceName;
-
-        _context.SaveChanges();
-        return Ok(existing);
-    }
-
-    [HttpDelete("{id}")]
-    public IActionResult Delete(long id)
-    {
-        var invoice = _context.Invoices.Find(id);
-        if (invoice == null)
-            return NotFound();
-
-        _context.Invoices.Remove(invoice);
-        _context.SaveChanges();
-        return NoContent();
+        var deleted = await _service.DeleteAsync(id);
+        return deleted ? NoContent() : NotFound();
     }
 }

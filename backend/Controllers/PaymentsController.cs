@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using iPosApi.Dtos;
-using iPosApi.Models;
 using iPosApi.Models.Data;
+using iPosApi.Services;
 
 namespace iPosApi.Controllers;
 
@@ -10,31 +10,14 @@ namespace iPosApi.Controllers;
 [Route("api/[controller]")]
 public class PaymentsController : ControllerBase
 {
+    private readonly ISyncService _sync;
     private readonly AppDbContext _db;
-    public PaymentsController(AppDbContext db) => _db = db;
-
-    [HttpPost("sync")]
-    public async Task<IActionResult> Sync([FromBody] List<PaymentDto> items)
-    {
-        foreach (var dto in items)
-        {
-            var existing = await _db.Payments.FindAsync(dto.PaymentId);
-            if (existing == null)
-                _db.Payments.Add(new Payment
-                {
-                    PaymentId = dto.PaymentId, InvoiceId = dto.InvoiceId,
-                    PaymentDate = dto.PaymentDate, Amount = dto.Amount, Method = dto.Method
-                });
-            else
-            {
-                existing.InvoiceId = dto.InvoiceId; existing.PaymentDate = dto.PaymentDate;
-                existing.Amount = dto.Amount; existing.Method = dto.Method;
-            }
-        }
-        await _db.SaveChangesAsync();
-        return Ok(new { synced = items.Count });
-    }
+    public PaymentsController(ISyncService sync, AppDbContext db) { _sync = sync; _db = db; }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll() => Ok(await _db.Payments.ToListAsync());
+    public async Task<IActionResult> GetAll() => Ok(await _db.Payments.AsNoTracking().ToListAsync());
+
+    [HttpPost("sync")]
+    public async Task<IActionResult> Sync([FromBody] List<PaymentDto> items) =>
+        Ok(new { synced = await _sync.SyncPaymentsAsync(items) });
 }

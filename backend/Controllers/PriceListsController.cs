@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using iPosApi.Dtos;
-using iPosApi.Models;
 using iPosApi.Models.Data;
+using iPosApi.Services;
 
 namespace iPosApi.Controllers;
 
@@ -10,35 +10,18 @@ namespace iPosApi.Controllers;
 [Route("api/[controller]")]
 public class PriceListsController : ControllerBase
 {
+    private readonly ISyncService _sync;
     private readonly AppDbContext _db;
-    public PriceListsController(AppDbContext db) => _db = db;
-
-    [HttpPost("sync")]
-    public async Task<IActionResult> Sync([FromBody] List<PriceListDto> items)
-    {
-        foreach (var dto in items)
-        {
-            var existing = await _db.PriceLists.FindAsync(dto.PriceListId);
-            if (existing == null)
-                _db.PriceLists.Add(new PriceList
-                {
-                    PriceListId = dto.PriceListId, ProductId = dto.ProductId,
-                    ProductDescription = dto.ProductDescription, UnitCost = dto.UnitCost,
-                    SellingPrice = dto.SellingPrice, MarkupPercentage = dto.MarkupPercentage,
-                    GrossProfitPercentage = dto.GrossProfitPercentage
-                });
-            else
-            {
-                existing.ProductId = dto.ProductId; existing.ProductDescription = dto.ProductDescription;
-                existing.UnitCost = dto.UnitCost; existing.SellingPrice = dto.SellingPrice;
-                existing.MarkupPercentage = dto.MarkupPercentage;
-                existing.GrossProfitPercentage = dto.GrossProfitPercentage;
-            }
-        }
-        await _db.SaveChangesAsync();
-        return Ok(new { synced = items.Count });
-    }
+    public PriceListsController(ISyncService sync, AppDbContext db) { _sync = sync; _db = db; }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll() => Ok(await _db.PriceLists.ToListAsync());
+    public async Task<IActionResult> GetAll() => Ok(await _db.PriceLists.AsNoTracking().ToListAsync());
+
+    [HttpGet("by-product/{productId:long}")]
+    public async Task<IActionResult> GetByProduct(long productId) =>
+        Ok(await _db.PriceLists.AsNoTracking().Where(p => p.ProductId == productId).ToListAsync());
+
+    [HttpPost("sync")]
+    public async Task<IActionResult> Sync([FromBody] List<PriceListDto> items) =>
+        Ok(new { synced = await _sync.SyncPriceListsAsync(items) });
 }

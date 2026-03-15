@@ -1,31 +1,48 @@
 using Microsoft.AspNetCore.Mvc;
 using iPosApi.Models;
-using iPosApi.Models.Data;
+using iPosApi.Services;
 
 namespace iPosApi.Controllers;
 
 [ApiController]
-[Route("api")]
+[Route("api/[controller]")]
 public class UsersController : ControllerBase
 {
-    private readonly AppDbContext _context;
+    private readonly IUserService _service;
 
-    public UsersController(AppDbContext context)
+    public UsersController(IUserService service) => _service = service;
+
+    [HttpGet]
+    public async Task<IActionResult> GetAll() => Ok(await _service.GetAllAsync());
+
+    [HttpGet("{id:long}")]
+    public async Task<IActionResult> GetById(long id)
     {
-        _context = context;
+        var user = await _service.GetByIdAsync(id);
+        return user is null ? NotFound() : Ok(user);
     }
 
-    [HttpPost("user")]
-    public IActionResult Create(User user)
+    [HttpGet("by-email")]
+    public async Task<IActionResult> GetByEmail([FromQuery] string email)
     {
-        _context.Users.Add(user);
-        _context.SaveChanges();
-        return Ok(user);
+        var user = await _service.GetByEmailAsync(email);
+        return user is null ? NotFound() : Ok(user);
     }
 
-    [HttpGet("users")]
-    public IActionResult GetAll()
+    /// <summary>Upsert a single user (used by Android sync worker)</summary>
+    [HttpPost]
+    public async Task<IActionResult> Upsert([FromBody] User user)
     {
-        return Ok(_context.Users.ToList());
+        var result = await _service.UpsertAsync(user);
+        return Ok(result);
+    }
+
+    /// <summary>Batch sync from Android</summary>
+    [HttpPost("sync")]
+    public async Task<IActionResult> Sync([FromBody] List<User> users)
+    {
+        foreach (var user in users)
+            await _service.UpsertAsync(user);
+        return Ok(new { synced = users.Count });
     }
 }

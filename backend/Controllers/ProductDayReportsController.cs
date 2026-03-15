@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using iPosApi.Dtos;
-using iPosApi.Models;
 using iPosApi.Models.Data;
+using iPosApi.Services;
 
 namespace iPosApi.Controllers;
 
@@ -10,34 +10,20 @@ namespace iPosApi.Controllers;
 [Route("api/[controller]")]
 public class ProductDayReportsController : ControllerBase
 {
+    private readonly ISyncService _sync;
     private readonly AppDbContext _db;
-    public ProductDayReportsController(AppDbContext db) => _db = db;
-
-    [HttpPost("sync")]
-    public async Task<IActionResult> Sync([FromBody] List<ProductDayReportDto> items)
-    {
-        foreach (var dto in items)
-        {
-            var existing = await _db.ProductDayReports.FindAsync(dto.ReportId);
-            if (existing == null)
-                _db.ProductDayReports.Add(new ProductDayReport
-                {
-                    ReportId = dto.ReportId, ProductId = dto.ProductId, ProductName = dto.ProductName,
-                    OpeningStock = dto.OpeningStock, ClosingStock = dto.ClosingStock,
-                    QuantitySold = dto.QuantitySold, TotalSales = dto.TotalSales,
-                    TotalCost = dto.TotalCost, TotalProfit = dto.TotalProfit, ReportDate = dto.ReportDate
-                });
-            else
-            {
-                existing.ClosingStock = dto.ClosingStock; existing.QuantitySold = dto.QuantitySold;
-                existing.TotalSales = dto.TotalSales; existing.TotalCost = dto.TotalCost;
-                existing.TotalProfit = dto.TotalProfit;
-            }
-        }
-        await _db.SaveChangesAsync();
-        return Ok(new { synced = items.Count });
-    }
+    public ProductDayReportsController(ISyncService sync, AppDbContext db) { _sync = sync; _db = db; }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll() => Ok(await _db.ProductDayReports.ToListAsync());
+    public async Task<IActionResult> GetAll([FromQuery] long? productId = null)
+    {
+        var query = _db.ProductDayReports.AsNoTracking();
+        if (productId.HasValue)
+            query = query.Where(p => p.ProductId == productId.Value);
+        return Ok(await query.ToListAsync());
+    }
+
+    [HttpPost("sync")]
+    public async Task<IActionResult> Sync([FromBody] List<ProductDayReportDto> items) =>
+        Ok(new { synced = await _sync.SyncProductDayReportsAsync(items) });
 }

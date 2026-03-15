@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using iPosApi.Dtos;
-using iPosApi.Models;
 using iPosApi.Models.Data;
+using iPosApi.Services;
 
 namespace iPosApi.Controllers;
 
@@ -10,30 +10,14 @@ namespace iPosApi.Controllers;
 [Route("api/[controller]")]
 public class InvoiceItemsController : ControllerBase
 {
+    private readonly ISyncService _sync;
     private readonly AppDbContext _db;
-    public InvoiceItemsController(AppDbContext db) => _db = db;
-
-    [HttpPost("sync")]
-    public async Task<IActionResult> Sync([FromBody] List<InvoiceItemDto> items)
-    {
-        foreach (var dto in items)
-        {
-            var existing = await _db.InvoiceItems.FindAsync(dto.ItemId);
-            if (existing == null)
-                _db.InvoiceItems.Add(new InvoiceItem
-                {
-                    ItemId = dto.ItemId, InvoiceId = dto.InvoiceId, ProductId = dto.ProductId,
-                    CustomerId = dto.CustomerId, Quantity = dto.Quantity, Price = dto.Price, Total = dto.Total
-                });
-            else
-            {
-                existing.Quantity = dto.Quantity; existing.Price = dto.Price; existing.Total = dto.Total;
-            }
-        }
-        await _db.SaveChangesAsync();
-        return Ok(new { synced = items.Count });
-    }
+    public InvoiceItemsController(ISyncService sync, AppDbContext db) { _sync = sync; _db = db; }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll() => Ok(await _db.InvoiceItems.ToListAsync());
+    public async Task<IActionResult> GetAll() => Ok(await _db.InvoiceItems.AsNoTracking().ToListAsync());
+
+    [HttpPost("sync")]
+    public async Task<IActionResult> Sync([FromBody] List<InvoiceItemDto> items) =>
+        Ok(new { synced = await _sync.SyncInvoiceItemsAsync(items) });
 }

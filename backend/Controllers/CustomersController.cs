@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using iPosApi.Dtos;
-using iPosApi.Models;
 using iPosApi.Models.Data;
+using iPosApi.Services;
 
 namespace iPosApi.Controllers;
 
@@ -10,34 +10,29 @@ namespace iPosApi.Controllers;
 [Route("api/[controller]")]
 public class CustomersController : ControllerBase
 {
+    private readonly ISyncService _sync;
     private readonly AppDbContext _db;
-    public CustomersController(AppDbContext db) => _db = db;
+
+    public CustomersController(ISyncService sync, AppDbContext db)
+    {
+        _sync = sync;
+        _db = db;
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetAll() => Ok(await _db.Customers.AsNoTracking().ToListAsync());
+
+    [HttpGet("{id:long}")]
+    public async Task<IActionResult> GetById(long id)
+    {
+        var customer = await _db.Customers.FindAsync(id);
+        return customer is null ? NotFound() : Ok(customer);
+    }
 
     [HttpPost("sync")]
     public async Task<IActionResult> Sync([FromBody] List<CustomerDto> items)
     {
-        foreach (var dto in items)
-        {
-            var existing = await _db.Customers.FindAsync(dto.CustomerId);
-            if (existing == null)
-                _db.Customers.Add(new Customer
-                {
-                    CustomerId = dto.CustomerId, Name = dto.Name, Email = dto.Email,
-                    Phone = dto.Phone, Address = dto.Address, CustomerType = dto.CustomerType,
-                    TaxIdentificationNumber = dto.TaxIdentificationNumber, LoyaltyPoints = dto.LoyaltyPoints
-                });
-            else
-            {
-                existing.Name = dto.Name; existing.Email = dto.Email; existing.Phone = dto.Phone;
-                existing.Address = dto.Address; existing.CustomerType = dto.CustomerType;
-                existing.TaxIdentificationNumber = dto.TaxIdentificationNumber;
-                existing.LoyaltyPoints = dto.LoyaltyPoints;
-            }
-        }
-        await _db.SaveChangesAsync();
-        return Ok(new { synced = items.Count });
+        var count = await _sync.SyncCustomersAsync(items);
+        return Ok(new { synced = count });
     }
-
-    [HttpGet]
-    public async Task<IActionResult> GetAll() => Ok(await _db.Customers.ToListAsync());
 }
