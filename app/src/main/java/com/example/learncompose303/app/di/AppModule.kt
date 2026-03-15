@@ -10,6 +10,7 @@ import com.example.learncompose303.data.MIGRATION_2_3
 import com.example.learncompose303.data.MIGRATION_3_4
 import com.example.learncompose303.data.MIGRATION_4_5
 import com.example.learncompose303.data.MIGRATION_5_6
+import com.example.learncompose303.data.MIGRATION_6_7
 import com.example.learncompose303.data.data_source.CartItemDao
 import com.example.learncompose303.data.data_source.CurrencyDao
 import com.example.learncompose303.data.data_source.CustomerDao
@@ -103,7 +104,14 @@ object AppModule {
             AppDatabase::class.java,
             AppDatabase.DATABASE_NAME
         )
-            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
+            .addMigrations(
+                MIGRATION_1_2,
+                MIGRATION_2_3,
+                MIGRATION_3_4,
+                MIGRATION_4_5,
+                MIGRATION_5_6,
+                MIGRATION_6_7
+            )
             .build()
     }
 
@@ -112,6 +120,13 @@ object AppModule {
     @Singleton
     fun provideWorkManager(@ApplicationContext context: Context): WorkManager {
         return WorkManager.getInstance(context)
+    }
+
+    // Provide SyncManager instance
+    @Provides
+    @Singleton
+    fun provideSyncManager(workManager: WorkManager): com.example.learncompose303.network.SyncManager {
+        return com.example.learncompose303.network.SyncManager(workManager)
     }
 
     @Provides
@@ -264,11 +279,13 @@ object AppModule {
     fun provideInvoiceRepository(
         appDatabase: AppDatabase,
         invoiceApiService: InvoiceApiService,
+        syncManager: com.example.learncompose303.network.SyncManager
     ): InvoiceRepository {
         return InvoiceRepositoryImpl(
             appDatabase.invoiceDao(),
             appDatabase.currencyDao(),
             invoiceApiService,
+            syncManager
         )
     }
 
@@ -302,8 +319,11 @@ object AppModule {
     }
 
     @Provides
-    fun provideInvoiceLineRepository(invoiceLineDao: InvoiceLineDao): InvoiceLineRepository {
-        return InvoiceLineRepositoryImp(invoiceLineDao)
+    fun provideInvoiceLineRepository(
+        invoiceLineDao: InvoiceLineDao,
+        syncManager: com.example.learncompose303.network.SyncManager
+    ): InvoiceLineRepository {
+        return InvoiceLineRepositoryImp(invoiceLineDao, syncManager)
     }
 
     @Provides
@@ -337,8 +357,11 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideProductRepository(appDatabase: AppDatabase): ProductRepository {
-        return ProductRepositoryImpl(appDatabase.productDao())
+    fun provideProductRepository(
+        appDatabase: AppDatabase,
+        syncManager: com.example.learncompose303.network.SyncManager
+    ): ProductRepository {
+        return ProductRepositoryImpl(appDatabase.productDao(), syncManager)
     }
 
     // Provide ItemRepository, assuming ItemRepository takes an ItemDao

@@ -63,7 +63,7 @@ import com.example.learncompose303.data.entities.User
         CashFlow::class, ShoeBrand::class, ShoeSize::class, StockTake::class,
         FailedInvoiceItem::class
     ],
-    version = 6,
+    version = 7,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -160,5 +160,13 @@ val MIGRATION_5_6 = object : Migration(5, 6) {
     override fun migrate(db: SupportSQLiteDatabase) {
         // Add suggestedMatches column to failed_invoices table
         db.execSQL("ALTER TABLE failed_invoices ADD COLUMN suggestedMatches TEXT")
+    }
+}
+
+val MIGRATION_6_7 = object : Migration(6, 7) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        // Add deviceId and deviceName columns to invoice table
+        db.execSQL("ALTER TABLE invoice ADD COLUMN deviceId TEXT")
+        db.execSQL("ALTER TABLE invoice ADD COLUMN deviceName TEXT")
     }
 }

@@ -1,0 +1,8 @@
+Developing iPOS Pro
+
+Command
+git -C . log --oneline -10
+git -C . diff HEAD~1 HEAD -- "app/src/main/java/com/example/learncompose303/data/entities/Invoice.kt" "app/src/main/java/com/example/learncompose303/data/AppDatabase.kt"
+git -C . show 43ab383 -- "app/src/main/java/com/example/learncompose303/data/entities/Invoice.kt" "app/src/main/java/com/example/learncompose303/data/AppDatabase.kt" 2>&1 | Select-String "^\+" | Select-Object -First 80
+git -C . log --all --oneline -- "app/src/main/java/com/example/learncompose303/network/SyncInvoiceWorker.kt"
+
