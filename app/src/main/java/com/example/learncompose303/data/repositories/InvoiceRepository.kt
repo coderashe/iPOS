@@ -39,6 +39,7 @@ class InvoiceRepositoryImpl @Inject constructor(
     private val invoiceDao: InvoiceDao,
     private val currencyDao: CurrencyDao,
     private val invoiceApiService: InvoiceApiService,
+    private val syncManager: com.example.learncompose303.network.SyncManager
 ) : InvoiceRepository {
 
     private val TAG = "InvoiceRepositoryImpl"
@@ -52,20 +53,23 @@ class InvoiceRepositoryImpl @Inject constructor(
         // Insert into local database
         val id = invoiceDao.insertInvoice(timestampedInvoice)
 
-        // Notify sync manager about new invoice
+        // Automatically trigger sync for the new invoice
         if (id > 0) {
-            val insertedInvoice = timestampedInvoice.copy(invoiceId = id)
+            syncManager.scheduleSingleInvoiceSync(id)
+            Log.d(TAG, "Auto-sync scheduled for new invoice: $id")
         }
 
         return@withContext id
     }
 
-    override suspend fun updateInvoice(invoice: Invoice) = withContext(Dispatchers.IO) {
+    override suspend fun updateInvoice(invoice: Invoice): Unit = withContext(Dispatchers.IO) {
         // Mark as needing sync by setting lastUpdated to null
         val updatedInvoice = invoice.copy(lastUpdated = null)
         invoiceDao.updateInvoice(updatedInvoice)
 
-        // Notify sync manager
+        // Automatically trigger sync for the updated invoice
+        syncManager.scheduleSingleInvoiceSync(updatedInvoice.invoiceId)
+        Log.d(TAG, "Auto-sync scheduled for updated invoice: ${updatedInvoice.invoiceId}")
     }
 
     override suspend fun deleteInvoice(invoice: Invoice): Unit = withContext(Dispatchers.IO) {

@@ -13,5 +13,6 @@ data class StockTake(
     val variance: Double,
     val varianceReason: String?,
     val dateRecorded: Long,
-    val recordedBy: String
+    val recordedBy: String,
+    val isSynced: Boolean = false
 )

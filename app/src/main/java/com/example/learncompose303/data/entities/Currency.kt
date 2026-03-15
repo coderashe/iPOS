@@ -7,5 +7,6 @@ import androidx.room.PrimaryKey
 data class Currency(
     @PrimaryKey val code: String,  // e.g., "USD", "ZAR", "ZiG", "Ecocash"
     val name: String,              // Full name e.g., "South African Rand"
-    val rateToBase: Double         // Exchange rate to USD
+    val rateToBase: Double,         // Exchange rate to USD
+    val isSynced: Boolean = false
 )

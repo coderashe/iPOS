@@ -60,8 +60,13 @@ interface ProductRepository {
 }
 
 class ProductRepositoryImpl @Inject constructor(
-    private val productDao: ProductDao
+    private val productDao: ProductDao,
+    private val syncManager: com.example.learncompose303.network.SyncManager
 ) : ProductRepository {
+
+    companion object {
+        private const val TAG = "ProductRepositoryImpl"
+    }
 
 
     override suspend fun getProductByContainsMatch(
@@ -125,14 +130,21 @@ class ProductRepositoryImpl @Inject constructor(
 
     override suspend fun insertProduct(products: Products): Long {
         return withContext(Dispatchers.IO) {
-            val productId = productDao.insertProduct(products)
+            // Mark for sync by setting lastUpdated to null
+            val productToInsert = products.copy(lastUpdated = null)
+            val productId = productDao.insertProduct(productToInsert)
             val productCode = "ISTART_$productId"
             productDao.updateProduct(
-                products.copy(
+                productToInsert.copy(
                     productId = productId,
                     productCode = productCode
                 )
             )
+            
+            // Automatically trigger sync for the new product
+            syncManager.scheduleSingleProductSync(productId)
+            android.util.Log.d(TAG, "Auto-sync scheduled for new product: $productId")
+            
             productId
         }
     }
@@ -155,7 +167,13 @@ class ProductRepositoryImpl @Inject constructor(
 
     override suspend fun updateProduct(products: Products) {
         return withContext(Dispatchers.IO) {
-            productDao.updateProduct(products)
+            // Mark for sync by setting lastUpdated to null
+            val productToUpdate = products.copy(lastUpdated = null)
+            productDao.updateProduct(productToUpdate)
+            
+            // Automatically trigger sync for the updated product
+            syncManager.scheduleSingleProductSync(products.productId)
+            android.util.Log.d(TAG, "Auto-sync scheduled for updated product: ${products.productId}")
         }
     }
 
@@ -167,13 +185,31 @@ class ProductRepositoryImpl @Inject constructor(
 
     override suspend fun insertProducts(products: List<Products>): List<Long> {
         return withContext(Dispatchers.IO) {
-            productDao.insertProducts(products)
+            // Mark all products for sync
+            val productsToInsert = products.map { it.copy(lastUpdated = null) }
+            val insertedIds = productDao.insertProducts(productsToInsert)
+            
+            // Trigger batch sync if multiple products inserted
+            if (insertedIds.isNotEmpty()) {
+                syncManager.scheduleProductBatchSync()
+                android.util.Log.d(TAG, "Auto-sync scheduled for ${insertedIds.size} new products")
+            }
+            
+            insertedIds
         }
     }
 
     override suspend fun updateProducts(products: List<Products>) {
         return withContext(Dispatchers.IO) {
-            productDao.updateProducts(products)
+            // Mark all products for sync
+            val productsToUpdate = products.map { it.copy(lastUpdated = null) }
+            productDao.updateProducts(productsToUpdate)
+            
+            // Trigger batch sync if multiple products updated
+            if (products.isNotEmpty()) {
+                syncManager.scheduleProductBatchSync()
+                android.util.Log.d(TAG, "Auto-sync scheduled for ${products.size} updated products")
+            }
         }
     }
 

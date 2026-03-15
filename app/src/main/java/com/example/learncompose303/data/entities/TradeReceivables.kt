@@ -13,5 +13,6 @@ data class TradeReceivables(
     val creditPeriod: Int, // in days
     val dueDate: Long, // calculated based on the creditPeriod
     val paymentStatus: String, // e.g., "Unpaid", "Partial", "Paid"
-    val dateCreated: Long
+    val dateCreated: Long,
+    val isSynced: Boolean = false
 )

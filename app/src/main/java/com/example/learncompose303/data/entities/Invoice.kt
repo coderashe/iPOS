@@ -14,7 +14,10 @@ data class Invoice(
     val status: String,
     val currencyCode: String,
     val lastUpdated: Long? = null,
-    val isArchived: Boolean = false
+    val isArchived: Boolean = false,
+    val deviceId: String? = null,
+    val deviceName: String? = null,
+    val isSynced: Boolean = false
 )
 
 data class InvoiceWithCurrency(
@@ -39,7 +42,9 @@ fun mapInvoiceToFirestore(invoice: Invoice): Map<String, Any?> {
         "status" to invoice.status,
         "currencyCode" to invoice.currencyCode,
         "lastUpdated" to invoice.lastUpdated,
-        "isArchived" to invoice.isArchived
+        "isArchived" to invoice.isArchived,
+        "deviceId" to invoice.deviceId,
+        "deviceName" to invoice.deviceName
     )
 }
 

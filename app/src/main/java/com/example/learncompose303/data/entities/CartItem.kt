@@ -38,5 +38,6 @@ data class CartItem(
     val taxAmount: Double? = null, // Tax amount on this cart item (optional)
     val discountAmount: Double? = null, // Discounts applied to the item
     val createdAt: Long = System.currentTimeMillis(), // Track when the item was added to the cart
-    val updatedAt: Long? = null // Track when the item was last updated
+    val updatedAt: Long? = null, // Track when the item was last updated
+    val isSynced: Boolean = false
 )

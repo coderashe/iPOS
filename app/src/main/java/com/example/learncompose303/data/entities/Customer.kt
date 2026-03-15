@@ -13,5 +13,6 @@ data class Customer(
     val address: String?,
     val customerType: String = "Regular", // e.g., Regular, VIP, Wholesale
     val taxIdentificationNumber: String? = null, // For business customers with tax requirements
-    val loyaltyPoints: Int = 0 // For loyalty programs, if applicable
+    val loyaltyPoints: Int = 0, // For loyalty programs, if applicable
+    val isSynced: Boolean = false
 )

@@ -22,17 +22,36 @@ interface InvoiceLineRepository {
 }
 
 class InvoiceLineRepositoryImp @Inject constructor(
-    private val invoiceLineDao: InvoiceLineDao
+    private val invoiceLineDao: InvoiceLineDao,
+    private val syncManager: com.example.learncompose303.network.SyncManager
 ) : InvoiceLineRepository {
+
+    companion object {
+        private const val TAG = "InvoiceLineRepository"
+    }
 
     override suspend fun updateInvoiceLine(invoiceLine: InvoiceLine) {
         withContext(Dispatchers.IO) {
-            invoiceLineDao.updateInvoiceLine(invoiceLine)
+            // Mark for sync
+            val updatedLine = invoiceLine.copy(synced = false)
+            invoiceLineDao.updateInvoiceLine(updatedLine)
+            
+            // Automatically trigger sync
+            syncManager.scheduleInvoiceLineSync(invoiceLine.id)
+            android.util.Log.d(TAG, "Auto-sync scheduled for updated invoice line: ${invoiceLine.id}")
         }
     }
 
     override suspend fun insertInvoiceLine(invoiceLine: InvoiceLine) {
-        invoiceLineDao.insertInvoiceLine(invoiceLine) // Ensure you have this method in DAO
+        // Mark for sync (synced = false)
+        val lineToInsert = invoiceLine.copy(synced = false)
+        val insertedId = invoiceLineDao.insertInvoiceLine(lineToInsert)
+        
+        // Automatically trigger sync for the new invoice line
+        if (insertedId > 0) {
+            syncManager.scheduleInvoiceLineSync(insertedId.toInt())
+            android.util.Log.d(TAG, "Auto-sync scheduled for new invoice line: $insertedId")
+        }
     }
 
     override suspend fun getAllInvoiceLines(): Flow<List<InvoiceLine>> {

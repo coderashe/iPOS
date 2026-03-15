@@ -11,6 +11,7 @@ import com.example.learncompose303.data.MIGRATION_3_4
 import com.example.learncompose303.data.MIGRATION_4_5
 import com.example.learncompose303.data.MIGRATION_5_6
 import com.example.learncompose303.data.MIGRATION_6_7
+import com.example.learncompose303.data.MIGRATION_7_8
 import com.example.learncompose303.data.data_source.CartItemDao
 import com.example.learncompose303.data.data_source.CurrencyDao
 import com.example.learncompose303.data.data_source.CustomerDao
@@ -110,7 +111,8 @@ object AppModule {
                 MIGRATION_3_4,
                 MIGRATION_4_5,
                 MIGRATION_5_6,
-                MIGRATION_6_7
+                MIGRATION_6_7,
+                MIGRATION_7_8
             )
             .build()
     }

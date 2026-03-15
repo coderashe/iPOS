@@ -14,7 +14,7 @@ import kotlinx.coroutines.flow.Flow
 interface InvoiceLineDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertInvoiceLine(invoiceLine: InvoiceLine)
+    suspend fun insertInvoiceLine(invoiceLine: InvoiceLine): Long
 
     @Query("SELECT * FROM invoice_lines")
     fun getAllInvoiceLines(): Flow<List<InvoiceLine>>

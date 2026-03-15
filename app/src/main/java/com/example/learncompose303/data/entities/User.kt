@@ -19,5 +19,6 @@ data class User(
     val userPassword: String,
     val storeID: String,   // Store ID (now has a unique constraint)
     val userEmail: String,
-    val userAddress: String?
+    val userAddress: String?,
+    val isSynced: Boolean = false
 )

@@ -12,6 +12,7 @@ data class DayReports(
     val totalInvoiceSales: Double,
     val reportDate: Long, // Timestamp for the day's report
     val startTime: Long,
-    val endTime: Long
+    val endTime: Long,
+    val isSynced: Boolean = false
 )
 

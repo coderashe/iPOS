@@ -63,7 +63,7 @@ import com.example.learncompose303.data.entities.User
         CashFlow::class, ShoeBrand::class, ShoeSize::class, StockTake::class,
         FailedInvoiceItem::class
     ],
-    version = 7,
+    version = 8,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -168,5 +168,30 @@ val MIGRATION_6_7 = object : Migration(6, 7) {
         // Add deviceId and deviceName columns to invoice table
         db.execSQL("ALTER TABLE invoice ADD COLUMN deviceId TEXT")
         db.execSQL("ALTER TABLE invoice ADD COLUMN deviceName TEXT")
+    }
+}
+
+val MIGRATION_7_8 = object : Migration(7, 8) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        // Add isSynced to every entity that needs it
+        db.execSQL("ALTER TABLE invoice ADD COLUMN isSynced INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE Products ADD COLUMN isSynced INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE user ADD COLUMN isSynced INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE customer ADD COLUMN isSynced INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE payment ADD COLUMN isSynced INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE cart_items ADD COLUMN isSynced INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE invoiceitem ADD COLUMN isSynced INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE price_list ADD COLUMN isSynced INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE expenses ADD COLUMN isSynced INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE day_reports ADD COLUMN isSynced INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE product_day_reports ADD COLUMN isSynced INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE currencies ADD COLUMN isSynced INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE cashflow ADD COLUMN isSynced INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE tradereceivables ADD COLUMN isSynced INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE discountsreceived ADD COLUMN isSynced INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE shoeBrand ADD COLUMN isSynced INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE shoe_sizes ADD COLUMN isSynced INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE stock_take ADD COLUMN isSynced INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE failed_invoices ADD COLUMN isSynced INTEGER NOT NULL DEFAULT 0")
     }
 }

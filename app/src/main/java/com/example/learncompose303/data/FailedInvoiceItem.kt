@@ -16,5 +16,6 @@ data class FailedInvoiceItem(
     val customerId: Long,
     val failureReason: String,
     val suggestedMatches: String? = null,
-    val timestamp: Long = System.currentTimeMillis()
+    val timestamp: Long = System.currentTimeMillis(),
+    val isSynced: Boolean = false
 )

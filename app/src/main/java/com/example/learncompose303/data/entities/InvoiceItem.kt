@@ -11,5 +11,6 @@ data class InvoiceItem(
     val customerId: Long,
     val quantity: Int,
     val price: Double, // Price per unit
-    val total: Double // quantity * price
+    val total: Double, // quantity * price
+    val isSynced: Boolean = false
 )

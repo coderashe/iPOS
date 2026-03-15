@@ -15,5 +15,6 @@ data class ProductDayReport(
     val totalSales: Double,
     val totalCost: Double, // Sum of standard cost * quantity sold
     val totalProfit: Double, // (selling price - standard cost) * quantity sold
-    val reportDate: Long // Timestamp for the day's report
+    val reportDate: Long, // Timestamp for the day's report
+    val isSynced: Boolean = false
 )

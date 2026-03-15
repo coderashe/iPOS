@@ -23,5 +23,6 @@ data class ShoeSize(
     val shoeSizeId: Long = 0,
     val brandID: Long, // Foreign key referencing Label
     val size: Double, // Shoe size (e.g., 1-11)
-    val quantity: Long // Quantity available for this size
+    val quantity: Long, // Quantity available for this size
+    val isSynced: Boolean = false
 )

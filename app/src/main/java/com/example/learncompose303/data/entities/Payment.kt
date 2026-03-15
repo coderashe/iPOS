@@ -9,5 +9,6 @@ data class Payment(
     val invoiceId: Long,
     val paymentDate: Long,  // Store as timestamp
     val amount: Double,
-    val method: String // e.g., "Credit Card", "Cash", "Bank Transfer"
+    val method: String, // e.g., "Credit Card", "Cash", "Bank Transfer"
+    val isSynced: Boolean = false
 )

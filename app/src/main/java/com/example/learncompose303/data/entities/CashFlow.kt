@@ -12,5 +12,6 @@ data class CashFlow(
     val amount: Double,
     val cashOutflow: Boolean, // true if outflow (payment), false if inflow (refund or correction)
     val transactionDate: Long,
-    val description: String?
+    val description: String?,
+    val isSynced: Boolean = false
 )

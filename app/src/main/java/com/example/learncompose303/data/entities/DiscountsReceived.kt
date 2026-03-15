@@ -9,5 +9,6 @@ data class DiscountsReceived(
     val discountId: Long,
     val orderId: Long,
     val discountAmount: Double,
-    val dateReceived: Long // Date when the discount was received
+    val dateReceived: Long, // Date when the discount was received
+    val isSynced: Boolean = false
 )
