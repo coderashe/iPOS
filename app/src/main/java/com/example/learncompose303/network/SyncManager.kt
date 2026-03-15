@@ -247,9 +247,9 @@ class SyncManager @Inject constructor(
 
     /**
      * Schedule a full DAG sync for all entities, respecting FK dependency order.
-     * Uses ExistingWorkPolicy.KEEP — won't re-queue if already running.
+     * Uses a timestamped unique name to avoid WorkManager chain conflicts.
      *
-     * Layer 1 (no deps):  ShoeBrand, Currency, Expense, DayReports, CashFlow, DiscountsReceived, TradeReceivables
+     * Layer 1 (no deps):  ShoeBrand, Currency, Expense, DayReports, CashFlow, DiscountsReceived, TradeReceivables, User, Device
      * Layer 2 (after L1): ShoeSize, Customer
      * Layer 3 (after L2): Product, PriceList
      * Layer 4 (after L3): Invoice
@@ -257,6 +257,9 @@ class SyncManager @Inject constructor(
      */
     fun scheduleFullSync() {
         Log.d(TAG, "Scheduling full DAG sync")
+
+        // Cancel any existing sync chain before starting a new one
+        workManager.cancelUniqueWork("full_sync")
 
         val constraints = Constraints.Builder()
             .setRequiredNetworkType(NetworkType.CONNECTED)
@@ -277,7 +280,8 @@ class SyncManager @Inject constructor(
             buildRequest(SyncCashFlowWorker::class.java),
             buildRequest(SyncDiscountsReceivedWorker::class.java),
             buildRequest(SyncTradeReceivablesWorker::class.java),
-            buildRequest(SyncUserWorker::class.java)
+            buildRequest(SyncUserWorker::class.java),
+            buildRequest(SyncDeviceWorker::class.java)
         )
 
         val layer2 = listOf(
@@ -310,7 +314,7 @@ class SyncManager @Inject constructor(
             .then(layer5)
             .enqueue()
 
-        android.util.Log.d("backIntCheck", "SyncManager.scheduleFullSync() — DAG enqueued with KEEP policy")
+        android.util.Log.d("backIntCheck", "SyncManager.scheduleFullSync() — DAG enqueued")
     }
 
     /**

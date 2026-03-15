@@ -34,6 +34,7 @@ public class AppDbContext : DbContext
     public DbSet<ShoeSize> ShoeSizes => Set<ShoeSize>();
     public DbSet<StockTake> StockTakes => Set<StockTake>();
     public DbSet<FailedInvoiceItem> FailedInvoiceItems => Set<FailedInvoiceItem>();
+    public DbSet<Device> Devices => Set<Device>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -55,5 +56,9 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<ShoeSize>().HasKey(s => s.ShoeSizeId);
         modelBuilder.Entity<StockTake>().HasKey(s => s.Id);
         modelBuilder.Entity<FailedInvoiceItem>().HasKey(f => f.Id);
+
+        modelBuilder.Entity<Device>().HasKey(d => d.DeviceId);
+        modelBuilder.Entity<Device>()
+            .HasIndex(d => d.StoreId);  // fast store-based lookups
     }
 }

@@ -42,4 +42,13 @@ interface PriceListDao {
 
     @Delete
     suspend fun deletePriceList(priceList: PriceList)
+
+    @Query("SELECT * FROM price_list WHERE isSynced = 0 LIMIT :limit")
+    suspend fun getUnsynced(limit: Int): List<PriceList>
+
+    @Query("UPDATE price_list SET isSynced = 1 WHERE priceListId IN (:ids)")
+    suspend fun markSynced(ids: List<Long>)
+
+    @Query("SELECT COUNT(*) FROM price_list WHERE isSynced = 0")
+    fun getUnsyncedCount(): Flow<Int>
 }

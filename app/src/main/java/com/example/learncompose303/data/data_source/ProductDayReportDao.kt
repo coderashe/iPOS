@@ -26,4 +26,13 @@ interface ProductDayReportDao {
 
     @Delete
     suspend fun deleteProductDayReport(productDayReport: ProductDayReport)
+
+    @Query("SELECT * FROM product_day_reports WHERE isSynced = 0 LIMIT :limit")
+    suspend fun getUnsynced(limit: Int): List<ProductDayReport>
+
+    @Query("UPDATE product_day_reports SET isSynced = 1 WHERE reportId IN (:ids)")
+    suspend fun markSynced(ids: List<Long>)
+
+    @Query("SELECT COUNT(*) FROM product_day_reports WHERE isSynced = 0")
+    fun getUnsyncedCount(): Flow<Int>
 }

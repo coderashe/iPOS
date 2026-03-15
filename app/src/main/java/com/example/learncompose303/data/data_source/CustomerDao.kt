@@ -43,4 +43,13 @@ interface CustomerDao {
     // Delete a customer
     @Delete
     suspend fun deleteCustomer(customer: Customer)
+
+    @Query("SELECT * FROM Customer WHERE isSynced = 0 LIMIT :limit")
+    suspend fun getUnsynced(limit: Int): List<Customer>
+
+    @Query("UPDATE Customer SET isSynced = 1 WHERE customerId IN (:ids)")
+    suspend fun markSynced(ids: List<Long>)
+
+    @Query("SELECT COUNT(*) FROM Customer WHERE isSynced = 0")
+    fun getUnsyncedCount(): Flow<Int>
 }

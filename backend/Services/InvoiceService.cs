@@ -15,11 +15,14 @@ public class InvoiceService : IInvoiceService
         _logger = logger;
     }
 
-    public async Task<List<Invoice>> GetAllAsync(string? deviceId = null)
+    public async Task<List<Invoice>> GetAllAsync(string? deviceId = null, string? storeId = null)
     {
         var query = _db.Invoices.AsNoTracking();
         if (!string.IsNullOrEmpty(deviceId))
             query = query.Where(i => i.DeviceId == deviceId);
+        if (!string.IsNullOrEmpty(storeId))
+            query = query.Where(i =>
+                _db.Devices.Any(d => d.DeviceId == i.DeviceId && d.StoreId == storeId));
         return await query.ToListAsync();
     }
 

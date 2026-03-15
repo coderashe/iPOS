@@ -79,4 +79,10 @@ object NetworkModule {
     fun provideConnectivityHelper(@dagger.hilt.android.qualifiers.ApplicationContext context: android.content.Context): ConnectivityHelper {
         return ConnectivityHelper(context)
     }
+
+    @Provides
+    @Singleton
+    fun provideSyncApiService(retrofit: Retrofit): SyncApiService {
+        return retrofit.create(SyncApiService::class.java)
+    }
 }

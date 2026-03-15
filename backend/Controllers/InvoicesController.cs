@@ -13,8 +13,10 @@ public class InvoicesController : ControllerBase
     public InvoicesController(IInvoiceService service) => _service = service;
 
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] string? deviceId = null) =>
-        Ok(await _service.GetAllAsync(deviceId));
+    public async Task<IActionResult> GetAll(
+        [FromQuery] string? deviceId = null,
+        [FromQuery] string? storeId = null) =>
+        Ok(await _service.GetAllAsync(deviceId, storeId));
 
     [HttpGet("{id:long}")]
     public async Task<IActionResult> GetById(long id)

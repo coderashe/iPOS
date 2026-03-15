@@ -60,15 +60,19 @@ abstract class BaseSyncWorker(
             performBatchSync(shouldRetry)
         } catch (e: java.net.UnknownHostException) {
             Log.e(TAG, "Unknown host: ${e.message}")
+            android.util.Log.d("backIntCheck", "$TAG — UnknownHostException: ${e.message}")
             Result.retry()
         } catch (e: java.net.SocketTimeoutException) {
             Log.e(TAG, "Timeout: ${e.message}")
+            android.util.Log.d("backIntCheck", "$TAG — SocketTimeoutException: ${e.message}")
             Result.retry()
         } catch (e: java.io.IOException) {
             Log.e(TAG, "IO error: ${e.message}")
+            android.util.Log.d("backIntCheck", "$TAG — IOException: ${e.message}")
             Result.retry()
         } catch (e: Exception) {
             Log.e(TAG, "Unexpected error: ${e.message}", e)
+            android.util.Log.d("backIntCheck", "$TAG — Exception(${e::class.simpleName}): ${e.message}")
             if (shouldRetry) Result.retry() else Result.failure()
         }
     }

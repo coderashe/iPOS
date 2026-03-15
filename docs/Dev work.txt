@@ -5,4 +5,94 @@ git -C . log --oneline -10
 git -C . diff HEAD~1 HEAD -- "app/src/main/java/com/example/learncompose303/data/entities/Invoice.kt" "app/src/main/java/com/example/learncompose303/data/AppDatabase.kt"
 git -C . show 43ab383 -- "app/src/main/java/com/example/learncompose303/data/entities/Invoice.kt" "app/src/main/java/com/example/learncompose303/data/AppDatabase.kt" 2>&1 | Select-String "^\+" | Select-Object -First 80
 git -C . log --all --oneline -- "app/src/main/java/com/example/learncompose303/network/SyncInvoiceWorker.kt"
+git -C . push 2>&1
+
+
+// MUST DO: LATER
+Honestly, it's solid for what this app is — a POS sync backend. But a few honest callouts:
+
+What's good:
+
+Service layer separation is correct
+Batch upsert pattern in SyncService is efficient (no N+1)
+Global error + request logging middleware is the right call
+EF migrations over EnsureCreated is proper
+What's debatable for this use case:
+
+Android → backend sync direction only — right now Android pushes data up. There's no pull-down (backend → Android). If two devices sync the same customer with different data, last-write wins with no conflict resolution. For a real POS with multiple devices, you'd want a lastModified timestamp comparison.
+
+No auth — every endpoint is wide open. Even a simple API key header check would be better than nothing for a POS system handling financial data.
+
+ISyncService is a god interface — 16 methods on one interface. It works, but as the app grows it becomes a maintenance burden. Splitting into domain-specific services (IInventorySyncService, IFinancialSyncService) would be cleaner long-term.
+
+context.Database.Migrate() on startup — fine for dev, risky in production with multiple instances. A dedicated migration step in CI/CD is safer.
+
+Bottom line: For a single-store or small multi-device POS syncing to a central backend, this is pragmatic and gets the job done. If you're heading toward multi-store, multi-tenant, or offline-first with conflict resolution, you'd want to revisit the sync strategy (e.g., event sourcing or a proper sync timestamp per entity). What's your scale target?
+
+//
+
+/////////////////////////
+
+The Android app stores all POS data locally in Room. The backend (iPosDb) is supposed to be the single source of truth, but most of that data never makes it there — only invoices, invoice lines, products, and users have sync workers. The other 15+ entities sit in Room and never reach the backend.
+
+The fix: build sync workers for every entity so all local data flows up to the backend consistently.
+///////////////////////////
+
+
+Best Approach
+
+BaseSyncWorker (abstract) handles connectivity, retry, batching, error handling.
+
+Thin entity workers (~15 lines each) just implement fetchUnsynced(), syncToApi(), markSynced().
+
+WorkManager DAG — not a chain, a dependency graph:
+
+[Brands, Sizes, Currency, Expense]  ← parallel, no deps         ↓ [Products, Customers]               ← parallel, after brands         ↓ [Invoices]                          ← after customers + products         ↓ [InvoiceLines, Payments, CartItems] ← parallel, after invoices
+
+Failure behavior: each worker retries independently via Result.retry() + exponential backoff. Only true FK dependents are blocked — unrelated entities (Expense, Currency) never stall waiting for a Customer failure to resolve.
+
+One entry point: SyncManager.scheduleFullSync() with ExistingWorkPolicy.KEEP — won't re-queue if already running.
+
+DAO additions per entity: getUnsynced(limit) + markSynced(ids) — only dirty rows travel over the network.
+
+That's the whole system.
+
+// are agreeing?
+
+
+===========================
+The design doc is ready. Here's a quick summary of what it covers:
+
+Architecture: BaseSyncWorker abstract class handles all the boilerplate (connectivity, retry, batch loop, error classification). The 14 entity workers are thin — each just implements fetchUnsynced(), syncToApi(), and markSynced().
+
+DAG: 5 layers respecting FK constraints. Layer 1 (ShoeBrand, Currency, Expense, DayReports, CashFlow, DiscountsReceived, TradeReceivables) runs in parallel with no deps. Each subsequent layer waits for the previous to complete before starting.
+
+Key design decisions captured:
+
+isSynced = 0 as the dirty marker for new workers (existing workers keep lastUpdated IS NULL)
+Batch size 50, exponential backoff 15min (consistent with existing workers)
+ExistingWorkPolicy.KEEP on scheduleFullSync() — no duplicate chains
+4xx skips the entity and continues the batch; 5xx retries the whole batch
+Single SyncApiService interface for all 14 new endpoints
+What needs to be built: 16 new files (BaseSyncWorker, SyncApiService, 14 workers) + modifications to 14 DAOs, SyncManager, NetworkModule, and WorkerModule.
+///////////////////////////////////////
+
+Tasks are ready. The plan has 9 top-level tasks in a logical build order:
+
+DAO additions (all 14 entities)
+SyncApiService — DTOs, toSyncDto() extensions, Retrofit interface
+BaseSyncWorker — abstract base class
+Checkpoint — tests pass before moving on
+Layer 1 entity workers (ShoeBrand, Currency, Expense, DayReports, CashFlow, DiscountsReceived, TradeReceivables)
+Layers 2–5 entity workers (ShoeSize, Customer, PriceList, Payment, CartItem, StockTake, ProductDayReport)
+DI wiring — NetworkModule + WorkerModule
+SyncManager.scheduleFullSync() DAG
+Final checkpoint
+Optional property-based tests are scattered throughout (marked with *) covering all 9 correctness properties from the design.
+
+------------------------------------------
+All 14 DAOs got getUnsynced(limit) and markSynced(ids) queries. SyncApiService.kt has all 14 DTOs, toSyncDto() extensions, and the Retrofit interface. BaseSyncWorker handles connectivity, batch loop, and error classification (4xx skip, 5xx retry). 14 thin entity workers were created across all 5 DAG layers. NetworkModule and WorkerModule are fully wired. SyncManager.scheduleFullSync() builds the 5-layer DAG with KEEP policy.
+
+To trigger a full sync from anywhere in the app, just call syncManager.scheduleFullSync().
+------------------------------
 

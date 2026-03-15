@@ -26,4 +26,13 @@ interface CashFlowDao {
 
     @Query("SELECT * FROM cashflow ORDER BY transactionDate DESC")
     fun getAllCashFlows(): Flow<List<CashFlow>>
+
+    @Query("SELECT * FROM cashflow WHERE isSynced = 0 LIMIT :limit")
+    suspend fun getUnsynced(limit: Int): List<CashFlow>
+
+    @Query("UPDATE cashflow SET isSynced = 1 WHERE cashFlowId IN (:ids)")
+    suspend fun markSynced(ids: List<Long>)
+
+    @Query("SELECT COUNT(*) FROM cashflow WHERE isSynced = 0")
+    fun getUnsyncedCount(): Flow<Int>
 }

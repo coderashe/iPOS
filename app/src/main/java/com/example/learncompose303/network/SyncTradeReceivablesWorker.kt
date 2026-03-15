@@ -1,0 +1,39 @@
+package com.example.learncompose303.network
+
+import android.content.Context
+import androidx.hilt.work.HiltWorker
+import androidx.hilt.work.WorkerAssistedFactory
+import androidx.work.WorkerParameters
+import com.example.learncompose303.data.data_source.TradeReceivablesDao
+import com.example.learncompose303.data.entities.TradeReceivables
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedInject
+
+@HiltWorker
+class SyncTradeReceivablesWorker @AssistedInject constructor(
+    @Assisted context: Context,
+    @Assisted params: WorkerParameters,
+    private val tradeReceivablesDao: TradeReceivablesDao,
+    private val syncApiService: SyncApiService,
+    connectivityHelper: ConnectivityHelper
+) : BaseSyncWorker(context, params, connectivityHelper) {
+
+    interface Factory : WorkerAssistedFactory<SyncTradeReceivablesWorker>
+
+    override suspend fun fetchUnsynced(limit: Int): List<Any> =
+        tradeReceivablesDao.getUnsynced(limit)
+
+    override suspend fun syncToApi(entity: Any): Boolean {
+        val dto = (entity as TradeReceivables).toSyncDto()
+        val response = syncApiService.syncTradeReceivables(listOf(dto))
+        val code = response.code()
+        return when {
+            response.isSuccessful -> true
+            code in 400..499 -> throw ClientSyncException("4xx $code for TradeReceivable ${entity.receivableId}")
+            else -> throw ServerSyncException("5xx $code for TradeReceivable ${entity.receivableId}")
+        }
+    }
+
+    override suspend fun markSynced(entity: Any) =
+        tradeReceivablesDao.markSynced(listOf((entity as TradeReceivables).receivableId))
+}

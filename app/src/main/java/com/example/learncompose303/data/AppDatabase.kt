@@ -27,10 +27,11 @@ import com.example.learncompose303.data.data_source.ShoeSizeDao
 import com.example.learncompose303.data.data_source.StockTakeDao
 import com.example.learncompose303.data.data_source.StudentDao
 import com.example.learncompose303.data.data_source.TradeReceivablesDao
+import com.example.learncompose303.data.data_source.DeviceInfoDao
+import com.example.learncompose303.data.entities.DeviceInfo
 import com.example.learncompose303.data.data_source.UserDao
 import com.example.learncompose303.data.domain.model.Note
 import com.example.learncompose303.data.entities.CartItem
-import com.example.learncompose303.data.entities.CashFlow
 import com.example.learncompose303.data.entities.Currency
 import com.example.learncompose303.data.entities.Customer
 import com.example.learncompose303.data.entities.DayReports
@@ -48,6 +49,7 @@ import com.example.learncompose303.data.entities.ProductDayReport
 import com.example.learncompose303.data.entities.ShoeBrand
 import com.example.learncompose303.data.entities.ShoeSize
 import com.example.learncompose303.data.entities.StockTake
+import com.example.learncompose303.data.entities.CashFlow
 import com.example.learncompose303.data.entities.TradeReceivables
 import com.example.learncompose303.data.entities.User
 
@@ -61,9 +63,10 @@ import com.example.learncompose303.data.entities.User
         User::class, Expense::class,
         TradeReceivables::class, DiscountsReceived::class, Currency::class,
         CashFlow::class, ShoeBrand::class, ShoeSize::class, StockTake::class,
-        FailedInvoiceItem::class
+        FailedInvoiceItem::class,
+        DeviceInfo::class
     ],
-    version = 8,
+    version = 9,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -95,6 +98,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun discountsReceivedDao(): DiscountsReceivedDao
     abstract fun cashFlowDao(): CashFlowDao
     abstract fun currencyDao(): CurrencyDao
+    abstract fun deviceInfoDao(): DeviceInfoDao
 
     companion object {
         const val DATABASE_NAME = "ipos_db"
@@ -103,7 +107,6 @@ abstract class AppDatabase : RoomDatabase() {
 
 val MIGRATION_1_2 = object : Migration(1, 2) {
     override fun migrate(db: SupportSQLiteDatabase) {
-        // Create the STOCKTAKE table with correct column types
         db.execSQL(
             """
             CREATE TABLE IF NOT EXISTS `stock_take` (
@@ -120,23 +123,20 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
         )
     }
 }
+
 val MIGRATION_2_3 = object : Migration(2, 3) {
     override fun migrate(db: SupportSQLiteDatabase) {
-        // Add the lastUpdated column to Products table
         db.execSQL("ALTER TABLE Products ADD COLUMN lastUpdated INTEGER")
     }
 }
 
 val MIGRATION_3_4 = object : Migration(3, 4) {
     override fun migrate(db: SupportSQLiteDatabase) {
-        // Add the synced column to invoice_lines table
         db.execSQL("ALTER TABLE invoice_lines ADD COLUMN synced INTEGER NOT NULL DEFAULT 0")
     }
 }
-
 val MIGRATION_4_5 = object : Migration(4, 5) {
     override fun migrate(db: SupportSQLiteDatabase) {
-        // Create failed_invoices table
         db.execSQL(
             """
             CREATE TABLE IF NOT EXISTS `failed_invoices` (
@@ -155,7 +155,6 @@ val MIGRATION_4_5 = object : Migration(4, 5) {
         )
     }
 }
-
 val MIGRATION_5_6 = object : Migration(5, 6) {
     override fun migrate(db: SupportSQLiteDatabase) {
         // Add suggestedMatches column to failed_invoices table
@@ -193,5 +192,21 @@ val MIGRATION_7_8 = object : Migration(7, 8) {
         db.execSQL("ALTER TABLE shoe_sizes ADD COLUMN isSynced INTEGER NOT NULL DEFAULT 0")
         db.execSQL("ALTER TABLE stock_take ADD COLUMN isSynced INTEGER NOT NULL DEFAULT 0")
         db.execSQL("ALTER TABLE failed_invoices ADD COLUMN isSynced INTEGER NOT NULL DEFAULT 0")
+    }
+}
+
+val MIGRATION_8_9 = object : Migration(8, 9) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS `device_info` (
+                `deviceId` TEXT NOT NULL PRIMARY KEY,
+                `deviceName` TEXT NOT NULL,
+                `storeId` TEXT NOT NULL,
+                `lastSeen` INTEGER NOT NULL,
+                `isSynced` INTEGER NOT NULL DEFAULT 0
+            )
+            """.trimIndent()
+        )
     }
 }

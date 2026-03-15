@@ -12,10 +12,14 @@ import com.example.learncompose303.data.MIGRATION_4_5
 import com.example.learncompose303.data.MIGRATION_5_6
 import com.example.learncompose303.data.MIGRATION_6_7
 import com.example.learncompose303.data.MIGRATION_7_8
+import com.example.learncompose303.data.MIGRATION_8_9
+import com.example.learncompose303.data.data_source.DeviceInfoDao
 import com.example.learncompose303.data.data_source.CartItemDao
+import com.example.learncompose303.data.data_source.CashFlowDao
 import com.example.learncompose303.data.data_source.CurrencyDao
 import com.example.learncompose303.data.data_source.CustomerDao
 import com.example.learncompose303.data.data_source.DayReportsDao
+import com.example.learncompose303.data.data_source.DiscountsReceivedDao
 import com.example.learncompose303.data.data_source.ExpenseDao
 import com.example.learncompose303.data.data_source.FailedInvoiceDao
 import com.example.learncompose303.data.data_source.InvoiceDao
@@ -31,6 +35,7 @@ import com.example.learncompose303.data.data_source.ProductDayReportDao
 import com.example.learncompose303.data.data_source.ShoeSizeDao
 import com.example.learncompose303.data.data_source.StockTakeDao
 import com.example.learncompose303.data.data_source.StudentDao
+import com.example.learncompose303.data.data_source.TradeReceivablesDao
 import com.example.learncompose303.data.data_source.UserDao
 import com.example.learncompose303.data.domain.repository.NoteRepository
 import com.example.learncompose303.data.domain.use_case.AddNoteuseCase
@@ -112,7 +117,8 @@ object AppModule {
                 MIGRATION_4_5,
                 MIGRATION_5_6,
                 MIGRATION_6_7,
-                MIGRATION_7_8
+                MIGRATION_7_8,
+                MIGRATION_8_9
             )
             .build()
     }
@@ -177,8 +183,10 @@ object AppModule {
     }
 
 
+    @Provides
     fun provideShoeBrandDao(appDatabase: AppDatabase): ShoeBrandDao = appDatabase.shoeBrandDao()
 
+    @Provides
     fun provideShoeSizeDao(appDatabase: AppDatabase): ShoeSizeDao =
         appDatabase.shoeSizeDao()
 
@@ -210,6 +218,7 @@ object AppModule {
     @Provides
     fun provideStudentDao(appDatabase: AppDatabase): StudentDao = appDatabase.studentDao()
 
+    @Provides
     fun provideProductDayReportDao(appDatabase: AppDatabase): ProductDayReportDao =
         appDatabase.productDayReportDao()
 
@@ -219,7 +228,7 @@ object AppModule {
         return ProductDayReportRepositoryImpl(appDatabase.productDayReportDao())
     }
 
-    //
+    @Provides
     fun provideExpenseDao(appDatabase: AppDatabase): ExpenseDao =
         appDatabase.expenseDao()
 
@@ -246,6 +255,7 @@ object AppModule {
     }
 //
 
+    @Provides
     fun provideDayReportsDao(appDatabase: AppDatabase): DayReportsDao =
         appDatabase.dayReportsDao()
 
@@ -395,5 +405,17 @@ object AppModule {
             addNoteUseCase = AddNoteuseCase(repository)
         )
     }
+
+    @Provides
+    fun provideCashFlowDao(appDatabase: AppDatabase): CashFlowDao = appDatabase.cashFlowDao()
+
+    @Provides
+    fun provideTradeReceivablesDao(appDatabase: AppDatabase): TradeReceivablesDao = appDatabase.tradeReceivablesDao()
+
+    @Provides
+    fun provideDiscountsReceivedDao(appDatabase: AppDatabase): DiscountsReceivedDao = appDatabase.discountsReceivedDao()
+
+    @Provides
+    fun provideDeviceInfoDao(appDatabase: AppDatabase): DeviceInfoDao = appDatabase.deviceInfoDao()
 }
 

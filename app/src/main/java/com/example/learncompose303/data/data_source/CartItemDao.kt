@@ -21,4 +21,13 @@ interface CartItemDao {
 
     @Query("DELETE FROM cart_items WHERE customerId = :customerId")
     suspend fun clearCartForCustomer(customerId: Long)
+
+    @Query("SELECT * FROM cart_items WHERE isSynced = 0 LIMIT :limit")
+    suspend fun getUnsynced(limit: Int): List<CartItem>
+
+    @Query("UPDATE cart_items SET isSynced = 1 WHERE cartItemId IN (:ids)")
+    suspend fun markSynced(ids: List<Long>)
+
+    @Query("SELECT COUNT(*) FROM cart_items WHERE isSynced = 0")
+    fun getUnsyncedCount(): Flow<Int>
 }

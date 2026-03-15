@@ -189,6 +189,29 @@ namespace iPosApi.Migrations
                     b.ToTable("DayReports");
                 });
 
+            modelBuilder.Entity("iPosApi.Models.Device", b =>
+                {
+                    b.Property<string>("DeviceId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("DeviceName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<long>("LastSeen")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("StoreId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("DeviceId");
+
+                    b.HasIndex("StoreId");
+
+                    b.ToTable("Devices");
+                });
+
             modelBuilder.Entity("iPosApi.Models.DiscountReceived", b =>
                 {
                     b.Property<long>("DiscountId")

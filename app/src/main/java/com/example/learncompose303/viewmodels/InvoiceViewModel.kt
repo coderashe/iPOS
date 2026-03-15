@@ -102,7 +102,8 @@ class InvoiceViewModel @Inject constructor(
     private val productDayReportRepository: ProductDayReportRepository,
     private val stockTakeRepository: StockTakeRepository,
     private val failedInvoiceRepository: FailedInvoiceRepository,
-    private val workManager: WorkManager
+    private val workManager: WorkManager,
+    private val syncManager: com.example.learncompose303.network.SyncManager
 ) : ViewModel() {
 
     private val _shoeSizes = MutableStateFlow(emptyList<ShoeSize>())
@@ -199,7 +200,7 @@ class InvoiceViewModel @Inject constructor(
 
     companion object {
         private const val TAG = "backIntCheck"
-        private const val SYNC_BATCH_SIZE = 50
+        private const val SYNC_BATCH_SIZE = 200
         private const val BATCH_SYNC_WORK_NAME = "invoice_batch_sync"
         const val PRODUCT_BATCH_SYNC_WORK_NAME = "product_batch_sync_work"
         const val INVOICE_LINE_BATCH_SYNC_WORK_NAME = "invoice_line_batch_sync_work"
@@ -376,18 +377,30 @@ class InvoiceViewModel @Inject constructor(
                 var totalUpdated = 0
                 var totalErrors = 0
 
-                Log.d("ProductUpload", "Processing ${productsFromCsv.size} products in batches of $BATCH_SIZE")
-                
+                Log.d(
+                    "ProductUpload",
+                    "Processing ${productsFromCsv.size} products in batches of $BATCH_SIZE"
+                )
+
                 productsFromCsv.chunked(BATCH_SIZE).forEachIndexed { batchIndex, batch ->
-                    Log.d("ProductUpload", "Processing batch ${batchIndex + 1}/${(productsFromCsv.size + BATCH_SIZE - 1) / BATCH_SIZE}")
+                    Log.d(
+                        "ProductUpload",
+                        "Processing batch ${batchIndex + 1}/${(productsFromCsv.size + BATCH_SIZE - 1) / BATCH_SIZE}"
+                    )
                     val result = processBatchProducts(batch, context)
                     totalInserted += result.inserted
                     totalUpdated += result.updated
                     totalErrors += result.errors
-                    Log.d("ProductUpload", "Batch ${batchIndex + 1} result: ${result.inserted} inserted, ${result.updated} updated, ${result.errors} errors")
+                    Log.d(
+                        "ProductUpload",
+                        "Batch ${batchIndex + 1} result: ${result.inserted} inserted, ${result.updated} updated, ${result.errors} errors"
+                    )
                 }
 
-                Log.d("ProductUpload", "=== Upload completed - $totalInserted inserted, $totalUpdated updated, $totalErrors errors ===")
+                Log.d(
+                    "ProductUpload",
+                    "=== Upload completed - $totalInserted inserted, $totalUpdated updated, $totalErrors errors ==="
+                )
 
                 withContext(Dispatchers.Main) {
                     Toast.makeText(
@@ -423,7 +436,7 @@ class InvoiceViewModel @Inject constructor(
         try {
             val existingProducts = productRepository.getAllProductsOnce()
             Log.d("BatchProcess", "Fetched ${existingProducts.size} existing products")
-            
+
             val existingMap = existingProducts.associateBy {
                 Triple(
                     it.productDescription.trim().lowercase(),
@@ -482,7 +495,10 @@ class InvoiceViewModel @Inject constructor(
                         priceListsToUpdate.add(priceList)
                         updated++
                     } else {
-                        Log.d("BatchProcess", "[${index + 1}/${batch.size}] Inserting: $description")
+                        Log.d(
+                            "BatchProcess",
+                            "[${index + 1}/${batch.size}] Inserting: $description"
+                        )
                         val imageUri = productCsv.imageUri ?: getDefaultImageUri(context)
                         val standardCost = productCsv.standardCost ?: 0.0
 
@@ -506,7 +522,11 @@ class InvoiceViewModel @Inject constructor(
                     }
                 } catch (e: Exception) {
                     errors++
-                    Log.e("BatchProcess", "❌ Error processing product [${index + 1}]: ${productCsv.productDescription} - ${e.message}", e)
+                    Log.e(
+                        "BatchProcess",
+                        "❌ Error processing product [${index + 1}]: ${productCsv.productDescription} - ${e.message}",
+                        e
+                    )
                 }
             }
 
@@ -516,7 +536,7 @@ class InvoiceViewModel @Inject constructor(
                 Log.d("BatchProcess", "Inserting ${productsToInsert.size} products...")
                 val insertedIds = productRepository.insertProducts(productsToInsert)
                 Log.d("BatchProcess", "✅ Inserted ${insertedIds.size} products")
-                
+
                 insertedIds.forEachIndexed { index, productId ->
                     val product = productsToInsert[index]
                     priceListsToInsert.add(
@@ -539,13 +559,16 @@ class InvoiceViewModel @Inject constructor(
                 Log.d("BatchProcess", "Updating ${productsToUpdate.size} products...")
                 productRepository.updateProducts(productsToUpdate)
                 Log.d("BatchProcess", "✅ Updated products")
-                
+
                 Log.d("BatchProcess", "Updating ${priceListsToUpdate.size} price lists...")
                 priceListRepository.updatePriceLists(priceListsToUpdate)
                 Log.d("BatchProcess", "✅ Updated price lists")
             }
 
-            Log.d("BatchProcess", "=== Batch complete: $inserted inserted, $updated updated, $errors errors ===")
+            Log.d(
+                "BatchProcess",
+                "=== Batch complete: $inserted inserted, $updated updated, $errors errors ==="
+            )
         } catch (e: Exception) {
             Log.e("BatchProcess", "❌ Batch processing failed: ${e.message}", e)
             e.printStackTrace()
@@ -555,7 +578,7 @@ class InvoiceViewModel @Inject constructor(
     }
 
     data class BatchResult(val inserted: Int, val updated: Int, val errors: Int)
-    
+
     data class ValidInvoiceItem(
         val product: Products,
         val quantity: Int,
@@ -748,35 +771,296 @@ class InvoiceViewModel @Inject constructor(
     // Insert initial shoe brands with optimized batch processing
     fun insertInitialShoeBrands() = viewModelScope.launch {
         val brandNames = listOf(
-            "OLDSTOCK", "D166", "6610", "SY24023", "6886", "D159", "W2127A", "W2127J", "D160", "Z7283",
-            "QY-247", "QY-122", "W23085B", "N05-1", "NF07-7", "NF07-9", "202588-3", "T18", "W24050D", "RR17-5",
-            "RR17-6", "RR17-1", "RR17-7", "NF25-2", "RR17-4", "6620", "NF256", "NF164", "N04-3", "N04-1",
-            "2893", "6610-2", "6610-4", "005", "NF24-1", "NF24-2", "NF24-5", "NF24-4", "NF24-3", "M265",
-            "M256", "831", "836-2", "827-2", "NF29-1", "NF29-2", "NF29-3", "206-3", "W24145A", "2088-1",
-            "N05-3", "15010-9", "206-4", "913", "M23085F", "X-9956", "NF51-1", "NF51-2", "NF51-3", "NF51-4",
-            "NF51-5", "NF50-1", "NF50-2", "NF50-3", "NF50-4", "NF50-5", "NF50-6", "NF06-1", "NF06-2", "NF06-4",
-            "NF06-7", "830-5", "02-6", "09-8", "W22103A", "PL2668-1", "NF52-1", "NF52-4", "NF52-5", "ZH881-2",
-            "D37", "D38", "CX-114", "W22103W", "NF71-2", "AC14-2", "NF72-1", "NF72-4", "880", "NF92-4",
-            "NFL-3014", "NF67-1", "W24024C", "2913-5", "NF108-5", "2422", "W23085C", "FK-67", "NF92-1", "W25022A",
-            "FK60", "Q-7", "N04-4", "5831-4", "AR703-3", "CK-08-2", "NF72-3", "MG1123", "W25010B", "NF86-1",
-            "2915-5", "LO67-5", "W25057D", "FK-65", "NF38-1", "M133-1", "W24024A", "FK68", "NF108-4", "NF108-1",
-            "N08", "QY230", "D51G", "0912B-5", "M192-2", "N-15-5", "QY-238", "L90-1", "DY3851", "G69161-1",
-            "L90-4", "M192-1", "0912B-4", "L90-6", "W9005", "M156-2", "NF86-4", "W24049A", "L90-5", "820-1",
-            "D51K", "L90-2", "G69161-2", "WG-0005P", "0912B-3", "D51P", "FK-59", "W-37", "W9207", "FK21",
-            "M156-1", "2913-1", "1820-1", "5160-1", "5160-2", "5160-3", "PL2599", "Z076", "W9193", "W24049B",
-            "W25094C", "W11-1", "W11-2", "W11-3", "W11-4", "Q7", "W-57-3", "NF-15-1", "J1-3", "202588-1",
-            "AC-14", "J1-1", "QY160", "WG-0005-1", "W-12-1", "NF-15-3",
-            "XZ-66", "XZ-91", "M1201-6", "M1201-5", "M1201-1", "M1201-2", "M1201-8", "M1201-7", "W23085E",
-            "2895", "W-16", "FK-60", "W-16-3", "L067-1", "S9025", "AC-14-2"
+            "OLDSTOCK",
+            "D166",
+            "6610",
+            "SY24023",
+            "6886",
+            "D159",
+            "W2127A",
+            "W2127J",
+            "D160",
+            "Z7283",
+            "QY-247",
+            "QY-122",
+            "W23085B",
+            "N05-1",
+            "NF07-7",
+            "NF07-9",
+            "202588-3",
+            "T18",
+            "W24050D",
+            "RR17-5",
+            "RR17-6",
+            "RR17-1",
+            "RR17-7",
+            "NF25-2",
+            "RR17-4",
+            "6620",
+            "NF256",
+            "NF164",
+            "N04-3",
+            "N04-1",
+            "2893",
+            "6610-2",
+            "6610-4",
+            "005",
+            "NF24-1",
+            "NF24-2",
+            "NF24-5",
+            "NF24-4",
+            "NF24-3",
+            "M265",
+            "M256",
+            "831",
+            "836-2",
+            "827-2",
+            "NF29-1",
+            "NF29-2",
+            "NF29-3",
+            "206-3",
+            "W24145A",
+            "2088-1",
+            "N05-3",
+            "15010-9",
+            "206-4",
+            "913",
+            "M23085F",
+            "X-9956",
+            "NF51-1",
+            "NF51-2",
+            "NF51-3",
+            "NF51-4",
+            "NF51-5",
+            "NF50-1",
+            "NF50-2",
+            "NF50-3",
+            "NF50-4",
+            "NF50-5",
+            "NF50-6",
+            "NF06-1",
+            "NF06-2",
+            "NF06-4",
+            "NF06-7",
+            "830-5",
+            "02-6",
+            "09-8",
+            "W22103A",
+            "PL2668-1",
+            "NF52-1",
+            "NF52-4",
+            "NF52-5",
+            "ZH881-2",
+            "D37",
+            "D38",
+            "CX-114",
+            "W22103W",
+            "NF71-2",
+            "AC14-2",
+            "NF72-1",
+            "NF72-4",
+            "880",
+            "NF92-4",
+            "NFL-3014",
+            "NF67-1",
+            "W24024C",
+            "2913-5",
+            "NF108-5",
+            "2422",
+            "W23085C",
+            "FK-67",
+            "NF92-1",
+            "W25022A",
+            "FK60",
+            "Q-7",
+            "N04-4",
+            "5831-4",
+            "AR703-3",
+            "CK-08-2",
+            "NF72-3",
+            "MG1123",
+            "W25010B",
+            "NF86-1",
+            "2915-5",
+            "LO67-5",
+            "W25057D",
+            "FK-65",
+            "NF38-1",
+            "M133-1",
+            "W24024A",
+            "FK68",
+            "NF108-4",
+            "NF108-1",
+            "N08",
+            "QY230",
+            "D51G",
+            "0912B-5",
+            "M192-2",
+            "N-15-5",
+            "QY-238",
+            "L90-1",
+            "DY3851",
+            "G69161-1",
+            "L90-4",
+            "M192-1",
+            "0912B-4",
+            "L90-6",
+            "W9005",
+            "M156-2",
+            "NF86-4",
+            "W24049A",
+            "L90-5",
+            "820-1",
+            "D51K",
+            "L90-2",
+            "G69161-2",
+            "WG-0005P",
+            "0912B-3",
+            "D51P",
+            "FK-59",
+            "W-37",
+            "W9207",
+            "FK21",
+            "M156-1",
+            "2913-1",
+            "1820-1",
+            "5160-1",
+            "5160-2",
+            "5160-3",
+            "PL2599",
+            "Z076",
+            "W9193",
+            "W24049B",
+            "W25094C",
+            "W11-1",
+            "W11-2",
+            "W11-3",
+            "W11-4",
+            "Q7",
+            "W-57-3",
+            "NF-15-1",
+            "J1-3",
+            "202588-1",
+            "AC-14",
+            "J1-1",
+            "QY160",
+            "WG-0005-1",
+            "W-12-1",
+            "NF-15-3",
+            "XZ-66",
+            "XZ-91",
+            "M1201-6",
+            "M1201-5",
+            "M1201-1",
+            "M1201-2",
+            "M1201-8",
+            "M1201-7",
+            "W23085E",
+            "2895",
+            "W-16",
+            "FK-60",
+            "W-16-3",
+            "L067-1",
+            "S9025",
+            "AC-14-2",
+            "N04-2",
+            "W23085D",
+            "J1-4",
+            "0912B-1",
+            "0912B-2",
+            "D152",
+            "NF80-4",
+            "NF108-3",
+            "1105-2",
+            "2160",
+            "2459",
+            "2459-1",
+            "2459-3",
+            "5160",
+            "B160",
+            "CK08-1",
+            "CK80-1",
+            "D51",
+            "FK-1",
+            "FK-160",
+            "FK-66",
+            "FK59",
+            "J-1",
+            "J-1-3",
+            "L-1",
+            "LOAFER",
+            "M12-1",
+            "M267",
+            "N05-2",
+            "N05-4",
+            "N05-5",
+            "N64-2",
+            "NF-35-2",
+            "NF100-4",
+            "NF103-1",
+            "NF103-2",
+            "NF103-3",
+            "NF108",
+            "NF108-2",
+            "NF122",
+            "NF122-2",
+            "NF122-3",
+            "NF122-6",
+            "NF124-2",
+            "NF124-8",
+            "NF13-1",
+            "NF13-2",
+            "NF13-5",
+            "NF15-3",
+            "NF16-1",
+            "NF34-3",
+            "NF35-1",
+            "NF35-2",
+            "NF50",
+            "NF51",
+            "NF52-2",
+            "NF64-2",
+            "NF64-4",
+            "NF92-2",
+            "PK60",
+            "QY160",
+            "SY2403",
+            "W-57",
+            "W25010E",
+            "W25057",
+            "W9169",
+            "W9196",
+            "WG-005",
+            "WQ1966",
+            "X-9856",
+            "Z-802",
+            "Z160",
+            "Z802",
+            "NEW BALANCE",
+            "COCO8-1",
+            "G69161-12",
+            "L687-1",
+            "L687-3",
+            "L687-4",
+            "LT502-1",
+            "NF100",
+            "NF100-3",
+            "NF80-2",
+            "W23085A",
+            "W25010B",
+            "W25010C",
+            "W2572G",
+            "Z7295",
+            "5160"
         )
-        
+
         val existingBrands = shoeBrandRepository.getAllShoeBrandsOnce()
         val existingBrandNames = existingBrands.map { it.brandName.lowercase() }.toSet()
-        
+
         val newBrands = brandNames
             .filter { it.lowercase() !in existingBrandNames }
             .map { ShoeBrand(0, it) }
-        
+
         if (newBrands.isNotEmpty()) {
             shoeBrandRepository.insertShoeBrands(newBrands)
             Log.d("BrandInsert", "Inserted ${newBrands.size} new brands")
@@ -1494,9 +1778,9 @@ class InvoiceViewModel @Inject constructor(
                 )
 
                 val invoiceId = invoiceRepository.insertInvoice(invoice)
-                
+
                 Log.d("submitInvoice", "Inserted Invoice with id: $invoiceId")
-                
+
                 // Only schedule sync if invoice was successfully inserted
                 if (invoiceId > 0) {
                     val insertedInvoice = invoice.copy(invoiceId = invoiceId)
@@ -1697,137 +1981,25 @@ class InvoiceViewModel @Inject constructor(
     }
 
     //    syncInvoice
+    // Note: Sync is now automatic in repositories, but keeping this for backward compatibility
     private suspend fun onInvoiceCreatedOrUpdated(invoice: Invoice) {
-        unsyncedCount++
-        scheduleSingleInvoiceSync(invoice)
-
-        if (unsyncedCount >= SYNC_BATCH_SIZE) {
-            scheduleBatchSync()
-            unsyncedCount = 0
-        }
-    }
-
-    private fun scheduleSingleInvoiceSync(invoice: Invoice) {
-        Log.d(TAG, "Scheduling sync for invoice ${invoice.invoiceId}")
-
-        val syncWorkRequest = OneTimeWorkRequestBuilder<SyncInvoiceWorker>()
-            .setInputData(
-                workDataOf(
-                    SyncInvoiceWorker.KEY_INVOICE_ID to invoice.invoiceId,
-                    SyncInvoiceWorker.KEY_RETRY to true
-                )
-            )
-            .setBackoffCriteria(
-                BackoffPolicy.EXPONENTIAL,
-                15,
-                TimeUnit.MINUTES
-            )
-            .setConstraints(
-                Constraints.Builder()
-                    .setRequiredNetworkType(NetworkType.CONNECTED)
-                    .build()
-            )
-            .build()
-
-        workManager.enqueueUniqueWork(
-            "sync_invoice_${invoice.invoiceId}",
-            ExistingWorkPolicy.REPLACE,
-            syncWorkRequest
-        )
-
-        viewModelScope.launch {
-            checkAndScheduleBatchSyncIfNeeded()
-        }
-    }
-
-    private suspend fun checkAndScheduleBatchSyncIfNeeded() {
-        val currentUnsyncedCount = invoiceRepository.getUnsyncedCount().first()
-        if (currentUnsyncedCount >= SYNC_BATCH_SIZE) {
-            scheduleBatchSync()
-            unsyncedCount = 0
-        }
+        // Sync is now handled automatically by InvoiceRepository
+        // This method is kept for any additional logic that might be needed
+        Log.d(TAG, "Invoice ${invoice.invoiceId} created/updated - auto-sync triggered by repository")
     }
 
     fun syncAllNow() {
-        scheduleProductBatchSync()
-        scheduleBatchSync()
-        scheduleInvoiceLineBatchSync()
+        android.util.Log.d("backIntCheck", "InvoiceViewModel.syncAllNow() called")
+        syncManager.syncAllNow()
         unsyncedCount = 0
     }
 
     private fun scheduleBatchSync() {
-        Log.d(TAG, "Scheduling batch sync for invoices")
-
-        val batchSyncWorkRequest = OneTimeWorkRequestBuilder<SyncInvoiceWorker>()
-            .setInputData(
-                workDataOf(
-                    SyncInvoiceWorker.KEY_BATCH_SYNC to true,
-                    SyncInvoiceWorker.KEY_RETRY to true
-                )
-            )
-            .setBackoffCriteria(
-                BackoffPolicy.EXPONENTIAL,
-                15,
-                TimeUnit.MINUTES
-            )
-            .setConstraints(
-                Constraints.Builder()
-                    .setRequiredNetworkType(NetworkType.CONNECTED)
-                    .build()
-            )
-            .build()
-
-        workManager.enqueueUniqueWork(
-            BATCH_SYNC_WORK_NAME,
-            ExistingWorkPolicy.REPLACE,
-            batchSyncWorkRequest
-        )
+        syncManager.scheduleInvoiceBatchSync()
     }
 
-//    fun syncProducts() {
-//        viewModelScope.launch {
-//            try {
-//                // First check if there are unsynced products
-//                val unsyncedCount = productRepository.getUnsyncedProductsCount()
-//                if (unsyncedCount > 0) {
-//                    scheduleProductBatchSync()
-//                    _uiState.update { it.copy(syncStatus = "Sync started for $unsyncedCount products") }
-//                } else {
-//                    _uiState.update { it.copy(syncStatus = "All products are synced") }
-//                }
-//            } catch (e: Exception) {
-//                _uiState.update { it.copy(syncStatus = "Sync failed: ${e.localizedMessage}") }
-//            }
-//        }
-//    }
-
     private fun scheduleProductBatchSync() {
-        Log.d(TAG, "Scheduling batch sync for products")
-
-        val batchSyncWorkRequest = OneTimeWorkRequestBuilder<SyncProductWorker>()
-            .setInputData(
-                workDataOf(
-                    SyncProductWorker.KEY_BATCH_SYNC to true,
-                    SyncProductWorker.KEY_RETRY to true
-                )
-            )
-            .setBackoffCriteria(
-                BackoffPolicy.EXPONENTIAL,
-                15,
-                TimeUnit.MINUTES
-            )
-            .setConstraints(
-                Constraints.Builder()
-                    .setRequiredNetworkType(NetworkType.CONNECTED)
-                    .build()
-            )
-            .build()
-
-        workManager.enqueueUniqueWork(
-            PRODUCT_BATCH_SYNC_WORK_NAME,
-            ExistingWorkPolicy.REPLACE,
-            batchSyncWorkRequest
-        )
+        syncManager.scheduleProductBatchSync()
     }
 
     fun setupPeriodicProductSync() {
@@ -1856,58 +2028,8 @@ class InvoiceViewModel @Inject constructor(
 
     fun syncInvoiceLines() {
         Log.d(TAG, "syncInvoiceLines() called - Starting invoice lines sync")
-        scheduleInvoiceLineBatchSync()
+        syncManager.scheduleInvoiceLineBatchSync()
         Log.d(TAG, "syncInvoiceLines() completed - Batch sync scheduled")
-    }
-
-    private fun scheduleInvoiceLineBatchSync() {
-        Log.d(TAG, "scheduleInvoiceLineBatchSync() called - Starting to schedule batch sync")
-
-        viewModelScope.launch {
-            try {
-                val invoiceLineCount = invoiceLineRepository.getUnsyncedInvoiceLines().size
-                Log.d(TAG, "Found $invoiceLineCount invoice lines to sync")
-
-                if (invoiceLineCount == 0) {
-                    Log.d(TAG, "No invoice lines to sync, skipping")
-                    return@launch
-                }
-
-                Log.d(TAG, "Creating WorkRequest for invoice line batch sync")
-
-                val batchSyncWorkRequest = OneTimeWorkRequestBuilder<SyncInvoiceLineWorker>()
-                    .setInputData(
-                        workDataOf(
-                            SyncInvoiceLineWorker.KEY_BATCH_SYNC to true,
-                            SyncInvoiceLineWorker.KEY_RETRY to true
-                        )
-                    )
-                    .setBackoffCriteria(
-                        BackoffPolicy.EXPONENTIAL,
-                        15,
-                        TimeUnit.MINUTES
-                    )
-                    .setConstraints(
-                        Constraints.Builder()
-                            .setRequiredNetworkType(NetworkType.CONNECTED)
-                            .build()
-                    )
-                    .build()
-
-                Log.d(TAG, "Enqueueing work request with name: $INVOICE_LINE_BATCH_SYNC_WORK_NAME")
-
-                workManager.enqueueUniqueWork(
-                    INVOICE_LINE_BATCH_SYNC_WORK_NAME,
-                    ExistingWorkPolicy.REPLACE,
-                    batchSyncWorkRequest
-                )
-
-                Log.d(TAG, "Invoice line batch sync work enqueued successfully")
-
-            } catch (e: Exception) {
-                Log.e(TAG, "Error in scheduleInvoiceLineBatchSync: ${e.message}", e)
-            }
-        }
     }
 
 //    end syncInvoice
@@ -1918,38 +2040,42 @@ class InvoiceViewModel @Inject constructor(
 
     /**
      * BATCH INVOICE PROCESSING ANALYSIS:
-     * 
+     *
      * STRENGTHS:
      * ✓ Single DB fetch - Loads all reference data (brands, sizes, products) once upfront
      * ✓ In-memory lookups - Uses HashMaps for O(1) product matching instead of repeated DB queries
      * ✓ Error resilience - Failed items persist to DB for retry, preventing data loss
      * ✓ Separation of concerns - Validation separated from invoice creation
      * ✓ Batch grouping - Groups items by customer before creating invoices
-     * 
+     *
      * POTENTIAL IMPROVEMENTS:
      * - Consider transaction wrapping for atomic invoice creation
      * - Add progress callbacks for large CSV files (>1000 items)
      * - Implement chunked processing if memory becomes an issue with huge CSVs
      * - Add duplicate detection to prevent re-processing same CSV
-     * 
+     *
      * VERDICT: Solid approach for typical use cases (100-1000 items). Optimized for performance
      * with minimal DB hits. Failed item persistence ensures no data loss.
      */
     // Optimized batch invoice processing
-    fun processCsvInvoices(inputStream: InputStream, cashierEmail: String, onComplete: (Boolean) -> Unit = {}) = viewModelScope.launch {
+    fun processCsvInvoices(
+        inputStream: InputStream,
+        cashierEmail: String,
+        onComplete: (Boolean) -> Unit = {}
+    ) = viewModelScope.launch {
         try {
             Log.d("BatchInvoice", "=== Starting batch invoice processing ===")
-            
+
             // 1. Parse CSV
             val parser = CsvParser()
             val items = parser.parseInvoiceCsv(inputStream)
             Log.d("BatchInvoice", "Parsed ${items.size} invoice items")
-            
+
             if (items.isEmpty()) {
                 Log.w("BatchInvoice", "No items to process")
                 return@launch
             }
-            
+
             // 2. Fetch ALL reference data ONCE
             Log.d("BatchInvoice", "Fetching reference data...")
             val brandMap = shoeBrandRepository.getAllShoeBrandsOnce()
@@ -1959,52 +2085,95 @@ class InvoiceViewModel @Inject constructor(
             val productMap = productRepository.getAllProductsOnce()
                 .groupBy { Triple(it.brandID, it.shoeSizeId, it.productDescription.lowercase()) }
                 .mapValues { it.value.first() }
-            
-            Log.d("BatchInvoice", "Loaded: ${brandMap.size} brands, ${sizeMap.size} sizes, ${productMap.size} products")
-            
+
+            Log.d(
+                "BatchInvoice",
+                "Loaded: ${brandMap.size} brands, ${sizeMap.size} sizes, ${productMap.size} products"
+            )
+
             // 3. Process all items with in-memory lookups
             val validItems = mutableListOf<ValidInvoiceItem>()
             var skipped = 0
-            
+
             val failedItems = mutableListOf<FailedInvoiceItem>()
-            
+
             items.forEachIndexed { index, item ->
                 try {
                     val brand = brandMap[item.brand.lowercase()]
                     if (brand == null) {
                         val allBrandNames = brandMap.values.map { it.brandName }
-                        val suggestions = StringMatcher.findClosestMatches(item.brand, allBrandNames)
-                        val suggestedText = if (suggestions.isNotEmpty()) suggestions.joinToString(", ") else null
-                        val reason = "Brand '${item.brand}' not found" + if (suggestions.isNotEmpty()) " → Try: ${suggestions.joinToString(", ")}" else ""
-                        
+                        val suggestions =
+                            StringMatcher.findClosestMatches(item.brand, allBrandNames)
+                        val suggestedText =
+                            if (suggestions.isNotEmpty()) suggestions.joinToString(", ") else null
+                        val reason =
+                            "Brand '${item.brand}' not found" + if (suggestions.isNotEmpty()) " → Try: ${
+                                suggestions.joinToString(", ")
+                            }" else ""
+
                         Log.w("BatchInvoice", "[${index + 1}] $reason")
-                        failedItems.add(FailedInvoiceItem(rowIndex = index + 1, brand = item.brand, size = item.size, description = item.description, quantity = item.quantity, amountTendered = item.amountTendered, customerId = item.customerId, failureReason = reason, suggestedMatches = suggestedText))
+                        failedItems.add(
+                            FailedInvoiceItem(
+                                rowIndex = index + 1,
+                                brand = item.brand,
+                                size = item.size,
+                                description = item.description,
+                                quantity = item.quantity,
+                                amountTendered = item.amountTendered,
+                                customerId = item.customerId,
+                                failureReason = reason,
+                                suggestedMatches = suggestedText
+                            )
+                        )
                         skipped++
                         return@forEachIndexed
                     }
-                    
+
                     val size = sizeMap[item.size]
                     if (size == null) {
                         val availableSizes = sizeMap.keys.sorted().take(10).joinToString(", ")
                         val reason = "Size ${item.size} not found. Available: $availableSizes"
-                        
+
                         Log.w("BatchInvoice", "[${index + 1}] $reason")
-                        failedItems.add(FailedInvoiceItem(rowIndex = index + 1, brand = item.brand, size = item.size, description = item.description, quantity = item.quantity, amountTendered = item.amountTendered, customerId = item.customerId, failureReason = reason))
+                        failedItems.add(
+                            FailedInvoiceItem(
+                                rowIndex = index + 1,
+                                brand = item.brand,
+                                size = item.size,
+                                description = item.description,
+                                quantity = item.quantity,
+                                amountTendered = item.amountTendered,
+                                customerId = item.customerId,
+                                failureReason = reason
+                            )
+                        )
                         skipped++
                         return@forEachIndexed
                     }
-                    
+
                     val key = Triple(brand.brandID, size.shoeSizeId, item.description.lowercase())
                     val product = productMap[key]
                     if (product == null) {
-                        val reason = "Product not found: Brand='${item.brand}', Size=${item.size}, Color='${item.description}'"
-                        
+                        val reason =
+                            "Product not found: Brand='${item.brand}', Size=${item.size}, Color='${item.description}'"
+
                         Log.w("BatchInvoice", "[${index + 1}] $reason")
-                        failedItems.add(FailedInvoiceItem(rowIndex = index + 1, brand = item.brand, size = item.size, description = item.description, quantity = item.quantity, amountTendered = item.amountTendered, customerId = item.customerId, failureReason = reason))
+                        failedItems.add(
+                            FailedInvoiceItem(
+                                rowIndex = index + 1,
+                                brand = item.brand,
+                                size = item.size,
+                                description = item.description,
+                                quantity = item.quantity,
+                                amountTendered = item.amountTendered,
+                                customerId = item.customerId,
+                                failureReason = reason
+                            )
+                        )
                         skipped++
                         return@forEachIndexed
                     }
-                    
+
                     validItems.add(
                         ValidInvoiceItem(
                             product = product,
@@ -2015,83 +2184,112 @@ class InvoiceViewModel @Inject constructor(
                     )
                 } catch (e: Exception) {
                     Log.e("BatchInvoice", "Error processing item ${index + 1}: ${e.message}")
-                    failedItems.add(FailedInvoiceItem(rowIndex = index + 1, brand = item.brand, size = item.size, description = item.description, quantity = item.quantity, amountTendered = item.amountTendered, customerId = item.customerId, failureReason = e.message ?: "Unknown error"))
+                    failedItems.add(
+                        FailedInvoiceItem(
+                            rowIndex = index + 1,
+                            brand = item.brand,
+                            size = item.size,
+                            description = item.description,
+                            quantity = item.quantity,
+                            amountTendered = item.amountTendered,
+                            customerId = item.customerId,
+                            failureReason = e.message ?: "Unknown error"
+                        )
+                    )
                     skipped++
                 }
             }
-            
+
             _failedInvoiceItems.value = failedItems
-            
+
             if (failedItems.isNotEmpty()) {
                 failedInvoiceRepository.insertFailedInvoices(failedItems)
             }
-            
+
             Log.d("BatchInvoice", "Valid items: ${validItems.size}, Skipped: $skipped")
-            
+
             if (validItems.isEmpty()) {
-                Log.w("BatchInvoice", "No valid items to invoice. Brands exist but products not found in database.")
-                Log.w("BatchInvoice", "Add products for these brands first using the product upload feature.")
+                Log.w(
+                    "BatchInvoice",
+                    "No valid items to invoice. Brands exist but products not found in database."
+                )
+                Log.w(
+                    "BatchInvoice",
+                    "Add products for these brands first using the product upload feature."
+                )
                 return@launch
             }
-            
+
             // 4. Group by customer and submit invoices
             val groupedByCustomer = validItems.groupBy { it.customerId }
-            Log.d("BatchInvoice", "Creating ${groupedByCustomer.size} invoices for ${groupedByCustomer.keys.size} customers")
-            
+            Log.d(
+                "BatchInvoice",
+                "Creating ${groupedByCustomer.size} invoices for ${groupedByCustomer.keys.size} customers"
+            )
+
             var successCount = 0
             var failCount = 0
-            
+
             groupedByCustomer.forEach { (customerId, customerItems) ->
                 try {
                     submitBatchInvoice(customerId, customerItems, cashierEmail)
                     successCount++
                 } catch (e: Exception) {
-                    Log.e("BatchInvoice", "Failed to submit invoice for customer $customerId: ${e.message}")
+                    Log.e(
+                        "BatchInvoice",
+                        "Failed to submit invoice for customer $customerId: ${e.message}"
+                    )
                     failCount++
                 }
             }
-            
+
             // Wait for invoice list to refresh
             withContext(Dispatchers.Main) {
                 fetchAllInvoices()
             }
-            
-            Log.d("BatchInvoice", "=== Batch complete: $successCount invoices created, $failCount failed ===")
-            
+
+            Log.d(
+                "BatchInvoice",
+                "=== Batch complete: $successCount invoices created, $failCount failed ==="
+            )
+
             withContext(Dispatchers.Main) {
                 onComplete(_failedInvoiceItems.value.isNotEmpty())
             }
-            
+
         } catch (e: Exception) {
             Log.e("BatchInvoice", "Batch invoice processing failed: ${e.message}", e)
         }
     }
-    
+
     private suspend fun submitBatchInvoice(
         customerId: Long,
         items: List<ValidInvoiceItem>,
         cashierEmail: String
     ) {
-        Log.d("BatchInvoice", "Submitting invoice for customer $customerId with ${items.size} items")
-        
+        Log.d(
+            "BatchInvoice",
+            "Submitting invoice for customer $customerId with ${items.size} items"
+        )
+
         _selectedProducts.value = items.map { it.product }
         val productQuantities = items.associate { it.product.productId to it.quantity }
-        
+
         // Calculate total from price list, not from CSV amountTendered
         val totalAmount = items.sumOf { item ->
             val priceList = priceListRepository.getPriceListByProductId(item.product.productId)
             (priceList?.sellingPrice ?: 0.0) * item.quantity
         }
-        
+
         Log.d("BatchInvoice", "Total amount: $totalAmount, Using as tendered amount")
-        
+
         submitInvoice(
             customerId = customerId,
             amountTendered = totalAmount, // Use calculated total as tendered
             productQuantities = productQuantities,
             cashierEmail = cashierEmail
         )
-        
+
         Log.d("BatchInvoice", "✅ Invoice submitted for customer $customerId")
     }
 
@@ -2162,35 +2360,48 @@ class InvoiceViewModel @Inject constructor(
             }
         }
     }
-    
-    fun retryFailedItem(failedItem: FailedInvoiceItem, cashierEmail: String, onResult: (Boolean, String) -> Unit) = viewModelScope.launch {
+
+    fun retryFailedItem(
+        failedItem: FailedInvoiceItem,
+        cashierEmail: String,
+        onResult: (Boolean, String) -> Unit
+    ) = viewModelScope.launch {
         try {
-            val brandMap = shoeBrandRepository.getAllShoeBrandsOnce().associateBy { it.brandName.lowercase() }
+            val brandMap =
+                shoeBrandRepository.getAllShoeBrandsOnce().associateBy { it.brandName.lowercase() }
             val sizeMap = shoeSizeRepository.getAllShoeSizesOnce().associateBy { it.size }
             val productMap = productRepository.getAllProductsOnce()
                 .groupBy { Triple(it.brandID, it.shoeSizeId, it.productDescription.lowercase()) }
                 .mapValues { it.value.first() }
-            
+
             val brand = brandMap[failedItem.brand.lowercase()]
             val size = sizeMap[failedItem.size]
-            
+
             if (brand != null && size != null) {
                 val key = Triple(brand.brandID, size.shoeSizeId, failedItem.description.lowercase())
                 val product = productMap[key]
-                
+
                 if (product != null) {
                     submitBatchInvoice(
                         failedItem.customerId,
-                        listOf(ValidInvoiceItem(product, failedItem.quantity, failedItem.amountTendered, failedItem.customerId)),
+                        listOf(
+                            ValidInvoiceItem(
+                                product,
+                                failedItem.quantity,
+                                failedItem.amountTendered,
+                                failedItem.customerId
+                            )
+                        ),
                         cashierEmail
                     )
-                    
+
                     // Delete from DB first
                     failedInvoiceRepository.deleteFailedInvoice(failedItem)
-                    
+
                     // Then update UI
-                    _failedInvoiceItems.value = _failedInvoiceItems.value.filter { it.id != failedItem.id }
-                    
+                    _failedInvoiceItems.value =
+                        _failedInvoiceItems.value.filter { it.id != failedItem.id }
+
                     Log.d("BatchInvoice", "✅ Retry successful for row ${failedItem.rowIndex}")
                     withContext(Dispatchers.Main) {
                         onResult(true, "Invoice created successfully")
@@ -2213,14 +2424,14 @@ class InvoiceViewModel @Inject constructor(
             }
         }
     }
-    
+
     fun clearFailedItems() = viewModelScope.launch {
         failedInvoiceRepository.clearAll()
         _failedInvoiceItems.value = emptyList()
     }
-    
+
     private var failedInvoicesJob: Job? = null
-    
+
     private fun fetchFailedInvoices() {
         failedInvoicesJob?.cancel()
         failedInvoicesJob = viewModelScope.launch {
@@ -2229,27 +2440,27 @@ class InvoiceViewModel @Inject constructor(
             }
         }
     }
-    
+
     fun deleteFailedItem(item: FailedInvoiceItem) = viewModelScope.launch {
         failedInvoiceRepository.deleteFailedInvoice(item)
     }
-    
+
     suspend fun getAvailableSizesForBrand(brandName: String): List<Double> {
         val brand = shoeBrandRepository.getAllShoeBrandsOnce()
             .find { it.brandName.equals(brandName, ignoreCase = true) } ?: return emptyList()
-        
+
         val products = productRepository.getAllProductsOnce()
             .filter { it.brandID == brand.brandID }
-        
+
         return products.mapNotNull { product ->
             shoeSizeRepository.getShoeSizeById(product.shoeSizeId)?.size
         }.distinct().sorted()
     }
-    
+
     suspend fun getAvailableColorsForBrand(brandName: String): List<String> {
         val brand = shoeBrandRepository.getAllShoeBrandsOnce()
             .find { it.brandName.equals(brandName, ignoreCase = true) } ?: return emptyList()
-        
+
         return productRepository.getAllProductsOnce()
             .filter { it.brandID == brand.brandID }
             .map { it.productDescription }

@@ -34,17 +34,17 @@ class SyncStatusViewModel @Inject constructor(
     private val productDayReportDao: ProductDayReportDao,
     private val tradeReceivablesDao: TradeReceivablesDao,
     private val discountsReceivedDao: DiscountsReceivedDao,
-    private val userDao: UserDao
+    private val userDao: UserDao,
+    private val deviceInfoDao: DeviceInfoDao
 ) : ViewModel() {
 
     private val names = listOf(
         "Invoice", "Product", "Customer", "Payment", "CartItem",
         "ShoeBrand", "ShoeSize", "Currency", "Expense", "PriceList",
         "StockTake", "CashFlow", "DayReports", "ProductDayReport",
-        "TradeReceivables", "DiscountsReceived", "User"
+        "TradeReceivables", "DiscountsReceived", "User", "Device"
     )
 
-    // Combine all flows into a single list using zip
     val uiState: StateFlow<SyncStatusUiState> = combine(
         listOf(
             invoiceDao.getUnsyncedCount(),
@@ -63,7 +63,8 @@ class SyncStatusViewModel @Inject constructor(
             productDayReportDao.getUnsyncedCount(),
             tradeReceivablesDao.getUnsyncedCount(),
             discountsReceivedDao.getUnsyncedCount(),
-            userDao.getUnsyncedCount()
+            userDao.getUnsyncedCount(),
+            deviceInfoDao.getUnsyncedCount()
         )
     ) { counts ->
         val intCounts = counts.map { it as Int }

@@ -120,7 +120,7 @@ interface ProductDao {
     @Query(
         """
     SELECT * FROM Products 
-    WHERE lastUpdated IS NULL 
+    WHERE isSynced = 0
     AND productDescription IS NOT NULL 
     AND productDescription != ''
     AND productCode IS NOT NULL 
@@ -130,5 +130,11 @@ interface ProductDao {
 """
     )
     suspend fun getUnsyncedProducts(limit: Int): List<Products>
+
+    @Query("SELECT COUNT(*) FROM Products WHERE isSynced = 0")
+    fun getUnsyncedCount(): Flow<Int>
+
+    @Query("UPDATE Products SET isSynced = 1 WHERE productId = :productId")
+    suspend fun markSynced(productId: Long)
 
 }

@@ -44,6 +44,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.rememberScaffoldState
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -115,6 +116,7 @@ import com.example.learncompose303.screens.expenses.ExpenseViewModel
 import com.example.learncompose303.screens.performance.BusinessPerformanceViewModel
 import com.example.learncompose303.ui.theme.MyGray
 import com.example.learncompose303.viewmodels.InvoiceViewModel
+import com.example.learncompose303.viewmodels.SyncStatusViewModel
 import kotlinx.coroutines.launch
 import android.content.Intent
 import android.net.Uri
@@ -123,6 +125,8 @@ import com.example.learncompose303.screens.MultiCurrencyScreen
 import com.example.learncompose303.screens.ShoeManagementScreen
 import com.example.learncompose303.screens.StockTakingScreen
 import com.example.learncompose303.screens.OcrUploadScreen
+import com.example.learncompose303.screens.SyncStatusScreen
+import com.example.learncompose303.screens.DeviceRegistrationScreen
 import com.example.learncompose303.viewmodels.ShoeViewModel
 
 
@@ -376,6 +380,18 @@ fun InDriveTopBottomNavigation() {
                 // OCR Upload Screen
                 composable(Destinations.OcrUpload.route) {
                     OcrUploadScreen(navController = navController)
+                }
+
+                // Sync Status Screen
+                composable(Destinations.SyncStatus.route) {
+                    SyncStatusScreen()
+                }
+
+                // Device Registration Screen
+                composable(Destinations.DeviceRegistration.route) {
+                    DeviceRegistrationScreen(
+                        onRegistrationComplete = { navController.popBackStack() }
+                    )
                 }
 
                 // Customer Selection Screen
@@ -817,6 +833,34 @@ fun IndriveDrawerBody(navController: NavController, scaffoldState: ScaffoldState
             Icon(Icons.Default.Face, contentDescription = null)
             Spacer(modifier = Modifier.width(20.dp))
             Text(text = "Failed Invoices (${failedCount.size})", color = Color.Black)
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+                .clickable {
+                    navController.navigate(Destinations.SyncStatus.route)
+                    coroutineScope.launch { scaffoldState.drawerState.close() }
+                }
+        ) {
+            Icon(Icons.Default.Sync, contentDescription = null)
+            Spacer(modifier = Modifier.width(20.dp))
+            Text(text = "Sync Status", color = Color.Black)
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+                .clickable {
+                    navController.navigate(Destinations.DeviceRegistration.route)
+                    coroutineScope.launch { scaffoldState.drawerState.close() }
+                }
+        ) {
+            Icon(Icons.Default.Settings, contentDescription = null)
+            Spacer(modifier = Modifier.width(20.dp))
+            Text(text = "Device Setup", color = Color.Black)
         }
 //
 

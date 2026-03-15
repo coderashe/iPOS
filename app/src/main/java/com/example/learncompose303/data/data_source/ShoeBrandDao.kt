@@ -49,4 +49,13 @@ interface ShoeBrandDao {
 
     @Delete
     suspend fun deleteShoeBrand(shoeBrand: ShoeBrand)
+
+    @Query("SELECT * FROM shoeBrand WHERE isSynced = 0 LIMIT :limit")
+    suspend fun getUnsynced(limit: Int): List<ShoeBrand>
+
+    @Query("UPDATE shoeBrand SET isSynced = 1 WHERE brandID IN (:ids)")
+    suspend fun markSynced(ids: List<Long>)
+
+    @Query("SELECT COUNT(*) FROM shoeBrand WHERE isSynced = 0")
+    fun getUnsyncedCount(): Flow<Int>
 }

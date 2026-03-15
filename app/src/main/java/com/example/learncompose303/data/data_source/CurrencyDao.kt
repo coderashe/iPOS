@@ -27,4 +27,13 @@ interface CurrencyDao {
 
     @Query("SELECT * FROM currencies")
     suspend fun getAllCurrenciesOnce(): List<Currency>
+
+    @Query("SELECT * FROM currencies WHERE isSynced = 0 LIMIT :limit")
+    suspend fun getUnsynced(limit: Int): List<Currency>
+
+    @Query("UPDATE currencies SET isSynced = 1 WHERE code IN (:codes)")
+    suspend fun markSynced(codes: List<String>)
+
+    @Query("SELECT COUNT(*) FROM currencies WHERE isSynced = 0")
+    fun getUnsyncedCount(): Flow<Int>
 }

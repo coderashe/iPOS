@@ -23,7 +23,7 @@ class SyncInvoiceLineWorker @AssistedInject constructor(
     companion object {
         private const val TAG = "backIntCheck"
         const val KEY_INVOICE_LINE_ID = "invoice_line_id"
-        const val KEY_BATCH_SYNC = "batch_sync"
+        const val KEY_BATCH_SYNC = "batchSync"
         const val KEY_RETRY = "retry"
         private const val BATCH_SIZE = 200
     }

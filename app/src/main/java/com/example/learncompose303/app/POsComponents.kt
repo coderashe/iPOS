@@ -104,26 +104,23 @@ fun SwipeRefreshLayout(
         onRefresh = {
             isRefreshing = true
             Log.d("backIntCheck", "SwipeRefresh triggered - starting sync operations")
-//            sync shoeBrands
-//            viewModel.insertInitialShoeBrands()
-//            sync invoiceLines
-            Log.d("backIntCheck", "Starting invoice lines sync")
-            viewModel.syncInvoiceLines()
-            Log.d("backIntCheck", "Invoice lines sync call completed")
-//            end of sync invoiceLines
-//            sync Invoices
-//            viewModel.syncAllNow()
-//            set delay
+            
+            // Sync all data types
+            Log.d("backIntCheck", "Starting sync for all data types")
+            viewModel.syncAllNow()  // Syncs invoices, products, and invoice lines
+            Log.d("backIntCheck", "Sync call completed")
+            
+            // Stop refresh indicator after delay
             Handler(Looper.getMainLooper()).postDelayed({
                 Log.d("backIntCheck", "Refresh delay completed - stopping refresh indicator")
                 isRefreshing = false
-                reloadTrigger++
-            }, 5000)
+                // Commented out: Navigation to login screen removed
+                // reloadTrigger++  // This was causing screen reload/navigation
+            }, 3000)  // Reduced delay from 5s to 3s
         },
     ) {
-        key(reloadTrigger) {
-            ShopLandingScreen()
-        }
+        // Removed key(reloadTrigger) to prevent screen reload
+        ShopLandingScreen()
     }
 }
 

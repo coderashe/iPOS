@@ -44,6 +44,8 @@ sealed class Destinations(val route: String) {
     data object Profile : Destinations("profile")
     data object Post : Destinations("post")
     data object TTTScreen : Destinations("game")
+    data object SyncStatus : Destinations("syncStatus")
+    data object DeviceRegistration : Destinations("deviceRegistration")
 
     data object Detail : Destinations("detail/{itemId}") {
         fun createRoute(itemId: Int) = "detail/$itemId"

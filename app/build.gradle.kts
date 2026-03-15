@@ -66,6 +66,7 @@ dependencies {
     // Hilt + WorkManager integration
     implementation("androidx.hilt:hilt-work:1.0.0")
     kapt("androidx.hilt:hilt-compiler:1.0.0")
+    implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
 
     // WorkManager
     val work_version = "2.9.1"
