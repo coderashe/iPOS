@@ -98,8 +98,9 @@ class SyncProductWorker @AssistedInject constructor(
         val markupPercentage = priceList?.markupPercentage ?: 0.0
 
         if (sellingPrice <= 0.0) {
-            Log.w(TAG, "Product $productId has no valid price in PriceList (price: $sellingPrice), skipping sync")
-            return Result.failure()
+            Log.w(TAG, "Product $productId has no valid price — skipping, marking as synced")
+            productDao.markSynced(productId)
+            return Result.success()
         }
 
         val productDto = product.toDto(
@@ -114,11 +115,10 @@ class SyncProductWorker @AssistedInject constructor(
         return try {
             val response = productApiService.saveProduct(productDto)
             if (response.isSuccessful) {
-                response.body()?.let { serverDto ->
-                    val updatedProduct = product.copy(
-                        lastUpdated = System.currentTimeMillis()
-                    )
+                response.body()?.let {
+                    val updatedProduct = product.copy(lastUpdated = System.currentTimeMillis())
                     productDao.updateProduct(updatedProduct)
+                    productDao.markSynced(productId)
                     Log.d(TAG, "Successfully synced product $productId")
                 }
                 Result.success()
@@ -152,40 +152,33 @@ class SyncProductWorker @AssistedInject constructor(
 
     private suspend fun performBatchSync(shouldRetry: Boolean): Result {
         try {
-            val unsyncedProducts = productDao.getUnsyncedProducts(50)
-            if (unsyncedProducts.isEmpty()) {
-                Log.d(TAG, "No products to sync in batch")
-                return Result.success()
-            }
-
-            Log.d(TAG, "Starting batch sync of ${unsyncedProducts.size} products")
-            var successCount = 0
-            var skippedCount = 0
-
-            for (product in unsyncedProducts) {
-                if (product.productDescription.isBlank() || product.productCode.isBlank()) {
-                    Log.w(TAG, "Skipping product ${product.productId} with invalid required fields")
-                    skippedCount++
-                    continue
+            var totalSynced = 0
+            while (true) {
+                val unsyncedProducts = productDao.getUnsyncedProducts(100)
+                if (unsyncedProducts.isEmpty()) {
+                    android.util.Log.d("backIntCheck", "SyncProductWorker — all done, total synced: $totalSynced")
+                    return Result.success()
                 }
 
-                Log.d(TAG, "Syncing product: ${product.productId}")
-                val result = syncSingleProduct(product.productId, false)
-                if (result is Result.Success) {
-                    successCount++
+                android.util.Log.d("backIntCheck", "SyncProductWorker — syncing ${unsyncedProducts.size} (total so far: $totalSynced)")
+
+                for (product in unsyncedProducts) {
+                    if (product.productDescription.isBlank() || product.productCode.isBlank()) {
+                        Log.w(TAG, "Skipping product ${product.productId} — invalid fields")
+                        // mark synced to avoid infinite loop on bad data
+                        val updated = product.copy(lastUpdated = System.currentTimeMillis())
+                        productDao.updateProduct(updated)
+                        productDao.markSynced(product.productId)
+                        continue
+                    }
+
+                    val result = syncSingleProduct(product.productId, false)
+                    when (result) {
+                        Result.success() -> totalSynced++
+                        Result.retry() -> if (shouldRetry) return Result.retry()
+                        else -> { /* failure — skip and continue */ }
+                    }
                 }
-            }
-
-            Log.d(
-                TAG,
-                "Batch sync completed. Success: $successCount, Failed: ${unsyncedProducts.size - successCount - skippedCount}, Skipped: $skippedCount"
-            )
-
-            return when {
-                successCount == unsyncedProducts.size -> Result.success()
-                successCount > 0 && !shouldRetry -> Result.success()
-                shouldRetry -> Result.retry()
-                else -> Result.failure()
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error in batch sync", e)

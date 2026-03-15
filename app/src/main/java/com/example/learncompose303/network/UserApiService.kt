@@ -6,10 +6,10 @@ import retrofit2.http.GET
 import retrofit2.http.POST
 
 interface UserApiService {
-    @POST("/user")
+    @POST("/api/users")
     suspend fun saveUser(@Body user: UserDto): Response<UserDto>
 
-    @GET("/users")
+    @GET("/api/users")
     suspend fun getAllUsers(): Response<List<UserDto>>
 }
 
