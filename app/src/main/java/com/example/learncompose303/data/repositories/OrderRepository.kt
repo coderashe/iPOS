@@ -1,5 +1,6 @@
 package com.example.learncompose303.data.repositories
 
+import com.example.learncompose303.app.core.DeviceSession
 import com.example.learncompose303.data.data_source.OrderDao
 import com.example.learncompose303.data.entities.Order
 import kotlinx.coroutines.Dispatchers
@@ -18,54 +19,32 @@ interface OrderRepository {
 }
 
 class OrderRepositoryImpl @Inject constructor(
-    private val orderDao: OrderDao
+    private val orderDao: OrderDao,
+    private val deviceSession: DeviceSession
 ) : OrderRepository {
 
-    // Insert a new order
-    override suspend fun insertOrder(order: Order) {
-        return withContext(Dispatchers.IO) {
-            orderDao.insertOrder(order)
+    override suspend fun insertOrder(order: Order) =
+        withContext(Dispatchers.IO) {
+            orderDao.insertOrder(
+                order.copy(deviceId = deviceSession.deviceId, storeId = deviceSession.storeId)
+            )
         }
-    }
 
-    // Fetch all orders
-    override suspend fun getAllOrders(): Flow<List<Order>> {
-        return withContext(Dispatchers.IO) {
-            orderDao.getAllOrders()
-        }
-    }
+    override suspend fun getAllOrders(): Flow<List<Order>> =
+        withContext(Dispatchers.IO) { orderDao.getAllOrders() }
 
-    // Fetch count of all orders
-    override suspend fun getOrderCount(): Flow<Int> {
-        return withContext(Dispatchers.IO) {
-            orderDao.getOrderCount()
-        }
-    }
+    override suspend fun getOrderCount(): Flow<Int> =
+        withContext(Dispatchers.IO) { orderDao.getOrderCount() }
 
-    // Get a specific order by ID
-    override suspend fun getOrderById(orderId: Int): Order? {
-        return withContext(Dispatchers.IO) {
-            orderDao.getOrderById(orderId)
-        }
-    }
+    override suspend fun getOrderById(orderId: Int): Order? =
+        withContext(Dispatchers.IO) { orderDao.getOrderById(orderId) }
 
-    override suspend fun getOrderByDate(startDate: Long): Flow<List<Order>> {
-        return withContext(Dispatchers.IO) {
-            orderDao.getOrderByDate(startDate)
-        }
-    }
+    override suspend fun getOrderByDate(startDate: Long): Flow<List<Order>> =
+        withContext(Dispatchers.IO) { orderDao.getOrderByDate(startDate) }
 
-    // Delete a specific order
-    override suspend fun deleteOrder(order: Order) {
-        return withContext(Dispatchers.IO) {
-            orderDao.deleteOrder(order)
-        }
-    }
+    override suspend fun deleteOrder(order: Order) =
+        withContext(Dispatchers.IO) { orderDao.deleteOrder(order) }
 
-    // Clear all orders
-    override suspend fun deleteAllOrders() {
-        return withContext(Dispatchers.IO) {
-            orderDao.deleteAllOrders()
-        }
-    }
+    override suspend fun deleteAllOrders() =
+        withContext(Dispatchers.IO) { orderDao.deleteAllOrders() }
 }

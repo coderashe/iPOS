@@ -10,5 +10,7 @@ data class Payment(
     val paymentDate: Long,  // Store as timestamp
     val amount: Double,
     val method: String, // e.g., "Credit Card", "Cash", "Bank Transfer"
+    val deviceId: String = "",
+    val storeId: String = "",
     val isSynced: Boolean = false
 )

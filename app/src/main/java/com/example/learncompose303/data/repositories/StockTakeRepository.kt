@@ -1,5 +1,6 @@
 package com.example.learncompose303.data.repositories
 
+import com.example.learncompose303.app.core.DeviceSession
 import com.example.learncompose303.data.data_source.ShoeBrandDao
 import com.example.learncompose303.data.data_source.StockTakeDao
 import com.example.learncompose303.data.entities.ShoeBrand
@@ -16,18 +17,17 @@ interface StockTakeRepository {
 }
 
 class StockTakeRepositoryImpl @Inject constructor(
-    private val stockTakeDao: StockTakeDao
+    private val stockTakeDao: StockTakeDao,
+    private val deviceSession: DeviceSession
 ) : StockTakeRepository {
 
-    override fun getAllStockTakes(): Flow<List<StockTake>> {
-        return stockTakeDao.getAllStockTakes()
-    }
+    override fun getAllStockTakes(): Flow<List<StockTake>> = stockTakeDao.getAllStockTakes()
 
     override suspend fun insertStockTake(stockTake: StockTake) {
-        return withContext(Dispatchers.IO) {
-            stockTakeDao.insertStockTake(stockTake)
+        withContext(Dispatchers.IO) {
+            stockTakeDao.insertStockTake(
+                stockTake.copy(deviceId = deviceSession.deviceId, storeId = deviceSession.storeId)
+            )
         }
     }
-
-
 }

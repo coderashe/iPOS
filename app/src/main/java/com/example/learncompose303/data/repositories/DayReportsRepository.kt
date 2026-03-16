@@ -1,5 +1,6 @@
 package com.example.learncompose303.data.repositories
 
+import com.example.learncompose303.app.core.DeviceSession
 import com.example.learncompose303.data.data_source.DayReportsDao
 import com.example.learncompose303.data.entities.DayReports
 import kotlinx.coroutines.Dispatchers
@@ -16,34 +17,25 @@ interface DayReportsRepository {
 }
 
 class DayReportsRepositoryImpl @Inject constructor(
-    private val dayReportsDao: DayReportsDao
+    private val dayReportsDao: DayReportsDao,
+    private val deviceSession: DeviceSession
 ) : DayReportsRepository {
 
-    override suspend fun getDayReportById(id: Long): DayReports? {
-        return withContext(Dispatchers.IO) {
-            dayReportsDao.getDayReportById(id)
-        }
-    }
+    override suspend fun getDayReportById(id: Long): DayReports? =
+        withContext(Dispatchers.IO) { dayReportsDao.getDayReportById(id) }
 
-    override fun getAllDayReports(): Flow<List<DayReports>> {
-        return dayReportsDao.getAllDayReports()
-    }
+    override fun getAllDayReports(): Flow<List<DayReports>> = dayReportsDao.getAllDayReports()
 
-    override suspend fun insertDayReport(dayReport: DayReports): Long {
-        return withContext(Dispatchers.IO) {
-            dayReportsDao.insertDayReport(dayReport)
+    override suspend fun insertDayReport(dayReport: DayReports): Long =
+        withContext(Dispatchers.IO) {
+            dayReportsDao.insertDayReport(
+                dayReport.copy(deviceId = deviceSession.deviceId, storeId = deviceSession.storeId)
+            )
         }
-    }
 
-    override suspend fun updateDayReport(dayReport: DayReports) {
-        return withContext(Dispatchers.IO) {
-            dayReportsDao.updateDayReport(dayReport)
-        }
-    }
+    override suspend fun updateDayReport(dayReport: DayReports) =
+        withContext(Dispatchers.IO) { dayReportsDao.updateDayReport(dayReport) }
 
-    override suspend fun deleteDayReport(dayReport: DayReports) {
-        return withContext(Dispatchers.IO) {
-            dayReportsDao.deleteDayReport(dayReport)
-        }
-    }
+    override suspend fun deleteDayReport(dayReport: DayReports) =
+        withContext(Dispatchers.IO) { dayReportsDao.deleteDayReport(dayReport) }
 }

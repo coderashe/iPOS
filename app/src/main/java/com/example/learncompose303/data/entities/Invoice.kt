@@ -17,6 +17,7 @@ data class Invoice(
     val isArchived: Boolean = false,
     val deviceId: String? = null,
     val deviceName: String? = null,
+    val storeId: String = "",
     val isSynced: Boolean = false
 )
 

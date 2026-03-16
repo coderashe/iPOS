@@ -13,6 +13,8 @@ data class DayReports(
     val reportDate: Long, // Timestamp for the day's report
     val startTime: Long,
     val endTime: Long,
+    val deviceId: String = "",
+    val storeId: String = "",
     val isSynced: Boolean = false
 )
 

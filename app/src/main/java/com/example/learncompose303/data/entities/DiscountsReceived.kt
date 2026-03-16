@@ -10,5 +10,7 @@ data class DiscountsReceived(
     val orderId: Long,
     val discountAmount: Double,
     val dateReceived: Long, // Date when the discount was received
+    val deviceId: String = "",
+    val storeId: String = "",
     val isSynced: Boolean = false
 )

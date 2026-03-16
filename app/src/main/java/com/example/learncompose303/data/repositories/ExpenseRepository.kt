@@ -1,5 +1,6 @@
 package com.example.learncompose303.data.repositories
 
+import com.example.learncompose303.app.core.DeviceSession
 import com.example.learncompose303.data.data_source.ExpenseDao
 import com.example.learncompose303.data.entities.Expense
 import kotlinx.coroutines.Dispatchers
@@ -17,32 +18,27 @@ interface ExpenseRepository {
 }
 
 class ExpenseRepositoryImpl @Inject constructor(
-    private val expenseDao: ExpenseDao
+    private val expenseDao: ExpenseDao,
+    private val deviceSession: DeviceSession
 ) : ExpenseRepository {
 
     override suspend fun insertExpense(expense: Expense) {
         withContext(Dispatchers.IO) {
-            expenseDao.insertExpense(expense)
+            expenseDao.insertExpense(
+                expense.copy(deviceId = deviceSession.deviceId, storeId = deviceSession.storeId)
+            )
         }
     }
 
-    override fun getAllExpenses(): Flow<List<Expense>> {
-        return expenseDao.getAllExpenses()
-    }
+    override fun getAllExpenses(): Flow<List<Expense>> = expenseDao.getAllExpenses()
 
-    override fun getTotalExpenses(): Flow<Double?> {
-        return expenseDao.getTotalExpenses()
-    }
+    override fun getTotalExpenses(): Flow<Double?> = expenseDao.getTotalExpenses()
 
     override suspend fun deleteExpense(expense: Expense) {
-        withContext(Dispatchers.IO) {
-            expenseDao.deleteExpense(expense)
-        }
+        withContext(Dispatchers.IO) { expenseDao.deleteExpense(expense) }
     }
 
     override suspend fun deleteAllExpenses() {
-        withContext(Dispatchers.IO) {
-            expenseDao.deleteAllExpenses()
-        }
+        withContext(Dispatchers.IO) { expenseDao.deleteAllExpenses() }
     }
 }

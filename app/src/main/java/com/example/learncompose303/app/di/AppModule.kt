@@ -13,6 +13,8 @@ import com.example.learncompose303.data.MIGRATION_5_6
 import com.example.learncompose303.data.MIGRATION_6_7
 import com.example.learncompose303.data.MIGRATION_7_8
 import com.example.learncompose303.data.MIGRATION_8_9
+import com.example.learncompose303.data.MIGRATION_9_10
+import com.example.learncompose303.app.core.DeviceSession
 import com.example.learncompose303.data.data_source.DeviceInfoDao
 import com.example.learncompose303.data.data_source.CartItemDao
 import com.example.learncompose303.data.data_source.CashFlowDao
@@ -118,7 +120,8 @@ object AppModule {
                 MIGRATION_5_6,
                 MIGRATION_6_7,
                 MIGRATION_7_8,
-                MIGRATION_8_9
+                MIGRATION_8_9,
+                MIGRATION_9_10
             )
             .build()
     }
@@ -178,8 +181,8 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideStockTakeRepository(appDatabase: AppDatabase): StockTakeRepository {
-        return StockTakeRepositoryImpl(appDatabase.stockTakeDao())
+    fun provideStockTakeRepository(appDatabase: AppDatabase, deviceSession: DeviceSession): StockTakeRepository {
+        return StockTakeRepositoryImpl(appDatabase.stockTakeDao(), deviceSession)
     }
 
 
@@ -234,8 +237,8 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideExpenseRepository(appDatabase: AppDatabase): ExpenseRepository {
-        return ExpenseRepositoryImpl(appDatabase.expenseDao())
+    fun provideExpenseRepository(appDatabase: AppDatabase, deviceSession: DeviceSession): ExpenseRepository {
+        return ExpenseRepositoryImpl(appDatabase.expenseDao(), deviceSession)
     }
 
     //
@@ -275,15 +278,15 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideDayReportsRepository(appDatabase: AppDatabase): DayReportsRepository {
-        return DayReportsRepositoryImpl(appDatabase.dayReportsDao())
+    fun provideDayReportsRepository(appDatabase: AppDatabase, deviceSession: DeviceSession): DayReportsRepository {
+        return DayReportsRepositoryImpl(appDatabase.dayReportsDao(), deviceSession)
     }
 
     //    Provide repositories here
     @Provides
     @Singleton
-    fun providePaymentRepository(appDatabase: AppDatabase): PaymentRepository {
-        return PaymentRepositoryImpl(appDatabase.paymentDao())
+    fun providePaymentRepository(appDatabase: AppDatabase, deviceSession: DeviceSession): PaymentRepository {
+        return PaymentRepositoryImpl(appDatabase.paymentDao(), deviceSession)
     }
 
     @Provides
@@ -291,13 +294,15 @@ object AppModule {
     fun provideInvoiceRepository(
         appDatabase: AppDatabase,
         invoiceApiService: InvoiceApiService,
-        syncManager: com.example.learncompose303.network.SyncManager
+        syncManager: com.example.learncompose303.network.SyncManager,
+        deviceSession: DeviceSession
     ): InvoiceRepository {
         return InvoiceRepositoryImpl(
             appDatabase.invoiceDao(),
             appDatabase.currencyDao(),
             invoiceApiService,
-            syncManager
+            syncManager,
+            deviceSession
         )
     }
 
@@ -344,8 +349,8 @@ object AppModule {
     }
 
     @Provides
-    fun provideOrderRepository(orderDao: OrderDao): OrderRepository {
-        return OrderRepositoryImpl(orderDao)
+    fun provideOrderRepository(orderDao: OrderDao, deviceSession: DeviceSession): OrderRepository {
+        return OrderRepositoryImpl(orderDao, deviceSession)
     }
 
     //
@@ -417,5 +422,38 @@ object AppModule {
 
     @Provides
     fun provideDeviceInfoDao(appDatabase: AppDatabase): DeviceInfoDao = appDatabase.deviceInfoDao()
+
+    @Provides
+    @Singleton
+    fun provideCashFlowRepository(
+        appDatabase: AppDatabase,
+        deviceSession: DeviceSession
+    ): com.example.learncompose303.data.repositories.CashFlowRepository {
+        return com.example.learncompose303.data.repositories.CashFlowRepositoryImpl(
+            appDatabase.cashFlowDao(), deviceSession
+        )
+    }
+
+    @Provides
+    @Singleton
+    fun provideTradeReceivablesRepository(
+        appDatabase: AppDatabase,
+        deviceSession: DeviceSession
+    ): com.example.learncompose303.data.repositories.TradeReceivablesRepository {
+        return com.example.learncompose303.data.repositories.TradeReceivablesRepositoryImpl(
+            appDatabase.tradeReceivablesDao(), deviceSession
+        )
+    }
+
+    @Provides
+    @Singleton
+    fun provideDiscountsReceivedRepository(
+        appDatabase: AppDatabase,
+        deviceSession: DeviceSession
+    ): com.example.learncompose303.data.repositories.DiscountsReceivedRepository {
+        return com.example.learncompose303.data.repositories.DiscountsReceivedRepositoryImpl(
+            appDatabase.discountsReceivedDao(), deviceSession
+        )
+    }
 }
 

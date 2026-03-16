@@ -39,15 +39,18 @@ class InvoiceRepositoryImpl @Inject constructor(
     private val invoiceDao: InvoiceDao,
     private val currencyDao: CurrencyDao,
     private val invoiceApiService: InvoiceApiService,
-    private val syncManager: com.example.learncompose303.network.SyncManager
+    private val syncManager: com.example.learncompose303.network.SyncManager,
+    private val deviceSession: com.example.learncompose303.app.core.DeviceSession
 ) : InvoiceRepository {
 
     private val TAG = "InvoiceRepositoryImpl"
 
     override suspend fun insertInvoice(invoice: Invoice): Long = withContext(Dispatchers.IO) {
-        // Set current time as timestamp and mark for sync
         val timestampedInvoice = invoice.copy(
-            lastUpdated = null // Null lastUpdated means it needs to be synced
+            lastUpdated = null,
+            deviceId = deviceSession.deviceId.ifBlank { invoice.deviceId ?: "" }.ifBlank { null },
+            deviceName = deviceSession.deviceName.ifBlank { invoice.deviceName ?: "" }.ifBlank { null },
+            storeId = deviceSession.storeId.ifBlank { invoice.storeId }
         )
 
         // Insert into local database

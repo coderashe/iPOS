@@ -10,6 +10,7 @@ import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
+import com.example.learncompose303.app.core.DeviceSessionInitializer
 import com.example.learncompose303.network.SyncInvoiceWorker
 import com.example.learncompose303.workmanager.MonthlyLogoutWorker
 import dagger.hilt.android.HiltAndroidApp
@@ -22,8 +23,12 @@ class MyApplication : Application(), Configuration.Provider {
     @Inject
     lateinit var workerFactory: HiltWorkerFactory
 
+    @Inject
+    lateinit var deviceSessionInitializer: DeviceSessionInitializer
+
     override fun onCreate() {
         super.onCreate()
+        deviceSessionInitializer.init()
         Log.d("SyncInvoiceWorker", "Application created")
     }
 

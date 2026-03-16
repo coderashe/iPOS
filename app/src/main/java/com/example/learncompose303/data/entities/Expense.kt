@@ -10,5 +10,7 @@ data class Expense(
     val amount: Double,
     val expenseDate: Long,
     val category: String, // e.g., Rent, Wages, Sundry, etc.
+    val deviceId: String = "",
+    val storeId: String = "",
     val isSynced: Boolean = false
 )

@@ -96,3 +96,17 @@ All 14 DAOs got getUnsynced(limit) and markSynced(ids) queries. SyncApiService.k
 To trigger a full sync from anywhere in the app, just call syncManager.scheduleFullSync().
 ------------------------------
 
+
+''''''''''''''''''''''''
+also why are Users not synced, checked the iPosDb and no users found. even on syncstatusScreen nothing mentions about the Users
+
+// fix quikly
+
+Here's what was implemented:
+
+DeviceSession singleton created in app/core/ — holds deviceId, storeId, deviceName at runtime
+All 9 root entities updated with deviceId and storeId fields (Invoice, Order, Expense, CashFlow, StockTake, DayReports, Payment, TradeReceivables, DiscountsReceived)
+Single MIGRATION_9_10 added — alters all 8 tables + adds storeId to invoice
+All repositories now inject DeviceSession and stamp both fields on every insert
+3 new repositories created for CashFlow, TradeReceivables, DiscountsReceived (they were DAO-only before)
+DeviceRegistrationViewModel now populates DeviceSession on registration and restores it from DB on app startup — so the session is always live after first registration

@@ -14,5 +14,7 @@ data class TradeReceivables(
     val dueDate: Long, // calculated based on the creditPeriod
     val paymentStatus: String, // e.g., "Unpaid", "Partial", "Paid"
     val dateCreated: Long,
+    val deviceId: String = "",
+    val storeId: String = "",
     val isSynced: Boolean = false
 )

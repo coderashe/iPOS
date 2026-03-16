@@ -1,5 +1,6 @@
 package com.example.learncompose303.data.repositories
 
+import com.example.learncompose303.app.core.DeviceSession
 import com.example.learncompose303.data.data_source.PaymentDao
 import com.example.learncompose303.data.entities.Payment
 import kotlinx.coroutines.Dispatchers
@@ -12,7 +13,8 @@ interface PaymentRepository {
 }
 
 class PaymentRepositoryImpl @Inject constructor(
-    private val paymentDao: PaymentDao
+    private val paymentDao: PaymentDao,
+    private val deviceSession: DeviceSession
 ) : PaymentRepository {
     override suspend fun getPaymentsForInvoice(invoiceId: Long): List<Payment> {
         return withContext(Dispatchers.IO) {
@@ -22,8 +24,9 @@ class PaymentRepositoryImpl @Inject constructor(
 
     override suspend fun insertPayment(payment: Payment): Long {
         return withContext(Dispatchers.IO) {
-            paymentDao.insertPayment(payment)
+            paymentDao.insertPayment(
+                payment.copy(deviceId = deviceSession.deviceId, storeId = deviceSession.storeId)
+            )
         }
     }
-
 }
