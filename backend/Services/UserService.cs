@@ -35,8 +35,8 @@ public class UserService : IUserService
         else
         {
             existing.Name = user.Name; existing.Contact = user.Contact;
-            existing.Role = user.Role; existing.Email = user.Email;
-            existing.Store = user.Store; existing.Address = user.Address;
+            existing.UserRole = user.UserRole; existing.Email = user.Email;
+            existing.StoreId = user.StoreId; existing.Address = user.Address;
             _logger.LogInformation("Updated user {Id} ({Email})", user.Id, user.Email);
         }
         await _db.SaveChangesAsync();

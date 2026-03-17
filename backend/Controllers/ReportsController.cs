@@ -1,6 +1,8 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using iPosApi.Dtos;
+using iPosApi.Extensions;
 using iPosApi.Models.Data;
 using iPosApi.Services;
 
@@ -8,19 +10,23 @@ namespace iPosApi.Controllers;
 
 [ApiController]
 [Route("api/reports")]
+[Authorize]
 public class ReportsController : ControllerBase
 {
     private readonly AppDbContext _context;
     private readonly CacheService _cacheService;
+    private readonly IStoreDeviceService _storeDeviceService;
     private readonly ILogger<ReportsController> _logger;
 
     public ReportsController(
         AppDbContext context,
         CacheService cacheService,
+        IStoreDeviceService storeDeviceService,
         ILogger<ReportsController> logger)
     {
         _context = context;
         _cacheService = cacheService;
+        _storeDeviceService = storeDeviceService;
         _logger = logger;
     }
 
@@ -32,14 +38,20 @@ public class ReportsController : ControllerBase
     {
         try
         {
+            var storeId = User.GetStoreId();
+            if (string.IsNullOrEmpty(storeId))
+                return Forbid();
+
+            var allowedDeviceIds = await _storeDeviceService.GetDeviceIdsForStoreAsync(storeId);
+
             var start = startDate ?? DateTime.Today.AddDays(-30);
             var end = endDate ?? DateTime.Today.AddDays(1);
 
-            var cacheKey = $"sales_report_{start:yyyyMMdd}_{end:yyyyMMdd}_{groupBy}";
+            var cacheKey = $"sales_report_{storeId}_{start:yyyyMMdd}_{end:yyyyMMdd}_{groupBy}";
 
             var report = await _cacheService.GetOrCreateAsync(
                 cacheKey,
-                async () => await GenerateSalesReport(start, end, groupBy),
+                async () => await GenerateSalesReport(start, end, groupBy, allowedDeviceIds),
                 TimeSpan.FromMinutes(15)
             );
 
@@ -52,14 +64,27 @@ public class ReportsController : ControllerBase
         }
     }
 
-    private async Task<SalesReportDto> GenerateSalesReport(DateTime startDate, DateTime endDate, string groupBy)
+    private async Task<SalesReportDto> GenerateSalesReport(
+        DateTime startDate,
+        DateTime endDate,
+        string groupBy,
+        IReadOnlyList<string> allowedDeviceIds)
     {
         var startTimestamp = new DateTimeOffset(startDate).ToUnixTimeMilliseconds();
         var endTimestamp = new DateTimeOffset(endDate).ToUnixTimeMilliseconds();
 
+        // Get invoice IDs for the allowed devices
+        var deviceInvoiceIds = await _context.Invoices
+            .AsNoTracking()
+            .Where(i => i.DeviceId != null && allowedDeviceIds.Contains(i.DeviceId))
+            .Select(i => i.InvoiceId)
+            .ToListAsync();
+
         var invoiceLines = await _context.InvoiceLines
             .AsNoTracking()
-            .Where(il => il.InvoiceDate >= startTimestamp && il.InvoiceDate <= endTimestamp)
+            .Where(il => il.InvoiceDate >= startTimestamp
+                      && il.InvoiceDate <= endTimestamp
+                      && deviceInvoiceIds.Contains(il.InvoiceId))
             .ToListAsync();
 
         var dataPoints = new List<SalesDataPointDto>();
@@ -130,14 +155,20 @@ public class ReportsController : ControllerBase
     {
         try
         {
+            var storeId = User.GetStoreId();
+            if (string.IsNullOrEmpty(storeId))
+                return Forbid();
+
+            var allowedDeviceIds = await _storeDeviceService.GetDeviceIdsForStoreAsync(storeId);
+
             var start = startDate ?? DateTime.Today.AddDays(-30);
             var end = endDate ?? DateTime.Today.AddDays(1);
 
-            var cacheKey = $"sales_by_cashier_{start:yyyyMMdd}_{end:yyyyMMdd}";
+            var cacheKey = $"sales_by_cashier_{storeId}_{start:yyyyMMdd}_{end:yyyyMMdd}";
 
             var report = await _cacheService.GetOrCreateAsync(
                 cacheKey,
-                async () => await GenerateSalesByCashierReport(start, end),
+                async () => await GenerateSalesByCashierReport(start, end, allowedDeviceIds),
                 TimeSpan.FromMinutes(15)
             );
 
@@ -150,14 +181,26 @@ public class ReportsController : ControllerBase
         }
     }
 
-    private async Task<List<SalesByCashierDto>> GenerateSalesByCashierReport(DateTime startDate, DateTime endDate)
+    private async Task<List<SalesByCashierDto>> GenerateSalesByCashierReport(
+        DateTime startDate,
+        DateTime endDate,
+        IReadOnlyList<string> allowedDeviceIds)
     {
         var startTimestamp = new DateTimeOffset(startDate).ToUnixTimeMilliseconds();
         var endTimestamp = new DateTimeOffset(endDate).ToUnixTimeMilliseconds();
 
+        // Get invoice IDs for the allowed devices
+        var deviceInvoiceIds = await _context.Invoices
+            .AsNoTracking()
+            .Where(i => i.DeviceId != null && allowedDeviceIds.Contains(i.DeviceId))
+            .Select(i => i.InvoiceId)
+            .ToListAsync();
+
         var salesByCashier = await _context.InvoiceLines
             .AsNoTracking()
-            .Where(il => il.InvoiceDate >= startTimestamp && il.InvoiceDate <= endTimestamp)
+            .Where(il => il.InvoiceDate >= startTimestamp
+                      && il.InvoiceDate <= endTimestamp
+                      && deviceInvoiceIds.Contains(il.InvoiceId))
             .GroupBy(il => il.Cashier)
             .Select(g => new SalesByCashierDto
             {
@@ -177,12 +220,18 @@ public class ReportsController : ControllerBase
     {
         try
         {
+            var storeId = User.GetStoreId();
+            if (string.IsNullOrEmpty(storeId))
+                return Forbid();
+
+            var allowedDeviceIds = await _storeDeviceService.GetDeviceIdsForStoreAsync(storeId);
+
             var targetDate = date ?? DateTime.Today;
-            var cacheKey = $"sales_by_hour_{targetDate:yyyyMMdd}";
+            var cacheKey = $"sales_by_hour_{storeId}_{targetDate:yyyyMMdd}";
 
             var report = await _cacheService.GetOrCreateAsync(
                 cacheKey,
-                async () => await GenerateSalesByHourReport(targetDate),
+                async () => await GenerateSalesByHourReport(targetDate, allowedDeviceIds),
                 TimeSpan.FromMinutes(15)
             );
 
@@ -195,14 +244,25 @@ public class ReportsController : ControllerBase
         }
     }
 
-    private async Task<List<SalesDataPointDto>> GenerateSalesByHourReport(DateTime date)
+    private async Task<List<SalesDataPointDto>> GenerateSalesByHourReport(
+        DateTime date,
+        IReadOnlyList<string> allowedDeviceIds)
     {
         var startOfDay = new DateTimeOffset(date.Date).ToUnixTimeMilliseconds();
         var endOfDay = new DateTimeOffset(date.Date.AddDays(1)).ToUnixTimeMilliseconds();
 
+        // Get invoice IDs for the allowed devices
+        var deviceInvoiceIds = await _context.Invoices
+            .AsNoTracking()
+            .Where(i => i.DeviceId != null && allowedDeviceIds.Contains(i.DeviceId))
+            .Select(i => i.InvoiceId)
+            .ToListAsync();
+
         var invoiceLines = await _context.InvoiceLines
             .AsNoTracking()
-            .Where(il => il.InvoiceDate >= startOfDay && il.InvoiceDate < endOfDay)
+            .Where(il => il.InvoiceDate >= startOfDay
+                      && il.InvoiceDate < endOfDay
+                      && deviceInvoiceIds.Contains(il.InvoiceId))
             .ToListAsync();
 
         var salesByHour = invoiceLines
@@ -225,11 +285,17 @@ public class ReportsController : ControllerBase
     {
         try
         {
-            var cacheKey = "inventory_stock_levels";
+            var storeId = User.GetStoreId();
+            if (string.IsNullOrEmpty(storeId))
+                return Forbid();
+
+            var allowedDeviceIds = await _storeDeviceService.GetDeviceIdsForStoreAsync(storeId);
+
+            var cacheKey = $"inventory_stock_levels_{storeId}";
 
             var stockLevels = await _cacheService.GetOrCreateAsync(
                 cacheKey,
-                async () => await GenerateStockLevelsReport(),
+                async () => await GenerateStockLevelsReport(allowedDeviceIds),
                 TimeSpan.FromMinutes(15)
             );
 
@@ -242,21 +308,31 @@ public class ReportsController : ControllerBase
         }
     }
 
-    private async Task<List<StockLevelDto>> GenerateStockLevelsReport()
+    private async Task<List<StockLevelDto>> GenerateStockLevelsReport(IReadOnlyList<string> allowedDeviceIds)
     {
-        // Get products with current stock
+        // Get products scoped to this store's devices
         var products = await _context.Products
             .AsNoTracking()
-            .Where(p => p.CurrentStock.HasValue)
+            .Where(p => p.CurrentStock.HasValue
+                     && p.DeviceId != null
+                     && allowedDeviceIds.Contains(p.DeviceId))
             .ToListAsync();
 
-        // Calculate sales velocity (average daily sales) for each product
+        // Get invoice IDs for the allowed devices
         var thirtyDaysAgo = new DateTimeOffset(DateTime.Today.AddDays(-30)).ToUnixTimeMilliseconds();
         var today = new DateTimeOffset(DateTime.Today.AddDays(1)).ToUnixTimeMilliseconds();
 
+        var deviceInvoiceIds = await _context.Invoices
+            .AsNoTracking()
+            .Where(i => i.DeviceId != null && allowedDeviceIds.Contains(i.DeviceId))
+            .Select(i => i.InvoiceId)
+            .ToListAsync();
+
         var salesVelocity = await _context.InvoiceLines
             .AsNoTracking()
-            .Where(il => il.InvoiceDate >= thirtyDaysAgo && il.InvoiceDate < today)
+            .Where(il => il.InvoiceDate >= thirtyDaysAgo
+                      && il.InvoiceDate < today
+                      && deviceInvoiceIds.Contains(il.InvoiceId))
             .GroupBy(il => il.ProductID)
             .Select(g => new
             {
@@ -293,11 +369,17 @@ public class ReportsController : ControllerBase
     {
         try
         {
-            var cacheKey = $"inventory_low_stock_{threshold}";
+            var storeId = User.GetStoreId();
+            if (string.IsNullOrEmpty(storeId))
+                return Forbid();
+
+            var allowedDeviceIds = await _storeDeviceService.GetDeviceIdsForStoreAsync(storeId);
+
+            var cacheKey = $"inventory_low_stock_{storeId}_{threshold}";
 
             var lowStock = await _cacheService.GetOrCreateAsync(
                 cacheKey,
-                async () => await GenerateLowStockReport(threshold),
+                async () => await GenerateLowStockReport(threshold, allowedDeviceIds),
                 TimeSpan.FromMinutes(15)
             );
 
@@ -310,10 +392,10 @@ public class ReportsController : ControllerBase
         }
     }
 
-    private async Task<List<StockLevelDto>> GenerateLowStockReport(int threshold)
+    private async Task<List<StockLevelDto>> GenerateLowStockReport(int threshold, IReadOnlyList<string> allowedDeviceIds)
     {
-        var allStockLevels = await GenerateStockLevelsReport();
-        
+        var allStockLevels = await GenerateStockLevelsReport(allowedDeviceIds);
+
         return allStockLevels
             .Where(s => s.DaysRemaining.HasValue && s.DaysRemaining.Value <= threshold)
             .ToList();
@@ -327,14 +409,20 @@ public class ReportsController : ControllerBase
     {
         try
         {
+            var storeId = User.GetStoreId();
+            if (string.IsNullOrEmpty(storeId))
+                return Forbid();
+
+            var allowedDeviceIds = await _storeDeviceService.GetDeviceIdsForStoreAsync(storeId);
+
             var start = startDate ?? DateTime.Today.AddDays(-30);
             var end = endDate ?? DateTime.Today.AddDays(1);
 
-            var cacheKey = $"revenue_report_{start:yyyyMMdd}_{end:yyyyMMdd}_{groupBy}";
+            var cacheKey = $"revenue_report_{storeId}_{start:yyyyMMdd}_{end:yyyyMMdd}_{groupBy}";
 
             var report = await _cacheService.GetOrCreateAsync(
                 cacheKey,
-                async () => await GenerateRevenueReport(start, end, groupBy),
+                async () => await GenerateRevenueReport(start, end, groupBy, allowedDeviceIds),
                 TimeSpan.FromMinutes(15)
             );
 
@@ -347,14 +435,27 @@ public class ReportsController : ControllerBase
         }
     }
 
-    private async Task<List<SalesDataPointDto>> GenerateRevenueReport(DateTime startDate, DateTime endDate, string groupBy)
+    private async Task<List<SalesDataPointDto>> GenerateRevenueReport(
+        DateTime startDate,
+        DateTime endDate,
+        string groupBy,
+        IReadOnlyList<string> allowedDeviceIds)
     {
         var startTimestamp = new DateTimeOffset(startDate).ToUnixTimeMilliseconds();
         var endTimestamp = new DateTimeOffset(endDate).ToUnixTimeMilliseconds();
 
+        // Get invoice IDs for the allowed devices
+        var deviceInvoiceIds = await _context.Invoices
+            .AsNoTracking()
+            .Where(i => i.DeviceId != null && allowedDeviceIds.Contains(i.DeviceId))
+            .Select(i => i.InvoiceId)
+            .ToListAsync();
+
         var invoiceLines = await _context.InvoiceLines
             .AsNoTracking()
-            .Where(il => il.InvoiceDate >= startTimestamp && il.InvoiceDate <= endTimestamp)
+            .Where(il => il.InvoiceDate >= startTimestamp
+                      && il.InvoiceDate <= endTimestamp
+                      && deviceInvoiceIds.Contains(il.InvoiceId))
             .ToListAsync();
 
         List<SalesDataPointDto> dataPoints;

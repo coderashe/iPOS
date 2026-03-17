@@ -110,3 +110,13 @@ Single MIGRATION_9_10 added — alters all 8 tables + adds storeId to invoice
 All repositories now inject DeviceSession and stamp both fields on every insert
 3 new repositories created for CashFlow, TradeReceivables, DiscountsReceived (they were DAO-only before)
 DeviceRegistrationViewModel now populates DeviceSession on registration and restores it from DB on app startup — so the session is always live after first registration
+
+=======================
+All done. Here's what was implemented end-to-end:
+
+Backend: AuthController (POST /api/auth/login), JwtService (8hr signed JWT), AuthService (BCrypt verify + admin check), StoreDeviceService (resolves deviceIds by storeId), and [Authorize] + store-scoped filtering applied to DashboardController, AnalyticsController, ReportsController, and CustomersController. Cache keys include storeId to prevent cross-store pollution.
+
+Angular: AuthService (JWT in localStorage, expiry check), authGuard (redirects to /login?returnUrl=...), authInterceptor (attaches Bearer token, auto-logout on 401), LoginComponent (email + password + store form), and all routes (/dashboard, /sales, /inventory, /customers, /financial) protected with authGuard.
+
+Credits used: 9.24
+=====================================

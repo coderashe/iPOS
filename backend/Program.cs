@@ -1,4 +1,7 @@
+using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using iPosApi.Middleware;
 using iPosApi.Models.Data;
 using iPosApi.Services;
@@ -29,6 +32,32 @@ builder.Services.AddScoped<ISyncService, SyncService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IInvoiceService, InvoiceService>();
 builder.Services.AddScoped<IDeviceService, DeviceService>();
+builder.Services.AddSingleton<IJwtService, JwtService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IStoreDeviceService, StoreDeviceService>();
+
+// ── Authentication / JWT Bearer ──────────────────────────────────────────────
+var jwtSecret   = builder.Configuration["Jwt:Secret"]   ?? throw new InvalidOperationException("Jwt:Secret is not configured.");
+var jwtIssuer   = builder.Configuration["Jwt:Issuer"]   ?? throw new InvalidOperationException("Jwt:Issuer is not configured.");
+var jwtAudience = builder.Configuration["Jwt:Audience"] ?? throw new InvalidOperationException("Jwt:Audience is not configured.");
+
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer           = true,
+            ValidateAudience         = true,
+            ValidateLifetime         = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer              = jwtIssuer,
+            ValidAudience            = jwtAudience,
+            IssuerSigningKey         = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret))
+        };
+    });
+
+builder.Services.AddAuthorization();
 
 // ── CORS ─────────────────────────────────────────────────────────────────────
 builder.Services.AddCors(options =>
@@ -69,6 +98,9 @@ app.UseSwagger();
 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "iPOS API v1"));
 
 app.UseCors("DashboardPolicy");
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapControllers();
 

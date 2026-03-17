@@ -1,6 +1,8 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using iPosApi.Dtos;
+using iPosApi.Extensions;
 using iPosApi.Models.Data;
 using iPosApi.Services;
 
@@ -8,19 +10,23 @@ namespace iPosApi.Controllers;
 
 [ApiController]
 [Route("api/dashboard")]
+[Authorize]
 public class DashboardController : ControllerBase
 {
     private readonly AppDbContext _context;
     private readonly CacheService _cacheService;
+    private readonly IStoreDeviceService _storeDeviceService;
     private readonly ILogger<DashboardController> _logger;
 
     public DashboardController(
         AppDbContext context,
         CacheService cacheService,
+        IStoreDeviceService storeDeviceService,
         ILogger<DashboardController> logger)
     {
         _context = context;
         _cacheService = cacheService;
+        _storeDeviceService = storeDeviceService;
         _logger = logger;
     }
 
@@ -32,15 +38,30 @@ public class DashboardController : ControllerBase
     {
         try
         {
+            var storeId = User.GetStoreId();
+            if (string.IsNullOrEmpty(storeId))
+                return Forbid();
+
+            var allowedDeviceIds = await _storeDeviceService.GetDeviceIdsForStoreAsync(storeId);
+
+            // If a specific deviceId is requested, verify it belongs to this store
+            string? effectiveDeviceId = null;
+            if (!string.IsNullOrEmpty(deviceId))
+            {
+                if (!allowedDeviceIds.Contains(deviceId))
+                    return Forbid();
+                effectiveDeviceId = deviceId;
+            }
+
             // Default to last 30 days if not specified
             var start = startDate ?? DateTime.Today.AddDays(-30);
             var end = endDate ?? DateTime.Today.AddDays(1);
 
-            var cacheKey = $"dashboard_summary_{start:yyyyMMdd}_{end:yyyyMMdd}_{deviceId ?? "all"}";
+            var cacheKey = $"dashboard_summary_{storeId}_{start:yyyyMMdd}_{end:yyyyMMdd}_{effectiveDeviceId ?? "all"}";
 
             var summary = await _cacheService.GetOrCreateAsync(
                 cacheKey,
-                async () => await GenerateSummary(start, end, deviceId),
+                async () => await GenerateSummary(start, end, allowedDeviceIds, effectiveDeviceId),
                 TimeSpan.FromMinutes(5)
             );
 
@@ -58,24 +79,30 @@ public class DashboardController : ControllerBase
     {
         try
         {
-            var cacheKey = "devices_list";
+            var storeId = User.GetStoreId();
+            if (string.IsNullOrEmpty(storeId))
+                return Forbid();
+
+            var allowedDeviceIds = await _storeDeviceService.GetDeviceIdsForStoreAsync(storeId);
+
+            var cacheKey = $"devices_list_{storeId}";
 
             var devices = await _cacheService.GetOrCreateAsync(
                 cacheKey,
                 async () =>
                 {
-                    // Get unique devices from invoices
+                    // Get unique devices from invoices scoped to this store's devices
                     var invoiceDevices = await _context.Invoices
                         .AsNoTracking()
-                        .Where(i => !string.IsNullOrEmpty(i.DeviceId))
+                        .Where(i => !string.IsNullOrEmpty(i.DeviceId) && allowedDeviceIds.Contains(i.DeviceId!))
                         .Select(i => new { i.DeviceId, i.DeviceName })
                         .Distinct()
                         .ToListAsync();
 
-                    // Get unique devices from products
+                    // Get unique devices from products scoped to this store's devices
                     var productDevices = await _context.Products
                         .AsNoTracking()
-                        .Where(p => !string.IsNullOrEmpty(p.DeviceId))
+                        .Where(p => !string.IsNullOrEmpty(p.DeviceId) && allowedDeviceIds.Contains(p.DeviceId!))
                         .Select(p => new { p.DeviceId, p.DeviceName })
                         .Distinct()
                         .ToListAsync();
@@ -106,30 +133,35 @@ public class DashboardController : ControllerBase
         }
     }
 
-    private async Task<DashboardSummaryDto> GenerateSummary(DateTime startDate, DateTime endDate, string? deviceId = null)
+    private async Task<DashboardSummaryDto> GenerateSummary(
+        DateTime startDate,
+        DateTime endDate,
+        IReadOnlyList<string> allowedDeviceIds,
+        string? deviceId = null)
     {
         // Convert DateTime to Unix timestamp (milliseconds)
         var startTimestamp = new DateTimeOffset(startDate).ToUnixTimeMilliseconds();
         var endTimestamp = new DateTimeOffset(endDate).ToUnixTimeMilliseconds();
 
-        // Query invoice lines within date range
-        var invoiceLinesQuery = _context.InvoiceLines
+        // Determine the effective device filter
+        var effectiveDeviceIds = deviceId != null
+            ? new List<string> { deviceId }
+            : allowedDeviceIds.ToList();
+
+        // Get invoice IDs for the allowed devices
+        var deviceInvoiceIds = await _context.Invoices
             .AsNoTracking()
-            .Where(il => il.InvoiceDate >= startTimestamp && il.InvoiceDate <= endTimestamp);
+            .Where(i => i.DeviceId != null && effectiveDeviceIds.Contains(i.DeviceId))
+            .Select(i => i.InvoiceId)
+            .ToListAsync();
 
-        // Filter by device if specified
-        if (!string.IsNullOrEmpty(deviceId))
-        {
-            var deviceInvoiceIds = await _context.Invoices
-                .AsNoTracking()
-                .Where(i => i.DeviceId == deviceId)
-                .Select(i => i.InvoiceId)
-                .ToListAsync();
-
-            invoiceLinesQuery = invoiceLinesQuery.Where(il => deviceInvoiceIds.Contains(il.InvoiceId));
-        }
-
-        var invoiceLines = await invoiceLinesQuery.ToListAsync();
+        // Query invoice lines within date range, scoped to store's devices
+        var invoiceLines = await _context.InvoiceLines
+            .AsNoTracking()
+            .Where(il => il.InvoiceDate >= startTimestamp
+                      && il.InvoiceDate <= endTimestamp
+                      && deviceInvoiceIds.Contains(il.InvoiceId))
+            .ToListAsync();
 
         // Calculate total sales and revenue
         var totalRevenue = invoiceLines.Sum(il => (decimal)il.TotalAmount);
@@ -150,13 +182,11 @@ public class DashboardController : ControllerBase
             .Take(5)
             .ToList();
 
-        // Get low stock count (products with stock < 10)
-        var lowStockQuery = _context.Products.AsNoTracking();
-        if (!string.IsNullOrEmpty(deviceId))
-        {
-            lowStockQuery = lowStockQuery.Where(p => p.DeviceId == deviceId);
-        }
-        var lowStockCount = await lowStockQuery.CountAsync(p => p.Price < 10);
+        // Get low stock count (products with stock < 10) scoped to store's devices
+        var lowStockCount = await _context.Products
+            .AsNoTracking()
+            .Where(p => p.DeviceId != null && effectiveDeviceIds.Contains(p.DeviceId))
+            .CountAsync(p => p.Price < 10);
 
         // Get active customers count
         var activeCustomersCount = invoiceLines
