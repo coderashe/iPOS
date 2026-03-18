@@ -34,4 +34,7 @@ interface ExpenseDao {
 
     @Query("SELECT COUNT(*) FROM expenses WHERE isSynced = 0")
     fun getUnsyncedCount(): Flow<Int>
+
+    @Query("UPDATE expenses SET deviceId = :deviceId, storeId = :storeId WHERE deviceId = '' OR deviceId IS NULL")
+    suspend fun backfillDeviceAndStore(deviceId: String, storeId: String)
 }

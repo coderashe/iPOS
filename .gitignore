@@ -13,3 +13,16 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# .NET build artifacts
+backend/bin/
+backend/obj/
+frontend/*/bin/
+frontend/*/obj/
+*.user
+*.suo
+
+# Angular
+frontend/ipos-dashboard/node_modules/
+frontend/ipos-dashboard/dist/
+frontend/ipos-dashboard/.angular/cache/

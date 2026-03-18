@@ -23,4 +23,7 @@ interface StockTakeDao {
 
     @Query("SELECT COUNT(*) FROM stock_take WHERE isSynced = 0")
     fun getUnsyncedCount(): Flow<Int>
+
+    @Query("UPDATE stock_take SET deviceId = :deviceId, storeId = :storeId WHERE deviceId = '' OR deviceId IS NULL")
+    suspend fun backfillDeviceAndStore(deviceId: String, storeId: String)
 }

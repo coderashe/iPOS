@@ -25,4 +25,7 @@ interface PaymentDao {
 
     @Query("SELECT COUNT(*) FROM payment WHERE isSynced = 0")
     fun getUnsyncedCount(): Flow<Int>
+
+    @Query("UPDATE payment SET deviceId = :deviceId, storeId = :storeId WHERE deviceId = '' OR deviceId IS NULL")
+    suspend fun backfillDeviceAndStore(deviceId: String, storeId: String)
 }

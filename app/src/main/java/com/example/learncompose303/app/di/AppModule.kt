@@ -425,6 +425,25 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun provideBackfillRepository(
+        invoiceDao: InvoiceDao,
+        expenseDao: ExpenseDao,
+        paymentDao: PaymentDao,
+        cashFlowDao: CashFlowDao,
+        stockTakeDao: StockTakeDao,
+        dayReportsDao: DayReportsDao,
+        tradeReceivablesDao: TradeReceivablesDao,
+        discountsReceivedDao: DiscountsReceivedDao,
+        orderDao: OrderDao
+    ): com.example.learncompose303.data.repositories.BackfillRepository {
+        return com.example.learncompose303.data.repositories.BackfillRepository(
+            invoiceDao, expenseDao, paymentDao, cashFlowDao,
+            stockTakeDao, dayReportsDao, tradeReceivablesDao, discountsReceivedDao, orderDao
+        )
+    }
+
+    @Provides
+    @Singleton
     fun provideCashFlowRepository(
         appDatabase: AppDatabase,
         deviceSession: DeviceSession

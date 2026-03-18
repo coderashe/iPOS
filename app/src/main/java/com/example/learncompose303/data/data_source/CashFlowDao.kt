@@ -35,4 +35,7 @@ interface CashFlowDao {
 
     @Query("SELECT COUNT(*) FROM cashflow WHERE isSynced = 0")
     fun getUnsyncedCount(): Flow<Int>
+
+    @Query("UPDATE cashflow SET deviceId = :deviceId, storeId = :storeId WHERE deviceId = '' OR deviceId IS NULL")
+    suspend fun backfillDeviceAndStore(deviceId: String, storeId: String)
 }

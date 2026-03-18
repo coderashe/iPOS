@@ -37,4 +37,7 @@ interface OrderDao {
     // Clear all orders
     @Query("DELETE FROM orders")
     suspend fun deleteAllOrders()
+
+    @Query("UPDATE orders SET deviceId = :deviceId, storeId = :storeId WHERE deviceId = '' OR deviceId IS NULL")
+    suspend fun backfillDeviceAndStore(deviceId: String, storeId: String)
 }

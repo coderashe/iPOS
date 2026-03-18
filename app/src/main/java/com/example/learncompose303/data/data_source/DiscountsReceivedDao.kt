@@ -35,4 +35,7 @@ interface DiscountsReceivedDao {
 
     @Query("SELECT COUNT(*) FROM discountsreceived WHERE isSynced = 0")
     fun getUnsyncedCount(): Flow<Int>
+
+    @Query("UPDATE discountsreceived SET deviceId = :deviceId, storeId = :storeId WHERE deviceId = '' OR deviceId IS NULL")
+    suspend fun backfillDeviceAndStore(deviceId: String, storeId: String)
 }

@@ -38,4 +38,7 @@ interface TradeReceivablesDao {
 
     @Query("SELECT COUNT(*) FROM tradereceivables WHERE isSynced = 0")
     fun getUnsyncedCount(): Flow<Int>
+
+    @Query("UPDATE tradereceivables SET deviceId = :deviceId, storeId = :storeId WHERE deviceId = '' OR deviceId IS NULL")
+    suspend fun backfillDeviceAndStore(deviceId: String, storeId: String)
 }

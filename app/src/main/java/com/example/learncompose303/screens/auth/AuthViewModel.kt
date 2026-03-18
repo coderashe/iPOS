@@ -12,6 +12,8 @@ import androidx.lifecycle.viewModelScope
 import androidx.work.BackoffPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
+import com.example.learncompose303.app.core.DeviceSession
+import com.example.learncompose303.data.repositories.BackfillRepository
 import com.example.learncompose303.data.entities.User
 import com.example.learncompose303.data.repositories.AuthRepository
 import com.example.learncompose303.workmanager.MonthlyLogoutWorker
@@ -38,7 +40,9 @@ import kotlinx.coroutines.flow.StateFlow
 class AuthViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val userApiService: UserApiService,
-    private val workManager: WorkManager
+    private val workManager: WorkManager,
+    private val backfillRepository: BackfillRepository,
+    private val deviceSession: DeviceSession
 ) : ViewModel() {
 
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
@@ -136,6 +140,13 @@ class AuthViewModel @Inject constructor(
                     _userEmail.value = auth.currentUser?.email
                     auth.currentUser?.email?.let { fetchUserRoleByEmail(it) }
                     resetLogoutState()
+                    // Backfill existing records with deviceId + storeId
+                    viewModelScope.launch {
+                        backfillRepository.backfillDeviceAndStore(
+                            deviceId = deviceSession.deviceId,
+                            storeId = deviceSession.storeId
+                        )
+                    }
                 } else {
                     val error = task.exception?.localizedMessage ?: "Unknown error"
                     Log.d("AuthViewModel", error)

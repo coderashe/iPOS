@@ -1,0 +1,107 @@
+name: CI/CD iPOS to IIS
+
+on:
+  push:
+    branches:
+      - feature/analytics-dashboard
+
+jobs:
+  build-backend:
+    runs-on: self-hosted
+    env:
+      DB_CONNECTION_STRING: ${{ secrets.DB_CONNECTION_STRING }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Add .NET to PATH
+        shell: powershell
+        run: echo "C:\dotnet" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8
+
+      - name: Install .NET SDK if missing
+        shell: powershell
+        run: |
+          if (-Not (Test-Path "C:\dotnet\dotnet.exe")) {
+            Write-Host "Installing .NET SDK..."
+            Invoke-WebRequest -Uri https://dotnet.microsoft.com/download/dotnet/scripts/v1/dotnet-install.ps1 -OutFile dotnet-install.ps1
+            .\dotnet-install.ps1 -InstallDir "C:\dotnet" -Version 9.0.0
+            [System.Environment]::SetEnvironmentVariable("DOTNET_ROOT", "C:\dotnet", "Machine")
+            [System.Environment]::SetEnvironmentVariable("Path", "C:\dotnet;$([System.Environment]::GetEnvironmentVariable('Path','Machine'))", "Machine")
+          } else {
+            Write-Host ".NET SDK already installed"
+          }
+
+      - name: Verify .NET
+        shell: powershell
+        run: dotnet --version
+
+      - name: Restore & Publish iPOS API
+        shell: powershell
+        run: |
+          dotnet restore backend/iPosApi.csproj
+          dotnet publish backend/iPosApi.csproj -c Release -o ./publish/backend
+
+      - name: Upload Backend Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ipos-backend
+          path: ./publish/backend
+
+  build-frontend:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Angular dependencies
+        working-directory: frontend/ipos-dashboard
+        run: npm ci
+
+      - name: Build Angular app
+        working-directory: frontend/ipos-dashboard
+        run: npm run build -- --configuration production
+
+      - name: Upload Frontend Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ipos-dashboard
+          path: frontend/ipos-dashboard/dist/ipos-dashboard/browser
+
+  deploy:
+    runs-on: self-hosted
+    needs: [build-backend, build-frontend]
+
+    steps:
+      - name: Download iPOS Backend
+        uses: actions/download-artifact@v4
+        with:
+          name: ipos-backend
+          path: C:\inetpub\wwwroot\iPosApi
+
+      - name: Download Angular Dashboard
+        uses: actions/download-artifact@v4
+        with:
+          name: ipos-dashboard
+          path: C:\inetpub\wwwroot\ipos-dashboard
+
+      - name: Inject DB Connection String into backend appsettings
+        shell: powershell
+        run: |
+          $path = "C:\inetpub\wwwroot\iPosApi\appsettings.json"
+          $json = Get-Content $path | ConvertFrom-Json
+          $json.ConnectionStrings.DefaultConnection = "${{ secrets.DB_CONNECTION_STRING }}"
+          $json | ConvertTo-Json -Depth 10 | Set-Content $path
+          Write-Host "Connection string updated"
+
+      - name: Restart IIS
+        shell: powershell
+        run: |
+          iisreset /restart
+          Write-Host "IIS restarted successfully"
