@@ -15,23 +15,6 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Add .NET to PATH
-        shell: powershell
-        run: echo "C:\dotnet" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8
-
-      - name: Install .NET SDK if missing
-        shell: powershell
-        run: |
-          if (-Not (Test-Path "C:\dotnet\dotnet.exe")) {
-            Write-Host "Installing .NET SDK..."
-            Invoke-WebRequest -Uri https://dotnet.microsoft.com/download/dotnet/scripts/v1/dotnet-install.ps1 -OutFile dotnet-install.ps1
-            .\dotnet-install.ps1 -InstallDir "C:\dotnet" -Version 9.0.0
-            [System.Environment]::SetEnvironmentVariable("DOTNET_ROOT", "C:\dotnet", "Machine")
-            [System.Environment]::SetEnvironmentVariable("Path", "C:\dotnet;$([System.Environment]::GetEnvironmentVariable('Path','Machine'))", "Machine")
-          } else {
-            Write-Host ".NET SDK already installed"
-          }
-
       - name: Verify .NET
         shell: powershell
         run: dotnet --version
@@ -62,7 +45,7 @@ jobs:
 
       - name: Install Angular dependencies
         working-directory: frontend/ipos-dashboard
-        run: npm ci
+        run: npm install --legacy-peer-deps
 
       - name: Build Angular app
         working-directory: frontend/ipos-dashboard
