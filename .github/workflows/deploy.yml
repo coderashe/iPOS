@@ -80,6 +80,6 @@ jobs:
           powershell -ExecutionPolicy Bypass -Command "$path = 'C:\inetpub\wwwroot\iPosApi\appsettings.json'; $json = Get-Content $path | ConvertFrom-Json; $json.ConnectionStrings.DefaultConnection = '${{ secrets.DB_CONNECTION_STRING }}'; $json | ConvertTo-Json -Depth 10 | Set-Content $path"
 
       - name: Restart IIS
+        continue-on-error: true
         shell: cmd
-        run: |
-          iisreset /restart || echo "IIS restart attempted"
+        run: iisreset /restart || echo "IIS restart attempted"
