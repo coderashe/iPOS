@@ -15,11 +15,6 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup .NET 9
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '9.0.x'
-
       - name: Verify .NET
         shell: cmd
         run: dotnet --version
@@ -73,12 +68,6 @@ jobs:
           name: ipos-backend
           path: ${{ runner.temp }}\ipos-backend
 
-      - name: Download Angular Dashboard
-        uses: actions/download-artifact@v4
-        with:
-          name: ipos-dashboard
-          path: ${{ runner.temp }}\ipos-dashboard
-
       - name: Deploy Backend to IIS folder
         shell: powershell
         run: |
@@ -89,16 +78,6 @@ jobs:
           if ($LASTEXITCODE -le 7) { $LASTEXITCODE = 0 }
           Start-WebAppPool -Name "iPosApi"
 
-      - name: Deploy Dashboard to IIS folder
-        shell: powershell
-        run: |
-          Stop-WebAppPool -Name "ipos-dashboard" -ErrorAction SilentlyContinue
-          Start-Sleep -Seconds 2
-          if (!(Test-Path "C:\inetpub\wwwroot\ipos-dashboard")) { New-Item -ItemType Directory -Path "C:\inetpub\wwwroot\ipos-dashboard" }
-          robocopy "${{ runner.temp }}\ipos-dashboard" "C:\inetpub\wwwroot\ipos-dashboard" /E /IS /IT /PURGE
-          if ($LASTEXITCODE -le 7) { $LASTEXITCODE = 0 }
-          Start-WebAppPool -Name "ipos-dashboard"
-
       - name: Inject DB Connection String into backend appsettings
         shell: powershell
         run: |
@@ -106,3 +85,19 @@ jobs:
           $json = Get-Content $path | ConvertFrom-Json
           $json.ConnectionStrings.DefaultConnection = '${{ secrets.DB_CONNECTION_STRING }}'
           $json | ConvertTo-Json -Depth 10 | Set-Content $path
+
+      # - name: Download Angular Dashboard
+      #   uses: actions/download-artifact@v4
+      #   with:
+      #     name: ipos-dashboard
+      #     path: ${{ runner.temp }}\ipos-dashboard
+
+      # - name: Deploy Dashboard to IIS folder
+      #   shell: powershell
+      #   run: |
+      #     Stop-WebAppPool -Name "ipos-dashboard" -ErrorAction SilentlyContinue
+      #     Start-Sleep -Seconds 2
+      #     if (!(Test-Path "C:\inetpub\wwwroot\ipos-dashboard")) { New-Item -ItemType Directory -Path "C:\inetpub\wwwroot\ipos-dashboard" }
+      #     robocopy "${{ runner.temp }}\ipos-dashboard" "C:\inetpub\wwwroot\ipos-dashboard" /E /IS /IT /PURGE
+      #     if ($LASTEXITCODE -le 7) { $LASTEXITCODE = 0 }
+      #     Start-WebAppPool -Name "ipos-dashboard"
