@@ -63,10 +63,10 @@ jobs:
 
     steps:
       - name: Ensure deploy directories exist
-        shell: powershell
+        shell: cmd
         run: |
-          New-Item -ItemType Directory -Force -Path "C:\inetpub\wwwroot\iPosApi"
-          New-Item -ItemType Directory -Force -Path "C:\inetpub\wwwroot\ipos-dashboard"
+          if not exist "C:\inetpub\wwwroot\iPosApi" mkdir "C:\inetpub\wwwroot\iPosApi"
+          if not exist "C:\inetpub\wwwroot\ipos-dashboard" mkdir "C:\inetpub\wwwroot\ipos-dashboard"
 
       - name: Download iPOS Backend
         uses: actions/download-artifact@v4
@@ -81,13 +81,9 @@ jobs:
           path: C:\inetpub\wwwroot\ipos-dashboard
 
       - name: Inject DB Connection String into backend appsettings
-        shell: powershell
+        shell: cmd
         run: |
-          $path = "C:\inetpub\wwwroot\iPosApi\appsettings.json"
-          $json = Get-Content $path | ConvertFrom-Json
-          $json.ConnectionStrings.DefaultConnection = "${{ secrets.DB_CONNECTION_STRING }}"
-          $json | ConvertTo-Json -Depth 10 | Set-Content $path
-          Write-Host "Connection string updated"
+          powershell -ExecutionPolicy Bypass -Command "$path = 'C:\inetpub\wwwroot\iPosApi\appsettings.json'; $json = Get-Content $path | ConvertFrom-Json; $json.ConnectionStrings.DefaultConnection = '${{ secrets.DB_CONNECTION_STRING }}'; $json | ConvertTo-Json -Depth 10 | Set-Content $path"
 
       - name: Restart IIS
         shell: cmd
