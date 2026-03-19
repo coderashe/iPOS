@@ -26,3 +26,4 @@ frontend/*/obj/
 frontend/ipos-dashboard/node_modules/
 frontend/ipos-dashboard/dist/
 frontend/ipos-dashboard/.angular/cache/
+/backend/.vs
