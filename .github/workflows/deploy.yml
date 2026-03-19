@@ -69,7 +69,7 @@ jobs:
           path: ${{ runner.temp }}\ipos-backend
 
       - name: Deploy Backend to IIS folder
-        shell: powershell
+        shell: powershell -ExecutionPolicy Bypass -Command "{0}"
         run: |
           Stop-WebAppPool -Name "iPosApi" -ErrorAction SilentlyContinue
           Start-Sleep -Seconds 2
@@ -79,7 +79,7 @@ jobs:
           Start-WebAppPool -Name "iPosApi"
 
       - name: Inject DB Connection String into backend appsettings
-        shell: powershell
+        shell: powershell -ExecutionPolicy Bypass -Command "{0}"
         run: |
           $path = 'C:\inetpub\wwwroot\iPosApi\appsettings.json'
           $json = Get-Content $path | ConvertFrom-Json
