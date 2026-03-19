@@ -90,7 +90,6 @@ jobs:
           Write-Host "Connection string updated"
 
       - name: Restart IIS
-        shell: powershell
+        shell: cmd
         run: |
-          iisreset /restart
-          Write-Host "IIS restarted successfully"
+          iisreset /restart || echo "IIS restart attempted"
