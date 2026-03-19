@@ -62,12 +62,6 @@ jobs:
     needs: [build-backend, build-frontend]
 
     steps:
-      - name: Ensure deploy directories exist
-        shell: cmd
-        run: |
-          if not exist "C:\inetpub\wwwroot\iPosApi" mkdir "C:\inetpub\wwwroot\iPosApi"
-          if not exist "C:\inetpub\wwwroot\ipos-dashboard" mkdir "C:\inetpub\wwwroot\ipos-dashboard"
-
       - name: Download iPOS Backend
         uses: actions/download-artifact@v4
         with:
