@@ -1,0 +1,51 @@
+name: Deploy Frontend
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'frontend/**'
+
+jobs:
+  build-and-deploy-frontend:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Angular dependencies
+        shell: cmd
+        working-directory: frontend/ipos-dashboard
+        run: npm install --legacy-peer-deps
+
+      - name: Build Angular app
+        shell: cmd
+        working-directory: frontend/ipos-dashboard
+        run: npm run build -- --configuration production
+
+      - name: Deploy Frontend to IIS
+        shell: powershell -ExecutionPolicy Bypass -Command "{0}"
+        run: |
+          $appcmd = "$env:SystemRoot\system32\inetsrv\appcmd.exe"
+          $dest = "C:\inetpub\wwwroot\ipos-dashboard"
+
+          # Stop app pool
+          & $appcmd stop apppool /apppool.name:"ipos-dashboard" | Out-Null
+          Start-Sleep -Seconds 3
+
+          # Delete old files
+          if (Test-Path $dest) { Remove-Item -Path $dest -Recurse -Force }
+          New-Item -ItemType Directory -Path $dest | Out-Null
+
+          # Copy new files
+          Copy-Item -Path ".\frontend\ipos-dashboard\dist\ipos-dashboard\browser\*" -Destination $dest -Recurse -Force
+
+          # Recycle app pool
+          & $appcmd start apppool /apppool.name:"ipos-dashboard" | Out-Null

@@ -1,0 +1,48 @@
+name: Deploy Backend
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'backend/**'
+
+jobs:
+  build-and-deploy-backend:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Verify .NET
+        shell: cmd
+        run: dotnet --version
+
+      - name: Restore & Publish iPOS API
+        shell: cmd
+        run: |
+          dotnet restore backend/iPosApi.csproj
+          dotnet publish backend/iPosApi.csproj -c Release -o ./publish/backend
+
+      - name: Deploy Backend to IIS
+        shell: powershell -ExecutionPolicy Bypass -Command "{0}"
+        run: |
+          $appcmd = "$env:SystemRoot\system32\inetsrv\appcmd.exe"
+          $dest = "C:\inetpub\wwwroot\iPosApi"
+
+          # Stop app pool and site
+          & $appcmd stop apppool /apppool.name:"iPosApi" | Out-Null
+          & $appcmd stop site /site.name:"iPosApi" | Out-Null
+          Start-Sleep -Seconds 3
+
+          # Delete old files
+          if (Test-Path $dest) { Remove-Item -Path $dest -Recurse -Force }
+          New-Item -ItemType Directory -Path $dest | Out-Null
+
+          # Copy new files
+          Copy-Item -Path ".\publish\backend\*" -Destination $dest -Recurse -Force
+
+          # Start site and recycle app pool
+          & $appcmd start site /site.name:"iPosApi" | Out-Null
+          & $appcmd start apppool /apppool.name:"iPosApi" | Out-Null
