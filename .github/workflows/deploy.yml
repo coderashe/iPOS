@@ -31,35 +31,35 @@ jobs:
           name: ipos-backend
           path: ./publish/backend
 
-  # build-frontend:
-  #   runs-on: self-hosted
+  build-frontend:
+    runs-on: self-hosted
 
-  #   steps:
-  #     - name: Checkout Repository
-  #       uses: actions/checkout@v4
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-  #     - name: Setup Node.js
-  #       uses: actions/setup-node@v4
-  #       with:
-  #         node-version: '20'
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
 
-  #     - name: Install Angular dependencies
-  #       working-directory: frontend/ipos-dashboard
-  #       run: npm install --legacy-peer-deps
+      - name: Install Angular dependencies
+        working-directory: frontend/ipos-dashboard
+        run: npm install --legacy-peer-deps
 
-  #     - name: Build Angular app
-  #       working-directory: frontend/ipos-dashboard
-  #       run: npm run build -- --configuration production
+      - name: Build Angular app
+        working-directory: frontend/ipos-dashboard
+        run: npm run build -- --configuration production
 
-  #     - name: Upload Frontend Artifact
-  #       uses: actions/upload-artifact@v4
-  #       with:
-  #         name: ipos-dashboard
-  #         path: frontend/ipos-dashboard/dist/ipos-dashboard/browser
+      - name: Upload Frontend Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ipos-dashboard
+          path: frontend/ipos-dashboard/dist/ipos-dashboard/browser
 
   deploy:
     runs-on: self-hosted
-    needs: [build-backend]
+    needs: [build-backend, build-frontend]
 
     steps:
       - name: Download iPOS Backend
@@ -87,18 +87,19 @@ jobs:
           $json.ConnectionStrings.DefaultConnection = '${{ secrets.DB_CONNECTION_STRING }}'
           $json | ConvertTo-Json -Depth 10 | Set-Content $path
 
-      # - name: Download Angular Dashboard
-      #   uses: actions/download-artifact@v4
-      #   with:
-      #     name: ipos-dashboard
-      #     path: ${{ runner.temp }}\ipos-dashboard
+      - name: Download Angular Dashboard
+        uses: actions/download-artifact@v4
+        with:
+          name: ipos-dashboard
+          path: ${{ runner.temp }}\ipos-dashboard
 
-      # - name: Deploy Dashboard to IIS folder
-      #   shell: powershell
-      #   run: |
-      #     Stop-WebAppPool -Name "ipos-dashboard" -ErrorAction SilentlyContinue
-      #     Start-Sleep -Seconds 2
-      #     if (!(Test-Path "C:\inetpub\wwwroot\ipos-dashboard")) { New-Item -ItemType Directory -Path "C:\inetpub\wwwroot\ipos-dashboard" }
-      #     robocopy "${{ runner.temp }}\ipos-dashboard" "C:\inetpub\wwwroot\ipos-dashboard" /E /IS /IT /PURGE
-      #     if ($LASTEXITCODE -le 7) { $LASTEXITCODE = 0 }
-      #     Start-WebAppPool -Name "ipos-dashboard"
+      - name: Deploy Dashboard to IIS folder
+        shell: powershell -ExecutionPolicy Bypass -Command "{0}"
+        run: |
+          $appcmd = "$env:SystemRoot\system32\inetsrv\appcmd.exe"
+          & $appcmd stop apppool /apppool.name:"ipos-dashboard" | Out-Null
+          Start-Sleep -Seconds 3
+          if (!(Test-Path "C:\inetpub\wwwroot\ipos-dashboard")) { New-Item -ItemType Directory -Path "C:\inetpub\wwwroot\ipos-dashboard" }
+          robocopy "${{ runner.temp }}\ipos-dashboard" "C:\inetpub\wwwroot\ipos-dashboard" /E /IS /IT /PURGE
+          if ($LASTEXITCODE -le 7) { $LASTEXITCODE = 0 }
+          & $appcmd start apppool /apppool.name:"ipos-dashboard" | Out-Null
