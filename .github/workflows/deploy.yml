@@ -3,7 +3,7 @@ name: CI/CD iPOS to IIS
 on:
   push:
     branches:
-      - feature/analytics-dashboard
+      - main
 
 jobs:
   build-backend:
