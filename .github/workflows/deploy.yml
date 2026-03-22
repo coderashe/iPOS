@@ -44,10 +44,12 @@ jobs:
           node-version: '20'
 
       - name: Install Angular dependencies
+        shell: cmd
         working-directory: frontend/ipos-dashboard
         run: npm install --legacy-peer-deps
 
       - name: Build Angular app
+        shell: cmd
         working-directory: frontend/ipos-dashboard
         run: npm run build -- --configuration production
 
