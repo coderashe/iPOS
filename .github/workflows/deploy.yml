@@ -71,12 +71,13 @@ jobs:
       - name: Deploy Backend to IIS folder
         shell: powershell -ExecutionPolicy Bypass -Command "{0}"
         run: |
-          Stop-WebAppPool -Name "iPosApi" -ErrorAction SilentlyContinue
-          Start-Sleep -Seconds 2
+          $appcmd = "$env:SystemRoot\system32\inetsrv\appcmd.exe"
+          & $appcmd stop apppool /apppool.name:"iPosApi" | Out-Null
+          Start-Sleep -Seconds 3
           if (!(Test-Path "C:\inetpub\wwwroot\iPosApi")) { New-Item -ItemType Directory -Path "C:\inetpub\wwwroot\iPosApi" }
           robocopy "${{ runner.temp }}\ipos-backend" "C:\inetpub\wwwroot\iPosApi" /E /IS /IT /PURGE
           if ($LASTEXITCODE -le 7) { $LASTEXITCODE = 0 }
-          Start-WebAppPool -Name "iPosApi"
+          & $appcmd start apppool /apppool.name:"iPosApi" | Out-Null
 
       - name: Inject DB Connection String into backend appsettings
         shell: powershell -ExecutionPolicy Bypass -Command "{0}"
