@@ -1,4 +1,5 @@
 name: CI/CD iPOS to IIS
+# updated secret: DB_CONNECTION_STRING
 
 on:
   push:
