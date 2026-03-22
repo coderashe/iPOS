@@ -76,10 +76,12 @@ jobs:
         run: |
           $appcmd = "$env:SystemRoot\system32\inetsrv\appcmd.exe"
           & $appcmd stop apppool /apppool.name:"iPosApi" | Out-Null
-          Start-Sleep -Seconds 3
+          & $appcmd stop site /site.name:"iPosApi" | Out-Null
+          Start-Sleep -Seconds 5
           if (!(Test-Path "C:\inetpub\wwwroot\iPosApi")) { New-Item -ItemType Directory -Path "C:\inetpub\wwwroot\iPosApi" }
-          robocopy "${{ runner.temp }}\ipos-backend" "C:\inetpub\wwwroot\iPosApi" /E /IS /IT /PURGE
+          robocopy "${{ runner.temp }}\ipos-backend" "C:\inetpub\wwwroot\iPosApi" /E /IS /IT /PURGE /R:2 /W:5
           if ($LASTEXITCODE -le 7) { $LASTEXITCODE = 0 }
+          & $appcmd start site /site.name:"iPosApi" | Out-Null
           & $appcmd start apppool /apppool.name:"iPosApi" | Out-Null
 
       - name: Inject DB Connection String into backend appsettings
