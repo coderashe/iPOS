@@ -86,7 +86,8 @@ using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     context.Database.Migrate();
-    DataSeeder.SeedData(context);
+    try { DataSeeder.SeedData(context); }
+    catch (Exception ex) { Console.WriteLine($"Seeding skipped: {ex.Message}"); }
 }
 
 // ── Middleware pipeline ───────────────────────────────────────────────────────
