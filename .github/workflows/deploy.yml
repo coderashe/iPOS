@@ -90,7 +90,8 @@ jobs:
           $path = 'C:\inetpub\wwwroot\iPosApi\appsettings.json'
           $json = Get-Content $path | ConvertFrom-Json
           $json.ConnectionStrings.DefaultConnection = '${{ secrets.DB_CONNECTION_STRING }}'
-          $json | ConvertTo-Json -Depth 10 | Set-Content $path
+          $output = $json | ConvertTo-Json -Depth 10
+          [System.IO.File]::WriteAllText($path, $output)
 
       - name: Download Angular Dashboard
         uses: actions/download-artifact@v4
