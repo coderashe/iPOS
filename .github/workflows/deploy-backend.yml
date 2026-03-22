@@ -15,7 +15,7 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Verify .NET
+      - name: Verify .NET # v2
         shell: cmd
         run: dotnet --version
 
