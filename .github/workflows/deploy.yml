@@ -9,8 +9,6 @@ on:
 jobs:
   build-backend:
     runs-on: self-hosted
-    env:
-      DB_CONNECTION_STRING: ${{ secrets.DB_CONNECTION_STRING }}
 
     steps:
       - name: Checkout Repository
@@ -83,15 +81,6 @@ jobs:
           if ($LASTEXITCODE -le 7) { $LASTEXITCODE = 0 }
           & $appcmd start site /site.name:"iPosApi" | Out-Null
           & $appcmd start apppool /apppool.name:"iPosApi" | Out-Null
-
-      - name: Inject DB Connection String into backend appsettings
-        shell: powershell -ExecutionPolicy Bypass -Command "{0}"
-        run: |
-          $path = 'C:\inetpub\wwwroot\iPosApi\appsettings.json'
-          $json = Get-Content $path | ConvertFrom-Json
-          $json.ConnectionStrings.DefaultConnection = '${{ secrets.DB_CONNECTION_STRING }}'
-          $output = $json | ConvertTo-Json -Depth 10
-          [System.IO.File]::WriteAllText($path, $output)
 
       - name: Download Angular Dashboard
         uses: actions/download-artifact@v4
