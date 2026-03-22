@@ -36,9 +36,9 @@ jobs:
           & $appcmd stop site /site.name:"iPosApi" | Out-Null
           Start-Sleep -Seconds 5
 
-          # Clear contents without deleting the folder (avoids permission issues on folder itself)
+          # Clear contents but preserve server-only config files
           if (Test-Path $dest) {
-            Remove-Item "$dest\*" -Recurse -Force
+            Get-ChildItem "$dest" -Recurse -Exclude "appsettings.*.json" | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
           }
 
           # Copy new files
