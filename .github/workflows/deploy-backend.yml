@@ -31,17 +31,19 @@ jobs:
           $appcmd = "$env:SystemRoot\system32\inetsrv\appcmd.exe"
           $dest = "C:\inetpub\wwwroot\iPosApi"
 
-          # Stop app pool and site
+          # Stop app pool and site to release file locks
           & $appcmd stop apppool /apppool.name:"iPosApi" | Out-Null
           & $appcmd stop site /site.name:"iPosApi" | Out-Null
-          Start-Sleep -Seconds 3
+          Start-Sleep -Seconds 5
 
-          # Delete old files
-          if (Test-Path $dest) { Remove-Item -Path $dest -Recurse -Force }
-          New-Item -ItemType Directory -Path $dest | Out-Null
+          # Clear contents without deleting the folder (avoids permission issues on folder itself)
+          if (Test-Path $dest) {
+            Remove-Item "$dest\*" -Recurse -Force
+          }
 
           # Copy new files
-          Copy-Item -Path ".\publish\backend\*" -Destination $dest -Recurse -Force
+          robocopy ".\publish\backend" $dest /E /IS /IT /R:2 /W:3
+          if ($LASTEXITCODE -le 7) { $LASTEXITCODE = 0 }
 
           # Start site and recycle app pool
           & $appcmd start site /site.name:"iPosApi" | Out-Null

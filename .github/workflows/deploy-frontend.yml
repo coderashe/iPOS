@@ -36,16 +36,18 @@ jobs:
           $appcmd = "$env:SystemRoot\system32\inetsrv\appcmd.exe"
           $dest = "C:\inetpub\wwwroot\ipos-dashboard"
 
-          # Stop app pool
+          # Stop app pool to release file locks
           & $appcmd stop apppool /apppool.name:"ipos-dashboard" | Out-Null
-          Start-Sleep -Seconds 3
+          Start-Sleep -Seconds 5
 
-          # Delete old files
-          if (Test-Path $dest) { Remove-Item -Path $dest -Recurse -Force }
-          New-Item -ItemType Directory -Path $dest | Out-Null
+          # Clear contents without deleting the folder (avoids permission issues on folder itself)
+          if (Test-Path $dest) {
+            Remove-Item "$dest\*" -Recurse -Force
+          }
 
           # Copy new files
-          Copy-Item -Path ".\frontend\ipos-dashboard\dist\ipos-dashboard\browser\*" -Destination $dest -Recurse -Force
+          robocopy ".\frontend\ipos-dashboard\dist\ipos-dashboard\browser" $dest /E /IS /IT /R:2 /W:3
+          if ($LASTEXITCODE -le 7) { $LASTEXITCODE = 0 }
 
           # Recycle app pool
           & $appcmd start apppool /apppool.name:"ipos-dashboard" | Out-Null
