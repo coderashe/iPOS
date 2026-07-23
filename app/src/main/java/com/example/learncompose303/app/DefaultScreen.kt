@@ -106,6 +106,8 @@ import com.example.learncompose303.screens.PriorityScreen
 import com.example.learncompose303.screens.ProductSelectionScreen
 import com.example.learncompose303.screens.ProductsScreen
 import com.example.learncompose303.screens.ReportsScreen
+import com.example.learncompose303.screens.SalesReportScreen
+import com.example.learncompose303.screens.StockTakeReportScreen
 import com.example.learncompose303.screens.DashboardScreen
 import com.example.learncompose303.screens.SignInPage
 import com.example.learncompose303.screens.SignUpPage
@@ -363,7 +365,6 @@ fun InDriveTopBottomNavigation() {
 //                for stockTackingScreen
                 composable(Destinations.StockTaking.route) {
                     StockTakingScreen(
-                        viewModel = viewModel,
                         authViewModel = authViewModel,
                         navController = navController
                     )
@@ -513,13 +514,29 @@ fun InDriveTopBottomNavigation() {
                             Log.e(
                                 "istartlogs",
                                 "Navigating to InvoiceDetailScreen with invoiceId: $invoiceId"
-                            ) // Log here to check
+                            )
                             navController.navigate(
-                                Destinations.InvoiceDetail.createRoute(invoiceId)  // Use invoiceId
+                                Destinations.InvoiceDetail.createRoute(invoiceId)
                             )
                         },
                         navController = navController
                     )
+                }
+
+                // Sales report (invoice list, split out from Reports hub)
+                composable(Destinations.SalesReport.route) {
+                    SalesReportScreen(
+                        viewModel = viewModel,
+                        navController = navController,
+                        onInvoiceClick = { invoiceId ->
+                            navController.navigate(Destinations.InvoiceDetail.createRoute(invoiceId))
+                        }
+                    )
+                }
+
+                // Stock take session history
+                composable(Destinations.StockTakeReport.route) {
+                    StockTakeReportScreen(navController = navController)
                 }
 
                 composable(
