@@ -19,7 +19,8 @@ object NetworkModule {
     @Singleton
     fun provideRetrofit(): Retrofit {
         return Retrofit.Builder()
-            .baseUrl("http://192.168.100.5:5000/") // Backend running on port 5000
+            .baseUrl("http://192.168.43.35:5001/") // Backend on local machine
+//            .baseUrl("http://192.168.100.5:5000/") // Old network IP
 //            .baseUrl("http://10.0.2.2:5000/") // Use 10.0.2.2 for localhost from Android emulator
             .addConverterFactory(GsonConverterFactory.create())
             .client(

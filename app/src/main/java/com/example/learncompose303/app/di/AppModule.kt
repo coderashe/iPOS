@@ -121,14 +121,7 @@ object AppModule {
                 MIGRATION_6_7,
                 MIGRATION_7_8,
                 MIGRATION_8_9,
-                MIGRATION_9_10,
-                // Downgrade safety: if an older build is accidentally installed on top of a
-                // newer DB, run no-op migrations so Room accepts the existing schema rather
-                // than crashing. Data is fully preserved because the tables haven't changed —
-                // the downgraded app just won't use the newer columns until updated again.
-                MIGRATION_10_9,
-                MIGRATION_9_8,
-                MIGRATION_8_7
+                MIGRATION_9_10
             )
             .build()
     }

@@ -225,27 +225,3 @@ val MIGRATION_9_10 = object : Migration(9, 10) {
     }
 }
 
-// ── Downgrade safety migrations ───────────────────────────────────────────────
-// These are no-ops. SQLite allows columns to exist that the old app doesn't know
-// about — it simply ignores them. So downgrading just means telling Room "yes,
-// this schema is acceptable" without dropping any data.
-// Only needed if you accidentally deploy an older build over a newer DB.
-
-val MIGRATION_10_9 = object : Migration(10, 9) {
-    override fun migrate(db: SupportSQLiteDatabase) {
-        // No destructive changes — the extra columns added in 9→10 are ignored by the
-        // older app. Room just needs a registered path to accept the DB.
-    }
-}
-
-val MIGRATION_9_8 = object : Migration(9, 8) {
-    override fun migrate(db: SupportSQLiteDatabase) {
-        // device_info table added in 8→9 is ignored by older app code.
-    }
-}
-
-val MIGRATION_8_7 = object : Migration(8, 7) {
-    override fun migrate(db: SupportSQLiteDatabase) {
-        // isSynced columns added in 7→8 are ignored by older app code.
-    }
-}
