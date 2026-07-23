@@ -140,13 +140,6 @@ class AuthViewModel @Inject constructor(
                     _userEmail.value = auth.currentUser?.email
                     auth.currentUser?.email?.let { fetchUserRoleByEmail(it) }
                     resetLogoutState()
-                    // Backfill existing records with deviceId + storeId
-                    viewModelScope.launch {
-                        backfillRepository.backfillDeviceAndStore(
-                            deviceId = deviceSession.deviceId,
-                            storeId = deviceSession.storeId
-                        )
-                    }
                 } else {
                     val error = task.exception?.localizedMessage ?: "Unknown error"
                     Log.d("AuthViewModel", error)

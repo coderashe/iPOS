@@ -1,5 +1,6 @@
 package com.example.learncompose303.network
 
+import com.google.firebase.firestore.FirebaseFirestore
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -84,5 +85,11 @@ object NetworkModule {
     @Singleton
     fun provideSyncApiService(retrofit: Retrofit): SyncApiService {
         return retrofit.create(SyncApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideFirebaseFirestore(): FirebaseFirestore {
+        return FirebaseFirestore.getInstance()
     }
 }

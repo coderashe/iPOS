@@ -7,14 +7,30 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.learncompose303.ui.theme.LearnCompose303Theme
 import com.example.learncompose303.viewmodels.InvoiceViewModel
+import com.example.learncompose303.viewmodels.TrialViewModel
+import com.example.learncompose303.app.core.TrialManager
+import com.example.learncompose303.screens.SetupScreen
+import com.example.learncompose303.screens.TrialBanner
+import com.example.learncompose303.screens.TrialExpiredScreen
+import com.example.learncompose303.viewmodels.SetupViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import android.Manifest
 import androidx.navigation.compose.rememberNavController
@@ -75,13 +91,47 @@ class MainActivity : ComponentActivity() {
         }
         setContent {
             LearnCompose303Theme {
-                // Create navController at the root level
-                val navController = rememberNavController()
-                val viewModel: InvoiceViewModel = viewModel()
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                ) {
-                    SwipeRefreshLayout(viewModel, navController)
+                val trialViewModel: TrialViewModel = hiltViewModel()
+                val trialStatus by trialViewModel.trialStatus.collectAsState()
+
+                Surface(modifier = Modifier.fillMaxSize()) {
+                    when (val status = trialStatus) {
+                        is TrialManager.TrialStatus.Loading -> {
+                            // Show a centered spinner while Firestore responds
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator()
+                            }
+                        }
+                        is TrialManager.TrialStatus.Expired -> {
+                            TrialExpiredScreen()
+                        }
+                        is TrialManager.TrialStatus.Active -> {
+                            val navController = rememberNavController()
+                            val viewModel: InvoiceViewModel = viewModel()
+                            val setupViewModel: SetupViewModel = hiltViewModel()
+                            val context = androidx.compose.ui.platform.LocalContext.current
+
+                            // Show setup gate if not yet completed
+                            var setupDone by remember {
+                                mutableStateOf(setupViewModel.isSetupAlreadyDone(context))
+                            }
+
+                            Column(modifier = Modifier.fillMaxSize()) {
+                                TrialBanner(daysLeft = status.daysLeft)
+                                if (!setupDone) {
+                                    SetupScreen(
+                                        onSetupComplete = { setupDone = true },
+                                        viewModel = setupViewModel
+                                    )
+                                } else {
+                                    SwipeRefreshLayout(viewModel, navController)
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -181,6 +231,3 @@ class MainActivity : ComponentActivity() {
     }
 
 }
-
-
-
