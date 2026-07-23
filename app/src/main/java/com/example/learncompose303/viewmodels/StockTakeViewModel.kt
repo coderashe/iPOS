@@ -17,11 +17,13 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.math.abs
 
 /** UI-facing state for the stock-take screen. */
 data class StockTakeUiState(
@@ -266,4 +268,194 @@ class StockTakeViewModel @Inject constructor(
     fun clearMessage() {
         _uiState.value = _uiState.value.copy(message = null)
     }
+
+    // ─── Session detail ───────────────────────────────────────────────────────
+
+    private val _detailState = MutableStateFlow<StockTakeDetailState>(StockTakeDetailState.Loading)
+    val detailState: StateFlow<StockTakeDetailState> = _detailState.asStateFlow()
+
+    fun loadSessionDetail(sessionId: Long) {
+        viewModelScope.launch {
+            _detailState.value = StockTakeDetailState.Loading
+            try {
+                // Fetch session meta
+                val session = stockTakeRepository.getAllSessions().first()
+                    .find { it.sessionId == sessionId }
+                    ?: run {
+                        _detailState.value = StockTakeDetailState.Error("Session not found")
+                        return@launch
+                    }
+
+                // Fetch all stock-take records for this session
+                val records = stockTakeRepository.getRecordsForSession(sessionId).first()
+
+                // Fetch all products with brand for name lookup
+                val allProducts = productRepository.getProductsWithBrand().first()
+                val productMap: Map<Long, ProductWithBrand> =
+                    allProducts.associateBy { it.product.productId }
+
+                // Total catalog size
+                val totalCatalog = allProducts.size
+
+                // Counted = products that have a record in this session
+                val countedCount = records.size
+
+                // Variances
+                val withVariance = records.filter { abs(it.variance) > 0.0 }
+                val shortages = withVariance.filter { it.variance < 0 }
+                val surpluses = withVariance.filter { it.variance > 0 }
+
+                // Coverage %
+                val coveragePct = if (totalCatalog > 0)
+                    (countedCount.toFloat() / totalCatalog * 100).toInt() else 0
+
+                // Uncounted products
+                val countedIds = records.map { it.productId }.toSet()
+                val uncounted = allProducts.filter { it.product.productId !in countedIds }
+
+                // Variance rows — sorted by absolute variance desc
+                val varianceRows = withVariance
+                    .sortedByDescending { abs(it.variance) }
+                    .map { record ->
+                        val pwb = productMap[record.productId]
+                        VarianceRow(
+                            displayName = pwb?.let { "${it.brand.brandName} - ${it.product.productDescription}" }
+                                ?: "Product #${record.productId}",
+                            systemQty = record.recordedStock,
+                            countedQty = record.countedStock,
+                            variance = record.variance,
+                            reason = record.varianceReason
+                        )
+                    }
+
+                // Business suggestions
+                val suggestions = buildSuggestions(
+                    coveragePct = coveragePct,
+                    totalCatalog = totalCatalog,
+                    countedCount = countedCount,
+                    shortageCount = shortages.size,
+                    surplusCount = surpluses.size,
+                    varianceCount = withVariance.size
+                )
+
+                _detailState.value = StockTakeDetailState.Ready(
+                    StockTakeDetail(
+                        session = session,
+                        totalCatalog = totalCatalog,
+                        countedCount = countedCount,
+                        coveragePct = coveragePct,
+                        varianceCount = withVariance.size,
+                        shortageCount = shortages.size,
+                        surplusCount = surpluses.size,
+                        uncountedProducts = uncounted,
+                        varianceRows = varianceRows,
+                        suggestions = suggestions
+                    )
+                )
+            } catch (e: Exception) {
+                _detailState.value = StockTakeDetailState.Error(e.message ?: "Unknown error")
+            }
+        }
+    }
+
+    private fun buildSuggestions(
+        coveragePct: Int,
+        totalCatalog: Int,
+        countedCount: Int,
+        shortageCount: Int,
+        surplusCount: Int,
+        varianceCount: Int
+    ): List<StockTakeSuggestion> {
+        val list = mutableListOf<StockTakeSuggestion>()
+
+        if (coveragePct < 50) {
+            list += StockTakeSuggestion(
+                type = SuggestionType.WARNING,
+                title = "Low coverage ($coveragePct%)",
+                body = "Less than half your catalog was counted. Avoid making purchasing or pricing decisions until the remaining ${totalCatalog - countedCount} products are checked."
+            )
+        } else if (coveragePct < 80) {
+            list += StockTakeSuggestion(
+                type = SuggestionType.INFO,
+                title = "Partial coverage ($coveragePct%)",
+                body = "${totalCatalog - countedCount} products still uncounted. Consider completing the count before closing the session."
+            )
+        } else {
+            list += StockTakeSuggestion(
+                type = SuggestionType.OK,
+                title = "Good coverage ($coveragePct%)",
+                body = "Most of your catalog has been counted. Results are reliable for decision-making."
+            )
+        }
+
+        val shortageRate = if (countedCount > 0) shortageCount.toFloat() / countedCount else 0f
+        if (shortageRate > 0.10f) {
+            list += StockTakeSuggestion(
+                type = SuggestionType.WARNING,
+                title = "High shortage rate (${(shortageRate * 100).toInt()}%)",
+                body = "$shortageCount products have less stock than recorded. Review receiving records and check for possible shrinkage, theft, or unprocessed sales."
+            )
+        } else if (shortageCount > 0) {
+            list += StockTakeSuggestion(
+                type = SuggestionType.INFO,
+                title = "$shortageCount shortage${if (shortageCount > 1) "s" else ""} found",
+                body = "Cross-check these items against recent sales invoices to identify any unrecorded transactions."
+            )
+        }
+
+        if (surplusCount > 0) {
+            list += StockTakeSuggestion(
+                type = SuggestionType.INFO,
+                title = "$surplusCount surplus${if (surplusCount > 1) "s" else ""} found",
+                body = "Stock exceeds system records for these items. Check if all received deliveries have been captured in the system."
+            )
+        }
+
+        if (varianceCount == 0 && countedCount > 0) {
+            list += StockTakeSuggestion(
+                type = SuggestionType.OK,
+                title = "Perfect match",
+                body = "All counted products match system records exactly. Your inventory data is accurate."
+            )
+        }
+
+        return list
+    }
+}
+
+// ─── Detail data models ───────────────────────────────────────────────────────
+
+data class VarianceRow(
+    val displayName: String,
+    val systemQty: Long,
+    val countedQty: Double,
+    val variance: Double,
+    val reason: String?
+)
+
+data class StockTakeSuggestion(
+    val type: SuggestionType,
+    val title: String,
+    val body: String
+)
+
+enum class SuggestionType { OK, INFO, WARNING }
+
+data class StockTakeDetail(
+    val session: StockTakeSession,
+    val totalCatalog: Int,
+    val countedCount: Int,
+    val coveragePct: Int,
+    val varianceCount: Int,
+    val shortageCount: Int,
+    val surplusCount: Int,
+    val uncountedProducts: List<ProductWithBrand>,
+    val varianceRows: List<VarianceRow>,
+    val suggestions: List<StockTakeSuggestion>
+)
+
+sealed class StockTakeDetailState {
+    object Loading : StockTakeDetailState()
+    data class Ready(val detail: StockTakeDetail) : StockTakeDetailState()
+    data class Error(val message: String) : StockTakeDetailState()
 }
