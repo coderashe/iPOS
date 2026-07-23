@@ -1,168 +1,689 @@
 package com.example.learncompose303.screens
 
-import android.util.Log
-import android.widget.Toast
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Divider
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.example.learncompose303.data.Destinations
-import com.example.learncompose303.data.entities.StockTake
+import com.example.learncompose303.data.domain.ProductWithBrand
+import com.example.learncompose303.data.entities.StockTakeSessionStatus
 import com.example.learncompose303.screens.auth.AuthViewModel
-import com.example.learncompose303.viewmodels.InvoiceViewModel
+import com.example.learncompose303.viewmodels.StockTakeViewModel
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StockTakingScreen(
-    viewModel: InvoiceViewModel,
+    stockTakeViewModel: StockTakeViewModel = hiltViewModel(),
     authViewModel: AuthViewModel,
-    navController: NavController,
+    navController: NavController
 ) {
-    val products by viewModel.productList.collectAsState()
-    val context = LocalContext.current
-
-    val stockTakes = remember { mutableStateListOf<StockTake>() }
+    val uiState by stockTakeViewModel.uiState.collectAsState()
     val loggedInUser by authViewModel.userEmail.observeAsState()
-    val checkedItems =
-        remember { mutableStateMapOf<Long, Boolean>() } // Track checked state per product
+    val snackbarHostState = remember { SnackbarHostState() }
 
-
-    // Trigger fetch when the email is available
-    loggedInUser?.let {
-        LaunchedEffect(it) {
-            authViewModel.fetchUserByEmail(it)
+    // Show snackbar messages
+    LaunchedEffect(uiState.message) {
+        uiState.message?.let {
+            snackbarHostState.showSnackbar(it)
+            stockTakeViewModel.clearMessage()
         }
-        Log.d("StartLogs", "current loggedin user is $loggedInUser")
     }
 
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        items(products) { product ->
-            var countedStock by remember { mutableStateOf("") }
-            val recordedStock = product.productQty
-            val variance = countedStock.toDoubleOrNull()?.minus(recordedStock) ?: 0.0
-            var varianceReason by remember { mutableStateOf("") }
-
-            Card(
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                elevation = CardDefaults.cardElevation(4.dp)
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Column {
+                        Text("Stock Take", style = MaterialTheme.typography.titleMedium)
+                        uiState.openSession?.let { session ->
+                            val fmt = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
+                            Text(
+                                "Started ${fmt.format(Date(session.startedAt))}",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                },
+                actions = {
+                    if (uiState.openSession != null) {
+                        TextButton(
+                            onClick = { stockTakeViewModel.closeSession() },
+                            colors = ButtonDefaults.textButtonColors(
+                                contentColor = MaterialTheme.colorScheme.error
+                            )
+                        ) {
+                            Text("Close Session", fontSize = 13.sp)
+                        }
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
+            )
+        },
+        floatingActionButton = {
+            if (uiState.openSession != null && uiState.searchQuery.isNotBlank() &&
+                uiState.filteredProducts.isEmpty()
             ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                // Search returned no results — offer to add a new product
+                FloatingActionButton(
+                    onClick = { stockTakeViewModel.showAddProductDialog() },
+                    containerColor = MaterialTheme.colorScheme.primary
                 ) {
+                    Icon(Icons.Default.Add, contentDescription = "Add new product")
+                }
+            }
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { paddingValues ->
+
+        when {
+            uiState.isLoading -> {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            }
+
+            uiState.openSession == null -> {
+                // No open session — show start screen
+                NoOpenSessionScreen(
+                    onStart = { loggedInUser?.let { stockTakeViewModel.startSession(it) } }
+                )
+            }
+
+            else -> {
+                // Active session
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues)
+                ) {
+                    // Progress bar
+                    SessionProgressHeader(
+                        checked = uiState.checkedCount,
+                        total = uiState.totalCount
+                    )
+
+                    // Search bar
+                    StockTakeSearchBar(
+                        query = uiState.searchQuery,
+                        onQueryChange = { stockTakeViewModel.onSearchQueryChanged(it) },
+                        onAddNew = { stockTakeViewModel.showAddProductDialog() },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp, vertical = 6.dp)
+                    )
+
+                    if (uiState.filteredProducts.isEmpty() && uiState.searchQuery.isNotBlank()) {
+                        EmptySearchResult(
+                            query = uiState.searchQuery,
+                            onAddNew = { stockTakeViewModel.showAddProductDialog() }
+                        )
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                            contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                                horizontal = 12.dp, vertical = 4.dp
+                            )
+                        ) {
+                            items(
+                                items = uiState.filteredProducts,
+                                key = { it.product.productId }
+                            ) { pwb ->
+                                StockTakeItemRow(
+                                    productWithBrand = pwb,
+                                    isChecked = pwb.product.productId in uiState.countedProductIds,
+                                    onRecord = { counted, reason ->
+                                        stockTakeViewModel.recordItem(
+                                            product = pwb.product,
+                                            countedStock = counted,
+                                            varianceReason = reason,
+                                            recordedBy = loggedInUser ?: "unknown"
+                                        )
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Add new product dialog
+    if (uiState.showAddProductDialog) {
+        AddNewProductDialog(
+            initialDescription = uiState.searchQuery,
+            onDismiss = { stockTakeViewModel.dismissAddProductDialog() },
+            onConfirm = { desc, code, brandId, sizeId, avgCost, stdCost, qty ->
+                stockTakeViewModel.addNewProductAndRecord(
+                    description = desc,
+                    productCode = code,
+                    brandId = brandId,
+                    shoeSizeId = sizeId,
+                    averageCost = avgCost,
+                    standardCost = stdCost,
+                    countedQty = qty,
+                    recordedBy = loggedInUser ?: "unknown"
+                )
+            }
+        )
+    }
+}
+
+// ─── No session screen ────────────────────────────────────────────────────────
+
+@Composable
+private fun NoOpenSessionScreen(onStart: () -> Unit) {
+    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier.padding(32.dp)
+        ) {
+            Icon(
+                Icons.Default.Warning,
+                contentDescription = null,
+                modifier = Modifier.size(64.dp),
+                tint = MaterialTheme.colorScheme.outline
+            )
+            Text(
+                "No active stock take",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.SemiBold
+            )
+            Text(
+                "Start a session to begin counting. The session stays open until you close it — " +
+                        "you can leave and come back at any time.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            )
+            Button(
+                onClick = onStart,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(Icons.Default.Add, contentDescription = null)
+                Spacer(Modifier.width(8.dp))
+                Text("Start Stock Take")
+            }
+        }
+    }
+}
+
+// ─── Progress header ──────────────────────────────────────────────────────────
+
+@Composable
+private fun SessionProgressHeader(checked: Int, total: Int) {
+    val progress = if (total > 0) checked.toFloat() / total else 0f
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 6.dp)
+    ) {
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                "Progress",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                "$checked / $total items",
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+        }
+        Spacer(Modifier.height(4.dp))
+        LinearProgressIndicator(
+            progress = progress,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(6.dp)
+                .clip(RoundedCornerShape(3.dp)),
+            color = MaterialTheme.colorScheme.primary
+        )
+    }
+}
+
+// ─── Search bar ───────────────────────────────────────────────────────────────
+
+@Composable
+private fun StockTakeSearchBar(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    onAddNew: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    OutlinedTextField(
+        value = query,
+        onValueChange = onQueryChange,
+        modifier = modifier,
+        placeholder = { Text("Search by name or code…") },
+        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+        trailingIcon = {
+            if (query.isNotEmpty()) {
+                IconButton(onClick = { onQueryChange("") }) {
+                    Icon(Icons.Default.Close, contentDescription = "Clear search")
+                }
+            }
+        },
+        singleLine = true,
+        shape = RoundedCornerShape(12.dp),
+        keyboardOptions = KeyboardOptions(
+            capitalization = KeyboardCapitalization.Words,
+            imeAction = ImeAction.Search
+        )
+    )
+}
+
+// ─── Empty search result ──────────────────────────────────────────────────────
+
+@Composable
+private fun EmptySearchResult(query: String, onAddNew: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Text(
+            "No product found for \"$query\"",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        FilledTonalButton(onClick = onAddNew) {
+            Icon(Icons.Default.Add, contentDescription = null)
+            Spacer(Modifier.width(6.dp))
+            Text("Add \"$query\" as new product")
+        }
+    }
+}
+
+// ─── Compact item row ─────────────────────────────────────────────────────────
+
+@Composable
+private fun StockTakeItemRow(
+    productWithBrand: ProductWithBrand,
+    isChecked: Boolean,
+    onRecord: (countedStock: Double, reason: String) -> Unit
+) {
+    val product = productWithBrand.product
+    val brandName = productWithBrand.brand.brandName
+    var expanded by rememberSaveable(product.productId) { mutableStateOf(!isChecked) }
+    var countedStockText by rememberSaveable(product.productId) { mutableStateOf("") }
+    var varianceReason by rememberSaveable(product.productId) { mutableStateOf("") }
+
+    val variance = countedStockText.toDoubleOrNull()?.minus(product.productQty) ?: 0.0
+    val hasVariance = countedStockText.isNotEmpty() && variance != 0.0
+
+    val indicatorColor = when {
+        isChecked && variance == 0.0 -> Color(0xFF4CAF50)   // green — matched
+        isChecked && variance != 0.0 -> Color(0xFFFFA000)   // amber — variance
+        else -> MaterialTheme.colorScheme.outlineVariant      // grey — not counted
+    }
+
+    Card(
+        shape = RoundedCornerShape(10.dp),
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isChecked)
+                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+            else
+                MaterialTheme.colorScheme.surface
+        )
+    ) {
+        Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
+            // ── Collapsed summary row ──────────────────────────────────────
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                // Colour dot indicator
+                Box(
+                    modifier = Modifier
+                        .size(10.dp)
+                        .clip(CircleShape)
+                        .background(indicatorColor)
+                )
+                Spacer(Modifier.width(10.dp))
+
+                // Product info
+                Column(Modifier.weight(1f)) {
                     Text(
-                        text = product.productDescription,
+                        "$brandName - ${product.productDescription}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        "Sys: ${product.productQty}  •  ${product.productCode}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                Spacer(Modifier.width(8.dp))
+
+                if (isChecked) {
+                    // Show checked badge; tap to re-open for correction
+                    IconButton(
+                        onClick = { expanded = !expanded },
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Check,
+                            contentDescription = "Checked — tap to edit",
+                            tint = indicatorColor
+                        )
+                    }
+                } else {
+                    // Inline count field + check button
+                    OutlinedTextField(
+                        value = countedStockText,
+                        onValueChange = { countedStockText = it.filter { c -> c.isDigit() || c == '.' } },
+                        modifier = Modifier.width(80.dp),
+                        label = { Text("Count", fontSize = 11.sp) },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Decimal,
+                            imeAction = ImeAction.Done
+                        ),
+                        keyboardActions = KeyboardActions(onDone = {
+                            if (countedStockText.isNotEmpty() && !hasVariance) {
+                                onRecord(countedStockText.toDouble(), "")
+                            }
+                        }),
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    FilledTonalButton(
+                        onClick = {
+                            if (countedStockText.isNotEmpty()) {
+                                if (hasVariance) {
+                                    expanded = true // show reason field
+                                } else {
+                                    onRecord(countedStockText.toDouble(), "")
+                                }
+                            }
+                        },
+                        enabled = countedStockText.isNotEmpty(),
+                        modifier = Modifier.height(40.dp),
+                        shape = RoundedCornerShape(8.dp),
+                        contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                            horizontal = 10.dp
+                        )
+                    ) {
+                        Text("Check", fontSize = 12.sp)
+                    }
+                }
+            }
+
+            // ── Variance reason (expandable) ───────────────────────────────
+            AnimatedVisibility(
+                visible = (hasVariance || isChecked) && expanded,
+                enter = expandVertically(),
+                exit = shrinkVertically()
+            ) {
+                Column(Modifier.padding(top = 8.dp)) {
+                    if (hasVariance || (isChecked)) {
+                        Text(
+                            text = if (variance < 0) "Shortage: ${variance.toInt()}" else "Surplus: +${variance.toInt()}",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = if (variance < 0) MaterialTheme.colorScheme.error
+                            else Color(0xFF2E7D32),
+                            modifier = Modifier.padding(bottom = 4.dp)
+                        )
+                    }
+                    OutlinedTextField(
+                        value = varianceReason,
+                        onValueChange = { varianceReason = it },
+                        label = { Text("Reason for variance") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        shape = RoundedCornerShape(8.dp),
+                        keyboardOptions = KeyboardOptions(
+                            capitalization = KeyboardCapitalization.Sentences,
+                            imeAction = ImeAction.Done
+                        ),
+                        keyboardActions = KeyboardActions(onDone = {
+                            if (countedStockText.isNotEmpty()) {
+                                onRecord(countedStockText.toDouble(), varianceReason)
+                            }
+                        })
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    Button(
+                        onClick = {
+                            onRecord(
+                                countedStockText.toDoubleOrNull() ?: product.productQty.toDouble(),
+                                varianceReason
+                            )
+                            expanded = false
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text(if (isChecked) "Update" else "Check")
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ─── Add new product dialog ───────────────────────────────────────────────────
+
+@Composable
+private fun AddNewProductDialog(
+    initialDescription: String,
+    onDismiss: () -> Unit,
+    onConfirm: (
+        description: String,
+        productCode: String,
+        brandId: Long,
+        shoeSizeId: Long,
+        averageCost: Double,
+        standardCost: Double,
+        countedQty: Double
+    ) -> Unit
+) {
+    var description by rememberSaveable { mutableStateOf(initialDescription) }
+    var productCode by rememberSaveable { mutableStateOf("") }
+    var brandIdText by rememberSaveable { mutableStateOf("1") }   // default brand 1
+    var shoeSizeIdText by rememberSaveable { mutableStateOf("1") } // default size 1
+    var averageCostText by rememberSaveable { mutableStateOf("0") }
+    var standardCostText by rememberSaveable { mutableStateOf("0") }
+    var countedQtyText by rememberSaveable { mutableStateOf("") }
+
+    val isValid = description.isNotBlank() &&
+            productCode.isNotBlank() &&
+            countedQtyText.toDoubleOrNull() != null
+
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(16.dp),
+            tonalElevation = 6.dp
+        ) {
+            LazyColumn(
+                modifier = Modifier.padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                item {
+                    Text(
+                        "Add New Product",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
-                    Text("Recorded Stock: $recordedStock", color = Color.Gray)
-
-                    OutlinedTextField(
-                        value = countedStock,
-                        onValueChange = { countedStock = it },
-                        label = { Text("Counted Stock") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.fillMaxWidth()
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "This product will be saved to your catalog and counted in this session.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-
-                    if (variance != 0.0) {
-                        Text(
-                            "Variance: $variance",
-                            color = if (variance < 0) Color.Red else Color.Green
-                        )
-
-                        OutlinedTextField(
-                            value = varianceReason,
-                            onValueChange = { varianceReason = it },
-                            label = { Text("Reason for Variance") },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-
-                    Button(
-                        onClick = {
-                            if (countedStock.isNotEmpty()) {
-                                val stockTake = StockTake(
-                                    productId = product.productId,
-                                    recordedStock = recordedStock,
-                                    countedStock = countedStock.toDouble(),
-                                    variance = variance,
-                                    varianceReason = varianceReason,
-                                    dateRecorded = System.currentTimeMillis(),
-                                    recordedBy = loggedInUser ?: "DEFAULT"
-                                )
-
-                                val existingIndex =
-                                    stockTakes.indexOfFirst { it.productId == product.productId }
-                                if (existingIndex != -1) {
-                                    stockTakes[existingIndex] = stockTake // Update existing entry
-                                } else {
-                                    stockTakes.add(stockTake) // Add new entry
-                                }
-
-                                checkedItems[product.productId] =
-                                    true // Mark only this product as checked
-                            }
-                        },
+                }
+                item {
+                    OutlinedTextField(
+                        value = description,
+                        onValueChange = { description = it },
+                        label = { Text("Product Description *") },
                         modifier = Modifier.fillMaxWidth(),
-                        enabled = countedStock.isNotEmpty() && (checkedItems[product.productId] != true) // Disable only for this product
-                    ) {
-                        Text(if (checkedItems[product.productId] == true) "Checked" else "Check") // Change button text only for this product
+                        singleLine = true,
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                }
+                item {
+                    OutlinedTextField(
+                        value = productCode,
+                        onValueChange = { productCode = it },
+                        label = { Text("Product Code *") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                }
+                item {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedTextField(
+                            value = averageCostText,
+                            onValueChange = { averageCostText = it },
+                            label = { Text("Avg Cost") },
+                            modifier = Modifier.weight(1f),
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                            shape = RoundedCornerShape(8.dp)
+                        )
+                        OutlinedTextField(
+                            value = standardCostText,
+                            onValueChange = { standardCostText = it },
+                            label = { Text("Std Cost") },
+                            modifier = Modifier.weight(1f),
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                            shape = RoundedCornerShape(8.dp)
+                        )
                     }
-
+                }
+                item {
+                    OutlinedTextField(
+                        value = countedQtyText,
+                        onValueChange = { countedQtyText = it },
+                        label = { Text("Counted Quantity *") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                }
+                item {
+                    Divider()
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(top = 4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
+                    ) {
+                        OutlinedButton(onClick = onDismiss) { Text("Cancel") }
+                        Button(
+                            onClick = {
+                                onConfirm(
+                                    description,
+                                    productCode,
+                                    brandIdText.toLongOrNull() ?: 1L,
+                                    shoeSizeIdText.toLongOrNull() ?: 1L,
+                                    averageCostText.toDoubleOrNull() ?: 0.0,
+                                    standardCostText.toDoubleOrNull() ?: 0.0,
+                                    countedQtyText.toDouble()
+                                )
+                            },
+                            enabled = isValid
+                        ) { Text("Save & Record") }
+                    }
                 }
             }
         }
-    }
-
-    Spacer(modifier = Modifier.height(16.dp))
-    Button(
-        onClick = {
-            stockTakes.forEach { viewModel.insertStockTake(it) }
-            Toast.makeText(context, "Stock recorded!", Toast.LENGTH_SHORT).show()
-            navController.navigate(Destinations.Dashboard.route) {
-                popUpTo(Destinations.Dashboard.route) {
-                    inclusive = true
-                }
-            }
-        }
-    ) {
-        Text("CONFIRM")
     }
 }
