@@ -14,6 +14,7 @@ import com.example.learncompose303.data.MIGRATION_6_7
 import com.example.learncompose303.data.MIGRATION_7_8
 import com.example.learncompose303.data.MIGRATION_8_9
 import com.example.learncompose303.data.MIGRATION_9_10
+import com.example.learncompose303.data.MIGRATION_10_11
 import com.example.learncompose303.app.core.DeviceSession
 import com.example.learncompose303.data.data_source.DeviceInfoDao
 import com.example.learncompose303.data.data_source.CartItemDao
@@ -36,6 +37,7 @@ import com.example.learncompose303.data.data_source.ProductDao
 import com.example.learncompose303.data.data_source.ProductDayReportDao
 import com.example.learncompose303.data.data_source.ShoeSizeDao
 import com.example.learncompose303.data.data_source.StockTakeDao
+import com.example.learncompose303.data.data_source.StockTakeSessionDao
 import com.example.learncompose303.data.data_source.StudentDao
 import com.example.learncompose303.data.data_source.TradeReceivablesDao
 import com.example.learncompose303.data.data_source.UserDao
@@ -121,7 +123,8 @@ object AppModule {
                 MIGRATION_6_7,
                 MIGRATION_7_8,
                 MIGRATION_8_9,
-                MIGRATION_9_10
+                MIGRATION_9_10,
+                MIGRATION_10_11
             )
             .build()
     }
@@ -180,9 +183,17 @@ object AppModule {
     fun provideStockTakeDao(appDatabase: AppDatabase): StockTakeDao = appDatabase.stockTakeDao()
 
     @Provides
+    fun provideStockTakeSessionDao(appDatabase: AppDatabase): StockTakeSessionDao =
+        appDatabase.stockTakeSessionDao()
+
+    @Provides
     @Singleton
-    fun provideStockTakeRepository(appDatabase: AppDatabase, deviceSession: DeviceSession): StockTakeRepository {
-        return StockTakeRepositoryImpl(appDatabase.stockTakeDao(), deviceSession)
+    fun provideStockTakeRepository(
+        stockTakeDao: StockTakeDao,
+        sessionDao: StockTakeSessionDao,
+        deviceSession: DeviceSession
+    ): StockTakeRepository {
+        return StockTakeRepositoryImpl(stockTakeDao, sessionDao, deviceSession)
     }
 
 

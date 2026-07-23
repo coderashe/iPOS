@@ -25,6 +25,7 @@ import com.example.learncompose303.data.data_source.ProductDao
 import com.example.learncompose303.data.data_source.ProductDayReportDao
 import com.example.learncompose303.data.data_source.ShoeSizeDao
 import com.example.learncompose303.data.data_source.StockTakeDao
+import com.example.learncompose303.data.data_source.StockTakeSessionDao
 import com.example.learncompose303.data.data_source.StudentDao
 import com.example.learncompose303.data.data_source.TradeReceivablesDao
 import com.example.learncompose303.data.data_source.DeviceInfoDao
@@ -49,6 +50,7 @@ import com.example.learncompose303.data.entities.ProductDayReport
 import com.example.learncompose303.data.entities.ShoeBrand
 import com.example.learncompose303.data.entities.ShoeSize
 import com.example.learncompose303.data.entities.StockTake
+import com.example.learncompose303.data.entities.StockTakeSession
 import com.example.learncompose303.data.entities.CashFlow
 import com.example.learncompose303.data.entities.TradeReceivables
 import com.example.learncompose303.data.entities.User
@@ -62,11 +64,11 @@ import com.example.learncompose303.data.entities.User
         Order::class, PriceList::class, ProductDayReport::class, DayReports::class,
         User::class, Expense::class,
         TradeReceivables::class, DiscountsReceived::class, Currency::class,
-        CashFlow::class, ShoeBrand::class, ShoeSize::class, StockTake::class,
+        CashFlow::class, ShoeBrand::class, ShoeSize::class, StockTake::class, StockTakeSession::class,
         FailedInvoiceItem::class,
         DeviceInfo::class
     ],
-    version = 10,
+    version = 11,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -91,6 +93,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun shoeBrandDao(): ShoeBrandDao
     abstract fun shoeSizeDao(): ShoeSizeDao
     abstract fun stockTakeDao(): StockTakeDao
+    abstract fun stockTakeSessionDao(): StockTakeSessionDao
     abstract fun failedInvoiceDao(): FailedInvoiceDao
 
     // New DAOs
@@ -222,6 +225,27 @@ val MIGRATION_9_10 = object : Migration(9, 10) {
         }
         // invoice already has deviceId — just add storeId
         db.execSQL("ALTER TABLE `invoice` ADD COLUMN storeId TEXT NOT NULL DEFAULT ''")
+    }
+}
+
+val MIGRATION_10_11 = object : Migration(10, 11) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        // Create the stock_take_session table
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS `stock_take_session` (
+                `sessionId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                `startedAt` INTEGER NOT NULL,
+                `closedAt` INTEGER,
+                `status` TEXT NOT NULL DEFAULT 'OPEN',
+                `startedBy` TEXT NOT NULL,
+                `storeId` TEXT NOT NULL DEFAULT '',
+                `deviceId` TEXT NOT NULL DEFAULT ''
+            )
+            """.trimIndent()
+        )
+        // Add sessionId column to existing stock_take table (0 = legacy, no session)
+        db.execSQL("ALTER TABLE `stock_take` ADD COLUMN sessionId INTEGER NOT NULL DEFAULT 0")
     }
 }
 
