@@ -108,6 +108,7 @@ import com.example.learncompose303.screens.ProductsScreen
 import com.example.learncompose303.screens.ReportsScreen
 import com.example.learncompose303.screens.SalesReportScreen
 import com.example.learncompose303.screens.StockTakeReportScreen
+import com.example.learncompose303.screens.StockTakeDetailScreen
 import com.example.learncompose303.screens.DashboardScreen
 import com.example.learncompose303.screens.SignInPage
 import com.example.learncompose303.screens.SignUpPage
@@ -537,6 +538,18 @@ fun InDriveTopBottomNavigation() {
                 // Stock take session history
                 composable(Destinations.StockTakeReport.route) {
                     StockTakeReportScreen(navController = navController)
+                }
+
+                // Stock take session detail
+                composable(
+                    route = Destinations.StockTakeDetail.route,
+                    arguments = listOf(navArgument("sessionId") { type = NavType.LongType })
+                ) { backStackEntry ->
+                    val sessionId = backStackEntry.arguments?.getLong("sessionId") ?: return@composable
+                    StockTakeDetailScreen(
+                        sessionId = sessionId,
+                        navController = navController
+                    )
                 }
 
                 composable(

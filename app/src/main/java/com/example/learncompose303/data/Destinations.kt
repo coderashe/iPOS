@@ -10,6 +10,9 @@ sealed class Destinations(val route: String) {
     data object ExpenseReport : Destinations("expenseReport")
     data object StockTaking : Destinations("stockTaking")
     data object StockTakeReport : Destinations("stockTakeReport")
+    data object StockTakeDetail : Destinations("stockTakeDetail/{sessionId}") {
+        fun createRoute(sessionId: Long) = "stockTakeDetail/$sessionId"
+    }
     data object SalesReport : Destinations("salesReport")
     data object ShoeManagement : Destinations("shoeManagement")
     data object OcrUpload : Destinations("ocrUpload")
