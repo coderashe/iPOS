@@ -7,6 +7,7 @@ import java.util.Date
 @Entity(tableName = "stock_take")
 data class StockTake(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    val sessionId: Long = 0,       // 0 = legacy record with no session
     val productId: Long,
     val recordedStock: Long,
     val countedStock: Double,

@@ -26,4 +26,12 @@ interface StockTakeDao {
 
     @Query("UPDATE stock_take SET deviceId = :deviceId, storeId = :storeId WHERE deviceId = '' OR deviceId IS NULL")
     suspend fun backfillDeviceAndStore(deviceId: String, storeId: String)
+
+    /** Returns the single stock-take record for a product in a given session, or null. */
+    @Query("SELECT * FROM stock_take WHERE sessionId = :sessionId AND productId = :productId LIMIT 1")
+    suspend fun getRecordForProduct(sessionId: Long, productId: Long): StockTake?
+
+    /** Update sessionId column (used for backfill of legacy 0-session records). */
+    @Query("UPDATE stock_take SET sessionId = :sessionId WHERE id = :id")
+    suspend fun updateSessionId(id: Int, sessionId: Long)
 }
