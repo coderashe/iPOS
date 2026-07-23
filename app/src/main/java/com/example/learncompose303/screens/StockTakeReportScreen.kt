@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import com.example.learncompose303.data.Destinations
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -53,7 +54,6 @@ fun StockTakeReportScreen(
     stockTakeViewModel: StockTakeViewModel = hiltViewModel(),
     navController: NavController
 ) {
-    val uiState by stockTakeViewModel.uiState.collectAsState()
     val sessions by stockTakeViewModel.allSessions.collectAsState()
 
     Scaffold(
@@ -93,7 +93,14 @@ fun StockTakeReportScreen(
                 contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 12.dp)
             ) {
                 items(sessions, key = { it.sessionId }) { session ->
-                    StockTakeSessionCard(session = session)
+                    StockTakeSessionCard(
+                        session = session,
+                        onClick = {
+                            navController.navigate(
+                                Destinations.StockTakeDetail.createRoute(session.sessionId)
+                            )
+                        }
+                    )
                 }
             }
         }
@@ -101,31 +108,27 @@ fun StockTakeReportScreen(
 }
 
 @Composable
-private fun StockTakeSessionCard(session: StockTakeSession) {
+private fun StockTakeSessionCard(session: StockTakeSession, onClick: () -> Unit) {
     val fmt = SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.getDefault())
     val status = StockTakeSessionStatus.valueOf(session.status)
 
     val (statusColor, statusIcon, statusLabel) = when (status) {
         StockTakeSessionStatus.OPEN -> Triple(
-            Color(0xFF1976D2),
-            Icons.Default.PlayArrow,
-            "In Progress"
+            Color(0xFF1976D2), Icons.Default.PlayArrow, "In Progress"
         )
         StockTakeSessionStatus.COMPLETED -> Triple(
-            Color(0xFF388E3C),
-            Icons.Default.CheckCircle,
-            "Completed"
+            Color(0xFF388E3C), Icons.Default.CheckCircle, "Completed"
         )
         StockTakeSessionStatus.CANCELLED -> Triple(
-            MaterialTheme.colorScheme.outline,
-            Icons.Default.Lock,
-            "Cancelled"
+            MaterialTheme.colorScheme.outline, Icons.Default.Lock, "Cancelled"
         )
     }
 
     Card(
         shape = RoundedCornerShape(12.dp),
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
         elevation = CardDefaults.cardElevation(2.dp)
     ) {
         Column(Modifier.padding(16.dp)) {
