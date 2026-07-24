@@ -1,4 +1,4 @@
-package com.example.learncompose303.screens
+﻿package com.example.learncompose303.screens
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
@@ -78,6 +78,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.example.learncompose303.app.AddBrandWithProductsDialog
 import com.example.learncompose303.data.domain.ProductWithBrand
 import com.example.learncompose303.data.entities.StockTakeSessionStatus
 import com.example.learncompose303.screens.auth.AuthViewModel
@@ -230,7 +231,7 @@ fun StockTakingScreen(
 
     // Add new product dialog
     if (uiState.showAddProductDialog) {
-        AddNewProductDialog(
+        AddBrandWithProductsDialog(
             initialBrandName = uiState.searchQuery,
             onDismiss = { stockTakeViewModel.dismissAddProductDialog() },
             onConfirm = { brandName, desc, avgCost, stdCost, qty ->
@@ -397,9 +398,9 @@ private fun StockTakeItemRow(
     val hasVariance = countedStockText.isNotEmpty() && variance != 0.0
 
     val indicatorColor = when {
-        isChecked && variance == 0.0 -> Color(0xFF4CAF50)   // green — matched
-        isChecked && variance != 0.0 -> Color(0xFFFFA000)   // amber — variance
-        else -> MaterialTheme.colorScheme.outlineVariant      // grey — not counted
+        isChecked && variance == 0.0 -> Color(0xFF4CAF50)
+        isChecked && variance != 0.0 -> Color(0xFFFFA000)
+        else -> MaterialTheme.colorScheme.outlineVariant
     }
 
     Card(
@@ -414,12 +415,10 @@ private fun StockTakeItemRow(
         )
     ) {
         Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
-            // ── Collapsed summary row ──────────────────────────────────────
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                // Colour dot indicator
                 Box(
                     modifier = Modifier
                         .size(10.dp)
@@ -428,7 +427,6 @@ private fun StockTakeItemRow(
                 )
                 Spacer(Modifier.width(10.dp))
 
-                // Product info
                 Column(Modifier.weight(1f)) {
                     Text(
                         "$brandName - ${product.productDescription}",
@@ -447,7 +445,6 @@ private fun StockTakeItemRow(
                 Spacer(Modifier.width(8.dp))
 
                 if (isChecked) {
-                    // Show checked badge; tap to re-open for correction
                     IconButton(
                         onClick = { expanded = !expanded },
                         modifier = Modifier.size(32.dp)
@@ -459,7 +456,6 @@ private fun StockTakeItemRow(
                         )
                     }
                 } else {
-                    // Inline count field + check button
                     OutlinedTextField(
                         value = countedStockText,
                         onValueChange = { countedStockText = it.filter { c -> c.isDigit() || c == '.' } },
@@ -482,7 +478,7 @@ private fun StockTakeItemRow(
                         onClick = {
                             if (countedStockText.isNotEmpty()) {
                                 if (hasVariance) {
-                                    expanded = true // show reason field
+                                    expanded = true
                                 } else {
                                     onRecord(countedStockText.toDouble(), "")
                                 }
@@ -500,7 +496,6 @@ private fun StockTakeItemRow(
                 }
             }
 
-            // ── Variance reason (expandable) ───────────────────────────────
             AnimatedVisibility(
                 visible = (hasVariance || isChecked) && expanded,
                 enter = expandVertically(),
@@ -548,303 +543,6 @@ private fun StockTakeItemRow(
                         Text(if (isChecked) "Update" else "Check")
                     }
                 }
-            }
-        }
-    }
-}
-
-// ─── Add new product dialog (stepped) ────────────────────────────────────────
-
-/**
- * Two-step dialog for adding a complete shoe brand with products.
- *
- * Step 1 — Brand name
- *   Enter or confirm the brand name. On "Next", the VM will resolve (or create) it.
- *
- * Step 2 — Product details
- *   Product description, avg cost, std cost, counted qty per size.
- *   On "Save & Record", triggers addNewBrandWithProductsAndRecord which creates
- *   9 ShoeSize entries (sizes 3-11, qty=100), 9 Products, 9 PriceList entries,
- *   and records all 9 in the current stock take session.
- */
-@Composable
-private fun AddNewProductDialog(
-    initialBrandName: String,
-    onDismiss: () -> Unit,
-    onConfirm: (
-        brandName: String,
-        description: String,
-        averageCost: Double,
-        standardCost: Double,
-        countedQtyPerSize: Double
-    ) -> Unit
-) {
-    // ── State ─────────────────────────────────────────────────────────────────
-    var step by rememberSaveable { mutableStateOf(1) }  // 1 = brand, 2 = details
-
-    // Step 1
-    var brandName by rememberSaveable { mutableStateOf(initialBrandName) }
-
-    // Step 2
-    var description by rememberSaveable { mutableStateOf("") }
-    var averageCostText by rememberSaveable { mutableStateOf("") }
-    var standardCostText by rememberSaveable { mutableStateOf("") }
-    var countedQtyText by rememberSaveable { mutableStateOf("100") }
-
-    val descriptionFocusRequester = remember { FocusRequester() }
-
-    // ── Validation ────────────────────────────────────────────────────────────
-    val step1Valid = brandName.isNotBlank()
-    val step2Valid = description.isNotBlank() &&
-            averageCostText.toDoubleOrNull() != null &&
-            standardCostText.toDoubleOrNull() != null &&
-            countedQtyText.toDoubleOrNull() != null
-
-    Dialog(onDismissRequest = onDismiss) {
-        Surface(
-            shape = RoundedCornerShape(20.dp),
-            tonalElevation = 8.dp,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(modifier = Modifier.padding(24.dp)) {
-
-                // ── Header ────────────────────────────────────────────────────
-                Text(
-                    text = "Add New Brand & Products",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    text = "This will create 9 products (sizes 3–11) with 100 units each.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                Spacer(Modifier.height(16.dp))
-
-                // ── Step indicator ────────────────────────────────────────────
-                StepIndicator(currentStep = step, totalSteps = 2)
-
-                Spacer(Modifier.height(20.dp))
-
-                // ── Step content ──────────────────────────────────────────────
-                if (step == 1) {
-                    // Step 1: Brand name
-                    Text(
-                        "Step 1: Brand Name",
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    Spacer(Modifier.height(12.dp))
-                    OutlinedTextField(
-                        value = brandName,
-                        onValueChange = { brandName = it },
-                        label = { Text("Brand Name *") },
-                        placeholder = { Text("e.g. Nike, Adidas, Puma") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        shape = RoundedCornerShape(10.dp),
-                        keyboardOptions = KeyboardOptions(
-                            capitalization = KeyboardCapitalization.Words,
-                            imeAction = ImeAction.Next
-                        ),
-                        keyboardActions = KeyboardActions(
-                            onNext = { if (step1Valid) step = 2 }
-                        )
-                    )
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        "If this brand already exists, it will be reused.",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                } else {
-                    // Step 2: Product details
-                    Text(
-                        "Step 2: Product Details",
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        "Brand: ${brandName.trim()}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(Modifier.height(12.dp))
-
-                    // Trigger keyboard focus on description when step 2 appears
-                    LaunchedEffect(Unit) {
-                        descriptionFocusRequester.requestFocus()
-                    }
-
-                    OutlinedTextField(
-                        value = description,
-                        onValueChange = { description = it },
-                        label = { Text("Product Description *") },
-                        placeholder = { Text("e.g. Air Force 1") },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .focusRequester(descriptionFocusRequester),
-                        singleLine = true,
-                        shape = RoundedCornerShape(10.dp),
-                        keyboardOptions = KeyboardOptions(
-                            capitalization = KeyboardCapitalization.Words,
-                            imeAction = ImeAction.Next
-                        )
-                    )
-                    Spacer(Modifier.height(10.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedTextField(
-                            value = averageCostText,
-                            onValueChange = { averageCostText = it.filter { c -> c.isDigit() || c == '.' } },
-                            label = { Text("Avg Cost *") },
-                            modifier = Modifier.weight(1f),
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(
-                                keyboardType = KeyboardType.Decimal,
-                                imeAction = ImeAction.Next
-                            ),
-                            shape = RoundedCornerShape(10.dp)
-                        )
-                        OutlinedTextField(
-                            value = standardCostText,
-                            onValueChange = { standardCostText = it.filter { c -> c.isDigit() || c == '.' } },
-                            label = { Text("Std Cost *") },
-                            modifier = Modifier.weight(1f),
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(
-                                keyboardType = KeyboardType.Decimal,
-                                imeAction = ImeAction.Next
-                            ),
-                            shape = RoundedCornerShape(10.dp)
-                        )
-                    }
-                    Spacer(Modifier.height(10.dp))
-                    OutlinedTextField(
-                        value = countedQtyText,
-                        onValueChange = { countedQtyText = it.filter { c -> c.isDigit() || c == '.' } },
-                        label = { Text("Counted Qty per Size *") },
-                        placeholder = { Text("Default: 100") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Decimal,
-                            imeAction = ImeAction.Done
-                        ),
-                        keyboardActions = KeyboardActions(
-                            onDone = {
-                                if (step2Valid) {
-                                    onConfirm(
-                                        brandName.trim(),
-                                        description.trim(),
-                                        averageCostText.toDouble(),
-                                        standardCostText.toDouble(),
-                                        countedQtyText.toDouble()
-                                    )
-                                }
-                            }
-                        ),
-                        shape = RoundedCornerShape(10.dp),
-                        supportingText = {
-                            Text("9 products will be created (sizes 3–11), each recorded with this quantity.")
-                        }
-                    )
-                }
-
-                Spacer(Modifier.height(20.dp))
-                Divider()
-                Spacer(Modifier.height(12.dp))
-
-                // ── Action buttons ────────────────────────────────────────────
-                Row(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    OutlinedButton(onClick = {
-                        if (step == 1) onDismiss() else step = 1
-                    }) {
-                        Text(if (step == 1) "Cancel" else "Back")
-                    }
-
-                    if (step == 1) {
-                        Button(
-                            onClick = { step = 2 },
-                            enabled = step1Valid
-                        ) {
-                            Text("Next")
-                        }
-                    } else {
-                        Button(
-                            onClick = {
-                                onConfirm(
-                                    brandName.trim(),
-                                    description.trim(),
-                                    averageCostText.toDoubleOrNull() ?: 0.0,
-                                    standardCostText.toDoubleOrNull() ?: 0.0,
-                                    countedQtyText.toDoubleOrNull() ?: 100.0
-                                )
-                            },
-                            enabled = step2Valid
-                        ) {
-                            Text("Save & Record")
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-// ─── Step indicator ───────────────────────────────────────────────────────────
-
-@Composable
-private fun StepIndicator(currentStep: Int, totalSteps: Int) {
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        repeat(totalSteps) { index ->
-            val stepNumber = index + 1
-            val isActive = stepNumber == currentStep
-            val isCompleted = stepNumber < currentStep
-
-            val dotColor = when {
-                isActive -> MaterialTheme.colorScheme.primary
-                isCompleted -> MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-                else -> MaterialTheme.colorScheme.outlineVariant
-            }
-
-            Box(
-                modifier = Modifier
-                    .size(if (isActive) 28.dp else 24.dp)
-                    .clip(CircleShape)
-                    .background(if (isActive || isCompleted) dotColor else dotColor),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = if (isCompleted) "✓" else stepNumber.toString(),
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = if (isActive || isCompleted)
-                        MaterialTheme.colorScheme.onPrimary
-                    else
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            if (index < totalSteps - 1) {
-                Divider(
-                    modifier = Modifier.width(32.dp),
-                    color = if (isCompleted)
-                        MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-                    else
-                        MaterialTheme.colorScheme.outlineVariant
-                )
             }
         }
     }

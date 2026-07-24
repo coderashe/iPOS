@@ -169,6 +169,193 @@ UI changes:
 
 ---
 
+## 2026-07-24 (Session 3) — Invoicing Add Brand Dialog + Crash Fix + Bottom Nav Role Fix
+
+### Overview
+Three fixes shipped together after testing:
+1. Add Brand dialog extended to invoicing (ProductSelectionScreen) with shared component
+2. StockTakeDetailScreen crash fix — duplicate LazyColumn key on variance rows
+3. Bottom nav non-admin layout corrected — was showing Expenses, now shows Home / Reports / Invoicing
+
+---
+
+### 1. Shared `AddBrandWithProductsDialog` — `AppComponents.kt`
+
+**File:** `app/AppComponents.kt`
+
+Extracted the two-step brand+products dialog out of `StockTakingScreen` (where it was private) into a shared public composable in `AppComponents.kt`. Also extracted `AddBrandStepIndicator`.
+
+All imports that were accidentally appended mid-file (causing `Arrangement` ambiguity build error) were moved to the proper top-level import block and duplicates removed.
+
+---
+
+### 2. StockTakingScreen — Uses Shared Dialog
+
+**File:** `screens/StockTakingScreen.kt`
+
+- Removed private `AddNewProductDialog` and `StepIndicator` composables
+- Now imports and uses `AddBrandWithProductsDialog` from `app/AppComponents.kt`
+- Behaviour identical to before
+
+---
+
+### 3. ProductSelectionScreen — Empty State + Add Brand Dialog
+
+**File:** `screens/ProductSelectionScreen.kt`
+
+- "No products found" plain text replaced with actionable empty state (only shown when `query.isNotBlank()`)
+- Empty state: message + `FilledTonalButton("Add '${searchQuery}' as new brand")`
+- `showAddBrandDialog` state + `SnackbarHostState` + `coroutineScope` added
+- Screen wrapped in `Box` so `SnackbarHost` anchors to bottom
+- `AddBrandWithProductsDialog` opens pre-filled with the current search query
+- On confirm → calls `viewModel.addNewBrandWithProducts(...)` → dialog closes → search cleared → snackbar shows result
+
+---
+
+### 4. InvoiceViewModel — `addNewBrandWithProducts()`
+
+**File:** `viewmodels/InvoiceViewModel.kt`
+
+New function (no session recording — invoicing context only):
+1. `findBrandByNameCaseInsensitive` → reuse or insert brand
+2. Loop sizes 3–11 → `findSizeByBrandAndValue` → skip or insert `ShoeSize(qty = qtyPerSize)`
+3. `getProductByExactMatch` → skip or `insertProduct` (auto-generates `productCode`, triggers sync)
+4. `insertPriceLists` for each new product
+5. `fetchProducts()` + `fetchBrandProducts()` + `fetchPriceList()` to refresh grid immediately
+6. `onComplete(message, isError)` callback on main thread
+
+---
+
+### 5. StockTakeDetailScreen — Crash Fix (Duplicate LazyColumn Key)
+
+**File:** `screens/StockTakeDetailScreen.kt`
+
+**Problem:** `items(detail.varianceRows, key = { it.displayName })` crashed with:
+```
+IllegalArgumentException: Key "blakes - BLK/BLK_99_96.0" was already used
+```
+The same product can appear multiple times in variance rows (same brand/description, same qty) so `displayName` — and even composite keys using qty values — are not guaranteed unique.
+
+**Fix:** Switched to `itemsIndexed` with no explicit key. List index is always unique within a stable, sorted list. Added `import androidx.compose.foundation.lazy.itemsIndexed`.
+
+---
+
+### 6. Bottom Navigation — Non-Admin Role Fix
+
+**File:** `app/DefaultScreen.kt`
+
+**Problem:** `ExpenseReport` was shown to all users regardless of role (it sat outside the `if (isAdmin)` blocks). Non-admin users had no Reports link.
+
+**Fix:** Restructured `IndriveBottomNavigation`:
+- **Admin** (unchanged): Home | Income | Business | Products | Invoicing
+- **Non-admin** (fixed): Home | Reports | Invoicing
+- Invoicing icon changed from `ProductionQuantityLimits` → `ShoppingCart` (semantically correct)
+
+---
+
+### Files Changed Summary
+
+| File | Action |
+|---|---|
+| `app/AppComponents.kt` | Modified — `AddBrandWithProductsDialog` + `AddBrandStepIndicator` (shared), import block fixed |
+| `screens/StockTakingScreen.kt` | Modified — uses shared dialog, private dialog removed |
+| `screens/ProductSelectionScreen.kt` | Modified — actionable empty state, dialog + snackbar wiring |
+| `viewmodels/InvoiceViewModel.kt` | Modified — `addNewBrandWithProducts()` added |
+| `screens/StockTakeDetailScreen.kt` | Modified — `itemsIndexed` crash fix, import added |
+| `app/DefaultScreen.kt` | Modified — non-admin bottom nav: Home/Reports/Invoicing |
+| `PROGRESS.md` | Updated |
+
+---
+
+## 2026-07-24 (Session 2) — Add Brand Dialog: Invoicing Integration + Shared Component
+
+### Overview
+Extended the "Add New Brand + Products" flow to the invoicing screen (`ProductSelectionScreen`). When a product search returns no results, the user now sees an actionable empty state with an "Add as new brand" button that opens the same stepped dialog. Refactored the dialog into a shared composable in `AppComponents.kt` to avoid duplication.
+
+---
+
+### 1. Shared Dialog Extracted — `AppComponents.kt`
+
+**File:** `app/AppComponents.kt`
+
+Two new public composables added at the bottom of the file:
+
+**`AddBrandWithProductsDialog`**
+- Two-step dialog identical in UX to the StockTake version
+- Step 1: Brand name field (pre-fillable, case-insensitive reuse hint)
+- Step 2: Description, Avg Cost, Std Cost, Qty per Size (default 100)
+- Signature: `onConfirm(brandName, description, avgCost, stdCost, qtyPerSize)` — caller decides what ViewModel function to call
+- Can be pre-filled with an `initialBrandName` string (e.g. the current search query)
+
+**`AddBrandStepIndicator`**
+- Two-dot step progress indicator extracted alongside the dialog
+- Active step = larger, filled; Completed step = checkmark ✓; Upcoming = outline
+
+---
+
+### 2. StockTakingScreen — Switched to Shared Dialog
+
+**File:** `screens/StockTakingScreen.kt`
+
+- Removed private `AddNewProductDialog` and `StepIndicator` composables (~290 lines)
+- Added `import com.example.learncompose303.app.AddBrandWithProductsDialog`
+- Call site updated to use `AddBrandWithProductsDialog` — same behaviour, same `onConfirm` lambda wiring to `addNewBrandWithProductsAndRecord()`
+
+---
+
+### 3. ProductSelectionScreen — Empty State + Dialog
+
+**File:** `screens/ProductSelectionScreen.kt`
+
+**Empty state behaviour:**
+- Previously showed plain `Text("No products found")` with no action
+- Now: only shows actionable empty state when `query.isNotBlank()` (search active with no results)
+- Empty state: `"No product found for '${searchQuery}'"` + `FilledTonalButton("Add '${searchQuery}' as new brand")`
+- No-query state (full catalog or empty catalog) shows nothing — preserves existing UX
+
+**Dialog wiring:**
+- `showAddBrandDialog: Boolean` state added
+- `coroutineScope` + `SnackbarHostState` added for result feedback
+- Screen wrapped in `Box` so `SnackbarHost` can anchor to `Alignment.BottomCenter`
+- `AddBrandWithProductsDialog` shown when `showAddBrandDialog = true`, pre-filled with current search query
+
+**Post-confirm behaviour (Option A):**
+- Dialog closes immediately
+- `searchQuery` cleared to `""` so new products appear in the unfiltered product grid
+- Snackbar shows: `"BrandName added: N new products (sizes 3–11)"`
+- No auto-add to cart — user picks the exact size they want to sell
+
+---
+
+### 4. InvoiceViewModel — `addNewBrandWithProducts()`
+
+**File:** `viewmodels/InvoiceViewModel.kt`
+
+New function mirroring `StockTakeViewModel.addNewBrandWithProductsAndRecord()` but without session recording:
+
+1. `findBrandByNameCaseInsensitive` → reuse or `insertShoeBrand`
+2. Loop sizes 3–11 → `findSizeByBrandAndValue` → skip or `insertShoeSize(qty = qtyPerSize)`
+3. `getProductByExactMatch` → skip or `insertProduct` (auto-generates `productCode = "ISTART_$id"`, triggers sync)
+4. `insertPriceLists` for each new product
+5. Calls `fetchProducts()`, `fetchBrandProducts()`, `fetchPriceList()` to refresh UI immediately
+6. `onComplete(message, isError)` callback on main thread for snackbar
+
+All repositories already injected (`shoeBrandRepository`, `shoeSizeRepository`, `productRepository`, `priceListRepository`).
+
+---
+
+### Files Changed Summary
+
+| File | Action |
+|---|---|
+| `app/AppComponents.kt` | Modified — `AddBrandWithProductsDialog` + `AddBrandStepIndicator` added |
+| `screens/StockTakingScreen.kt` | Modified — private dialog/indicator removed, now uses shared component |
+| `screens/ProductSelectionScreen.kt` | Modified — actionable empty state, dialog wiring, snackbar, Box wrapper |
+| `viewmodels/InvoiceViewModel.kt` | Modified — `addNewBrandWithProducts()` added |
+| `PROGRESS.md` | Updated |
+
+---
+
 ## 2026-07-24 — Add New Brand: Stepped Dialog + Bulk Product Creation
 
 ### Overview

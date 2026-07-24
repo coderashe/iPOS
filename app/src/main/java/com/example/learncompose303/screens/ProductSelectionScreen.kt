@@ -24,14 +24,18 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -62,10 +66,12 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.learncompose303.R
+import com.example.learncompose303.app.AddBrandWithProductsDialog
 import com.example.learncompose303.data.entities.Customer
 import com.example.learncompose303.data.entities.Products
 import com.example.learncompose303.data.entities.ShoeBrand
 import com.example.learncompose303.viewmodels.InvoiceViewModel
+import kotlinx.coroutines.launch
 
 @Composable
 fun ProductSelectionScreen(
@@ -81,6 +87,11 @@ fun ProductSelectionScreen(
     var lowStockInventories by remember { mutableStateOf(emptyList<Products>()) }
     var showNoSelectionWarning by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
+
+    // Add brand dialog state
+    var showAddBrandDialog by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = androidx.compose.runtime.rememberCoroutineScope()
 
     LaunchedEffect(key1 = true) {
         viewModel.fetchProducts()
@@ -98,70 +109,117 @@ fun ProductSelectionScreen(
                 it.brand.brandName.lowercase().contains(query)
     }
 
-//    old logic
-//    val filteredProducts = products.filter {
-//        it.productDescription.contains(searchQuery, ignoreCase = true)
-//    }
-
     val configuration = LocalConfiguration.current
     val chunkSize = if (configuration.orientation == Configuration.ORIENTATION_PORTRAIT) 5 else 9
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        Row {
-            Text(
-                "Customer: ${customer.name}",
-                fontWeight = FontWeight.Bold,
-                fontSize = 18.sp,
-                modifier = Modifier.weight(1f)
-            )
-            Button(onClick = {
-                if (selectedProducts.isNotEmpty()) {
-                    onProceedToCart()
-                } else {
-                    showNoSelectionWarning = true
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+        ) {
+            Row {
+                Text(
+                    "Customer: ${customer.name}",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    modifier = Modifier.weight(1f)
+                )
+                Button(onClick = {
+                    if (selectedProducts.isNotEmpty()) {
+                        onProceedToCart()
+                    } else {
+                        showNoSelectionWarning = true
+                    }
+                }) {
+                    Text("Proceed to Cart")
                 }
-            }) {
-                Text("Proceed to Cart")
             }
-        }
-        Spacer(modifier = Modifier.height(16.dp))
-        SearchBar(query = searchQuery, onQueryChanged = { searchQuery = it })
-        Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(16.dp))
+            SearchBar(query = searchQuery, onQueryChanged = { searchQuery = it })
+            Spacer(modifier = Modifier.height(8.dp))
 
-        if (filteredProducts.isNotEmpty()) {
-            LazyColumn {
-                items(filteredProducts.chunked(chunkSize)) { rowItems ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        rowItems.forEach { product ->
-                            val isSelected = selectedProducts.contains(product.product)
-                            val price = viewModel.getPricelistById(product.product.productId)
+            if (filteredProducts.isNotEmpty()) {
+                LazyColumn {
+                    items(filteredProducts.chunked(chunkSize)) { rowItems ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            rowItems.forEach { product ->
+                                val isSelected = selectedProducts.contains(product.product)
+                                val price = viewModel.getPricelistById(product.product.productId)
 
-                            price?.let {
-//                                ProductCard(
-                                NewProductCard(
-                                    products = product.product,
-                                    isSelected = isSelected,
-                                    onAddProduct = { viewModel.addProductToCart(product.product) },
-                                    price = it.sellingPrice,
-                                    viewModel = viewModel
-                                )
+                                price?.let {
+                                    NewProductCard(
+                                        products = product.product,
+                                        isSelected = isSelected,
+                                        onAddProduct = { viewModel.addProductToCart(product.product) },
+                                        price = it.sellingPrice,
+                                        viewModel = viewModel
+                                    )
+                                }
                             }
                         }
                     }
                 }
+            } else if (query.isNotBlank()) {
+                // No results for an active search — show actionable empty state
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 48.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        text = "No product found for \"$searchQuery\"",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center
+                    )
+                    FilledTonalButton(onClick = { showAddBrandDialog = true }) {
+                        Icon(Icons.Default.Add, contentDescription = null)
+                        Spacer(Modifier.width(6.dp))
+                        Text("Add \"$searchQuery\" as new brand")
+                    }
+                }
             }
-        } else {
-            Text("No products found", modifier = Modifier.align(Alignment.CenterHorizontally))
+            // else: empty query with no products — show nothing (normal empty catalog state)
         }
+
+        // Snackbar anchored to bottom of screen
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier.align(Alignment.BottomCenter)
+        )
+    }
+
+    // Add brand + products dialog
+    if (showAddBrandDialog) {
+        AddBrandWithProductsDialog(
+            initialBrandName = searchQuery,
+            onDismiss = { showAddBrandDialog = false },
+            onConfirm = { brandName, desc, avgCost, stdCost, qty ->
+                viewModel.addNewBrandWithProducts(
+                    brandName = brandName,
+                    productDescription = desc,
+                    averageCost = avgCost,
+                    standardCost = stdCost,
+                    qtyPerSize = qty,
+                    onComplete = { message, isError ->
+                        showAddBrandDialog = false
+                        // Clear the search so the new products appear in the unfiltered list
+                        searchQuery = ""
+                        coroutineScope.launch {
+                            snackbarHostState.showSnackbar(message)
+                        }
+                    }
+                )
+            }
+        )
     }
 
     if (showLowStockWarning) {

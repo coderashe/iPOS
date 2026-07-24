@@ -1,4 +1,4 @@
-package com.example.learncompose303.app
+﻿package com.example.learncompose303.app
 
 import android.annotation.SuppressLint
 import android.content.Context
@@ -62,7 +62,10 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationDrawerItem
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -71,14 +74,18 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
@@ -86,14 +93,20 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import com.example.learncompose303.R
 import com.example.learncompose303.data.City
 import com.example.learncompose303.data.Destinations
@@ -111,6 +124,9 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+
+
+
 
 @Composable
 fun ButtonComponents() {
@@ -1329,3 +1345,285 @@ fun SocialSignInButton(
 //    }
 //}
 
+/**
+ * Two-step dialog for creating a full shoe brand with 9 products (sizes 3–11).
+ *
+ * Step 1: Brand name — resolved via case-insensitive lookup, created if new.
+ * Step 2: Product description + avg cost + std cost + counted qty per size.
+ *
+ * [onConfirm] receives: brandName, description, avgCost, stdCost, countedQtyPerSize.
+ * The caller is responsible for delegating to the appropriate ViewModel function.
+ */
+@Composable
+fun AddBrandWithProductsDialog(
+    initialBrandName: String = "",
+    onDismiss: () -> Unit,
+    onConfirm: (
+        brandName: String,
+        description: String,
+        averageCost: Double,
+        standardCost: Double,
+        countedQtyPerSize: Double
+    ) -> Unit
+) {
+    var step by rememberSaveable { mutableStateOf(1) }
+
+    // Step 1
+    var brandName by rememberSaveable { mutableStateOf(initialBrandName) }
+
+    // Step 2
+    var description by rememberSaveable { mutableStateOf("") }
+    var averageCostText by rememberSaveable { mutableStateOf("") }
+    var standardCostText by rememberSaveable { mutableStateOf("") }
+    var countedQtyText by rememberSaveable { mutableStateOf("100") }
+
+    val descriptionFocusRequester = remember { FocusRequester() }
+
+    val step1Valid = brandName.isNotBlank()
+    val step2Valid = description.isNotBlank() &&
+            averageCostText.toDoubleOrNull() != null &&
+            standardCostText.toDoubleOrNull() != null &&
+            countedQtyText.toDoubleOrNull() != null
+
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(20.dp),
+            tonalElevation = 8.dp,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(24.dp)) {
+
+                // Header
+                Text(
+                    text = "Add New Brand & Products",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = "Creates 9 products (sizes 3–11) with 100 units each.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Spacer(Modifier.height(16.dp))
+
+                // Step indicator
+                AddBrandStepIndicator(currentStep = step, totalSteps = 2)
+
+                Spacer(Modifier.height(20.dp))
+
+                if (step == 1) {
+                    Text(
+                        "Step 1: Brand Name",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    OutlinedTextField(
+                        value = brandName,
+                        onValueChange = { brandName = it },
+                        label = { Text("Brand Name *") },
+                        placeholder = { Text("e.g. Nike, Adidas, Puma") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        shape = RoundedCornerShape(10.dp),
+                        keyboardOptions = KeyboardOptions(
+                            capitalization = KeyboardCapitalization.Words,
+                            imeAction = ImeAction.Next
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onNext = { if (step1Valid) step = 2 }
+                        )
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "If this brand already exists, it will be reused.",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                } else {
+                    Text(
+                        "Step 2: Product Details",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "Brand: ${brandName.trim()}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(Modifier.height(12.dp))
+
+                    LaunchedEffect(Unit) {
+                        descriptionFocusRequester.requestFocus()
+                    }
+
+                    OutlinedTextField(
+                        value = description,
+                        onValueChange = { description = it },
+                        label = { Text("Product Description *") },
+                        placeholder = { Text("e.g. Air Force 1") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .focusRequester(descriptionFocusRequester),
+                        singleLine = true,
+                        shape = RoundedCornerShape(10.dp),
+                        keyboardOptions = KeyboardOptions(
+                            capitalization = KeyboardCapitalization.Words,
+                            imeAction = ImeAction.Next
+                        )
+                    )
+                    Spacer(Modifier.height(10.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedTextField(
+                            value = averageCostText,
+                            onValueChange = { averageCostText = it.filter { c -> c.isDigit() || c == '.' } },
+                            label = { Text("Avg Cost *") },
+                            modifier = Modifier.weight(1f),
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Decimal,
+                                imeAction = ImeAction.Next
+                            ),
+                            shape = RoundedCornerShape(10.dp)
+                        )
+                        OutlinedTextField(
+                            value = standardCostText,
+                            onValueChange = { standardCostText = it.filter { c -> c.isDigit() || c == '.' } },
+                            label = { Text("Std Cost *") },
+                            modifier = Modifier.weight(1f),
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Decimal,
+                                imeAction = ImeAction.Next
+                            ),
+                            shape = RoundedCornerShape(10.dp)
+                        )
+                    }
+                    Spacer(Modifier.height(10.dp))
+                    OutlinedTextField(
+                        value = countedQtyText,
+                        onValueChange = { countedQtyText = it.filter { c -> c.isDigit() || c == '.' } },
+                        label = { Text("Qty per Size *") },
+                        placeholder = { Text("Default: 100") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Decimal,
+                            imeAction = ImeAction.Done
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onDone = {
+                                if (step2Valid) {
+                                    onConfirm(
+                                        brandName.trim(),
+                                        description.trim(),
+                                        averageCostText.toDouble(),
+                                        standardCostText.toDouble(),
+                                        countedQtyText.toDouble()
+                                    )
+                                }
+                            }
+                        ),
+                        shape = RoundedCornerShape(10.dp),
+                        supportingText = {
+                            Text("9 products (sizes 3–11) will be created.")
+                        }
+                    )
+                }
+
+                Spacer(Modifier.height(20.dp))
+                Divider()
+                Spacer(Modifier.height(12.dp))
+
+                // Action buttons
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    OutlinedButton(onClick = {
+                        if (step == 1) onDismiss() else step = 1
+                    }) {
+                        Text(if (step == 1) "Cancel" else "Back")
+                    }
+
+                    if (step == 1) {
+                        Button(
+                            onClick = { step = 2 },
+                            enabled = step1Valid
+                        ) {
+                            Text("Next")
+                        }
+                    } else {
+                        Button(
+                            onClick = {
+                                onConfirm(
+                                    brandName.trim(),
+                                    description.trim(),
+                                    averageCostText.toDoubleOrNull() ?: 0.0,
+                                    standardCostText.toDoubleOrNull() ?: 0.0,
+                                    countedQtyText.toDoubleOrNull() ?: 100.0
+                                )
+                            },
+                            enabled = step2Valid
+                        ) {
+                            Text("Save & Create")
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun AddBrandStepIndicator(currentStep: Int, totalSteps: Int) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        repeat(totalSteps) { index ->
+            val stepNumber = index + 1
+            val isActive = stepNumber == currentStep
+            val isCompleted = stepNumber < currentStep
+
+            val dotColor = when {
+                isActive || isCompleted -> MaterialTheme.colorScheme.primary
+                else -> MaterialTheme.colorScheme.outlineVariant
+            }
+
+            Box(
+                modifier = Modifier
+                    .size(if (isActive) 28.dp else 24.dp)
+                    .clip(CircleShape)
+                    .background(dotColor),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = if (isCompleted) "✓" else stepNumber.toString(),
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = if (isActive || isCompleted)
+                        MaterialTheme.colorScheme.onPrimary
+                    else
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            if (index < totalSteps - 1) {
+                Divider(
+                    modifier = Modifier.width(32.dp),
+                    color = if (isCompleted)
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                    else
+                        MaterialTheme.colorScheme.outlineVariant
+                )
+            }
+        }
+    }
+}

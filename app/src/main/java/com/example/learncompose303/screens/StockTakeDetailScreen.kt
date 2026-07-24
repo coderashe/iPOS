@@ -1,4 +1,4 @@
-package com.example.learncompose303.screens
+﻿package com.example.learncompose303.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -181,7 +182,7 @@ private fun DetailContent(detail: StockTakeDetail, modifier: Modifier = Modifier
                 )
             }
             item { VarianceTableHeader() }
-            items(detail.varianceRows, key = { it.displayName }) { row ->
+            itemsIndexed(detail.varianceRows) { index, row ->
                 VarianceRowItem(row = row)
             }
         }
@@ -527,3 +528,5 @@ private fun LabelValueDetail(label: String, value: String) {
         )
     }
 }
+
+

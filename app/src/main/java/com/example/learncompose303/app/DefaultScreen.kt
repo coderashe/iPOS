@@ -1,4 +1,4 @@
-package com.example.learncompose303.app
+﻿package com.example.learncompose303.app
 
 import android.os.Build
 import android.util.Log
@@ -987,22 +987,18 @@ fun IndriveBottomNavigation(
     navController: NavHostController,
     authViewModel: AuthViewModel = viewModel()
 ) {
-    // Get the current back stack entry (current route)
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
 
-    // Check if the current route is the SignIn route
     val isSignInRoute = currentDestination?.route == Destinations.SignIn.route
     val isSignUpRoute = currentDestination?.route == Destinations.SignUp.route
 
-    // Only show bottom navigation if not on the SignInPage or SignUpPage
     if (currentDestination != null && !isSignInRoute && !isSignUpRoute) {
-        BottomNavigation(
-            backgroundColor = Color.White
-        ) {
+        BottomNavigation(backgroundColor = Color.White) {
             val userRole by authViewModel.userRole.observeAsState()
             val isAdmin = userRole == "admin"
 
+            // Home — always visible
             BottomNavigationItem(
                 selected = currentDestination.route == Destinations.Dashboard.route,
                 onClick = { navController.navigate(Destinations.Dashboard.route) },
@@ -1011,73 +1007,43 @@ fun IndriveBottomNavigation(
             )
 
             if (isAdmin) {
+                // Admin: Income
                 BottomNavigationItem(
                     selected = currentDestination.route == Destinations.Income.route,
                     onClick = { navController.navigate(Destinations.Income.route) },
                     icon = { Icon(Icons.Default.MonetizationOn, contentDescription = null) },
-                    label = {
-                        Text(
-                            text = stringResource(id = R.string.navincome),
-                            color = Color.Black
-                        )
-                    }
+                    label = { Text(text = stringResource(id = R.string.navincome), color = Color.Black) }
                 )
-            }
-
-            if (isAdmin) {
+                // Admin: Business Performance
                 BottomNavigationItem(
                     selected = currentDestination.route == Destinations.BusinessPerformance.route,
                     onClick = { navController.navigate(Destinations.BusinessPerformance.route) },
                     icon = { Icon(Icons.Default.AutoGraph, contentDescription = null) },
-                    label = {
-                        Text(
-                            text = stringResource(id = R.string.navbusiness),
-                            color = Color.Black
-                        )
-                    }
+                    label = { Text(text = stringResource(id = R.string.navbusiness), color = Color.Black) }
                 )
-            }
-
-            BottomNavigationItem(
-                selected = currentDestination.route == Destinations.ExpenseReport.route,
-                onClick = { navController.navigate(Destinations.ExpenseReport.route) },
-                icon = { Icon(Icons.Default.Favorite, contentDescription = null) },
-                label = {
-                    Text(
-                        text = stringResource(id = R.string.navexpenses),
-                        color = Color.Black
-                    )
-                }
-            )
-
-            if (isAdmin) {
+                // Admin: Products
                 BottomNavigationItem(
                     selected = currentDestination.route == Destinations.Products.route,
                     onClick = { navController.navigate(Destinations.Products.route) },
-                    icon = {
-                        Icon(
-                            Icons.Default.ProductionQuantityLimits,
-                            contentDescription = null
-                        )
-                    },
-                    label = {
-                        Text(
-                            text = stringResource(id = R.string.navproducts),
-                            color = Color.Black
-                        )
-                    }
+                    icon = { Icon(Icons.Default.ProductionQuantityLimits, contentDescription = null) },
+                    label = { Text(text = stringResource(id = R.string.navproducts), color = Color.Black) }
+                )
+            } else {
+                // Non-admin: Reports
+                BottomNavigationItem(
+                    selected = currentDestination.route == Destinations.Reports.route,
+                    onClick = { navController.navigate(Destinations.Reports.route) },
+                    icon = { Icon(Icons.Default.LocationOn, contentDescription = null) },
+                    label = { Text(text = stringResource(id = R.string.reports1), color = Color.Black) }
                 )
             }
+
+            // Invoicing — always visible
             BottomNavigationItem(
                 selected = currentDestination.route == Destinations.CustomerSelection.route,
                 onClick = { navController.navigate(Destinations.CustomerSelection.route) },
-                icon = { Icon(Icons.Default.ProductionQuantityLimits, contentDescription = null) },
-                label = {
-                    Text(
-                        text = stringResource(id = R.string.navinvoicing),
-                        color = Color.Black
-                    )
-                }
+                icon = { Icon(Icons.Default.ShoppingCart, contentDescription = null) },
+                label = { Text(text = stringResource(id = R.string.navinvoicing), color = Color.Black) }
             )
         }
     }
