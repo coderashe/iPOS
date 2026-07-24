@@ -231,17 +231,15 @@ fun StockTakingScreen(
     // Add new product dialog
     if (uiState.showAddProductDialog) {
         AddNewProductDialog(
-            initialDescription = uiState.searchQuery,
+            initialBrandName = uiState.searchQuery,
             onDismiss = { stockTakeViewModel.dismissAddProductDialog() },
-            onConfirm = { desc, code, brandId, sizeId, avgCost, stdCost, qty ->
-                stockTakeViewModel.addNewProductAndRecord(
-                    description = desc,
-                    productCode = code,
-                    brandId = brandId,
-                    shoeSizeId = sizeId,
+            onConfirm = { brandName, desc, avgCost, stdCost, qty ->
+                stockTakeViewModel.addNewBrandWithProductsAndRecord(
+                    brandName = brandName,
+                    productDescription = desc,
                     averageCost = avgCost,
                     standardCost = stdCost,
-                    countedQty = qty,
+                    countedQtyPerSize = qty,
                     recordedBy = loggedInUser ?: "unknown"
                 )
             }
@@ -555,134 +553,298 @@ private fun StockTakeItemRow(
     }
 }
 
-// ─── Add new product dialog ───────────────────────────────────────────────────
+// ─── Add new product dialog (stepped) ────────────────────────────────────────
 
+/**
+ * Two-step dialog for adding a complete shoe brand with products.
+ *
+ * Step 1 — Brand name
+ *   Enter or confirm the brand name. On "Next", the VM will resolve (or create) it.
+ *
+ * Step 2 — Product details
+ *   Product description, avg cost, std cost, counted qty per size.
+ *   On "Save & Record", triggers addNewBrandWithProductsAndRecord which creates
+ *   9 ShoeSize entries (sizes 3-11, qty=100), 9 Products, 9 PriceList entries,
+ *   and records all 9 in the current stock take session.
+ */
 @Composable
 private fun AddNewProductDialog(
-    initialDescription: String,
+    initialBrandName: String,
     onDismiss: () -> Unit,
     onConfirm: (
+        brandName: String,
         description: String,
-        productCode: String,
-        brandId: Long,
-        shoeSizeId: Long,
         averageCost: Double,
         standardCost: Double,
-        countedQty: Double
+        countedQtyPerSize: Double
     ) -> Unit
 ) {
-    var description by rememberSaveable { mutableStateOf(initialDescription) }
-    var productCode by rememberSaveable { mutableStateOf("") }
-    var brandIdText by rememberSaveable { mutableStateOf("1") }   // default brand 1
-    var shoeSizeIdText by rememberSaveable { mutableStateOf("1") } // default size 1
-    var averageCostText by rememberSaveable { mutableStateOf("0") }
-    var standardCostText by rememberSaveable { mutableStateOf("0") }
-    var countedQtyText by rememberSaveable { mutableStateOf("") }
+    // ── State ─────────────────────────────────────────────────────────────────
+    var step by rememberSaveable { mutableStateOf(1) }  // 1 = brand, 2 = details
 
-    val isValid = description.isNotBlank() &&
-            productCode.isNotBlank() &&
+    // Step 1
+    var brandName by rememberSaveable { mutableStateOf(initialBrandName) }
+
+    // Step 2
+    var description by rememberSaveable { mutableStateOf("") }
+    var averageCostText by rememberSaveable { mutableStateOf("") }
+    var standardCostText by rememberSaveable { mutableStateOf("") }
+    var countedQtyText by rememberSaveable { mutableStateOf("100") }
+
+    val descriptionFocusRequester = remember { FocusRequester() }
+
+    // ── Validation ────────────────────────────────────────────────────────────
+    val step1Valid = brandName.isNotBlank()
+    val step2Valid = description.isNotBlank() &&
+            averageCostText.toDoubleOrNull() != null &&
+            standardCostText.toDoubleOrNull() != null &&
             countedQtyText.toDoubleOrNull() != null
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
-            shape = RoundedCornerShape(16.dp),
-            tonalElevation = 6.dp
+            shape = RoundedCornerShape(20.dp),
+            tonalElevation = 8.dp,
+            modifier = Modifier.fillMaxWidth()
         ) {
-            LazyColumn(
-                modifier = Modifier.padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                item {
+            Column(modifier = Modifier.padding(24.dp)) {
+
+                // ── Header ────────────────────────────────────────────────────
+                Text(
+                    text = "Add New Brand & Products",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = "This will create 9 products (sizes 3–11) with 100 units each.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Spacer(Modifier.height(16.dp))
+
+                // ── Step indicator ────────────────────────────────────────────
+                StepIndicator(currentStep = step, totalSteps = 2)
+
+                Spacer(Modifier.height(20.dp))
+
+                // ── Step content ──────────────────────────────────────────────
+                if (step == 1) {
+                    // Step 1: Brand name
                     Text(
-                        "Add New Product",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
+                        "Step 1: Brand Name",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    OutlinedTextField(
+                        value = brandName,
+                        onValueChange = { brandName = it },
+                        label = { Text("Brand Name *") },
+                        placeholder = { Text("e.g. Nike, Adidas, Puma") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        shape = RoundedCornerShape(10.dp),
+                        keyboardOptions = KeyboardOptions(
+                            capitalization = KeyboardCapitalization.Words,
+                            imeAction = ImeAction.Next
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onNext = { if (step1Valid) step = 2 }
+                        )
                     )
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        "This product will be saved to your catalog and counted in this session.",
+                        "If this brand already exists, it will be reused.",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                } else {
+                    // Step 2: Product details
+                    Text(
+                        "Step 2: Product Details",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "Brand: ${brandName.trim()}",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                }
-                item {
+                    Spacer(Modifier.height(12.dp))
+
+                    // Trigger keyboard focus on description when step 2 appears
+                    LaunchedEffect(Unit) {
+                        descriptionFocusRequester.requestFocus()
+                    }
+
                     OutlinedTextField(
                         value = description,
                         onValueChange = { description = it },
                         label = { Text("Product Description *") },
-                        modifier = Modifier.fillMaxWidth(),
+                        placeholder = { Text("e.g. Air Force 1") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .focusRequester(descriptionFocusRequester),
                         singleLine = true,
-                        shape = RoundedCornerShape(8.dp)
+                        shape = RoundedCornerShape(10.dp),
+                        keyboardOptions = KeyboardOptions(
+                            capitalization = KeyboardCapitalization.Words,
+                            imeAction = ImeAction.Next
+                        )
                     )
-                }
-                item {
-                    OutlinedTextField(
-                        value = productCode,
-                        onValueChange = { productCode = it },
-                        label = { Text("Product Code *") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        shape = RoundedCornerShape(8.dp)
-                    )
-                }
-                item {
+                    Spacer(Modifier.height(10.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         OutlinedTextField(
                             value = averageCostText,
-                            onValueChange = { averageCostText = it },
-                            label = { Text("Avg Cost") },
+                            onValueChange = { averageCostText = it.filter { c -> c.isDigit() || c == '.' } },
+                            label = { Text("Avg Cost *") },
                             modifier = Modifier.weight(1f),
                             singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                            shape = RoundedCornerShape(8.dp)
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Decimal,
+                                imeAction = ImeAction.Next
+                            ),
+                            shape = RoundedCornerShape(10.dp)
                         )
                         OutlinedTextField(
                             value = standardCostText,
-                            onValueChange = { standardCostText = it },
-                            label = { Text("Std Cost") },
+                            onValueChange = { standardCostText = it.filter { c -> c.isDigit() || c == '.' } },
+                            label = { Text("Std Cost *") },
                             modifier = Modifier.weight(1f),
                             singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                            shape = RoundedCornerShape(8.dp)
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Decimal,
+                                imeAction = ImeAction.Next
+                            ),
+                            shape = RoundedCornerShape(10.dp)
                         )
                     }
-                }
-                item {
+                    Spacer(Modifier.height(10.dp))
                     OutlinedTextField(
                         value = countedQtyText,
-                        onValueChange = { countedQtyText = it },
-                        label = { Text("Counted Quantity *") },
+                        onValueChange = { countedQtyText = it.filter { c -> c.isDigit() || c == '.' } },
+                        label = { Text("Counted Qty per Size *") },
+                        placeholder = { Text("Default: 100") },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        shape = RoundedCornerShape(8.dp)
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Decimal,
+                            imeAction = ImeAction.Done
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onDone = {
+                                if (step2Valid) {
+                                    onConfirm(
+                                        brandName.trim(),
+                                        description.trim(),
+                                        averageCostText.toDouble(),
+                                        standardCostText.toDouble(),
+                                        countedQtyText.toDouble()
+                                    )
+                                }
+                            }
+                        ),
+                        shape = RoundedCornerShape(10.dp),
+                        supportingText = {
+                            Text("9 products will be created (sizes 3–11), each recorded with this quantity.")
+                        }
                     )
                 }
-                item {
-                    Divider()
-                    Row(
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(top = 4.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
-                    ) {
-                        OutlinedButton(onClick = onDismiss) { Text("Cancel") }
+
+                Spacer(Modifier.height(20.dp))
+                Divider()
+                Spacer(Modifier.height(12.dp))
+
+                // ── Action buttons ────────────────────────────────────────────
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    OutlinedButton(onClick = {
+                        if (step == 1) onDismiss() else step = 1
+                    }) {
+                        Text(if (step == 1) "Cancel" else "Back")
+                    }
+
+                    if (step == 1) {
+                        Button(
+                            onClick = { step = 2 },
+                            enabled = step1Valid
+                        ) {
+                            Text("Next")
+                        }
+                    } else {
                         Button(
                             onClick = {
                                 onConfirm(
-                                    description,
-                                    productCode,
-                                    brandIdText.toLongOrNull() ?: 1L,
-                                    shoeSizeIdText.toLongOrNull() ?: 1L,
+                                    brandName.trim(),
+                                    description.trim(),
                                     averageCostText.toDoubleOrNull() ?: 0.0,
                                     standardCostText.toDoubleOrNull() ?: 0.0,
-                                    countedQtyText.toDouble()
+                                    countedQtyText.toDoubleOrNull() ?: 100.0
                                 )
                             },
-                            enabled = isValid
-                        ) { Text("Save & Record") }
+                            enabled = step2Valid
+                        ) {
+                            Text("Save & Record")
+                        }
                     }
                 }
+            }
+        }
+    }
+}
+
+// ─── Step indicator ───────────────────────────────────────────────────────────
+
+@Composable
+private fun StepIndicator(currentStep: Int, totalSteps: Int) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        repeat(totalSteps) { index ->
+            val stepNumber = index + 1
+            val isActive = stepNumber == currentStep
+            val isCompleted = stepNumber < currentStep
+
+            val dotColor = when {
+                isActive -> MaterialTheme.colorScheme.primary
+                isCompleted -> MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                else -> MaterialTheme.colorScheme.outlineVariant
+            }
+
+            Box(
+                modifier = Modifier
+                    .size(if (isActive) 28.dp else 24.dp)
+                    .clip(CircleShape)
+                    .background(if (isActive || isCompleted) dotColor else dotColor),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = if (isCompleted) "✓" else stepNumber.toString(),
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = if (isActive || isCompleted)
+                        MaterialTheme.colorScheme.onPrimary
+                    else
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            if (index < totalSteps - 1) {
+                Divider(
+                    modifier = Modifier.width(32.dp),
+                    color = if (isCompleted)
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                    else
+                        MaterialTheme.colorScheme.outlineVariant
+                )
             }
         }
     }

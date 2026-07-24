@@ -169,6 +169,80 @@ UI changes:
 
 ---
 
+## 2026-07-24 — Add New Brand: Stepped Dialog + Bulk Product Creation
+
+### Overview
+Replaced the generic "Add New Product" dialog in the Stock Take screen with a proper two-step brand-first workflow. A single brand name now creates 9 ShoeSize records (sizes 3–11) and 9 Products/PriceLists in one action, all immediately recorded in the active stock take session.
+
+---
+
+### 1. AddNewProductDialog — Replaced with Stepped Dialog
+
+**File:** `screens/StockTakingScreen.kt`
+
+**Problem with the old dialog:**
+- Accepted raw numeric IDs for `brandId` and `shoeSizeId` (hardcoded defaults of `1L`)
+- No brand name entry or lookup — completely disconnected from `ShoeBrand`/`ShoeSize` entities
+- Called `addNewProductAndRecord()` which did not exist in the ViewModel
+- Created only a single product with no size variants
+
+**New `AddNewProductDialog` (stepped, two pages):**
+
+Step 1 — Brand Name
+- Single `OutlinedTextField` pre-filled with the current search query
+- Hint: "If this brand already exists, it will be reused"
+- "Next" advances to step 2 (disabled until brand name is non-blank)
+
+Step 2 — Product Details
+- Shows confirmed brand name as subtitle for context
+- Fields: Product Description, Avg Cost, Std Cost, Counted Qty per Size (defaults to 100)
+- Supporting text: "9 products will be created (sizes 3–11), each recorded with this quantity"
+- Keyboard `Done` action triggers save if all fields are valid
+- "Back" returns to step 1; "Save & Record" submits
+
+Step Indicator component (`StepIndicator`):
+- Two-dot indicator at dialog top
+- Active step shown larger with filled colour
+- Completed steps show a ✓ checkmark
+
+---
+
+### 2. StockTakeViewModel — `addNewBrandWithProductsAndRecord()`
+
+**File:** `viewmodels/StockTakeViewModel.kt`
+
+Full workflow on confirm:
+
+1. **Resolve brand** — `findBrandByNameCaseInsensitive(brandName)`: if found, reuse it; if not, `insertShoeBrand()` and re-fetch
+2. **Create shoe sizes 3–11** — loops sizes 3 to 11, calls `findSizeByBrandAndValue()` to avoid duplicates; inserts `ShoeSize(brandID, size, quantity=100)` for each new size
+3. **Create products** — for each of the 9 shoe size IDs, checks `getProductByExactMatch()` before inserting; `insertProduct()` auto-generates `productCode = "ISTART_$productId"` and schedules sync
+4. **Create price lists** — one `PriceList` per new product via `insertPriceLists()`
+5. **Record in session** — `upsertStockTakeRecord()` for all 9 products (new or existing) with the entered counted qty and a "New product added during stock take" variance reason for new entries
+6. **Success message** — snackbar shows `"BrandName added: N new products (sizes 3–11) recorded"`
+
+Injected dependencies already present: `ShoeBrandRepository`, `ShoeSizeRepository`, `ProductRepository`, `PriceListRepository`, `StockTakeRepository`.
+
+---
+
+### 3. Call Site Updated
+
+**File:** `screens/StockTakingScreen.kt`
+
+- `onConfirm` lambda signature changed from `(desc, code, brandId, sizeId, avgCost, stdCost, qty)` to `(brandName, desc, avgCost, stdCost, qty)`
+- Calls `stockTakeViewModel.addNewBrandWithProductsAndRecord(...)` with correct parameters
+
+---
+
+### Files Changed Summary
+
+| File | Action |
+|---|---|
+| `screens/StockTakingScreen.kt` | Modified — stepped `AddNewProductDialog`, `StepIndicator`, updated call site |
+| `viewmodels/StockTakeViewModel.kt` | Modified — `addNewBrandWithProductsAndRecord()` replaces old stub |
+| `PROGRESS.md` | Updated |
+
+---
+
 ## 2026-07-23 (Session 2) — Stock Take Detail Screen + PDF Export
 
 ### Overview

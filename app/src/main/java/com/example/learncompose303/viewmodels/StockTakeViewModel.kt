@@ -9,6 +9,8 @@ import com.example.learncompose303.data.entities.StockTake
 import com.example.learncompose303.data.entities.StockTakeSession
 import com.example.learncompose303.data.repositories.PriceListRepository
 import com.example.learncompose303.data.repositories.ProductRepository
+import com.example.learncompose303.data.repositories.ShoeBrandRepository
+import com.example.learncompose303.data.repositories.ShoeSizeRepository
 import com.example.learncompose303.data.repositories.StockTakeRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -46,7 +48,9 @@ data class StockTakeUiState(
 class StockTakeViewModel @Inject constructor(
     private val stockTakeRepository: StockTakeRepository,
     private val productRepository: ProductRepository,
-    private val priceListRepository: PriceListRepository
+    private val priceListRepository: PriceListRepository,
+    private val shoeBrandRepository: ShoeBrandRepository,
+    private val shoeSizeRepository: ShoeSizeRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(StockTakeUiState())
@@ -191,73 +195,130 @@ class StockTakeViewModel @Inject constructor(
     }
 
     /**
-     * Inserts a new product into the Products table, creates a price list entry,
-     * then immediately records it as checked in the current session.
+     * Creates a complete shoe brand with sizes 3-11, all products, price lists,
+     * and records them in the current stock take session.
+     * 
+     * Workflow:
+     * 1. Check if brand exists by name (case-insensitive), else create it
+     * 2. Create 9 ShoeSize entries (sizes 3-11) with qty=100 each
+     * 3. Create 9 Products linking brand + each size with description + costs
+     * 4. Create 9 PriceList entries
+     * 5. Record all 9 products in the current stock take session
      */
-    fun addNewProductAndRecord(
-        description: String,
-        productCode: String,
-        brandId: Long,
-        shoeSizeId: Long,
+    fun addNewBrandWithProductsAndRecord(
+        brandName: String,
+        productDescription: String,
         averageCost: Double,
         standardCost: Double,
-        countedQty: Double,
+        countedQtyPerSize: Double,
         recordedBy: String
     ) {
         val sessionId = _uiState.value.openSession?.sessionId ?: return
         viewModelScope.launch {
             try {
-                val newProduct = Products(
-                    productDescription = description.trim(),
-                    productQty = 0L,               // system qty = 0 (new item)
-                    brandID = brandId,
-                    shoeSizeId = shoeSizeId,
-                    saleable = true,
-                    purchasable = true,
-                    averageCost = averageCost,
-                    standardCost = standardCost,
-                    salesTaxCode = null,
-                    productCode = productCode.trim(),
-                    inclusiveTaxed = false,
-                    lastUpdated = System.currentTimeMillis()
-                )
-                val productId = productRepository.insertProduct(newProduct)
+                // Step 1: Resolve or create brand
+                val brand = shoeBrandRepository.findBrandByNameCaseInsensitive(brandName.trim())
+                    ?: run {
+                        val newBrandId = shoeBrandRepository.insertShoeBrand(
+                            com.example.learncompose303.data.entities.ShoeBrand(
+                                brandName = brandName.trim()
+                            )
+                        )
+                        shoeBrandRepository.getShoeBrandById(newBrandId)!!
+                    }
+                val brandId = brand.brandID
 
-                // Insert price list entry
-                priceListRepository.insertPriceLists(
-                    listOf(
-                        PriceList(
+                // Step 2: Create shoe sizes 3-11 with default qty=100
+                val shoeSizeIds = mutableListOf<Long>()
+                for (size in 3..11) {
+                    // Check if size already exists for this brand
+                    val existingSize = shoeSizeRepository.findSizeByBrandAndValue(brandId, size.toDouble())
+                    val sizeId = if (existingSize != null) {
+                        existingSize.shoeSizeId
+                    } else {
+                        shoeSizeRepository.insertShoeSize(
+                            com.example.learncompose303.data.entities.ShoeSize(
+                                brandID = brandId,
+                                size = size.toDouble(),
+                                quantity = 100L
+                            )
+                        )
+                    }
+                    shoeSizeIds.add(sizeId)
+                }
+
+                // Step 3-5: Create products, price lists, and stock take records for each size
+                var createdCount = 0
+                shoeSizeIds.forEachIndexed { index, shoeSizeId ->
+                    val size = (3 + index).toDouble()
+                    
+                    // Check if product already exists
+                    val existingProduct = productRepository.getProductByExactMatch(
+                        brandId = brandId,
+                        shoeSizeId = shoeSizeId,
+                        description = productDescription.trim()
+                    )
+                    
+                    val productId = if (existingProduct != null) {
+                        existingProduct.productId
+                    } else {
+                        // Create new product
+                        val newProduct = Products(
+                            productDescription = productDescription.trim(),
+                            productQty = 100L,  // Default stock level
+                            brandID = brandId,
+                            shoeSizeId = shoeSizeId,
+                            saleable = true,
+                            purchasable = true,
+                            averageCost = averageCost,
+                            standardCost = standardCost,
+                            salesTaxCode = null,
+                            productCode = "",  // Will be auto-generated by repository
+                            inclusiveTaxed = false,
+                            lastUpdated = System.currentTimeMillis()
+                        )
+                        val id = productRepository.insertProduct(newProduct)
+                        
+                        // Create price list entry
+                        priceListRepository.insertPriceLists(
+                            listOf(
+                                PriceList(
+                                    productId = id,
+                                    productDescription = productDescription.trim(),
+                                    unitCost = standardCost,
+                                    sellingPrice = standardCost,
+                                    markupPercentage = 0.0,
+                                    grossProfitPercentage = 0.0
+                                )
+                            )
+                        )
+                        createdCount++
+                        id
+                    }
+
+                    // Record in stock take session
+                    stockTakeRepository.upsertStockTakeRecord(
+                        StockTake(
+                            sessionId = sessionId,
                             productId = productId,
-                            productDescription = description.trim(),
-                            unitCost = standardCost,
-                            sellingPrice = standardCost,
-                            markupPercentage = 0.0,
-                            grossProfitPercentage = 0.0
+                            recordedStock = if (existingProduct != null) existingProduct.productQty else 100L,
+                            countedStock = countedQtyPerSize,
+                            variance = countedQtyPerSize - (if (existingProduct != null) existingProduct.productQty else 100L),
+                            varianceReason = if (existingProduct == null) "New product added during stock take" else null,
+                            dateRecorded = System.currentTimeMillis(),
+                            recordedBy = recordedBy
                         )
                     )
-                )
-
-                // Immediately record in the current session
-                stockTakeRepository.upsertStockTakeRecord(
-                    StockTake(
-                        sessionId = sessionId,
-                        productId = productId,
-                        recordedStock = 0L,
-                        countedStock = countedQty,
-                        variance = countedQty,   // system was 0, all is variance
-                        varianceReason = "New product added during stock take",
-                        dateRecorded = System.currentTimeMillis(),
-                        recordedBy = recordedBy
-                    )
-                )
+                }
 
                 _uiState.value = _uiState.value.copy(
                     showAddProductDialog = false,
-                    message = "\"$description\" added and recorded"
+                    message = "\"${brandName.trim()}\" added: $createdCount new products (sizes 3-11) recorded"
                 )
             } catch (e: Exception) {
+                android.util.Log.e("StockTakeVM", "Failed to add brand with products", e)
                 _uiState.value = _uiState.value.copy(
-                    message = "Failed to add product: ${e.message}"
+                    message = "Failed to add brand: ${e.message}"
                 )
             }
         }
