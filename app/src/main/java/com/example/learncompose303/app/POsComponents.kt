@@ -1,4 +1,4 @@
-package com.example.learncompose303.app
+﻿package com.example.learncompose303.app
 
 import android.app.Activity
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -103,16 +103,12 @@ fun SwipeRefreshLayout(
         state = rememberSwipeRefreshState(isRefreshing),
         onRefresh = {
             isRefreshing = true
-            Log.d("backIntCheck", "SwipeRefresh triggered - starting sync operations")
             
             // Sync all data types
-            Log.d("backIntCheck", "Starting sync for all data types")
             viewModel.syncAllNow()  // Syncs invoices, products, and invoice lines
-            Log.d("backIntCheck", "Sync call completed")
             
             // Stop refresh indicator after delay
             Handler(Looper.getMainLooper()).postDelayed({
-                Log.d("backIntCheck", "Refresh delay completed - stopping refresh indicator")
                 isRefreshing = false
                 // Commented out: Navigation to login screen removed
                 // reloadTrigger++  // This was causing screen reload/navigation
@@ -297,7 +293,6 @@ fun SalesmanInfoCard(
     val (oldSalesTotal, numberOfTransactions) = viewModel.getTodaySalesInfo()
 
     // Log raw invoice list
-    Log.d("todays", "RAW INVOICE LIST: ${invoiceList.size} invoices")
     invoiceList.forEach { invoice ->
         Log.d(
             "todays",
@@ -307,24 +302,18 @@ fun SalesmanInfoCard(
 
     // Get today's date
     val today = LocalDate.now()
-    Log.d("todays", "TODAY'S DATE: $today")
 
     // Filter invoices for today only - FIXED VERSION
     val todayInvoices = invoiceList.filter { invoice ->
         val invoiceDate = Instant.ofEpochMilli(invoice.invoiceDate)
             .atZone(ZoneId.systemDefault())
             .toLocalDate()
-        println("Converted invoice date: $invoiceDate")
         invoiceDate.isEqual(today)
     }
-
-    Log.d("todays", "TODAY'S INVOICES COUNT: ${todayInvoices.size}")
 
     // Group invoices by currency and sum totals - now using today's filtered list
     val currencyTotals = todayInvoices.groupBy { it.currencyCode }
         .mapValues { entry -> entry.value.sumOf { it.totalAmount } }
-
-    Log.d("todays", "CURRENCY TOTALS: $currencyTotals")
 
     Card(
         modifier = Modifier

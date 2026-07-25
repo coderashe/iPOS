@@ -1,4 +1,4 @@
-package com.example.learncompose303.screens
+﻿package com.example.learncompose303.screens
 
 import android.content.res.Configuration
 import android.net.Uri
@@ -90,7 +90,6 @@ fun ProductsScreen(
     LaunchedEffect(lowStockInventories) {
         showLowStockWarning = lowStockInventories.isNotEmpty()
         if (showLowStockWarning) {
-            Log.d("productScreen", "Low stock products detected: $lowStockInventories")
         }
     }
 
@@ -141,10 +140,7 @@ fun ProductsScreen(
                                     authViewModel = authViewModel
                                 )
                             } else {
-                                Log.d(
-                                    "productScreen",
-                                    "No price found for product ID: ${product.product.productId}"
-                                )
+
                             }
                         }
                         if (rowItems.size == 1) {
@@ -390,4 +386,5 @@ fun TheProductCard(
         }
     }
 }
+
 

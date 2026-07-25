@@ -1,4 +1,4 @@
-package com.example.learncompose303.network
+﻿package com.example.learncompose303.network
 
 import android.util.Log
 import androidx.work.BackoffPolicy
@@ -33,7 +33,6 @@ class SyncManager @Inject constructor(
      * Schedule sync for a single invoice immediately after creation/update
      */
     fun scheduleSingleInvoiceSync(invoiceId: Long) {
-        Log.d(TAG, "Scheduling immediate sync for invoice $invoiceId")
 
         val syncWorkRequest = OneTimeWorkRequestBuilder<SyncInvoiceWorker>()
             .setInputData(
@@ -72,7 +71,6 @@ class SyncManager @Inject constructor(
      * Schedule batch sync for all unsynced invoices
      */
     fun scheduleInvoiceBatchSync() {
-        Log.d(TAG, "Scheduling batch sync for invoices")
 
         val batchSyncWorkRequest = OneTimeWorkRequestBuilder<SyncInvoiceWorker>()
             .setInputData(
@@ -104,7 +102,6 @@ class SyncManager @Inject constructor(
      * Schedule sync for a single product immediately after creation/update
      */
     fun scheduleSingleProductSync(productId: Long) {
-        Log.d(TAG, "Scheduling immediate sync for product $productId")
 
         val syncWorkRequest = OneTimeWorkRequestBuilder<SyncProductWorker>()
             .setInputData(
@@ -143,7 +140,6 @@ class SyncManager @Inject constructor(
      * Schedule batch sync for all unsynced products
      */
     fun scheduleProductBatchSync() {
-        Log.d(TAG, "Scheduling batch sync for products")
 
         val batchSyncWorkRequest = OneTimeWorkRequestBuilder<SyncProductWorker>()
             .setInputData(
@@ -175,7 +171,6 @@ class SyncManager @Inject constructor(
      * Schedule sync for invoice lines
      */
     fun scheduleInvoiceLineSync(invoiceLineId: Int) {
-        Log.d(TAG, "Scheduling immediate sync for invoice line $invoiceLineId")
 
         val syncWorkRequest = OneTimeWorkRequestBuilder<SyncInvoiceLineWorker>()
             .setInputData(
@@ -207,7 +202,6 @@ class SyncManager @Inject constructor(
      * Schedule batch sync for all unsynced invoice lines
      */
     fun scheduleInvoiceLineBatchSync() {
-        Log.d(TAG, "Scheduling batch sync for invoice lines")
 
         val batchSyncWorkRequest = OneTimeWorkRequestBuilder<SyncInvoiceLineWorker>()
             .setInputData(
@@ -256,7 +250,6 @@ class SyncManager @Inject constructor(
      * Layer 5 (after L4): InvoiceLine, Payment, CartItem, StockTake, ProductDayReport
      */
     fun scheduleFullSync() {
-        Log.d(TAG, "Scheduling full DAG sync")
 
         // Cancel any existing sync chain before starting a new one
         workManager.cancelUniqueWork("full_sync")
@@ -325,3 +318,4 @@ class SyncManager @Inject constructor(
         unsyncedProductCount = 0
     }
 }
+

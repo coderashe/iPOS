@@ -1,4 +1,4 @@
-package com.example.learncompose303.screens
+﻿package com.example.learncompose303.screens
 
 import android.os.Build
 import android.util.Log
@@ -58,15 +58,12 @@ fun DashboardScreen(
         LaunchedEffect(it) {
             authViewModel.fetchUserByEmail(it)
         }
-        Log.d("StartLogs", "current loggedin user is $currentUserEmail")
     }
 
     val currentUser by authViewModel.fetchedUser.observeAsState()
     // Logging the fetched user once available
     currentUser?.let {
-        Log.d("StartLogs", "Current logged-in user is ${it.userFullName}")
     } ?: run {
-        Log.d("StartLogs", "No user found with this email.")
     }
 
     Column(
@@ -95,4 +92,5 @@ fun DashboardScreen(
         SpacerHeight()
     }
 }
+
 

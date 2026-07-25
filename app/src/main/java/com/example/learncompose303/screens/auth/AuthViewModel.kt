@@ -1,4 +1,4 @@
-package com.example.learncompose303.screens.auth
+﻿package com.example.learncompose303.screens.auth
 
 import android.content.Context
 import androidx.lifecycle.LiveData
@@ -79,11 +79,9 @@ class AuthViewModel @Inject constructor(
             when (result) {
                 is NetworkResult.Success -> {
                     val usersList = result.data
-                    Log.d("UsersData", "Successfully fetched ${usersList.size} users")
 
                     // Log each user individually
                     usersList.forEachIndexed { index, user ->
-                        Log.d("UsersData", "User $index: ${user.name}, ${user.email}, ${user.role}")
                     }
                 }
 
@@ -92,7 +90,6 @@ class AuthViewModel @Inject constructor(
                 }
 
                 is NetworkResult.Loading -> {
-                    Log.d("UsersData", "Loading users...")
                 }
             }
         }
@@ -264,7 +261,6 @@ class AuthViewModel @Inject constructor(
 
     // Manual Signout method
     fun signout() {
-        Log.d("AuthViewModel", "Manual signout called.")
         isManuallyLoggedOut = true
         performLogout()
     }
@@ -288,7 +284,6 @@ class AuthViewModel @Inject constructor(
 
     // Perform Logout
     private fun performLogout() {
-        Log.d("AuthViewModel", "Performing logout.")
         auth.signOut()
         _authState.value = AuthState.UnAuthenticated
     }
@@ -301,7 +296,6 @@ class AuthViewModel @Inject constructor(
 
     // Method to be called when user interacts with the app to reset the timer
     fun onUserInteraction() {
-        Log.d("AuthViewModel", "User interaction detected. Timer will continue running.")
         // Do nothing here to allow timer to continue running
     }
 
@@ -328,10 +322,7 @@ class AuthViewModel @Inject constructor(
                 ExistingWorkPolicy.REPLACE,
                 logoutRequest
             )
-
-            Log.d("AuthViewModel", "Scheduled logout for ${testLogoutTime.time}.")
         } else {
-            Log.d("AuthViewModel", "Test logout time has already passed. Adjust time for testing.")
         }
     }
 
@@ -357,3 +348,4 @@ class AuthViewModel @Inject constructor(
     }
 
 }
+

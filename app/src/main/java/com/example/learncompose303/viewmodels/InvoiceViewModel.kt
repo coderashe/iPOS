@@ -1,4 +1,4 @@
-package com.example.learncompose303.viewmodels
+﻿package com.example.learncompose303.viewmodels
 
 import android.content.Context
 import android.net.Uri
@@ -337,7 +337,6 @@ class InvoiceViewModel @Inject constructor(
     fun fetchShoeSizes() = viewModelScope.launch {
         shoeSizeRepository.getAllShoeSizes().collectLatest { shoeSizesList ->
             _shoeSizes.value = shoeSizesList
-            Log.d("viewmodel", "Updated Shoe size list: $shoeSizesList")
         }
     }
 
@@ -345,7 +344,6 @@ class InvoiceViewModel @Inject constructor(
     fun fetchShoeBrands() = viewModelScope.launch {
         shoeBrandRepository.getAllShoeBrands().collectLatest { shoeBrandsList ->
             _shoeBrands.value = shoeBrandsList
-            Log.d("viewmodel", "Updated Shoe brand list: $shoeBrandsList")
         }
     }
 
@@ -353,12 +351,9 @@ class InvoiceViewModel @Inject constructor(
     fun uploadProductsFromCsv(inputStream: InputStream, context: Context) {
         viewModelScope.launch {
             try {
-                Log.d("ProductUpload", "=== Starting CSV upload process ===")
-                Log.d("ProductUpload", "InputStream available: ${inputStream.available()} bytes")
 
                 val parser = CsvParser()
                 val productsFromCsv = parser.parseProductCsv(inputStream)
-                Log.d("ProductUpload", "Parsed ${productsFromCsv.size} products from CSV")
 
                 if (productsFromCsv.isEmpty()) {
                     Log.w("ProductUpload", "⚠️ No products parsed from CSV. Check CSV format.")
@@ -377,30 +372,10 @@ class InvoiceViewModel @Inject constructor(
                 var totalUpdated = 0
                 var totalErrors = 0
 
-                Log.d(
-                    "ProductUpload",
-                    "Processing ${productsFromCsv.size} products in batches of $BATCH_SIZE"
-                )
-
                 productsFromCsv.chunked(BATCH_SIZE).forEachIndexed { batchIndex, batch ->
-                    Log.d(
-                        "ProductUpload",
-                        "Processing batch ${batchIndex + 1}/${(productsFromCsv.size + BATCH_SIZE - 1) / BATCH_SIZE}"
-                    )
-                    val result = processBatchProducts(batch, context)
                     totalInserted += result.inserted
                     totalUpdated += result.updated
                     totalErrors += result.errors
-                    Log.d(
-                        "ProductUpload",
-                        "Batch ${batchIndex + 1} result: ${result.inserted} inserted, ${result.updated} updated, ${result.errors} errors"
-                    )
-                }
-
-                Log.d(
-                    "ProductUpload",
-                    "=== Upload completed - $totalInserted inserted, $totalUpdated updated, $totalErrors errors ==="
-                )
 
                 withContext(Dispatchers.Main) {
                     Toast.makeText(
@@ -428,14 +403,12 @@ class InvoiceViewModel @Inject constructor(
         batch: List<ProductCsvModel>,
         context: Context
     ): BatchResult = withContext(Dispatchers.IO) {
-        Log.d("BatchProcess", "=== Processing batch of ${batch.size} products ===")
         var inserted = 0
         var updated = 0
         var errors = 0
 
         try {
             val existingProducts = productRepository.getAllProductsOnce()
-            Log.d("BatchProcess", "Fetched ${existingProducts.size} existing products")
 
             val existingMap = existingProducts.associateBy {
                 Triple(
@@ -444,7 +417,6 @@ class InvoiceViewModel @Inject constructor(
                     it.brandID ?: -1L
                 )
             }
-            Log.d("BatchProcess", "Created lookup map with ${existingMap.size} entries")
 
             val productsToInsert = mutableListOf<Products>()
             val productsToUpdate = mutableListOf<Products>()
@@ -467,7 +439,6 @@ class InvoiceViewModel @Inject constructor(
                     }
 
                     if (existingProduct != null) {
-                        Log.d("BatchProcess", "[${index + 1}/${batch.size}] Updating: $description")
                         val updatedProduct = existingProduct.copy(
                             productQty = productCsv.productQty,
                             brandID = brandID,
@@ -495,11 +466,6 @@ class InvoiceViewModel @Inject constructor(
                         priceListsToUpdate.add(priceList)
                         updated++
                     } else {
-                        Log.d(
-                            "BatchProcess",
-                            "[${index + 1}/${batch.size}] Inserting: $description"
-                        )
-                        val imageUri = productCsv.imageUri ?: getDefaultImageUri(context)
                         val standardCost = productCsv.standardCost ?: 0.0
 
                         val newProduct = Products(
@@ -530,13 +496,8 @@ class InvoiceViewModel @Inject constructor(
                 }
             }
 
-            Log.d("BatchProcess", "Prepared: $inserted to insert, $updated to update")
-
             if (productsToInsert.isNotEmpty()) {
-                Log.d("BatchProcess", "Inserting ${productsToInsert.size} products...")
                 val insertedIds = productRepository.insertProducts(productsToInsert)
-                Log.d("BatchProcess", "✅ Inserted ${insertedIds.size} products")
-
                 insertedIds.forEachIndexed { index, productId ->
                     val product = productsToInsert[index]
                     priceListsToInsert.add(
@@ -550,26 +511,11 @@ class InvoiceViewModel @Inject constructor(
                         )
                     )
                 }
-                Log.d("BatchProcess", "Inserting ${priceListsToInsert.size} price lists...")
                 priceListRepository.insertPriceLists(priceListsToInsert)
-                Log.d("BatchProcess", "✅ Inserted price lists")
-            }
 
             if (productsToUpdate.isNotEmpty()) {
-                Log.d("BatchProcess", "Updating ${productsToUpdate.size} products...")
                 productRepository.updateProducts(productsToUpdate)
-                Log.d("BatchProcess", "✅ Updated products")
 
-                Log.d("BatchProcess", "Updating ${priceListsToUpdate.size} price lists...")
-                priceListRepository.updatePriceLists(priceListsToUpdate)
-                Log.d("BatchProcess", "✅ Updated price lists")
-            }
-
-            Log.d(
-                "BatchProcess",
-                "=== Batch complete: $inserted inserted, $updated updated, $errors errors ==="
-            )
-        } catch (e: Exception) {
             Log.e("BatchProcess", "❌ Batch processing failed: ${e.message}", e)
             e.printStackTrace()
         }
@@ -661,9 +607,7 @@ class InvoiceViewModel @Inject constructor(
 
     // Fetch invoiceLines by invoiceId from repository
     fun fetchInvoiceLinesByInvoiceId(invoiceId: Long) = viewModelScope.launch {
-        Log.e("viewmodellogs", "Fetching invoice lines for invoiceId: $invoiceId")
         val invoiceLineList = invoiceLineRepository.getInvoiceLinesByInvoiceId(invoiceId)
-        Log.e("viewmodellogs", "Fetched invoice lines: $invoiceLineList")
         _invoiceLines.value = invoiceLineList
     }
 
@@ -1063,7 +1007,6 @@ class InvoiceViewModel @Inject constructor(
 
         if (newBrands.isNotEmpty()) {
             shoeBrandRepository.insertShoeBrands(newBrands)
-            Log.d("BrandInsert", "Inserted ${newBrands.size} new brands")
         }
     }
 
@@ -1166,10 +1109,8 @@ class InvoiceViewModel @Inject constructor(
         val today = LocalDate.now()
 
         // Log the current date for debugging
-        Log.d("InvoiceViewModel", "Today's Date: $today")
 
         // Log the entire order list for debugging
-        Log.d("InvoiceViewModel", "Order List: ${_orderList.value}")
 
         // Filter orders for today
         val todayOrders = _orderList.value.filter { order ->
@@ -1177,11 +1118,6 @@ class InvoiceViewModel @Inject constructor(
             val orderDate = LocalDate.ofEpochDay(order.orderDate / (24 * 60 * 60 * 1000))
 
             // Log each order date being checked
-            Log.d(
-                "InvoiceViewModel",
-                "Order Date: ${order.orderDate}, LocalDate: $orderDate"
-            )
-
             // Check if the order date matches today
             orderDate == today
         }
@@ -1190,8 +1126,6 @@ class InvoiceViewModel @Inject constructor(
         val totalOrdersForToday = todayOrders.size
 
         // Log the filtered orders and total for debugging
-        Log.d("InvoiceViewModel", "Today's Orders: $todayOrders")
-        Log.d("InvoiceViewModel", "Total Orders for Today: $totalOrdersForToday")
 
         return totalOrdersForToday
     }
@@ -1203,16 +1137,10 @@ class InvoiceViewModel @Inject constructor(
         val todayStartMillis = getTodayStartInMillis()
         val todayEndMillis = todayStartMillis + (24 * 60 * 60 * 1000)
 
-        Log.d("InvoiceViewModel", "Today's Date: $today")
-        Log.d("InvoiceViewModel", "Today range: $todayStartMillis to $todayEndMillis")
-
         // Filter invoices for today using milliseconds comparison
         val todayInvoices = _invoiceList.value.filter { invoice ->
-            Log.d("todays", "Invoice Date millis: ${invoice.invoiceDate}")
             invoice.invoiceDate >= todayStartMillis && invoice.invoiceDate < todayEndMillis
         }
-
-        Log.d("todays", "DEBUG - getTodaySalesInfo found ${todayInvoices.size} invoices")
 
         // Group invoices by currency and sum totals
         val currencyTotals = todayInvoices.groupBy { it.currencyCode }
@@ -1222,12 +1150,6 @@ class InvoiceViewModel @Inject constructor(
         val transactionCount = todayInvoices.size
 
         // Log the filtered invoices for debugging
-        Log.d("InvoiceViewModel", "Today's Invoices: $todayInvoices")
-        Log.d(
-            "InvoiceViewModel",
-            "Currency Totals: $currencyTotals, Transaction Count: $transactionCount"
-        )
-
         return currencyTotals to transactionCount
     }
 
@@ -1238,13 +1160,11 @@ class InvoiceViewModel @Inject constructor(
         val endOfWeek = today.with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY))
 
         // Log the week range
-        Log.d("InvoiceViewModel", "Week Range: $startOfWeek to $endOfWeek")
 
         // Filter invoices for the current week
         val weeklyInvoices = _invoiceList.value.filter { invoice ->
             val invoiceDate = LocalDate.ofEpochDay(invoice.invoiceDate / (24 * 60 * 60 * 1000))
             // Log each invoice date being checked
-            Log.d("InvoiceViewModel", "Invoice Date: $invoiceDate")
             invoiceDate.isAfter(startOfWeek.minusDays(1)) && invoiceDate.isBefore(
                 endOfWeek.plusDays(
                     1
@@ -1260,12 +1180,6 @@ class InvoiceViewModel @Inject constructor(
         val transactionCount = weeklyInvoices.size
 
         // Log the filtered invoices for debugging
-        Log.d("InvoiceViewModel", "Weekly Invoices: $weeklyInvoices")
-        Log.d(
-            "InvoiceViewModel",
-            "Currency Totals: $currencyTotals, Transaction Count: $transactionCount"
-        )
-
         return currencyTotals to transactionCount
     }
 
@@ -1276,13 +1190,11 @@ class InvoiceViewModel @Inject constructor(
         val endOfMonth = today.withDayOfMonth(today.lengthOfMonth())
 
         // Log the month range
-        Log.d("InvoiceViewModel", "Month Range: $startOfMonth to $endOfMonth")
 
         // Filter invoices for the current month
         val monthlyInvoices = _invoiceList.value.filter { invoice ->
             val invoiceDate = LocalDate.ofEpochDay(invoice.invoiceDate / (24 * 60 * 60 * 1000))
             // Log each invoice date being checked
-            Log.d("InvoiceViewModel", "Invoice Date: $invoiceDate")
             invoiceDate.isAfter(startOfMonth.minusDays(1)) && invoiceDate.isBefore(
                 endOfMonth.plusDays(
                     1
@@ -1298,12 +1210,6 @@ class InvoiceViewModel @Inject constructor(
         val transactionCount = monthlyInvoices.size
 
         // Log the filtered invoices for debugging
-        Log.d("InvoiceViewModel", "Monthly Invoices: $monthlyInvoices")
-        Log.d(
-            "InvoiceViewModel",
-            "Currency Totals: $currencyTotals, Transaction Count: $transactionCount"
-        )
-
         return currencyTotals to transactionCount
     }
 
@@ -1480,11 +1386,6 @@ class InvoiceViewModel @Inject constructor(
             val updatedProduct = product.copy(newStockLevel.toLong())
             productRepository.updateProduct(updatedProduct)
 
-            Log.d(
-                "StockUpdate",
-                "Stock updated for product: ${product.productDescription}, New stock: $newStockLevel"
-            )
-
         } catch (e: Exception) {
             Log.e(
                 "viewmodel",
@@ -1509,10 +1410,6 @@ class InvoiceViewModel @Inject constructor(
                         productRepository.updateProduct(updatedProduct)
 
                         Log.d(
-                            "InventoryUpdate",
-                            "Deducted $soldQuantity from product $productId, new quantity: $newQuantity"
-                        )
-                    }
                 }
             } catch (e: Exception) {
                 Log.e("InventoryUpdate", "Failed to update product quantities", e)
@@ -1565,14 +1462,12 @@ class InvoiceViewModel @Inject constructor(
     fun updateProduct(products: Products) {
         viewModelScope.launch {
             productRepository.updateProduct(products)
-            Log.d("ProductUpdate", "Product updated: $products")
         }
     }
 
     fun updatePriceList(priceList: PriceList) = viewModelScope.launch {
         try {
             priceListRepository.updatePriceList(priceList)
-            Log.d("PriceListUpdate", "Price list updated successfully")
         } catch (e: Exception) {
             Log.e("PriceListUpdate", "Failed to update price list: ${e.message}")
         }
@@ -1589,8 +1484,6 @@ class InvoiceViewModel @Inject constructor(
             var totalAmount = 0.0
             val taxPercentage = 0.15 // Example tax percentage
             val discountPercentage = 0.0 // Example discount percentage
-
-            Log.d("Invoice", "Starting invoice submission for customerId: $customerId")
 
             val customer = customerRepository.getCustomerById(customerId)
             if (customer == null) {
@@ -1635,8 +1528,6 @@ class InvoiceViewModel @Inject constructor(
                 val invoiceId = invoiceRepository.insertInvoice(invoice)
                 onInvoiceCreatedOrUpdated(invoice)
 
-                Log.d("Invoice", "Inserted Invoice with id: $invoiceId")
-
                 selectedProductsWithDetails.forEach { (product, finalPrice, quantitySold) ->
                     deductButcherQuantityAndUpdateStock(product.productId, quantitySold)
 
@@ -1679,14 +1570,10 @@ class InvoiceViewModel @Inject constructor(
                         currentStock = product.productQty.toDouble().minus(quantitySold),
                         invoiceDate = System.currentTimeMillis()
                     )
-
-                    Log.d("Invoice", "Inserting this invoiceLine: $invoiceLine")
                     invoiceLineRepository.insertInvoiceLine(invoiceLine)
-                    Log.d("Invoice", "Successfully Inserted this invoiceLine:")
                 }
 
                 _selectedProducts.value = emptyList()
-                Log.d("Invoice", "Cleared selected products for customer: $customerId")
             } else {
                 Log.e("InvoiceError", "No valid selected products to invoice or total amount is 0")
             }
@@ -1710,9 +1597,6 @@ class InvoiceViewModel @Inject constructor(
             val currencyCode = _selectedCurrency.value?.code ?: "USD"
             var totalAmount = 0.0
 
-            Log.d("submitInvoice", "Currency: $currencyCode")
-            Log.d("submitInvoice", "Amount tendered: $amountTendered")
-
             // Fetch customer details
             val customer = customerRepository.getCustomerById(customerId)
             if (customer == null) {
@@ -1721,46 +1605,27 @@ class InvoiceViewModel @Inject constructor(
             }
 
             val selectedProducts = _selectedProducts.value
-            Log.d(
-                "submitInvoice",
-                "Selected products: ${selectedProducts.map { it.productDescription }}"
-            )
-
             if (selectedProducts.isEmpty()) {
                 Log.e("submitInvoice", "No products selected.")
             }
 
             val exchangeRate = _selectedCurrency.value?.rateToBase ?: 1.0
-            Log.d("submitInvoice", "Exchange rate to base: $exchangeRate")
 
             val selectedProductsWithDetails = selectedProducts.map { product ->
                 val quantitySold = productQuantities[product.productId] ?: 1
                 val priceList = priceListRepository.getPriceListByProductId(product.productId)
 
                 if (priceList == null) {
-                    Log.w(
-                        "submitInvoice",
-                        "No price list found for productId: ${product.productId}"
-                    )
-                }
 
                 val basePrice = priceList?.sellingPrice ?: 0.0
                 val finalPrice = basePrice * exchangeRate
-
-                Log.d(
-                    "submitInvoice",
-                    "Product: ${product.productDescription}, Qty: $quantitySold, BasePrice: $basePrice, FinalPrice: $finalPrice"
-                )
 
                 totalAmount += finalPrice * quantitySold
 
                 Triple(product, finalPrice, quantitySold)
             }
 
-            Log.d("submitInvoice", "Total calculated amount: $totalAmount")
-
             val change = amountTendered - totalAmount
-            Log.d("submitInvoice", "Calculated change: $change")
 
             if (change < 0) {
                 Log.e("submitInvoice", "Amount tendered is less than total amount!")
@@ -1778,8 +1643,6 @@ class InvoiceViewModel @Inject constructor(
                 )
 
                 val invoiceId = invoiceRepository.insertInvoice(invoice)
-
-                Log.d("submitInvoice", "Inserted Invoice with id: $invoiceId")
 
                 // Only schedule sync if invoice was successfully inserted
                 if (invoiceId > 0) {
@@ -1835,14 +1698,7 @@ class InvoiceViewModel @Inject constructor(
                         currentStock = updatedProducts[product.productId] ?: 0.0,
                         invoiceDate = System.currentTimeMillis()
                     )
-
-                    Log.d("submitInvoice", "Inserting invoiceLine: $invoiceLine")
                     invoiceLineRepository.insertInvoiceLine(invoiceLine)
-                    Log.d(
-                        "submitInvoice",
-                        "Inserted invoiceLine for product: ${product.productDescription}"
-                    )
-                }
 
                 _selectedProducts.value = emptyList()
             } else {
@@ -1916,11 +1772,6 @@ class InvoiceViewModel @Inject constructor(
                             invoiceDate = System.currentTimeMillis() // Update with the current timestamp
                         )
 
-                        Log.d(
-                            "CreditNote",
-                            "Updating credit note line: $updatedInvoiceLine"
-                        )
-                        invoiceLineRepository.updateInvoiceLine(updatedInvoiceLine)
                     }
 
                     Log.d("CreditNote", "Successfully reversed invoice ID: $invoiceId")
@@ -1951,19 +1802,9 @@ class InvoiceViewModel @Inject constructor(
                     val updatedStockLevel = totalQuantity + quantity
                     val updatedProduct = product.copy(updatedStockLevel)
 
-                    Log.d(
-                        "viewmodel",
-                        "CurrentStockLevel is $updatedProduct \n and $updatedStockLevel"
-                    )
-
                     // Save the updated product back to the repository
                     productRepository.updateProduct(updatedProduct)
 
-                    Log.d(
-                        "StockUpdate",
-                        "Successfully added $quantity to product ID: $productId. Derived stock level: $totalQuantity"
-                    )
-                } else {
                     Log.e(
                         "viewmodel",
                         "ShoeBrand or ShoeSize not found for product ID: $productId"
@@ -1985,11 +1826,9 @@ class InvoiceViewModel @Inject constructor(
     private suspend fun onInvoiceCreatedOrUpdated(invoice: Invoice) {
         // Sync is now handled automatically by InvoiceRepository
         // This method is kept for any additional logic that might be needed
-        Log.d(TAG, "Invoice ${invoice.invoiceId} created/updated - auto-sync triggered by repository")
     }
 
     fun syncAllNow() {
-        android.util.Log.d("backIntCheck", "InvoiceViewModel.syncAllNow() called")
         syncManager.syncAllNow()
         unsyncedCount = 0
     }
@@ -2027,9 +1866,7 @@ class InvoiceViewModel @Inject constructor(
     }
 
     fun syncInvoiceLines() {
-        Log.d(TAG, "syncInvoiceLines() called - Starting invoice lines sync")
         syncManager.scheduleInvoiceLineBatchSync()
-        Log.d(TAG, "syncInvoiceLines() completed - Batch sync scheduled")
     }
 
 //    end syncInvoice
@@ -2064,12 +1901,10 @@ class InvoiceViewModel @Inject constructor(
         onComplete: (Boolean) -> Unit = {}
     ) = viewModelScope.launch {
         try {
-            Log.d("BatchInvoice", "=== Starting batch invoice processing ===")
 
             // 1. Parse CSV
             val parser = CsvParser()
             val items = parser.parseInvoiceCsv(inputStream)
-            Log.d("BatchInvoice", "Parsed ${items.size} invoice items")
 
             if (items.isEmpty()) {
                 Log.w("BatchInvoice", "No items to process")
@@ -2077,7 +1912,6 @@ class InvoiceViewModel @Inject constructor(
             }
 
             // 2. Fetch ALL reference data ONCE
-            Log.d("BatchInvoice", "Fetching reference data...")
             val brandMap = shoeBrandRepository.getAllShoeBrandsOnce()
                 .associateBy { it.brandName.lowercase() }
             val sizeMap = shoeSizeRepository.getAllShoeSizesOnce()
@@ -2085,11 +1919,6 @@ class InvoiceViewModel @Inject constructor(
             val productMap = productRepository.getAllProductsOnce()
                 .groupBy { Triple(it.brandID, it.shoeSizeId, it.productDescription.lowercase()) }
                 .mapValues { it.value.first() }
-
-            Log.d(
-                "BatchInvoice",
-                "Loaded: ${brandMap.size} brands, ${sizeMap.size} sizes, ${productMap.size} products"
-            )
 
             // 3. Process all items with in-memory lookups
             val validItems = mutableListOf<ValidInvoiceItem>()
@@ -2206,8 +2035,6 @@ class InvoiceViewModel @Inject constructor(
                 failedInvoiceRepository.insertFailedInvoices(failedItems)
             }
 
-            Log.d("BatchInvoice", "Valid items: ${validItems.size}, Skipped: $skipped")
-
             if (validItems.isEmpty()) {
                 Log.w(
                     "BatchInvoice",
@@ -2222,11 +2049,6 @@ class InvoiceViewModel @Inject constructor(
 
             // 4. Group by customer and submit invoices
             val groupedByCustomer = validItems.groupBy { it.customerId }
-            Log.d(
-                "BatchInvoice",
-                "Creating ${groupedByCustomer.size} invoices for ${groupedByCustomer.keys.size} customers"
-            )
-
             var successCount = 0
             var failCount = 0
 
@@ -2248,11 +2070,6 @@ class InvoiceViewModel @Inject constructor(
                 fetchAllInvoices()
             }
 
-            Log.d(
-                "BatchInvoice",
-                "=== Batch complete: $successCount invoices created, $failCount failed ==="
-            )
-
             withContext(Dispatchers.Main) {
                 onComplete(_failedInvoiceItems.value.isNotEmpty())
             }
@@ -2267,11 +2084,6 @@ class InvoiceViewModel @Inject constructor(
         items: List<ValidInvoiceItem>,
         cashierEmail: String
     ) {
-        Log.d(
-            "BatchInvoice",
-            "Submitting invoice for customer $customerId with ${items.size} items"
-        )
-
         _selectedProducts.value = items.map { it.product }
         val productQuantities = items.associate { it.product.productId to it.quantity }
 
@@ -2281,16 +2093,12 @@ class InvoiceViewModel @Inject constructor(
             (priceList?.sellingPrice ?: 0.0) * item.quantity
         }
 
-        Log.d("BatchInvoice", "Total amount: $totalAmount, Using as tendered amount")
-
         submitInvoice(
             customerId = customerId,
             amountTendered = totalAmount, // Use calculated total as tendered
             productQuantities = productQuantities,
             cashierEmail = cashierEmail
         )
-
-        Log.d("BatchInvoice", "✅ Invoice submitted for customer $customerId")
     }
 
 //    end of batch invoice processing
@@ -2401,8 +2209,6 @@ class InvoiceViewModel @Inject constructor(
                     // Then update UI
                     _failedInvoiceItems.value =
                         _failedInvoiceItems.value.filter { it.id != failedItem.id }
-
-                    Log.d("BatchInvoice", "✅ Retry successful for row ${failedItem.rowIndex}")
                     withContext(Dispatchers.Main) {
                         onResult(true, "Invoice created successfully")
                     }
@@ -2579,3 +2385,4 @@ class InvoiceViewModel @Inject constructor(
         }
     }
 }
+

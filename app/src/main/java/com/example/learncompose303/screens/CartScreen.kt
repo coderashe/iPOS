@@ -1,4 +1,4 @@
-package com.example.learncompose303.screens
+﻿package com.example.learncompose303.screens
 
 import android.content.Context
 import android.content.Intent
@@ -268,8 +268,6 @@ fun CartScreen(
                                     cashierEmail
                                 )
 
-                                Log.d("cartScreen", "Submitted qty is  ${productQuantitiesMap}")
-
                                 // Share the invoice message...
                                 val message = "RECEIPT: ${Date(System.currentTimeMillis())}\n\n" +
                                         "CUSTOMER DETAILS\n" +
@@ -306,7 +304,6 @@ fun CartScreen(
                                 navController.navigate(Destinations.SignIn.route) {
                                     popUpTo(Destinations.SignIn.route) { inclusive = true }
                                 }
-                                Log.d("AuthViewModel", "Auth status is $authState")
 
                                 Toast.makeText(
                                     context,
@@ -453,3 +450,4 @@ fun CartScreen(
         Spacer(modifier = Modifier.height(8.dp))
     }
 }
+
