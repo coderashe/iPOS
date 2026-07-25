@@ -169,6 +169,86 @@ UI changes:
 
 ---
 
+## 2026-07-25 — Performance: Log Cleanup + ProGuard Release Stripping
+
+### Overview
+Removed ~100 logging calls that were firing inside tight loops and recomposition cycles, causing unnecessary memory allocations and string building on every state change. Added a ProGuard rule to strip all remaining `Log.*` calls from release builds at compile time.
+
+---
+
+### Problem
+
+`InvoiceViewModel` had 124 log lines. Many were inside:
+- `getTodaySalesInfo` / `getWeeklySalesInfo` / `getMonthlySalesInfo` — each fires a `Log.d` inside `.filter {}` on the entire invoice list, on every `collectLatest` emission
+- `submitInvoice` — per-product loop logging every product description, base price, final price, inserted invoiceLine
+- `processCsvInvoices` / `processBatchProducts` — per-item `Log.d` inside `forEachIndexed`
+- `SalesmanInfoCard` in `POsComponents.kt` — `println("Converted invoice date: $invoiceDate")` inside a `.filter {}` block running on every recomposition
+
+Each `Log.d` call builds a string, allocates memory, and acquires a lock on the logging system. In a loop over 200+ invoices/products that runs on startup and on every state update, that's hundreds of allocations per second.
+
+---
+
+### What Was Removed
+
+| File | Before | After | Removed |
+|---|---|---|---|
+| `InvoiceViewModel.kt` | 124 | 41 | 83 |
+| `POsComponents.kt` | 11 | 0 | 11 |
+| `DefaultScreen.kt` | 5 | 2 | 3 |
+| `DashboardScreen.kt` | 3 | 0 | 3 |
+| `CartScreen.kt` | 2 | 0 | 2 |
+| `ProductsScreen.kt` | 2 | 0 | 2 |
+| `SyncManager.kt` | 9 | 2 | 7 |
+| `AuthViewModel.kt` | 10 | 3 | 7 |
+
+**Removed categories:**
+- All `Log.d` inside `.filter {}`, `.forEach {}`, `forEachIndexed {}` loops
+- Per-invoice date conversion logs (`println` + `Log.d("todays", ...)`)
+- Per-product submit/insert step logs in `submitInvoice` and `butcherSubmitInvoice`
+- Per-item `BatchProcess` and `BatchInvoice` progress logs
+- Composable-level logs that fire on recomposition (`StartLogs`, `todays`)
+- Routine lifecycle confirmations (signout called, logout performed, user interaction detected)
+- Per-operation sync scheduling logs in `SyncManager` (fired on every invoice/product save)
+
+**Kept:** All `Log.e` errors, credit note confirmations, sync entry points, CSV batch summaries, failed invoice warnings.
+
+---
+
+### ProGuard Rule — `app/proguard-rules.pro`
+
+```proguard
+-assumenosideeffects class android.util.Log {
+    public static int v(...);
+    public static int d(...);
+    public static int i(...);
+    public static int w(...);
+    public static int e(...);
+    public static int wtf(...);
+    public static boolean isLoggable(...);
+}
+```
+
+R8 treats these methods as having no side effects and removes all call sites entirely from release APKs. Zero runtime cost in production. Debug builds still log normally.
+
+---
+
+### Files Changed Summary
+
+| File | Action |
+|---|---|
+| `viewmodels/InvoiceViewModel.kt` | Modified — 83 log lines removed |
+| `app/POsComponents.kt` | Modified — all 11 logs removed (println loop + todays/backIntCheck) |
+| `app/DefaultScreen.kt` | Modified — 3 composable-level logs removed |
+| `screens/DashboardScreen.kt` | Modified — 3 logs removed |
+| `screens/CartScreen.kt` | Modified — 2 logs removed |
+| `screens/ProductsScreen.kt` | Modified — 2 logs removed |
+| `network/SyncManager.kt` | Modified — 7 per-operation logs removed |
+| `screens/auth/AuthViewModel.kt` | Modified — 7 lifecycle logs removed |
+| `app/proguard-rules.pro` | Modified — `Log.*` stripping rule added |
+| `PROGRESS.md` | Updated |
+
+---
+
 ## 2026-07-24 (Session 3) — Invoicing Add Brand Dialog + Crash Fix + Bottom Nav Role Fix
 
 ### Overview
