@@ -373,9 +373,11 @@ class InvoiceViewModel @Inject constructor(
                 var totalErrors = 0
 
                 productsFromCsv.chunked(BATCH_SIZE).forEachIndexed { batchIndex, batch ->
+                    val result = processBatchProducts(batch, context)
                     totalInserted += result.inserted
                     totalUpdated += result.updated
                     totalErrors += result.errors
+                }
 
                 withContext(Dispatchers.Main) {
                     Toast.makeText(
@@ -466,6 +468,7 @@ class InvoiceViewModel @Inject constructor(
                         priceListsToUpdate.add(priceList)
                         updated++
                     } else {
+                        val imageUri = getDefaultImageUri(context)
                         val standardCost = productCsv.standardCost ?: 0.0
 
                         val newProduct = Products(
@@ -512,10 +515,14 @@ class InvoiceViewModel @Inject constructor(
                     )
                 }
                 priceListRepository.insertPriceLists(priceListsToInsert)
+            }
 
             if (productsToUpdate.isNotEmpty()) {
                 productRepository.updateProducts(productsToUpdate)
+                priceListRepository.updatePriceLists(priceListsToUpdate)
+            }
 
+        } catch (e: Exception) {
             Log.e("BatchProcess", "❌ Batch processing failed: ${e.message}", e)
             e.printStackTrace()
         }
@@ -1409,7 +1416,6 @@ class InvoiceViewModel @Inject constructor(
                         val updatedProduct = it.copy(productQty = newQuantity)
                         productRepository.updateProduct(updatedProduct)
 
-                        Log.d(
                 }
             } catch (e: Exception) {
                 Log.e("InventoryUpdate", "Failed to update product quantities", e)
