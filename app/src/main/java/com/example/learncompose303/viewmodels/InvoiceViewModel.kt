@@ -1415,7 +1415,7 @@ class InvoiceViewModel @Inject constructor(
                         // Update the product with new quantity
                         val updatedProduct = it.copy(productQty = newQuantity)
                         productRepository.updateProduct(updatedProduct)
-
+                    }
                 }
             } catch (e: Exception) {
                 Log.e("InventoryUpdate", "Failed to update product quantities", e)
@@ -1621,7 +1621,7 @@ class InvoiceViewModel @Inject constructor(
                 val quantitySold = productQuantities[product.productId] ?: 1
                 val priceList = priceListRepository.getPriceListByProductId(product.productId)
 
-                if (priceList == null) {
+                if (priceList == null) { /* no price list — use 0.0 */ }
 
                 val basePrice = priceList?.sellingPrice ?: 0.0
                 val finalPrice = basePrice * exchangeRate
@@ -1705,6 +1705,7 @@ class InvoiceViewModel @Inject constructor(
                         invoiceDate = System.currentTimeMillis()
                     )
                     invoiceLineRepository.insertInvoiceLine(invoiceLine)
+                }
 
                 _selectedProducts.value = emptyList()
             } else {

@@ -292,14 +292,6 @@ fun SalesmanInfoCard(
     val invoiceList by viewModel.invoiceList.collectAsState()
     val (oldSalesTotal, numberOfTransactions) = viewModel.getTodaySalesInfo()
 
-    // Log raw invoice list
-    invoiceList.forEach { invoice ->
-        Log.d(
-            "todays",
-            "Invoice ID: ${invoice.invoiceId}, Date: ${invoice.invoiceDate}, Amount: ${invoice.totalAmount}"
-        )
-    }
-
     // Get today's date
     val today = LocalDate.now()
 
