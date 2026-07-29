@@ -90,15 +90,16 @@ fun SearchBar(
                 singleLine = true,
                 shape = RoundedCornerShape(12.dp),
                 colors = TextFieldDefaults.textFieldColors(
-                    Color.White,
-                    focusedIndicatorColor = MyGray,
-                    unfocusedIndicatorColor = MyGray,
+                    containerColor = MyGray,
+                    focusedTextColor = Color.White,
+                    unfocusedTextColor = Color.White,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
                     cursorColor = Color.White
                 ),
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight()
-                    .background(MyGray)
             )
 
             Spacer(modifier = Modifier.width(8.dp))
