@@ -51,6 +51,7 @@ public class ProductsController : ControllerBase
             existingProduct.LastUpdated = productDto.LastUpdated ?? DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             existingProduct.DeviceId = productDto.DeviceId;
             existingProduct.DeviceName = productDto.DeviceName;
+            existingProduct.StoreId = productDto.StoreId;
             
             _context.SaveChanges();
             _logger.LogInformation("Updated product {ProductId} - {ProductCode}", existingProduct.Id, existingProduct.ProductCode);
@@ -79,7 +80,8 @@ public class ProductsController : ControllerBase
                 MarkupPercentage = productDto.MarkupPercentage,
                 LastUpdated = productDto.LastUpdated ?? DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
                 DeviceId = productDto.DeviceId,
-                DeviceName = productDto.DeviceName
+                DeviceName = productDto.DeviceName,
+                StoreId = productDto.StoreId
             };
 
             _context.Products.Add(product);
@@ -127,4 +129,5 @@ public class ProductDto
     public long? LastUpdated { get; set; }
     public string? DeviceId { get; set; }
     public string? DeviceName { get; set; }
+    public string? StoreId { get; set; }
 }

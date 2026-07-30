@@ -43,7 +43,7 @@ public class InvoiceService : IInvoiceService
             existing.InvoiceDate = invoice.InvoiceDate; existing.DueDate = invoice.DueDate;
             existing.TheStatus = invoice.TheStatus; existing.CurrencyCode = invoice.CurrencyCode;
             existing.IsArchived = invoice.IsArchived; existing.DeviceId = invoice.DeviceId;
-            existing.DeviceName = invoice.DeviceName;
+            existing.DeviceName = invoice.DeviceName; existing.StoreId = invoice.StoreId;
             existing.LastUpdated = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             _logger.LogInformation("Updated invoice {InvoiceId}", invoice.InvoiceId);
         }

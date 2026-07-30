@@ -13,4 +13,6 @@ public class TradeReceivable
     public long DueDate { get; set; }
     public string PaymentStatus { get; set; } = string.Empty;
     public long DateCreated { get; set; }
+    public string? DeviceId { get; set; }
+    public string? StoreId { get; set; }
 }

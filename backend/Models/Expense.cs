@@ -10,4 +10,6 @@ public class Expense
     public double Amount { get; set; }
     public long ExpenseDate { get; set; }
     public string Category { get; set; } = string.Empty;
+    public string? DeviceId { get; set; }
+    public string? StoreId { get; set; }
 }

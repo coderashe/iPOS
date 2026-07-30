@@ -57,6 +57,9 @@ namespace iPosApi.Migrations
                     b.Property<long>("CustomerId")
                         .HasColumnType("bigint");
 
+                    b.Property<string>("DeviceId")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<double?>("DiscountAmount")
                         .HasColumnType("float");
 
@@ -65,6 +68,9 @@ namespace iPosApi.Migrations
 
                     b.Property<long>("ProductId")
                         .HasColumnType("bigint");
+
+                    b.Property<string>("StoreId")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<double?>("TaxAmount")
                         .HasColumnType("float");
@@ -97,8 +103,14 @@ namespace iPosApi.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("DeviceId")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<long>("OrderId")
                         .HasColumnType("bigint");
+
+                    b.Property<string>("StoreId")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<long>("TransactionDate")
                         .HasColumnType("bigint");
@@ -163,6 +175,9 @@ namespace iPosApi.Migrations
                     b.Property<long>("ReportId")
                         .HasColumnType("bigint");
 
+                    b.Property<string>("DeviceId")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<long>("EndTime")
                         .HasColumnType("bigint");
 
@@ -171,6 +186,9 @@ namespace iPosApi.Migrations
 
                     b.Property<long>("StartTime")
                         .HasColumnType("bigint");
+
+                    b.Property<string>("StoreId")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<double>("TotalInvoiceSales")
                         .HasColumnType("float");
@@ -220,11 +238,17 @@ namespace iPosApi.Migrations
                     b.Property<long>("DateReceived")
                         .HasColumnType("bigint");
 
+                    b.Property<string>("DeviceId")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<double>("DiscountAmount")
                         .HasColumnType("float");
 
                     b.Property<long>("OrderId")
                         .HasColumnType("bigint");
+
+                    b.Property<string>("StoreId")
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("DiscountId");
 
@@ -247,8 +271,14 @@ namespace iPosApi.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("DeviceId")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<long>("ExpenseDate")
                         .HasColumnType("bigint");
+
+                    b.Property<string>("StoreId")
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("ExpenseId");
 
@@ -328,6 +358,9 @@ namespace iPosApi.Migrations
                     b.Property<long?>("LastUpdated")
                         .HasColumnType("bigint");
 
+                    b.Property<string>("StoreId")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("TheStatus")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -402,6 +435,9 @@ namespace iPosApi.Migrations
                     b.Property<string>("CustomerPhone")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("DeviceId")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<long>("InvoiceDate")
                         .HasColumnType("bigint");
 
@@ -424,6 +460,9 @@ namespace iPosApi.Migrations
 
                     b.Property<int>("ProductQtySold")
                         .HasColumnType("int");
+
+                    b.Property<string>("StoreId")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<double?>("TaxAmount")
                         .HasColumnType("float");
@@ -505,6 +544,9 @@ namespace iPosApi.Migrations
                     b.Property<double>("Amount")
                         .HasColumnType("float");
 
+                    b.Property<string>("DeviceId")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<long>("InvoiceId")
                         .HasColumnType("bigint");
 
@@ -514,6 +556,9 @@ namespace iPosApi.Migrations
 
                     b.Property<long>("PaymentDate")
                         .HasColumnType("bigint");
+
+                    b.Property<string>("StoreId")
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("PaymentId");
 
@@ -607,6 +652,9 @@ namespace iPosApi.Migrations
                     b.Property<double>("StandardCost")
                         .HasColumnType("float");
 
+                    b.Property<string>("StoreId")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<double>("UnitCost")
                         .HasColumnType("float");
 
@@ -697,6 +745,9 @@ namespace iPosApi.Migrations
                     b.Property<long>("DateRecorded")
                         .HasColumnType("bigint");
 
+                    b.Property<string>("DeviceId")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<long>("ProductId")
                         .HasColumnType("bigint");
 
@@ -706,6 +757,9 @@ namespace iPosApi.Migrations
 
                     b.Property<long>("RecordedStock")
                         .HasColumnType("bigint");
+
+                    b.Property<string>("StoreId")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<double>("Variance")
                         .HasColumnType("float");
@@ -732,6 +786,9 @@ namespace iPosApi.Migrations
                     b.Property<long>("DateCreated")
                         .HasColumnType("bigint");
 
+                    b.Property<string>("DeviceId")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<long>("DueDate")
                         .HasColumnType("bigint");
 
@@ -740,6 +797,9 @@ namespace iPosApi.Migrations
 
                     b.Property<string>("PaymentStatus")
                         .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("StoreId")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<double>("TotalAmount")

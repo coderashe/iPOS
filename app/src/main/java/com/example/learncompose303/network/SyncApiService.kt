@@ -40,7 +40,9 @@ data class ExpenseSyncDto(
     val description: String,
     val amount: Double,
     val expenseDate: Long,
-    val category: String
+    val category: String,
+    val deviceId: String? = null,
+    val storeId: String? = null
 )
 
 data class ShoeBrandSyncDto(
@@ -66,7 +68,9 @@ data class PaymentSyncDto(
     val invoiceId: Long,
     val paymentDate: Long,
     val amount: Double,
-    val method: String
+    val method: String,
+    val deviceId: String? = null,
+    val storeId: String? = null
 )
 
 data class CartItemSyncDto(
@@ -80,7 +84,9 @@ data class CartItemSyncDto(
     val taxAmount: Double?,
     val discountAmount: Double?,
     val createdAt: Long,
-    val updatedAt: Long?
+    val updatedAt: Long?,
+    val deviceId: String? = null,
+    val storeId: String? = null
 )
 
 data class StockTakeSyncDto(
@@ -91,7 +97,9 @@ data class StockTakeSyncDto(
     val variance: Double,
     val varianceReason: String?,
     val dateRecorded: Long,
-    val recordedBy: String
+    val recordedBy: String,
+    val deviceId: String? = null,
+    val storeId: String? = null
 )
 
 data class TradeReceivablesSyncDto(
@@ -102,7 +110,9 @@ data class TradeReceivablesSyncDto(
     val creditPeriod: Int,
     val dueDate: Long,
     val paymentStatus: String,
-    val dateCreated: Long
+    val dateCreated: Long,
+    val deviceId: String? = null,
+    val storeId: String? = null
 )
 
 data class DayReportsSyncDto(
@@ -113,7 +123,9 @@ data class DayReportsSyncDto(
     val totalInvoiceSales: Double,
     val reportDate: Long,
     val startTime: Long,
-    val endTime: Long
+    val endTime: Long,
+    val deviceId: String? = null,
+    val storeId: String? = null
 )
 
 data class ProductDayReportSyncDto(
@@ -135,14 +147,18 @@ data class CashFlowSyncDto(
     val amount: Double,
     val cashOutflow: Boolean,
     val transactionDate: Long,
-    val description: String?
+    val description: String?,
+    val deviceId: String? = null,
+    val storeId: String? = null
 )
 
 data class DiscountsReceivedSyncDto(
     val discountId: Long,
     val orderId: Long,
     val discountAmount: Double,
-    val dateReceived: Long
+    val dateReceived: Long,
+    val deviceId: String? = null,
+    val storeId: String? = null
 )
 
 data class PriceListSyncDto(
@@ -173,7 +189,9 @@ fun Expense.toSyncDto() = ExpenseSyncDto(
     description = description,
     amount = amount,
     expenseDate = expenseDate,
-    category = category
+    category = category,
+    deviceId = deviceId.ifBlank { null },
+    storeId = storeId.ifBlank { null }
 )
 
 fun ShoeBrand.toSyncDto() = ShoeBrandSyncDto(
@@ -199,7 +217,9 @@ fun Payment.toSyncDto() = PaymentSyncDto(
     invoiceId = invoiceId,
     paymentDate = paymentDate,
     amount = amount,
-    method = method
+    method = method,
+    deviceId = deviceId.ifBlank { null },
+    storeId = storeId.ifBlank { null }
 )
 
 fun CartItem.toSyncDto() = CartItemSyncDto(
@@ -213,7 +233,9 @@ fun CartItem.toSyncDto() = CartItemSyncDto(
     taxAmount = taxAmount,
     discountAmount = discountAmount,
     createdAt = createdAt,
-    updatedAt = updatedAt
+    updatedAt = updatedAt,
+    deviceId = null,   // CartItem entity has no deviceId/storeId — safe default
+    storeId = null
 )
 
 fun StockTake.toSyncDto() = StockTakeSyncDto(
@@ -224,7 +246,9 @@ fun StockTake.toSyncDto() = StockTakeSyncDto(
     variance = variance,
     varianceReason = varianceReason,
     dateRecorded = dateRecorded,
-    recordedBy = recordedBy
+    recordedBy = recordedBy,
+    deviceId = deviceId.ifBlank { null },
+    storeId = storeId.ifBlank { null }
 )
 
 fun TradeReceivables.toSyncDto() = TradeReceivablesSyncDto(
@@ -235,7 +259,9 @@ fun TradeReceivables.toSyncDto() = TradeReceivablesSyncDto(
     creditPeriod = creditPeriod,
     dueDate = dueDate,
     paymentStatus = paymentStatus,
-    dateCreated = dateCreated
+    dateCreated = dateCreated,
+    deviceId = deviceId.ifBlank { null },
+    storeId = storeId.ifBlank { null }
 )
 
 fun DayReports.toSyncDto() = DayReportsSyncDto(
@@ -246,7 +272,9 @@ fun DayReports.toSyncDto() = DayReportsSyncDto(
     totalInvoiceSales = totalInvoiceSales,
     reportDate = reportDate,
     startTime = startTime,
-    endTime = endTime
+    endTime = endTime,
+    deviceId = deviceId.ifBlank { null },
+    storeId = storeId.ifBlank { null }
 )
 
 fun ProductDayReport.toSyncDto() = ProductDayReportSyncDto(
@@ -268,14 +296,18 @@ fun CashFlow.toSyncDto() = CashFlowSyncDto(
     amount = amount,
     cashOutflow = cashOutflow,
     transactionDate = transactionDate,
-    description = description
+    description = description,
+    deviceId = deviceId.ifBlank { null },
+    storeId = storeId.ifBlank { null }
 )
 
 fun DiscountsReceived.toSyncDto() = DiscountsReceivedSyncDto(
     discountId = discountId,
     orderId = orderId,
     discountAmount = discountAmount,
-    dateReceived = dateReceived
+    dateReceived = dateReceived,
+    deviceId = deviceId.ifBlank { null },
+    storeId = storeId.ifBlank { null }
 )
 
 fun PriceList.toSyncDto() = PriceListSyncDto(

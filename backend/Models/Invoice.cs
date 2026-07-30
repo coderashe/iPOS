@@ -16,4 +16,5 @@ public class Invoice
     public bool IsArchived { get; set; }
     public string? DeviceId { get; set; }
     public string? DeviceName { get; set; }
+    public string? StoreId { get; set; }
 }

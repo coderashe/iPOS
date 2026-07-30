@@ -15,8 +15,9 @@ data class InvoiceDto(
     val currencyCode: String,
     val lastUpdated: Long? = null,
     val isArchived: Boolean = false,
-    val deviceId: String? = null,  // Device identifier for multi-device tracking
-    val deviceName: String? = null  // User-friendly device name
+    val deviceId: String? = null,
+    val deviceName: String? = null,
+    val storeId: String? = null
 )
 
 // Invoice API service interface
@@ -46,16 +47,17 @@ fun Invoice.toDto(deviceId: String? = null, deviceName: String? = null): Invoice
         invoiceDate = this.invoiceDate,
         dueDate = this.dueDate,
         theStatus = when (this.status) {
-            "Paid" -> "PAID" // Example mapping
+            "Paid" -> "PAID"
             "Pending" -> "PENDING"
             "Overdue" -> "OVERDUE"
-            else -> "UNKNOWN" // Default value
+            else -> "UNKNOWN"
         },
         currencyCode = this.currencyCode,
         lastUpdated = this.lastUpdated,
         isArchived = this.isArchived,
         deviceId = deviceId,
-        deviceName = deviceName
+        deviceName = deviceName,
+        storeId = this.storeId.ifBlank { null }
     )
 }
 

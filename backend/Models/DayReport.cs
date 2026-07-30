@@ -13,4 +13,6 @@ public class DayReport
     public long ReportDate { get; set; }
     public long StartTime { get; set; }
     public long EndTime { get; set; }
+    public string? DeviceId { get; set; }
+    public string? StoreId { get; set; }
 }

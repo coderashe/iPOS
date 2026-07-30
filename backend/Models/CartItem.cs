@@ -16,4 +16,6 @@ public class CartItem
     public double? DiscountAmount { get; set; }
     public long CreatedAt { get; set; }
     public long? UpdatedAt { get; set; }
+    public string? DeviceId { get; set; }
+    public string? StoreId { get; set; }
 }

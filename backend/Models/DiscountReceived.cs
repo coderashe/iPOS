@@ -9,4 +9,6 @@ public class DiscountReceived
     public long OrderId { get; set; }
     public double DiscountAmount { get; set; }
     public long DateReceived { get; set; }
+    public string? DeviceId { get; set; }
+    public string? StoreId { get; set; }
 }

@@ -13,4 +13,6 @@ public class StockTake
     public string? VarianceReason { get; set; }
     public long DateRecorded { get; set; }
     public string RecordedBy { get; set; } = string.Empty;
+    public string? DeviceId { get; set; }
+    public string? StoreId { get; set; }
 }
