@@ -27,7 +27,7 @@ interface DiscountsReceivedDao {
     @Query("SELECT * FROM discountsreceived ORDER BY dateReceived DESC")
     fun getAllDiscountsReceived(): Flow<List<DiscountsReceived>>
 
-    @Query("SELECT * FROM discountsreceived WHERE isSynced = 0 LIMIT :limit")
+    @Query("SELECT * FROM discountsreceived WHERE isSynced = 0 AND storeId != '' AND storeId IS NOT NULL LIMIT :limit")
     suspend fun getUnsynced(limit: Int): List<DiscountsReceived>
 
     @Query("UPDATE discountsreceived SET isSynced = 1 WHERE discountId IN (:ids)")

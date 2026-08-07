@@ -28,6 +28,7 @@ import com.example.learncompose303.viewmodels.InvoiceViewModel
 import com.example.learncompose303.viewmodels.TrialViewModel
 import com.example.learncompose303.app.core.TrialManager
 import com.example.learncompose303.screens.SetupScreen
+import com.example.learncompose303.screens.DeviceRegistrationScreen
 import com.example.learncompose303.screens.TrialBanner
 import com.example.learncompose303.screens.TrialExpiredScreen
 import com.example.learncompose303.viewmodels.SetupViewModel
@@ -55,8 +56,6 @@ class MainActivity : ComponentActivity() {
         super.onStart()
 
         if (!isWorkScheduled) {
-            setupPeriodicProductSync()
-            setupPeriodicSync()
             scheduleMonthlyLogout()
             isWorkScheduled = true
         }
@@ -118,16 +117,30 @@ class MainActivity : ComponentActivity() {
                             var setupDone by remember {
                                 mutableStateOf(setupViewModel.isSetupAlreadyDone(context))
                             }
+                            var showDeviceRegistration by remember { mutableStateOf(false) }
 
                             Column(modifier = Modifier.fillMaxSize()) {
                                 TrialBanner(daysLeft = status.daysLeft)
-                                if (!setupDone) {
-                                    SetupScreen(
-                                        onSetupComplete = { setupDone = true },
-                                        viewModel = setupViewModel
-                                    )
-                                } else {
-                                    SwipeRefreshLayout(viewModel, navController)
+                                when {
+                                    showDeviceRegistration -> {
+                                        DeviceRegistrationScreen(
+                                            onRegistrationComplete = {
+                                                showDeviceRegistration = false
+                                                // Re-run setup now that device is registered
+                                                setupViewModel.retry(context)
+                                            }
+                                        )
+                                    }
+                                    !setupDone -> {
+                                        SetupScreen(
+                                            onSetupComplete = { setupDone = true },
+                                            onRegisterDevice = { showDeviceRegistration = true },
+                                            viewModel = setupViewModel
+                                        )
+                                    }
+                                    else -> {
+                                        SwipeRefreshLayout(viewModel, navController)
+                                    }
                                 }
                             }
                         }

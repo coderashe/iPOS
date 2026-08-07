@@ -4,8 +4,11 @@ import android.content.Context
 import androidx.hilt.work.HiltWorker
 import androidx.hilt.work.WorkerAssistedFactory
 import androidx.work.WorkerParameters
+import com.example.learncompose303.app.core.DeviceSession
+import com.example.learncompose303.app.core.DeviceSessionInitializer
 import com.example.learncompose303.data.data_source.CartItemDao
 import com.example.learncompose303.data.entities.CartItem
+import com.example.learncompose303.data.repositories.BackfillRepository
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 
@@ -15,8 +18,11 @@ class SyncCartItemWorker @AssistedInject constructor(
     @Assisted params: WorkerParameters,
     private val cartItemDao: CartItemDao,
     private val syncApiService: SyncApiService,
-    connectivityHelper: ConnectivityHelper
-) : BaseSyncWorker(context, params, connectivityHelper) {
+    connectivityHelper: ConnectivityHelper,
+    deviceSession: DeviceSession,
+    deviceSessionInitializer: DeviceSessionInitializer,
+    backfillRepository: BackfillRepository
+) : BaseSyncWorker(context, params, connectivityHelper, deviceSession, deviceSessionInitializer, backfillRepository) {
 
     interface Factory : WorkerAssistedFactory<SyncCartItemWorker>
 

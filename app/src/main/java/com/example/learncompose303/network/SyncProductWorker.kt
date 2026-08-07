@@ -40,22 +40,24 @@ class SyncProductWorker @AssistedInject constructor(
     }
 
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
+        Log.d("ProductSync", "doWork() started — runAttemptCount=${runAttemptCount}")
         try {
-            // Check network connectivity first
             if (!connectivityHelper.isNetworkAvailable()) {
-                Log.w(TAG, "No network connection available, will retry later")
+                Log.w("ProductSync", "No network — retrying")
                 return@withContext Result.retry()
             }
 
             val isBatchSync = inputData.getBoolean(KEY_BATCH_SYNC, false)
             val shouldRetry = inputData.getBoolean(KEY_RETRY, true)
+            Log.d("ProductSync", "isBatchSync=$isBatchSync shouldRetry=$shouldRetry")
 
             if (isBatchSync) {
                 return@withContext performBatchSync(shouldRetry)
             } else {
                 val productId = inputData.getLong(KEY_PRODUCT_ID, -1L)
+                Log.d("ProductSync", "single productId=$productId")
                 if (productId == -1L) {
-                    Log.e(TAG, "Invalid product ID provided for sync")
+                    Log.e("ProductSync", "Invalid product ID")
                     return@withContext Result.failure()
                 }
                 return@withContext syncSingleProduct(productId, shouldRetry)
@@ -155,33 +157,68 @@ class SyncProductWorker @AssistedInject constructor(
             var totalSynced = 0
             while (true) {
                 val unsyncedProducts = productDao.getUnsyncedProducts(100)
+                Log.d("ProductSync", "fetchUnsynced returned ${unsyncedProducts.size} products")
                 if (unsyncedProducts.isEmpty()) {
+                    Log.d("ProductSync", "all done, total synced: $totalSynced")
                     android.util.Log.d("backIntCheck", "SyncProductWorker — all done, total synced: $totalSynced")
                     return Result.success()
                 }
 
-                android.util.Log.d("backIntCheck", "SyncProductWorker — syncing ${unsyncedProducts.size} (total so far: $totalSynced)")
+                android.util.Log.d("backIntCheck", "SyncProductWorker — syncing batch of ${unsyncedProducts.size} (total so far: $totalSynced)")
 
-                for (product in unsyncedProducts) {
+                val dtos = unsyncedProducts.mapNotNull { product ->
                     if (product.productDescription.isBlank() || product.productCode.isBlank()) {
-                        Log.w(TAG, "Skipping product ${product.productId} — invalid fields")
-                        // mark synced to avoid infinite loop on bad data
-                        val updated = product.copy(lastUpdated = System.currentTimeMillis())
-                        productDao.updateProduct(updated)
+                        Log.w("ProductSync", "Skipping product ${product.productId} — blank fields")
                         productDao.markSynced(product.productId)
-                        continue
+                        null
+                    } else {
+                        val priceList = priceListDao.getPriceListByProductId(product.productId)
+                        Log.d("ProductSync", "product ${product.productId} priceList=${priceList?.sellingPrice}")
+                        product.toDto(
+                            deviceId = deviceManager.getDeviceId(),
+                            deviceName = deviceManager.getDeviceName(),
+                            sellingPrice = priceList?.sellingPrice ?: 0.0,
+                            unitCost = priceList?.unitCost ?: 0.0,
+                            markupPercentage = priceList?.markupPercentage ?: 0.0
+                        )
                     }
+                }
 
-                    val result = syncSingleProduct(product.productId, false)
-                    when (result) {
-                        Result.success() -> totalSynced++
-                        Result.retry() -> if (shouldRetry) return Result.retry()
-                        else -> { /* failure — skip and continue */ }
+                Log.d("ProductSync", "DTOs to send: ${dtos.size}")
+                if (dtos.isEmpty()) continue
+
+                try {
+                    val response = productApiService.saveProducts(dtos)
+                    Log.d("ProductSync", "API response: ${response.code()} isSuccessful=${response.isSuccessful}")
+                    when {
+                        response.isSuccessful -> {
+                            val synced = response.body()?.synced ?: dtos.size
+                            unsyncedProducts.forEach { p ->
+                                productDao.markSynced(p.productId)
+                                productDao.updateProduct(p.copy(lastUpdated = System.currentTimeMillis()))
+                            }
+                            totalSynced += synced
+                            Log.d("ProductSync", "Batch synced $synced products")
+                        }
+                        response.code() in 400..499 -> {
+                            Log.e("ProductSync", "Client error ${response.code()} — body: ${response.errorBody()?.string()}")
+                            unsyncedProducts.forEach { productDao.markSynced(it.productId) }
+                        }
+                        else -> {
+                            Log.e("ProductSync", "Server error ${response.code()} — retrying")
+                            return if (shouldRetry) Result.retry() else Result.failure()
+                        }
                     }
+                } catch (e: java.net.SocketTimeoutException) {
+                    Log.e("ProductSync", "Timeout hitting ${e.message}")
+                    return if (shouldRetry) Result.retry() else Result.failure()
+                } catch (e: java.io.IOException) {
+                    Log.e("ProductSync", "IOException: ${e.message}")
+                    return if (shouldRetry) Result.retry() else Result.failure()
                 }
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error in batch sync", e)
+            Log.e("ProductSync", "Unexpected error in batch: ${e.message}", e)
             return if (shouldRetry) Result.retry() else Result.failure()
         }
     }

@@ -4,6 +4,9 @@ import android.content.Context
 import android.util.Log
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import com.example.learncompose303.app.core.DeviceSession
+import com.example.learncompose303.app.core.DeviceSessionInitializer
+import com.example.learncompose303.data.repositories.BackfillRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -23,7 +26,10 @@ import kotlinx.coroutines.withContext
 abstract class BaseSyncWorker(
     context: Context,
     params: WorkerParameters,
-    private val connectivityHelper: ConnectivityHelper
+    private val connectivityHelper: ConnectivityHelper,
+    private val deviceSession: DeviceSession? = null,
+    private val deviceSessionInitializer: DeviceSessionInitializer? = null,
+    private val backfillRepository: BackfillRepository? = null
 ) : CoroutineWorker(context, params) {
 
     companion object {
@@ -57,6 +63,10 @@ abstract class BaseSyncWorker(
             }
             Log.d(TAG, "Network available — starting batch sync")
             android.util.Log.d("backIntCheck", "$TAG — network OK, starting batch sync")
+
+            // Ensure DeviceSession is populated before syncing
+            deviceSessionInitializer?.ensureLoaded()
+
             performBatchSync(shouldRetry)
         } catch (e: java.net.UnknownHostException) {
             Log.e(TAG, "Unknown host: ${e.message}")

@@ -15,7 +15,7 @@ interface StockTakeDao {
     @Query("SELECT * FROM stock_take")
     fun getAllStockTakes(): Flow<List<StockTake>>
 
-    @Query("SELECT * FROM stock_take WHERE isSynced = 0 LIMIT :limit")
+    @Query("SELECT * FROM stock_take WHERE isSynced = 0 AND storeId != '' AND storeId IS NOT NULL LIMIT :limit")
     suspend fun getUnsynced(limit: Int): List<StockTake>
 
     @Query("UPDATE stock_take SET isSynced = 1 WHERE id IN (:ids)")

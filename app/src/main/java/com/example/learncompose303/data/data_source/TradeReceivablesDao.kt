@@ -30,7 +30,7 @@ interface TradeReceivablesDao {
     @Query("SELECT * FROM tradereceivables WHERE dueDate <= :currentTime")
     fun getOverdueReceivables(currentTime: Long): Flow<List<TradeReceivables>>
 
-    @Query("SELECT * FROM tradereceivables WHERE isSynced = 0 LIMIT :limit")
+    @Query("SELECT * FROM tradereceivables WHERE isSynced = 0 AND storeId != '' AND storeId IS NOT NULL LIMIT :limit")
     suspend fun getUnsynced(limit: Int): List<TradeReceivables>
 
     @Query("UPDATE tradereceivables SET isSynced = 1 WHERE receivableId IN (:ids)")

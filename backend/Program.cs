@@ -117,7 +117,7 @@ app.MapGet("/", () => "iPOS API is running");
 app.UseSwagger();
 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "iPOS API v1"));
 
-app.UseCors("DashboardPolicy");
+app.UseCors("AndroidPolicy"); // Allow Android devices + dashboard on local network
 
 app.UseAuthentication();
 app.UseAuthorization();

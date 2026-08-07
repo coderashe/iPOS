@@ -17,7 +17,7 @@ interface PaymentDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertPayment(payment: Payment): Long
 
-    @Query("SELECT * FROM payment WHERE isSynced = 0 LIMIT :limit")
+    @Query("SELECT * FROM payment WHERE isSynced = 0 AND storeId != '' AND storeId IS NOT NULL LIMIT :limit")
     suspend fun getUnsynced(limit: Int): List<Payment>
 
     @Query("UPDATE payment SET isSynced = 1 WHERE paymentId IN (:ids)")

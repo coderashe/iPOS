@@ -42,7 +42,8 @@ class SetupViewModel @Inject constructor(
     private val deviceInfoDao: DeviceInfoDao,
     private val userDao: UserDao,
     private val backfillRepository: BackfillRepository,
-    private val syncApiService: SyncApiService
+    private val syncApiService: SyncApiService,
+    private val syncManager: com.example.learncompose303.network.SyncManager
 ) : ViewModel() {
 
     companion object {
@@ -146,9 +147,19 @@ class SetupViewModel @Inject constructor(
             }
 
             // ── All done ─────────────────────────────────────────────────────
+            // Block if storeId is still blank — user must complete device registration
+            if (deviceSession.storeId.isBlank()) {
+                setError("This device has no Store ID. Please complete device registration before continuing.")
+                return@launch
+            }
+
             prefs.edit().putBoolean(KEY_SETUP_DONE, true).apply()
             _uiState.value = _uiState.value.copy(isComplete = true)
             Log.d(TAG, "Setup complete")
+
+            // Trigger full sync now that backfill is done and storeId is set
+            syncManager.syncAllNow()
+            Log.d(TAG, "Full sync scheduled after setup")
         }
     }
 
@@ -156,10 +167,19 @@ class SetupViewModel @Inject constructor(
         runSetup(context)
     }
 
-    /** Returns true if setup has already completed successfully on a previous launch */
+    /** Returns true only if setup completed AND this device has a valid storeId.
+     *  If storeId is missing, clears the flag so setup re-runs on next check. */
     fun isSetupAlreadyDone(context: android.content.Context): Boolean {
         val prefs = context.getSharedPreferences(PREFS_NAME, android.content.Context.MODE_PRIVATE)
-        return prefs.getBoolean(KEY_SETUP_DONE, false)
+        val flagSet = prefs.getBoolean(KEY_SETUP_DONE, false)
+        if (!flagSet) return false
+        // Double-check the session is actually populated (guards against app data clear / reinstall)
+        if (deviceSession.storeId.isBlank()) {
+            // Session not loaded yet or device has no storeId — force re-run of setup
+            prefs.edit().remove(KEY_SETUP_DONE).apply()
+            return false
+        }
+        return true
     }
 
     private fun setStep(index: Int, status: StepStatus) {

@@ -21,6 +21,7 @@ import com.example.learncompose303.viewmodels.StepStatus
 @Composable
 fun SetupScreen(
     onSetupComplete: () -> Unit,
+    onRegisterDevice: () -> Unit = {},
     viewModel: SetupViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
@@ -130,14 +131,25 @@ fun SetupScreen(
                             color = MaterialTheme.colorScheme.error
                         )
                     }
-                    Button(
-                        onClick = { viewModel.retry(context) },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.error
-                        )
-                    ) {
-                        Text("Retry")
+
+                    // If storeId is missing, show device registration CTA
+                    if (state.errorMessage?.contains("Store ID") == true) {
+                        Button(
+                            onClick = { onRegisterDevice() },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Register This Device")
+                        }
+                    } else {
+                        Button(
+                            onClick = { viewModel.retry(context) },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.error
+                            )
+                        ) {
+                            Text("Retry")
+                        }
                     }
                 }
             }

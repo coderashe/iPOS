@@ -31,6 +31,9 @@ interface ProductApiService {
     @POST("/api/products")
     suspend fun saveProduct(@Body product: ProductDto): Response<ProductDto>
 
+    @POST("/api/products/batch")
+    suspend fun saveProducts(@Body products: List<ProductDto>): Response<BatchSyncResult>
+
     @GET("/api/products/{id}")
     suspend fun getProductById(@Path("id") id: Long): Response<ProductDto>
 
@@ -43,6 +46,8 @@ interface ProductApiService {
     @PUT("/api/products/{id}")
     suspend fun updateProduct(@Path("id") id: Long, @Body product: ProductDto): Response<ProductDto>
 }
+
+data class BatchSyncResult(val synced: Int)
 
 // Extension functions for conversion between domain model and DTO
 fun Products.toDto(

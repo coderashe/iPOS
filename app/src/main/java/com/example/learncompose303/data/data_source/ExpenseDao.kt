@@ -26,7 +26,7 @@ interface ExpenseDao {
     @Query("DELETE FROM expenses")
     suspend fun deleteAllExpenses()
 
-    @Query("SELECT * FROM expenses WHERE isSynced = 0 LIMIT :limit")
+    @Query("SELECT * FROM expenses WHERE isSynced = 0 AND storeId != '' AND storeId IS NOT NULL LIMIT :limit")
     suspend fun getUnsynced(limit: Int): List<Expense>
 
     @Query("UPDATE expenses SET isSynced = 1 WHERE expenseId IN (:ids)")

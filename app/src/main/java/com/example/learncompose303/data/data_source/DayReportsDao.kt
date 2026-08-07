@@ -27,7 +27,7 @@ interface DayReportsDao {
     @Delete
     suspend fun deleteDayReport(dayReport: DayReports)
 
-    @Query("SELECT * FROM day_reports WHERE isSynced = 0 LIMIT :limit")
+    @Query("SELECT * FROM day_reports WHERE isSynced = 0 AND storeId != '' AND storeId IS NOT NULL LIMIT :limit")
     suspend fun getUnsynced(limit: Int): List<DayReports>
 
     @Query("UPDATE day_reports SET isSynced = 1 WHERE reportId IN (:ids)")
