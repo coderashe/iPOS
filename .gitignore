@@ -17,6 +17,8 @@ local.properties
 # .NET build artifacts
 backend/bin/
 backend/obj/
+backend/out/
+backend/backend/
 frontend/*/bin/
 frontend/*/obj/
 *.user
