@@ -5,7 +5,6 @@ import androidx.lifecycle.viewModelScope
 import com.example.learncompose303.app.core.DeviceManager
 import com.example.learncompose303.app.core.DeviceSession
 import com.example.learncompose303.data.data_source.DeviceInfoDao
-import com.example.learncompose303.data.data_source.UserDao
 import com.example.learncompose303.data.entities.DeviceInfo
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
@@ -15,15 +14,13 @@ import javax.inject.Inject
 class DeviceRegistrationViewModel @Inject constructor(
     val deviceManager: DeviceManager,
     private val deviceInfoDao: DeviceInfoDao,
-    private val userDao: UserDao,
-    private val deviceSession: DeviceSession
+    val deviceSession: DeviceSession
 ) : ViewModel() {
 
     /** Save device info to Room (isSynced = false). SyncDeviceWorker handles the backend push. */
-    fun registerDevice(deviceName: String, userEmail: String, onComplete: () -> Unit) {
+    fun registerDevice(deviceName: String, storeId: String, onComplete: () -> Unit) {
         viewModelScope.launch {
             deviceManager.setDeviceName(deviceName)
-            val storeId = userDao.getUserByEmail(userEmail)?.storeID ?: ""
             val deviceId = deviceManager.getDeviceId()
             deviceInfoDao.upsert(
                 DeviceInfo(
@@ -33,7 +30,7 @@ class DeviceRegistrationViewModel @Inject constructor(
                     isSynced = false
                 )
             )
-            // Populate session immediately after registration
+            // Populate session immediately so backfill and sync use the correct storeId
             deviceSession.deviceId = deviceId
             deviceSession.storeId = storeId
             deviceSession.deviceName = deviceName

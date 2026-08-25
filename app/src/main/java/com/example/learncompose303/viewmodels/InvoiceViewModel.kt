@@ -74,6 +74,7 @@ import androidx.work.workDataOf
 import com.example.learncompose303.data.CsvInvoiceItem
 import com.example.learncompose303.data.entities.FailedInvoiceItem
 import com.example.learncompose303.data.entities.ProductCsvModel
+import com.example.learncompose303.app.core.DeviceSession
 import com.example.learncompose303.data.repositories.FailedInvoiceRepository
 import com.example.learncompose303.network.SyncInvoiceWorker
 import com.example.learncompose303.network.SyncProductWorker
@@ -103,7 +104,8 @@ class InvoiceViewModel @Inject constructor(
     private val stockTakeRepository: StockTakeRepository,
     private val failedInvoiceRepository: FailedInvoiceRepository,
     private val workManager: WorkManager,
-    private val syncManager: com.example.learncompose303.network.SyncManager
+    private val syncManager: com.example.learncompose303.network.SyncManager,
+    private val deviceSession: DeviceSession
 ) : ViewModel() {
 
     private val _shoeSizes = MutableStateFlow(emptyList<ShoeSize>())
@@ -1574,7 +1576,9 @@ class InvoiceViewModel @Inject constructor(
                         amountTendered = amountTendered,
                         changeBalance = change,
                         currentStock = product.productQty.toDouble().minus(quantitySold),
-                        invoiceDate = System.currentTimeMillis()
+                        invoiceDate = System.currentTimeMillis(),
+                        deviceId = deviceSession.deviceId.ifBlank { null },
+                        storeId = deviceSession.storeId.ifBlank { null }
                     )
                     invoiceLineRepository.insertInvoiceLine(invoiceLine)
                 }
@@ -1702,7 +1706,9 @@ class InvoiceViewModel @Inject constructor(
                         amountTendered = amountTendered,
                         changeBalance = change,
                         currentStock = updatedProducts[product.productId] ?: 0.0,
-                        invoiceDate = System.currentTimeMillis()
+                        invoiceDate = System.currentTimeMillis(),
+                        deviceId = deviceSession.deviceId.ifBlank { null },
+                        storeId = deviceSession.storeId.ifBlank { null }
                     )
                     invoiceLineRepository.insertInvoiceLine(invoiceLine)
                 }

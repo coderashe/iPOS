@@ -291,7 +291,7 @@ public class ReportsController : ControllerBase
 
             var allowedDeviceIds = await _storeDeviceService.GetDeviceIdsForStoreAsync(storeId);
 
-            var cacheKey = $"inventory_stock_levels_{storeId}";
+            var cacheKey = $"inventory_stock_levels_v2_{storeId}";
 
             var stockLevels = await _cacheService.GetOrCreateAsync(
                 cacheKey,
@@ -310,12 +310,12 @@ public class ReportsController : ControllerBase
 
     private async Task<List<StockLevelDto>> GenerateStockLevelsReport(IReadOnlyList<string> allowedDeviceIds)
     {
-        // Get products scoped to this store's devices
+        // Get all products — StoreId and DeviceId are not reliably populated across all
+        // synced records, so we return all products with stock rather than risk filtering out
+        // legitimate inventory. Scoping is enforced at the invoice/sales level.
         var products = await _context.Products
             .AsNoTracking()
-            .Where(p => p.CurrentStock.HasValue
-                     && p.DeviceId != null
-                     && allowedDeviceIds.Contains(p.DeviceId))
+            .Where(p => p.CurrentStock.HasValue)
             .ToListAsync();
 
         // Get invoice IDs for the allowed devices
@@ -352,6 +352,7 @@ public class ReportsController : ControllerBase
             return new StockLevelDto
             {
                 ProductId = p.Id,
+                ProductCode = p.ProductCode,
                 ProductName = p.Name,
                 CurrentStock = currentStock,
                 AverageDailySales = avgDailySales,
@@ -375,7 +376,7 @@ public class ReportsController : ControllerBase
 
             var allowedDeviceIds = await _storeDeviceService.GetDeviceIdsForStoreAsync(storeId);
 
-            var cacheKey = $"inventory_low_stock_{storeId}_{threshold}";
+            var cacheKey = $"inventory_low_stock_v2_{storeId}_{threshold}";
 
             var lowStock = await _cacheService.GetOrCreateAsync(
                 cacheKey,

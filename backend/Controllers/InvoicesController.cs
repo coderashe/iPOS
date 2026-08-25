@@ -29,12 +29,11 @@ public class InvoicesController : ControllerBase
     public async Task<IActionResult> Upsert([FromBody] Invoice invoice) =>
         Ok(await _service.UpsertAsync(invoice));
 
-    /// <summary>Batch sync from Android</summary>
+    /// <summary>Batch sync from Android — upserts all invoices in a single SaveChanges call</summary>
     [HttpPost("sync")]
     public async Task<IActionResult> Sync([FromBody] List<Invoice> invoices)
     {
-        foreach (var invoice in invoices)
-            await _service.UpsertAsync(invoice);
+        await _service.UpsertBatchAsync(invoices);
         return Ok(new { synced = invoices.Count });
     }
 

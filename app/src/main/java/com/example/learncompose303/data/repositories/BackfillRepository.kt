@@ -6,6 +6,7 @@ import com.example.learncompose303.data.data_source.DayReportsDao
 import com.example.learncompose303.data.data_source.DiscountsReceivedDao
 import com.example.learncompose303.data.data_source.ExpenseDao
 import com.example.learncompose303.data.data_source.InvoiceDao
+import com.example.learncompose303.data.data_source.InvoiceLineDao
 import com.example.learncompose303.data.data_source.OrderDao
 import com.example.learncompose303.data.data_source.PaymentDao
 import com.example.learncompose303.data.data_source.StockTakeDao
@@ -16,6 +17,7 @@ import javax.inject.Singleton
 @Singleton
 class BackfillRepository @Inject constructor(
     private val invoiceDao: InvoiceDao,
+    private val invoiceLineDao: InvoiceLineDao,
     private val expenseDao: ExpenseDao,
     private val paymentDao: PaymentDao,
     private val cashFlowDao: CashFlowDao,
@@ -46,6 +48,7 @@ class BackfillRepository @Inject constructor(
         Log.d(TAG, "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
         run("invoice")          { invoiceDao.backfillDeviceAndStore(deviceId, storeId) }
+        run("invoice_lines")    { invoiceLineDao.backfillDeviceAndStore(deviceId, storeId) }
         run("expenses")         { expenseDao.backfillDeviceAndStore(deviceId, storeId) }
         run("payment")          { paymentDao.backfillDeviceAndStore(deviceId, storeId) }
         run("cashflow")         { cashFlowDao.backfillDeviceAndStore(deviceId, storeId) }

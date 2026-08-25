@@ -121,6 +121,16 @@ fun SetupScreen(
                     }
                 }
 
+                Divider()
+
+                // Manual backfill button — fixes legacy records missing DeviceId/StoreId
+                OutlinedButton(
+                    onClick = { viewModel.runBackfill() },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Backfill Device & Store IDs")
+                }
+
                 // Error + retry
                 if (state.canRetry) {
                     Divider()

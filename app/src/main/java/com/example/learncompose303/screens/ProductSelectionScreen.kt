@@ -1,17 +1,13 @@
 package com.example.learncompose303.screens
 
-import android.content.res.Configuration
-import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -20,153 +16,197 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.material3.AlertDialog
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.graphics.RenderEffect
-import androidx.compose.ui.graphics.Shader
-import androidx.compose.ui.graphics.Shadow
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.example.learncompose303.R
 import com.example.learncompose303.app.AddBrandWithProductsDialog
 import com.example.learncompose303.data.entities.Customer
 import com.example.learncompose303.data.entities.Products
-import com.example.learncompose303.data.entities.ShoeBrand
 import com.example.learncompose303.viewmodels.InvoiceViewModel
 import kotlinx.coroutines.launch
 
+// Walk-in default customer — no customer selection screen needed
+private val WALK_IN_CUSTOMER = Customer(
+    customerId = 0,
+    name = "Walk-in",
+    phone = "",
+    email = "",
+    address = ""
+)
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProductSelectionScreen(
-    customer: Customer,
     onProceedToCart: () -> Unit,
     navController: NavController,
-    viewModel: InvoiceViewModel = viewModel()
+    viewModel: InvoiceViewModel = hiltViewModel(),
+    // Keep customer param for back-compat but default to walk-in
+    customer: Customer = WALK_IN_CUSTOMER
 ) {
-    val products by viewModel.productList.collectAsState()
-    val withBranProducts by viewModel.withBrandProductList.collectAsState()
+    val withBrandProducts by viewModel.withBrandProductList.collectAsState()
     val selectedProducts by viewModel.selectedProducts.collectAsState()
-    var showLowStockWarning by remember { mutableStateOf(false) }
-    var lowStockInventories by remember { mutableStateOf(emptyList<Products>()) }
-    var showNoSelectionWarning by remember { mutableStateOf(false) }
-    var searchQuery by remember { mutableStateOf("") }
 
-    // Add brand dialog state
+    // qty map: productId → qty chosen on this screen
+    val productQuantities = remember { mutableStateMapOf<Long, Int>() }
+
+    var searchQuery by remember { mutableStateOf("") }
     var showAddBrandDialog by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
-    val coroutineScope = androidx.compose.runtime.rememberCoroutineScope()
+    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
 
-    LaunchedEffect(key1 = true) {
+    LaunchedEffect(Unit) {
         viewModel.fetchProducts()
         viewModel.fetchBrandProducts()
-        val lowStock = products.filter { it.productQty < 10 }
-        if (lowStock.isNotEmpty()) {
-            lowStockInventories = lowStock
-            showLowStockWarning = true
-        }
     }
 
     val query = searchQuery.trim().lowercase()
-    val filteredProducts = withBranProducts.filter {
+    val filteredProducts = withBrandProducts.filter {
+        query.isBlank() ||
         it.product.productDescription.lowercase().contains(query) ||
-                it.brand.brandName.lowercase().contains(query)
+        it.brand.brandName.lowercase().contains(query) ||
+        it.product.productCode.lowercase().contains(query)
     }
 
-    val configuration = LocalConfiguration.current
-    val chunkSize = if (configuration.orientation == Configuration.ORIENTATION_PORTRAIT) 5 else 9
+    // Running totals for the bottom bar
+    val totalItems = productQuantities.values.sum()
+    val totalPrice = withBrandProducts.sumOf { pwb ->
+        val qty = productQuantities[pwb.product.productId] ?: 0
+        val price = viewModel.getPricelistById(pwb.product.productId)?.sellingPrice ?: 0.0
+        price * qty
+    }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp)
-        ) {
-            Row {
-                Text(
-                    "Customer: ${customer.name}",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp,
-                    modifier = Modifier.weight(1f)
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Select Products") },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface
                 )
-                Button(onClick = {
-                    if (selectedProducts.isNotEmpty()) {
-                        onProceedToCart()
-                    } else {
-                        showNoSelectionWarning = true
-                    }
-                }) {
-                    Text("Proceed to Cart")
-                }
-            }
-            Spacer(modifier = Modifier.height(16.dp))
-            SearchBar(query = searchQuery, onQueryChanged = { searchQuery = it })
-            Spacer(modifier = Modifier.height(8.dp))
-
-            if (filteredProducts.isNotEmpty()) {
-                LazyColumn {
-                    items(filteredProducts.chunked(chunkSize)) { rowItems ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .horizontalScroll(rememberScrollState()),
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            rowItems.forEach { product ->
-                                val isSelected = selectedProducts.contains(product.product)
-                                val price = viewModel.getPricelistById(product.product.productId)
-
-                                price?.let {
-                                    NewProductCard(
-                                        products = product.product,
-                                        isSelected = isSelected,
-                                        onAddProduct = { viewModel.addProductToCart(product.product) },
-                                        price = it.sellingPrice,
-                                        viewModel = viewModel
-                                    )
+            )
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        bottomBar = {
+            if (totalItems > 0) {
+                Surface(
+                    shadowElevation = 8.dp,
+                    color = MaterialTheme.colorScheme.primaryContainer
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column {
+                            Text(
+                                "$totalItems item${if (totalItems != 1) "s" else ""}",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                            Text(
+                                "Total: ${"%.2f".format(totalPrice)}",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+                        Button(
+                            onClick = {
+                                // Sync qty map into viewmodel selections before navigating
+                                productQuantities.forEach { (id, qty) ->
+                                    if (qty > 0) {
+                                        val product = withBrandProducts
+                                            .find { it.product.productId == id }?.product
+                                        if (product != null && !selectedProducts.contains(product)) {
+                                            viewModel.addProductToCart(product)
+                                        }
+                                    }
                                 }
+                                onProceedToCart()
                             }
+                        ) {
+                            Text("Proceed to Cart")
                         }
                     }
                 }
-            } else if (query.isNotBlank()) {
-                // No results for an active search — show actionable empty state
+            }
+        }
+    ) { paddingValues ->
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+        ) {
+            // ── Search bar ───────────────────────────────────────────────
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                placeholder = { Text("Search by name, brand or code…") },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                trailingIcon = {
+                    if (searchQuery.isNotEmpty()) {
+                        IconButton(onClick = { searchQuery = "" }) {
+                            Icon(Icons.Default.Close, contentDescription = "Clear")
+                        }
+                    }
+                },
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp),
+                keyboardOptions = KeyboardOptions(
+                    capitalization = KeyboardCapitalization.Words,
+                    imeAction = ImeAction.Search
+                )
+            )
+
+            // ── Empty search state ───────────────────────────────────────
+            if (filteredProducts.isEmpty() && query.isNotBlank()) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -175,10 +215,9 @@ fun ProductSelectionScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Text(
-                        text = "No product found for \"$searchQuery\"",
+                        "No product found for \"$searchQuery\"",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     FilledTonalButton(onClick = { showAddBrandDialog = true }) {
                         Icon(Icons.Default.Add, contentDescription = null)
@@ -186,18 +225,45 @@ fun ProductSelectionScreen(
                         Text("Add \"$searchQuery\" as new brand")
                     }
                 }
+            } else {
+                // ── Product list ─────────────────────────────────────────
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    items(
+                        items = filteredProducts,
+                        key = { it.product.productId }
+                    ) { pwb ->
+                        val price = viewModel.getPricelistById(pwb.product.productId)?.sellingPrice ?: 0.0
+                        val qty = productQuantities[pwb.product.productId] ?: 0
+                        ProductSelectionRow(
+                            name = pwb.product.productDescription,
+                            brand = pwb.brand.brandName,
+                            code = pwb.product.productCode,
+                            price = price,
+                            stock = pwb.product.productQty,
+                            qty = qty,
+                            onQtyChange = { newQty ->
+                                if (newQty <= pwb.product.productQty) {
+                                    productQuantities[pwb.product.productId] = newQty
+                                } else {
+                                    Toast.makeText(
+                                        context,
+                                        "Only ${pwb.product.productQty} in stock",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                            }
+                        )
+                    }
+                }
             }
-            // else: empty query with no products — show nothing (normal empty catalog state)
         }
-
-        // Snackbar anchored to bottom of screen
-        SnackbarHost(
-            hostState = snackbarHostState,
-            modifier = Modifier.align(Alignment.BottomCenter)
-        )
     }
 
-    // Add brand + products dialog
+    // ── Add brand dialog ─────────────────────────────────────────────────────
     if (showAddBrandDialog) {
         AddBrandWithProductsDialog(
             initialBrandName = searchQuery,
@@ -209,348 +275,130 @@ fun ProductSelectionScreen(
                     averageCost = avgCost,
                     standardCost = stdCost,
                     qtyPerSize = qty,
-                    onComplete = { message, isError ->
+                    onComplete = { message, _ ->
                         showAddBrandDialog = false
-                        // Clear the search so the new products appear in the unfiltered list
                         searchQuery = ""
-                        coroutineScope.launch {
-                            snackbarHostState.showSnackbar(message)
-                        }
+                        scope.launch { snackbarHostState.showSnackbar(message) }
                     }
                 )
-            }
-        )
-    }
-
-    if (showLowStockWarning) {
-        AlertDialog(
-            onDismissRequest = { showLowStockWarning = false },
-            title = { Text("Low Stock Warning") },
-            text = {
-                Column {
-                    Text("The following products have low stock:")
-                    Spacer(modifier = Modifier.height(8.dp))
-                    lowStockInventories.forEach { product ->
-                        Text(
-                            "- ${product.productDescription} : ${product.productQty}",
-                            color = Color.Red
-                        )
-                    }
-                }
-            },
-            confirmButton = {
-                Button(onClick = { showLowStockWarning = false }) { Text("OK") }
-            }
-        )
-    }
-
-    if (showNoSelectionWarning) {
-        AlertDialog(
-            onDismissRequest = { showNoSelectionWarning = false },
-            title = { Text("No Products Selected") },
-            text = { Text("Please select at least one product before proceeding to the cart.") },
-            confirmButton = {
-                Button(onClick = { showNoSelectionWarning = false }) { Text("OK") }
             }
         )
     }
 }
 
-@Composable
-fun ProductCard(
-    products: Products,
-    isSelected: Boolean,
-    onAddProduct: (Products) -> Unit,
-    price: Double,
-    viewModel: InvoiceViewModel
-) {
-    val context = LocalContext.current
-    var stockLevel by remember { mutableStateOf(0L) }
-
-    // Collect shoe size state from ViewModel
-    val shoeSizeState = viewModel.getShoeSizeById(products.shoeSizeId)
-        .collectAsState(initial = null)
-    val shoeSize = shoeSizeState.value?.size?.toString() ?: "N/A"
-
-    var brand by remember { mutableStateOf<ShoeBrand?>(null) }
-    // Use LaunchedEffect to collect the Flow in a coroutine
-    LaunchedEffect(products.brandID) {
-        viewModel.getBrandById(products.brandID).collect { fetchedBrand ->
-            brand = fetchedBrand
-        }
-    }
-    val brandName = brand?.brandName ?: "Unknown Brand"
-
-    // Fetch stock level when productId changes
-    LaunchedEffect(products.productId) {
-        stockLevel = products.productQty
-    }
-
-    Card(
-        shape = RoundedCornerShape(16.dp),
-        modifier = Modifier
-            .padding(6.dp)
-            .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surfaceVariant)
-            .shadow(8.dp, RoundedCornerShape(16.dp))
-            .clickable {
-                if (stockLevel > 0) {
-                    onAddProduct(products)
-                } else {
-                    Toast
-                        .makeText(
-                            context,
-                            "${products.productDescription} is out of stock!",
-                            Toast.LENGTH_SHORT
-                        )
-                        .show()
-                }
-            },
-        elevation = CardDefaults.cardElevation(6.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            // Product Image Placeholder
-//            Box(
-//                modifier = Modifier
-//                    .size(80.dp)
-//                    .clip(RoundedCornerShape(12.dp))
-//                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
-//                contentAlignment = Alignment.Center
-//            ) {
-//                Icon(
-//                    imageVector = Icons.Default.ShoppingCart,
-//                    contentDescription = "Product Image",
-//                    tint = MaterialTheme.colorScheme.primary,
-//                    modifier = Modifier.size(48.dp)
-//                )
-//            }
-//
-//            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = products.productDescription,
-                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
-                textAlign = TextAlign.Center,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
-            )
-
-            Spacer(modifier = Modifier.height(3.dp))
-
-            Text(
-                text = "($brandName) : Size - $shoeSize",
-                style = MaterialTheme.typography.bodyMedium.copy(
-                    shadow = Shadow(
-                        color = Color.Black.copy(alpha = 0.3f),
-                        offset = Offset(2f, 2f),
-                        blurRadius = 4f
-                    )
-                ),
-//                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                color = Color.Red,
-                modifier = Modifier.background(Color.White)
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Stock Level
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp),
-                contentAlignment = Alignment.CenterEnd
-            ) {
-                Text(
-                    text = "Stock: $stockLevel",
-                    style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
-                    color = if (stockLevel > 0) MaterialTheme.colorScheme.primary else Color.Red,
-//                    modifier = Modifier.background(Color.White)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            Text(
-                text = "$${"%.2f".format(price)}",
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.primary
-            )
-
-            Spacer(modifier = Modifier.height(6.dp))
-
-            Button(
-                onClick = {
-                    if (stockLevel > 0) {
-                        onAddProduct(products)
-                    } else {
-                        Toast.makeText(
-                            context,
-                            "${products.productDescription} is out of stock!",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isSelected) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.primary,
-                    contentColor = Color.White
-                ),
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.fillMaxWidth(0.8f)
-            ) {
-                Text(
-                    text = if (isSelected) stringResource(R.string.added) else stringResource(R.string.addToCart),
-                    fontWeight = FontWeight.Bold
-                )
-            }
-        }
-    }
-}
+// ─── Compact product row (StockTake style) ────────────────────────────────────
 
 @Composable
-fun NewProductCard(
-    products: Products,
-    isSelected: Boolean,
-    onAddProduct: (Products) -> Unit,
+private fun ProductSelectionRow(
+    name: String,
+    brand: String,
+    code: String,
     price: Double,
-    viewModel: InvoiceViewModel
+    stock: Long,
+    qty: Int,
+    onQtyChange: (Int) -> Unit
 ) {
-    val context = LocalContext.current
-    var stockLevel by remember { mutableStateOf(0L) }
-
-    // Collect shoe size state from ViewModel
-    val shoeSizeState = viewModel.getShoeSizeById(products.shoeSizeId)
-        .collectAsState(initial = null)
-    val shoeSize = shoeSizeState.value?.size?.toString() ?: "N/A"
-
-    var brand by remember { mutableStateOf<ShoeBrand?>(null) }
-    // Use LaunchedEffect to collect the Flow in a coroutine
-    LaunchedEffect(products.brandID) {
-        viewModel.getBrandById(products.brandID).collect { fetchedBrand ->
-            brand = fetchedBrand
-        }
-    }
-    val brandName = brand?.brandName ?: "Unknown Brand"
-
-    // Fetch stock level when productId changes
-    LaunchedEffect(products.productId) {
-        stockLevel = products.productQty
-    }
+    val isOutOfStock = stock <= 0
 
     Card(
-        shape = RoundedCornerShape(8.dp),
-        modifier = Modifier
-            .padding(2.dp)
-            .fillMaxWidth()
-            .height(100.dp)
-            .background(MaterialTheme.colorScheme.surfaceVariant)
-            .clickable {
-                if (stockLevel > 0) {
-                    onAddProduct(products)
-                } else {
-                    Toast
-                        .makeText(
-                            context,
-                            "${products.productDescription} is out of stock!",
-                            Toast.LENGTH_SHORT
-                        )
-                        .show()
-                }
-            },
-        elevation = CardDefaults.cardElevation(4.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        shape = RoundedCornerShape(10.dp),
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = when {
+                qty > 0 -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.25f)
+                isOutOfStock -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.15f)
+                else -> MaterialTheme.colorScheme.surface
+            }
+        )
     ) {
         Row(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(4.dp),
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.Start
-            ) {
-
-                Button(
-                    onClick = {
-                        if (stockLevel > 0) {
-                            onAddProduct(products)
-                        } else {
-                            Toast.makeText(
-                                context,
-                                "${products.productDescription} is out of stock!",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
-                    },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (isSelected) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.primary,
-                        contentColor = Color.White
-                    ),
-                    shape = RoundedCornerShape(8.dp),
-//                modifier = Modifier.fillMaxWidth(0.8f)
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth()
-                ) {
-                    Text(
-                        text = if (isSelected) stringResource(R.string.added) else stringResource(R.string.addToCart),
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-//                price
+            // ── Product info ─────────────────────────────────────────────
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "$${"%.2f".format(price)}",
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.primary,
-                )
-
-            }
-            // Text Content
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.Start
-            ) {
-                Text(
-                    text = "($brandName) : Size - $shoeSize",
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        shadow = Shadow(
-                            color = Color.Black.copy(alpha = 0.3f),
-                            offset = Offset(2f, 2f),
-                            blurRadius = 4f
-                        )
-                    ),
-                    color = Color.Red,
-                    modifier = Modifier.background(Color.White)
-                )
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = products.productDescription,
-                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                    textAlign = TextAlign.Center,
-                    maxLines = 2,
+                    text = "$brand – $name",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                Spacer(modifier = Modifier.height(2.dp))
-                // Stock Level
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 2.dp),
-                    contentAlignment = Alignment.Center
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "left: $stockLevel",
-                        style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
-                        color = if (stockLevel > 0) MaterialTheme.colorScheme.primary else Color.Red,
-                        modifier = Modifier.background(Color.White)
+                        text = code,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = "•",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = "${"%.2f".format(price)}",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        text = "•",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = if (isOutOfStock) "Out of stock" else "Left: $stock",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = if (isOutOfStock) MaterialTheme.colorScheme.error
+                               else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                Spacer(modifier = Modifier.height(2.dp))
+            }
+
+            Spacer(Modifier.width(8.dp))
+
+            // ── Qty controls ─────────────────────────────────────────────
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                IconButton(
+                    onClick = { if (qty > 0) onQtyChange(qty - 1) },
+                    modifier = Modifier.size(32.dp),
+                    enabled = qty > 0
+                ) {
+                    Icon(
+                        Icons.Default.Remove,
+                        contentDescription = "Decrease",
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+
+                Text(
+                    text = qty.toString(),
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.width(28.dp),
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
+
+                IconButton(
+                    onClick = { if (!isOutOfStock) onQtyChange(qty + 1) },
+                    modifier = Modifier.size(32.dp),
+                    enabled = !isOutOfStock && qty < stock
+                ) {
+                    Icon(
+                        Icons.Default.Add,
+                        contentDescription = "Increase",
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
             }
         }
     }

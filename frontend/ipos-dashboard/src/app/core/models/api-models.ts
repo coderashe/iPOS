@@ -40,6 +40,7 @@ export interface SalesByCashier {
 
 export interface StockLevel {
   productId: number;
+  productCode: string;
   productName: string;
   currentStock: number;
   averageDailySales: number;

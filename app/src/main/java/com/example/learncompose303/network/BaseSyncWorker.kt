@@ -52,37 +52,30 @@ abstract class BaseSyncWorker(
     abstract suspend fun markSynced(entity: Any)
 
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
-        Log.d(TAG, "doWork() started")
-        android.util.Log.d("backIntCheck", "$TAG — doWork() started")
         val shouldRetry = inputData.getBoolean(KEY_RETRY, true)
+        Log.d(TAG, "$TAG — doWork() started (attempt #$runAttemptCount)")
         try {
-            if (!connectivityHelper.isNetworkAvailable()) {
-                Log.w(TAG, "No network — will retry")
-                android.util.Log.d("backIntCheck", "$TAG — NO NETWORK, will retry")
+            val networkAvailable = connectivityHelper.isNetworkAvailable()
+            Log.d(TAG, "$TAG — network available: $networkAvailable")
+            if (!networkAvailable) {
+                Log.w(TAG, "$TAG — no network, retrying")
                 return@withContext Result.retry()
             }
-            Log.d(TAG, "Network available — starting batch sync")
-            android.util.Log.d("backIntCheck", "$TAG — network OK, starting batch sync")
 
-            // Ensure DeviceSession is populated before syncing
             deviceSessionInitializer?.ensureLoaded()
 
             performBatchSync(shouldRetry)
         } catch (e: java.net.UnknownHostException) {
-            Log.e(TAG, "Unknown host: ${e.message}")
-            android.util.Log.d("backIntCheck", "$TAG — UnknownHostException: ${e.message}")
+            Log.e(TAG, "$TAG — cannot reach server: ${e.message}")
             Result.retry()
         } catch (e: java.net.SocketTimeoutException) {
-            Log.e(TAG, "Timeout: ${e.message}")
-            android.util.Log.d("backIntCheck", "$TAG — SocketTimeoutException: ${e.message}")
+            Log.e(TAG, "$TAG — timeout: ${e.message}")
             Result.retry()
         } catch (e: java.io.IOException) {
-            Log.e(TAG, "IO error: ${e.message}")
-            android.util.Log.d("backIntCheck", "$TAG — IOException: ${e.message}")
+            Log.e(TAG, "$TAG — IOException: ${e.message}")
             Result.retry()
         } catch (e: Exception) {
-            Log.e(TAG, "Unexpected error: ${e.message}", e)
-            android.util.Log.d("backIntCheck", "$TAG — Exception(${e::class.simpleName}): ${e.message}")
+            Log.e(TAG, "$TAG — unexpected error: ${e.message}", e)
             if (shouldRetry) Result.retry() else Result.failure()
         }
     }
@@ -93,12 +86,9 @@ abstract class BaseSyncWorker(
         while (true) {
             val entities = fetchUnsynced(BATCH_SIZE).filter { it !in skipped }
             if (entities.isEmpty()) {
-                android.util.Log.d("backIntCheck", "$TAG — all done, total synced: $totalSynced")
+                Log.d(TAG, "$TAG — done (synced: $totalSynced)")
                 return Result.success()
             }
-
-            Log.d(TAG, "Syncing batch of ${entities.size} (total so far: $totalSynced)")
-            android.util.Log.d("backIntCheck", "$TAG — syncing ${entities.size} (total so far: $totalSynced)")
 
             for (entity in entities) {
                 try {
@@ -107,21 +97,16 @@ abstract class BaseSyncWorker(
                         markSynced(entity)
                         totalSynced++
                     } else {
-                        Log.w(TAG, "4xx for entity $entity — skipping this run")
-                        android.util.Log.d("backIntCheck", "$TAG — 4xx skipping entity")
                         skipped.add(entity)
                     }
                 } catch (e: ClientSyncException) {
-                    Log.w(TAG, "Client error for entity $entity — skipping this run: ${e.message}")
-                    android.util.Log.d("backIntCheck", "$TAG — client error: ${e.message}")
+                    Log.w(TAG, "$TAG — skipping entity (${e.message})")
                     skipped.add(entity)
                 } catch (e: java.io.IOException) {
-                    Log.e(TAG, "Network error mid-batch — retrying")
-                    android.util.Log.d("backIntCheck", "$TAG — IOException mid-batch, retrying: ${e.message}")
+                    Log.e(TAG, "$TAG — IOException mid-batch, retrying: ${e.message}")
                     return if (shouldRetry) Result.retry() else Result.failure()
                 } catch (e: ServerSyncException) {
-                    Log.e(TAG, "Server error mid-batch — retrying")
-                    android.util.Log.d("backIntCheck", "$TAG — server error mid-batch, retrying: ${e.message}")
+                    Log.e(TAG, "$TAG — server error mid-batch, retrying: ${e.message}")
                     return if (shouldRetry) Result.retry() else Result.failure()
                 }
             }

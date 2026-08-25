@@ -25,5 +25,7 @@ data class InvoiceLine(
     val currentStock: Double,
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long? = null,
-    val synced: Boolean = false
+    val synced: Boolean = false,
+    val deviceId: String? = null,
+    val storeId: String? = null
 )

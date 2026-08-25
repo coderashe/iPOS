@@ -167,6 +167,21 @@ class SetupViewModel @Inject constructor(
         runSetup(context)
     }
 
+    fun runBackfill() {
+        viewModelScope.launch {
+            if (deviceSession.deviceId.isNotBlank() && deviceSession.storeId.isNotBlank()) {
+                Log.d(TAG, "Manual backfill triggered")
+                backfillRepository.backfillDeviceAndStore(
+                    deviceId = deviceSession.deviceId,
+                    storeId = deviceSession.storeId
+                )
+                Log.d(TAG, "Manual backfill complete")
+            } else {
+                Log.w(TAG, "Manual backfill skipped — deviceId or storeId blank")
+            }
+        }
+    }
+
     /** Returns true only if setup completed AND this device has a valid storeId.
      *  If storeId is missing, clears the flag so setup re-runs on next check. */
     fun isSetupAlreadyDone(context: android.content.Context): Boolean {
@@ -175,9 +190,17 @@ class SetupViewModel @Inject constructor(
         if (!flagSet) return false
         // Double-check the session is actually populated (guards against app data clear / reinstall)
         if (deviceSession.storeId.isBlank()) {
-            // Session not loaded yet or device has no storeId — force re-run of setup
             prefs.edit().remove(KEY_SETUP_DONE).apply()
             return false
+        }
+        // Always re-run backfill in background even if setup was already done
+        viewModelScope.launch {
+            if (deviceSession.deviceId.isNotBlank() && deviceSession.storeId.isNotBlank()) {
+                backfillRepository.backfillDeviceAndStore(
+                    deviceId = deviceSession.deviceId,
+                    storeId = deviceSession.storeId
+                )
+            }
         }
         return true
     }

@@ -68,7 +68,7 @@ import com.example.learncompose303.data.entities.User
         FailedInvoiceItem::class,
         DeviceInfo::class
     ],
-    version = 11,
+    version = 12,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -249,3 +249,9 @@ val MIGRATION_10_11 = object : Migration(10, 11) {
     }
 }
 
+val MIGRATION_11_12 = object : Migration(11, 12) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `invoice_lines` ADD COLUMN deviceId TEXT")
+        db.execSQL("ALTER TABLE `invoice_lines` ADD COLUMN storeId TEXT")
+    }
+}

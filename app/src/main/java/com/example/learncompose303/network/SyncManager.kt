@@ -1,4 +1,4 @@
-﻿package com.example.learncompose303.network
+package com.example.learncompose303.network
 
 import android.util.Log
 import androidx.work.BackoffPolicy
@@ -6,6 +6,7 @@ import androidx.work.Constraints
 import androidx.work.ExistingWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import androidx.work.workDataOf
 import java.util.concurrent.TimeUnit
@@ -48,7 +49,7 @@ class SyncManager @Inject constructor(
             )
             .setConstraints(
                 Constraints.Builder()
-                    .setRequiredNetworkType(NetworkType.CONNECTED)
+                    .setRequiredNetworkType(NetworkType.NOT_REQUIRED) // ConnectivityHelper handles check inside doWork()
                     .build()
             )
             .build()
@@ -86,7 +87,7 @@ class SyncManager @Inject constructor(
             )
             .setConstraints(
                 Constraints.Builder()
-                    .setRequiredNetworkType(NetworkType.CONNECTED)
+                    .setRequiredNetworkType(NetworkType.NOT_REQUIRED) // ConnectivityHelper handles check inside doWork()
                     .build()
             )
             .build()
@@ -117,7 +118,7 @@ class SyncManager @Inject constructor(
             )
             .setConstraints(
                 Constraints.Builder()
-                    .setRequiredNetworkType(NetworkType.CONNECTED)
+                    .setRequiredNetworkType(NetworkType.NOT_REQUIRED) // ConnectivityHelper handles check inside doWork()
                     .build()
             )
             .build()
@@ -155,7 +156,7 @@ class SyncManager @Inject constructor(
             )
             .setConstraints(
                 Constraints.Builder()
-                    .setRequiredNetworkType(NetworkType.CONNECTED)
+                    .setRequiredNetworkType(NetworkType.NOT_REQUIRED) // ConnectivityHelper handles check inside doWork()
                     .build()
             )
             .build()
@@ -186,7 +187,7 @@ class SyncManager @Inject constructor(
             )
             .setConstraints(
                 Constraints.Builder()
-                    .setRequiredNetworkType(NetworkType.CONNECTED)
+                    .setRequiredNetworkType(NetworkType.NOT_REQUIRED) // ConnectivityHelper handles check inside doWork()
                     .build()
             )
             .build()
@@ -217,7 +218,7 @@ class SyncManager @Inject constructor(
             )
             .setConstraints(
                 Constraints.Builder()
-                    .setRequiredNetworkType(NetworkType.CONNECTED)
+                    .setRequiredNetworkType(NetworkType.NOT_REQUIRED) // ConnectivityHelper handles check inside doWork()
                     .build()
             )
             .build()
@@ -233,7 +234,6 @@ class SyncManager @Inject constructor(
      * Sync all data types immediately, including the full entity DAG.
      */
     fun syncAllNow() {
-        android.util.Log.d("backIntCheck", "SyncManager.syncAllNow() called — scheduling full DAG")
         scheduleFullSync()
         unsyncedInvoiceCount = 0
         unsyncedProductCount = 0
@@ -255,7 +255,7 @@ class SyncManager @Inject constructor(
         workManager.cancelUniqueWork("full_sync")
 
         val constraints = Constraints.Builder()
-            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .setRequiredNetworkType(NetworkType.NOT_REQUIRED) // ConnectivityHelper handles the check inside doWork()
             .build()
 
         fun buildRequest(clazz: Class<out androidx.work.ListenableWorker>) =
@@ -306,8 +306,6 @@ class SyncManager @Inject constructor(
             .then(layer4)
             .then(layer5)
             .enqueue()
-
-        android.util.Log.d("backIntCheck", "SyncManager.scheduleFullSync() — DAG enqueued")
     }
 
     /**

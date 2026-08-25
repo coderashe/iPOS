@@ -25,6 +25,9 @@ interface InvoiceApiService {
     @POST("/api/invoices")
     suspend fun saveInvoice(@Body invoice: InvoiceDto): Response<InvoiceDto>
 
+    @POST("/api/invoices/sync")
+    suspend fun syncInvoices(@Body invoices: List<InvoiceDto>): Response<Map<String, Int>>
+
     @GET("/api/invoices/{id}")
     suspend fun getInvoiceById(@Path("id") id: Long): Response<InvoiceDto>
 

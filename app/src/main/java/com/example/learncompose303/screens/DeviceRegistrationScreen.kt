@@ -1,6 +1,8 @@
 package com.example.learncompose303.screens
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Devices
 import androidx.compose.material.icons.filled.Info
@@ -14,19 +16,22 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.learncompose303.screens.auth.AuthViewModel
 import com.example.learncompose303.viewmodels.DeviceRegistrationViewModel
+import com.example.learncompose303.viewmodels.SetupViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DeviceRegistrationScreen(
     onRegistrationComplete: () -> Unit,
     viewModel: DeviceRegistrationViewModel = hiltViewModel(),
-    authViewModel: AuthViewModel = hiltViewModel()
+    authViewModel: AuthViewModel = hiltViewModel(),
+    setupViewModel: SetupViewModel = hiltViewModel()
 ) {
     val deviceManager = viewModel.deviceManager
     var deviceName by remember { mutableStateOf(deviceManager.getDeviceName()) }
+    var storeIdInput by remember { mutableStateOf(viewModel.deviceSession.storeId) }
     var isLoading by remember { mutableStateOf(false) }
+    var backfillDone by remember { mutableStateOf(false) }
     val deviceId = deviceManager.getDeviceId()
-    val userEmail by authViewModel.userEmail.observeAsState()
 
     Scaffold(
         topBar = {
@@ -42,11 +47,12 @@ fun DeviceRegistrationScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(24.dp),
+                .padding(24.dp)
+                .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             Icon(
                 imageVector = Icons.Default.Devices,
@@ -56,7 +62,7 @@ fun DeviceRegistrationScreen(
             )
 
             Text(
-                text = "Name Your Device",
+                text = "Device Setup",
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold
             )
@@ -67,40 +73,70 @@ fun DeviceRegistrationScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
-
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.surfaceVariant
                 )
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Info,
-                        contentDescription = "Info",
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column {
-                        Text(
-                            text = "Device ID",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Info,
+                            contentDescription = "Info",
+                            tint = MaterialTheme.colorScheme.primary
                         )
-                        Text(
-                            text = deviceId.take(16) + "...",
-                            style = MaterialTheme.typography.bodySmall,
-                            fontWeight = FontWeight.Medium
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column {
+                            Text(
+                                text = "Device ID",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = deviceId.take(16) + "...",
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Info,
+                            contentDescription = "Store",
+                            tint = MaterialTheme.colorScheme.primary
                         )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column {
+                            Text(
+                                text = "Store ID",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = storeIdInput.ifBlank { "Not set" },
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
                     }
                 }
             }
+
+            OutlinedTextField(
+                value = storeIdInput,
+                onValueChange = { storeIdInput = it.uppercase() },
+                label = { Text("Store ID") },
+                placeholder = { Text("e.g., ISTART, HANDP") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                enabled = !isLoading
+            )
 
             OutlinedTextField(
                 value = deviceName,
@@ -118,21 +154,38 @@ fun DeviceRegistrationScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
-            Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Backfill button — stamps DeviceId & StoreId on all legacy records missing them
+            OutlinedButton(
+                onClick = {
+                    backfillDone = false
+                    setupViewModel.runBackfill()
+                    backfillDone = true
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp),
+                enabled = !isLoading
+            ) {
+                Text(if (backfillDone) "✓ Records Updated" else "Backfill Device & Store IDs")
+            }
+
+            Spacer(modifier = Modifier.height(4.dp))
 
             Button(
                 onClick = {
                     isLoading = true
                     viewModel.registerDevice(
                         deviceName = deviceName,
-                        userEmail = userEmail ?: "",
+                        storeId = storeIdInput.trim(),
                         onComplete = onRegistrationComplete
                     )
                 },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
-                enabled = deviceName.isNotBlank() && !isLoading
+                enabled = deviceName.isNotBlank() && storeIdInput.isNotBlank() && !isLoading
             ) {
                 if (isLoading) {
                     CircularProgressIndicator(
@@ -140,9 +193,11 @@ fun DeviceRegistrationScreen(
                         color = MaterialTheme.colorScheme.onPrimary
                     )
                 } else {
-                    Text("Continue")
+                    Text("Update Device Name")
                 }
             }
+
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }

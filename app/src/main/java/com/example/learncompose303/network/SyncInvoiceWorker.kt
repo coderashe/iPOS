@@ -160,37 +160,42 @@ class SyncInvoiceWorker @AssistedInject constructor(
             }
 
             Log.d(TAG, "Starting batch sync of ${unsyncedInvoices.size} invoices")
-            var successCount = 0
-            var skippedCount = 0
 
-            for (invoice in unsyncedInvoices) {
-                // Skip invoices with invalid status
-                if (invoice.status.isEmpty()) {
-                    Log.w(TAG, "Skipping invoice ${invoice.invoiceId} with invalid status")
-                    skippedCount++
-                    continue
+            val validInvoices = unsyncedInvoices.filter { it.status.isNotEmpty() }
+            val skipped = unsyncedInvoices.size - validInvoices.size
+            if (skipped > 0) Log.w(TAG, "Skipping $skipped invoices with empty status")
+
+            val dtos = validInvoices.map { it.toDto(
+                deviceId = deviceManager.getDeviceId(),
+                deviceName = deviceManager.getDeviceName()
+            )}
+
+            val response = invoiceApiService.syncInvoices(dtos)
+
+            return if (response.isSuccessful) {
+                // Mark all as synced in one pass
+                val now = System.currentTimeMillis()
+                validInvoices.forEach { invoice ->
+                    invoiceDao.updateInvoice(invoice.copy(lastUpdated = now))
                 }
-
-                Log.d(TAG, "Syncing invoice: ${invoice.invoiceId}")
-                val result = syncSingleInvoice(invoice.invoiceId, false)
-                if (result is Result.Success) {
-                    successCount++
-                }
+                val synced = response.body()?.get("synced") ?: validInvoices.size
+                Log.d(TAG, "✔ Batch sync complete — synced: $synced")
+                Result.success()
+            } else {
+                val code = response.code()
+                val error = response.errorBody()?.string() ?: ""
+                Log.e(TAG, "✘ Batch sync failed — HTTP $code: $error")
+                if (code in 400..499) Result.failure()
+                else if (shouldRetry) Result.retry() else Result.failure()
             }
-
-            Log.d(
-                TAG,
-                "Batch sync completed. Success: $successCount, Failed: ${unsyncedInvoices.size - successCount - skippedCount}, Skipped: $skippedCount"
-            )
-
-            return when {
-                successCount == unsyncedInvoices.size -> Result.success()
-                successCount > 0 && !shouldRetry -> Result.success() // Partial success
-                shouldRetry -> Result.retry()
-                else -> Result.failure()
-            }
+        } catch (e: java.net.SocketTimeoutException) {
+            Log.e(TAG, "Batch sync timeout: ${e.message}")
+            return if (shouldRetry) Result.retry() else Result.failure()
+        } catch (e: java.io.IOException) {
+            Log.e(TAG, "Batch sync IO error: ${e.message}")
+            return if (shouldRetry) Result.retry() else Result.failure()
         } catch (e: Exception) {
-            Log.e(TAG, "Error in batch sync", e)
+            Log.e(TAG, "Batch sync unexpected error: ${e.message}", e)
             return if (shouldRetry) Result.retry() else Result.failure()
         }
     }

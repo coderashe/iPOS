@@ -40,7 +40,8 @@ import { StockLevel } from '../../core/models/api-models';
             <table>
               <thead>
                 <tr>
-                  <th>Product</th>
+                  <th>Product Code</th>
+                  <th>Product Name</th>
                   <th>Current Stock</th>
                   <th>Avg Daily Sales</th>
                   <th>Days Remaining</th>
@@ -48,6 +49,7 @@ import { StockLevel } from '../../core/models/api-models';
               </thead>
               <tbody>
                 <tr *ngFor="let item of stockLevels">
+                  <td>{{ item.productCode }}</td>
                   <td>{{ item.productName }}</td>
                   <td>{{ item.currentStock }}</td>
                   <td>{{ item.averageDailySales | number:'1.2-2' }}</td>

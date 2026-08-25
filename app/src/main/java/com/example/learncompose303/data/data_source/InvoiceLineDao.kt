@@ -37,6 +37,9 @@ interface InvoiceLineDao {
     @Update
     suspend fun updateInvoiceLine(invoiceLine: InvoiceLine)
 
+    @Query("UPDATE invoice_lines SET deviceId = :deviceId, storeId = :storeId WHERE deviceId = '' OR deviceId IS NULL")
+    suspend fun backfillDeviceAndStore(deviceId: String, storeId: String)
+
     @Query(
         """
     SELECT productId AS productID, 

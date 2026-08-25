@@ -27,7 +27,6 @@ class SyncDeviceWorker @AssistedInject constructor(
         val device = entity as DeviceInfo
         val response = syncApiService.syncDevices(listOf(device.toSyncDto()))
         val code = response.code()
-        android.util.Log.d("backIntCheck", "SyncDeviceWorker — API response: $code for device ${device.deviceId}")
         return when {
             response.isSuccessful -> true
             code in 400..499 -> throw ClientSyncException("4xx $code for Device ${device.deviceId}")

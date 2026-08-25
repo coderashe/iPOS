@@ -15,6 +15,7 @@ import com.example.learncompose303.data.MIGRATION_7_8
 import com.example.learncompose303.data.MIGRATION_8_9
 import com.example.learncompose303.data.MIGRATION_9_10
 import com.example.learncompose303.data.MIGRATION_10_11
+import com.example.learncompose303.data.MIGRATION_11_12
 import com.example.learncompose303.app.core.DeviceSession
 import com.example.learncompose303.data.data_source.DeviceInfoDao
 import com.example.learncompose303.data.data_source.CartItemDao
@@ -124,7 +125,8 @@ object AppModule {
                 MIGRATION_7_8,
                 MIGRATION_8_9,
                 MIGRATION_9_10,
-                MIGRATION_10_11
+                MIGRATION_10_11,
+                MIGRATION_11_12
             )
             .build()
     }
@@ -438,6 +440,7 @@ object AppModule {
     @Singleton
     fun provideBackfillRepository(
         invoiceDao: InvoiceDao,
+        invoiceLineDao: InvoiceLineDao,
         expenseDao: ExpenseDao,
         paymentDao: PaymentDao,
         cashFlowDao: CashFlowDao,
@@ -448,7 +451,7 @@ object AppModule {
         orderDao: OrderDao
     ): com.example.learncompose303.data.repositories.BackfillRepository {
         return com.example.learncompose303.data.repositories.BackfillRepository(
-            invoiceDao, expenseDao, paymentDao, cashFlowDao,
+            invoiceDao, invoiceLineDao, expenseDao, paymentDao, cashFlowDao,
             stockTakeDao, dayReportsDao, tradeReceivablesDao, discountsReceivedDao, orderDao
         )
     }
