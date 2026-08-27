@@ -48,8 +48,12 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -127,6 +131,29 @@ class InvoiceViewModel @Inject constructor(
     private val _priceList = MutableStateFlow(emptyList<PriceList>())
     val priceList = _priceList.asStateFlow()
 
+    // Quantities selected on ProductSelectionScreen — shared with CartScreen
+    private val _selectedQuantities = MutableStateFlow<Map<Long, Int>>(emptyMap())
+    val selectedQuantities: StateFlow<Map<Long, Int>> = _selectedQuantities.asStateFlow()
+
+    fun setProductQuantity(productId: Long, qty: Int) {
+        val current = _selectedQuantities.value.toMutableMap()
+        if (qty <= 0) current.remove(productId) else current[productId] = qty
+        _selectedQuantities.value = current
+    }
+
+    fun clearSelectedQuantities() {
+        _selectedQuantities.value = emptyMap()
+    }
+
+    /** Full cart reset — call after successful payment or when starting a new sale. */
+    fun clearCart() {
+        _selectedProducts.value = emptyList()
+        _selectedQuantities.value = emptyMap()
+        _productsWithPriceDetails.value = emptyList()
+        _selectedCurrency.value = null
+    }
+
+
     // Cart items (CartItem)
     private val _cartItems = MutableStateFlow(emptyList<CartItem>())
 
@@ -176,8 +203,8 @@ class InvoiceViewModel @Inject constructor(
     private val _invoiceDetailItems = MutableStateFlow<List<InvoiceItem>>(emptyList())
     val invoiceDetailItems: StateFlow<List<InvoiceItem>> = _invoiceDetailItems.asStateFlow()
 
-    private val _invoiceLines = MutableStateFlow<List<InvoiceLine>>(emptyList())
-    val invoiceLines: StateFlow<List<InvoiceLine>> get() = _invoiceLines
+    private val _invoiceLines = MutableStateFlow<List<InvoiceLine>?>(null)
+    val invoiceLines: StateFlow<List<InvoiceLine>?> get() = _invoiceLines
 
     private val _currencies = MutableStateFlow<List<Currency>>(emptyList())
     val currencies: StateFlow<List<Currency>> = _currencies
@@ -191,14 +218,34 @@ class InvoiceViewModel @Inject constructor(
     private val _failedInvoiceItems = MutableStateFlow<List<FailedInvoiceItem>>(emptyList())
     val failedInvoiceItems: StateFlow<List<FailedInvoiceItem>> = _failedInvoiceItems.asStateFlow()
 
-    // State for unsynced count
+    // State for unsynced count — combined invoices + invoice lines
     private val _unsyncedCount = MutableStateFlow(0)
     val notsyncedCount: StateFlow<Int> = _unsyncedCount.asStateFlow()
-    private var unsyncedCount = 0
 
     // Track sync status
     private val _syncStatus = MutableLiveData<String>("Idle")
     val syncStatus: LiveData<String> = _syncStatus
+
+    enum class SyncState { IDLE, SYNCING, SUCCESS, FAILED }
+
+    /**
+     * Real sync state driven by WorkManager job status for the full_sync chain.
+     * Cards observe this instead of guessing from animation timers.
+     */
+    val syncState: StateFlow<SyncState> =
+        workManager.getWorkInfosForUniqueWorkFlow("full_sync")
+            .map { infos ->
+                when {
+                    infos.any { it.state == WorkInfo.State.RUNNING || it.state == WorkInfo.State.ENQUEUED } ->
+                        SyncState.SYNCING
+                    infos.isNotEmpty() && infos.all { it.state == WorkInfo.State.SUCCEEDED } ->
+                        SyncState.SUCCESS
+                    infos.any { it.state == WorkInfo.State.FAILED } ->
+                        SyncState.FAILED
+                    else -> SyncState.IDLE
+                }
+            }
+            .stateIn(viewModelScope, kotlinx.coroutines.flow.SharingStarted.WhileSubscribed(5000), SyncState.IDLE)
 
     companion object {
         private const val TAG = "backIntCheck"
@@ -229,26 +276,27 @@ class InvoiceViewModel @Inject constructor(
         fetchCurrencies()
         fetchCurrencyTotals()
         fetchBrandProducts()
-        // Monitor unsynced count
-        monitorUnsyncedInvoiceLineCount()
+        // Monitor combined unsynced count (invoices + invoice lines)
+        monitorUnsyncedCount()
         fetchFailedInvoices()
     }
 
     private fun monitorUnsyncedCount() {
         viewModelScope.launch {
-            invoiceRepository.getUnsyncedCount().collectLatest { count ->
-                _unsyncedCount.value = count
+            kotlinx.coroutines.flow.combine(
+                invoiceRepository.getUnsyncedCount(),
+                invoiceLineRepository.getAllInvoiceLines()
+            ) { invoiceUnsynced, allLines ->
+                val lineUnsynced = allLines.count { !it.synced }
+                invoiceUnsynced + lineUnsynced
+            }.collectLatest { total ->
+                _unsyncedCount.value = total
             }
         }
     }
 
     private fun monitorUnsyncedInvoiceLineCount() {
-        viewModelScope.launch {
-            invoiceLineRepository.getAllInvoiceLines().collectLatest { invoiceLines ->
-                val unsyncedCount = invoiceLines.count { !it.synced }
-                _unsyncedCount.value = unsyncedCount
-            }
-        }
+        // Replaced by monitorUnsyncedCount() — kept to avoid breaking any external call sites
     }
 
     private fun monitorSyncStatus() {
@@ -616,8 +664,10 @@ class InvoiceViewModel @Inject constructor(
 
     // Fetch invoiceLines by invoiceId from repository
     fun fetchInvoiceLinesByInvoiceId(invoiceId: Long) = viewModelScope.launch {
+        _invoiceLines.value = null // null = loading
         val invoiceLineList = invoiceLineRepository.getInvoiceLinesByInvoiceId(invoiceId)
         _invoiceLines.value = invoiceLineList
+        android.util.Log.d("InvoiceDetail", "Loaded ${invoiceLineList.size} lines for invoice $invoiceId")
     }
 
     fun fetchAllInvoiceLines() = viewModelScope.launch {
@@ -1597,41 +1647,56 @@ class InvoiceViewModel @Inject constructor(
     }
 
     //    final submitInvoice
+    /**
+     * All cart data is passed in as plain parameters — no ViewModel StateFlow is read
+     * inside this coroutine. This eliminates the race condition where clearCart() could
+     * wipe _selectedProducts between launch() and the first suspend point.
+     *
+     * @param products       Exact list of Products the cashier selected (from CartScreen state)
+     * @param productQuantities  productId → quantity map (from CartScreen state)
+     * @param productPrices  productId → final selling price in selected currency (from CartScreen state)
+     * @param currencyCode   Currency code in use at checkout time
+     */
     fun submitInvoice(
         customerId: Long,
         amountTendered: Double,
+        products: List<Products>,
         productQuantities: Map<Long, Int>,
+        productPrices: Map<Long, Double>,
+        currencyCode: String,
         cashierEmail: String
     ) = viewModelScope.launch {
         try {
-            val currencyCode = _selectedCurrency.value?.code ?: "USD"
+            Log.d("submitInvoice", "products: ${products.size}, quantities: $productQuantities, prices: $productPrices")
+
+            if (products.isEmpty()) {
+                Log.e("submitInvoice", "No products passed — aborting.")
+                return@launch
+            }
+
             var totalAmount = 0.0
 
-            // Fetch customer details
-            val customer = customerRepository.getCustomerById(customerId)
+            // For walk-in (customerId = 0) use a default customer object; no DB lookup needed
+            val customer = if (customerId == 0L) {
+                Customer(
+                    customerId = 0,
+                    name = "Walk-in",
+                    phone = null,
+                    email = null,
+                    address = null
+                )
+            } else {
+                customerRepository.getCustomerById(customerId)
+            }
             if (customer == null) {
                 Log.e("submitInvoice", "Customer not found for customerId: $customerId")
                 return@launch
             }
 
-            val selectedProducts = _selectedProducts.value
-            if (selectedProducts.isEmpty()) {
-                Log.e("submitInvoice", "No products selected.")
-            }
-
-            val exchangeRate = _selectedCurrency.value?.rateToBase ?: 1.0
-
-            val selectedProductsWithDetails = selectedProducts.map { product ->
+            val selectedProductsWithDetails = products.map { product ->
                 val quantitySold = productQuantities[product.productId] ?: 1
-                val priceList = priceListRepository.getPriceListByProductId(product.productId)
-
-                if (priceList == null) { /* no price list — use 0.0 */ }
-
-                val basePrice = priceList?.sellingPrice ?: 0.0
-                val finalPrice = basePrice * exchangeRate
-
+                val finalPrice = productPrices[product.productId] ?: 0.0
                 totalAmount += finalPrice * quantitySold
-
                 Triple(product, finalPrice, quantitySold)
             }
 
@@ -1663,15 +1728,18 @@ class InvoiceViewModel @Inject constructor(
                 deductProductQuantities(productQuantities)
 
                 selectedProductsWithDetails.forEach { (product, finalPrice, quantitySold) ->
-                    val cartItem = CartItem(
-                        customerId = customerId,
-                        productId = product.productId,
-                        invoiceId = invoiceId,
-                        totalAmount = finalPrice * quantitySold,
-                        totalAmountTendered = amountTendered,
-                        change = change
-                    )
-                    cartItemRepository.insertCartItem(cartItem)
+                    // CartItem has a FK on customerId — skip for walk-in (id=0) to avoid constraint violation
+                    if (customerId != 0L) {
+                        val cartItem = CartItem(
+                            customerId = customerId,
+                            productId = product.productId,
+                            invoiceId = invoiceId,
+                            totalAmount = finalPrice * quantitySold,
+                            totalAmountTendered = amountTendered,
+                            change = change
+                        )
+                        cartItemRepository.insertCartItem(cartItem)
+                    }
 
                     val invoiceItem = InvoiceItem(
                         invoiceId = invoiceId,
@@ -1711,9 +1779,11 @@ class InvoiceViewModel @Inject constructor(
                         storeId = deviceSession.storeId.ifBlank { null }
                     )
                     invoiceLineRepository.insertInvoiceLine(invoiceLine)
+                    Log.d("submitInvoice", "✔ Inserted line for product ${product.productDescription} invoiceId=$invoiceId")
                 }
 
-                _selectedProducts.value = emptyList()
+                // clearCart() is called by CartScreen immediately before navigating,
+                // so there is nothing to reset here.
             } else {
                 Log.e(
                     "submitInvoice",
@@ -1843,7 +1913,6 @@ class InvoiceViewModel @Inject constructor(
 
     fun syncAllNow() {
         syncManager.syncAllNow()
-        unsyncedCount = 0
     }
 
     private fun scheduleBatchSync() {
@@ -1879,8 +1948,16 @@ class InvoiceViewModel @Inject constructor(
     }
 
     fun syncInvoiceLines() {
+        Log.d("SyncStatusCard", "syncInvoiceLines() called — scheduling batch sync")
         syncManager.scheduleInvoiceLineBatchSync()
     }
+
+    /** Reflects the real WorkManager state of the invoice-line batch sync job. */
+    val syncWorkState: StateFlow<WorkInfo.State?> =
+        workManager
+            .getWorkInfosForUniqueWorkFlow("invoice_line_batch_sync")
+            .map { infos -> infos.firstOrNull()?.state }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
 //    end syncInvoice
 
@@ -2097,20 +2174,27 @@ class InvoiceViewModel @Inject constructor(
         items: List<ValidInvoiceItem>,
         cashierEmail: String
     ) {
-        _selectedProducts.value = items.map { it.product }
+        val products = items.map { it.product }
         val productQuantities = items.associate { it.product.productId to it.quantity }
 
-        // Calculate total from price list, not from CSV amountTendered
-        val totalAmount = items.sumOf { item ->
+        // Calculate prices from price list
+        val productPrices = items.associate { item ->
             val priceList = priceListRepository.getPriceListByProductId(item.product.productId)
-            (priceList?.sellingPrice ?: 0.0) * item.quantity
+            item.product.productId to (priceList?.sellingPrice ?: 0.0)
+        }
+
+        val totalAmount = productPrices.entries.sumOf { (id, price) ->
+            price * (productQuantities[id] ?: 0)
         }
 
         submitInvoice(
-            customerId = customerId,
-            amountTendered = totalAmount, // Use calculated total as tendered
+            customerId        = customerId,
+            amountTendered    = totalAmount,
+            products          = products,
             productQuantities = productQuantities,
-            cashierEmail = cashierEmail
+            productPrices     = productPrices,
+            currencyCode      = "USD",
+            cashierEmail      = cashierEmail
         )
     }
 

@@ -61,10 +61,13 @@ interface InvoiceDao {
     )
     fun getSalesPerMonthWithCurrency(): Flow<List<MonthlySalesWithCurrency>>
 
-    @Query("SELECT * FROM invoice WHERE lastUpdated IS NULL ORDER BY invoiceDate DESC LIMIT :limit")
+    @Query("SELECT * FROM invoice WHERE isSynced = 0 ORDER BY invoiceDate DESC LIMIT :limit")
     suspend fun getUnsyncedInvoices(limit: Int): List<Invoice>
 
-    @Query("SELECT COUNT(*) FROM invoice WHERE lastUpdated IS NULL")
+    @Query("UPDATE invoice SET isSynced = 1 WHERE invoiceId IN (:ids)")
+    suspend fun markSynced(ids: List<Long>)
+
+    @Query("SELECT COUNT(*) FROM invoice WHERE isSynced = 0")
     fun getUnsyncedCount(): Flow<Int>
 
     @Query("UPDATE invoice SET deviceId = :deviceId, storeId = :storeId WHERE deviceId = '' OR deviceId IS NULL")

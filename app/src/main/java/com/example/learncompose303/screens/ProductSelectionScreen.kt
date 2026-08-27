@@ -1,7 +1,6 @@
 package com.example.learncompose303.screens
 
 import android.widget.Toast
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -43,7 +42,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -58,11 +56,9 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.learncompose303.app.AddBrandWithProductsDialog
 import com.example.learncompose303.data.entities.Customer
-import com.example.learncompose303.data.entities.Products
 import com.example.learncompose303.viewmodels.InvoiceViewModel
 import kotlinx.coroutines.launch
 
@@ -80,15 +76,15 @@ private val WALK_IN_CUSTOMER = Customer(
 fun ProductSelectionScreen(
     onProceedToCart: () -> Unit,
     navController: NavController,
-    viewModel: InvoiceViewModel = hiltViewModel(),
+    viewModel: InvoiceViewModel,
     // Keep customer param for back-compat but default to walk-in
     customer: Customer = WALK_IN_CUSTOMER
 ) {
     val withBrandProducts by viewModel.withBrandProductList.collectAsState()
     val selectedProducts by viewModel.selectedProducts.collectAsState()
+    val selectedQuantities by viewModel.selectedQuantities.collectAsState()
 
-    // qty map: productId → qty chosen on this screen
-    val productQuantities = remember { mutableStateMapOf<Long, Int>() }
+    // No local qty map — quantities live in the ViewModel
 
     var searchQuery by remember { mutableStateOf("") }
     var showAddBrandDialog by remember { mutableStateOf(false) }
@@ -97,6 +93,9 @@ fun ProductSelectionScreen(
     val context = LocalContext.current
 
     LaunchedEffect(Unit) {
+        // Always start fresh — cart was cleared by CartScreen before navigating back,
+        // or this is a new entry from Dashboard/drawer. No flag needed.
+        viewModel.clearCart()
         viewModel.fetchProducts()
         viewModel.fetchBrandProducts()
     }
@@ -110,9 +109,9 @@ fun ProductSelectionScreen(
     }
 
     // Running totals for the bottom bar
-    val totalItems = productQuantities.values.sum()
+    val totalItems = selectedQuantities.values.sum()
     val totalPrice = withBrandProducts.sumOf { pwb ->
-        val qty = productQuantities[pwb.product.productId] ?: 0
+        val qty = selectedQuantities[pwb.product.productId] ?: 0
         val price = viewModel.getPricelistById(pwb.product.productId)?.sellingPrice ?: 0.0
         price * qty
     }
@@ -121,6 +120,18 @@ fun ProductSelectionScreen(
         topBar = {
             TopAppBar(
                 title = { Text("Select Products") },
+                actions = {
+                    if (totalItems > 0) {
+                        androidx.compose.material3.TextButton(
+                            onClick = { viewModel.clearCart() }
+                        ) {
+                            Text(
+                                "New Sale",
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface
                 )
@@ -155,16 +166,8 @@ fun ProductSelectionScreen(
                         }
                         Button(
                             onClick = {
-                                // Sync qty map into viewmodel selections before navigating
-                                productQuantities.forEach { (id, qty) ->
-                                    if (qty > 0) {
-                                        val product = withBrandProducts
-                                            .find { it.product.productId == id }?.product
-                                        if (product != null && !selectedProducts.contains(product)) {
-                                            viewModel.addProductToCart(product)
-                                        }
-                                    }
-                                }
+                                // Quantities are already live in viewModel.selectedQuantities.
+                                // CartScreen collects them directly — no manual sync needed.
                                 onProceedToCart()
                             }
                         ) {
@@ -237,7 +240,7 @@ fun ProductSelectionScreen(
                         key = { it.product.productId }
                     ) { pwb ->
                         val price = viewModel.getPricelistById(pwb.product.productId)?.sellingPrice ?: 0.0
-                        val qty = productQuantities[pwb.product.productId] ?: 0
+                        val qty = selectedQuantities[pwb.product.productId] ?: 0
                         ProductSelectionRow(
                             name = pwb.product.productDescription,
                             brand = pwb.brand.brandName,
@@ -247,7 +250,7 @@ fun ProductSelectionScreen(
                             qty = qty,
                             onQtyChange = { newQty ->
                                 if (newQty <= pwb.product.productQty) {
-                                    productQuantities[pwb.product.productId] = newQty
+                                    viewModel.setProductQuantity(pwb.product.productId, newQty)
                                 } else {
                                     Toast.makeText(
                                         context,

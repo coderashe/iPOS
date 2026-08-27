@@ -43,15 +43,9 @@ class InvoiceLineRepositoryImp @Inject constructor(
     }
 
     override suspend fun insertInvoiceLine(invoiceLine: InvoiceLine) {
-        // Mark for sync (synced = false)
         val lineToInsert = invoiceLine.copy(synced = false)
-        val insertedId = invoiceLineDao.insertInvoiceLine(lineToInsert)
-        
-        // Automatically trigger sync for the new invoice line
-        if (insertedId > 0) {
-            syncManager.scheduleInvoiceLineSync(insertedId.toInt())
-            android.util.Log.d(TAG, "Auto-sync scheduled for new invoice line: $insertedId")
-        }
+        invoiceLineDao.insertInvoiceLine(lineToInsert)
+        // Batch sync picks this up — no per-line worker needed
     }
 
     override suspend fun getAllInvoiceLines(): Flow<List<InvoiceLine>> {

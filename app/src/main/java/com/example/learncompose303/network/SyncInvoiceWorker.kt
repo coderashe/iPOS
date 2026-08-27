@@ -101,18 +101,11 @@ class SyncInvoiceWorker @AssistedInject constructor(
         Log.e(TAG, "Trying to sync invoice $invoiceDto")
 
         return try {
-            // Attempt to sync with remote server
             val response = invoiceApiService.saveInvoice(invoiceDto)
             if (response.isSuccessful) {
-                // Update local invoice with server response data
-                response.body()?.let { serverDto ->
-                    // Update the local invoice with any server-provided data
-                    val updatedInvoice = invoice.copy(
-                        lastUpdated = System.currentTimeMillis()
-                    )
-                    invoiceDao.updateInvoice(updatedInvoice)
-                    Log.d(TAG, "Successfully synced invoice $invoiceId")
-                }
+                // Mark as synced unconditionally on any 2xx — don't depend on response body
+                invoiceDao.markSynced(listOf(invoice.invoiceId))
+                Log.d(TAG, "Successfully synced invoice $invoiceId")
                 Result.success()
             } else {
                 val errorCode = response.code()
@@ -173,11 +166,7 @@ class SyncInvoiceWorker @AssistedInject constructor(
             val response = invoiceApiService.syncInvoices(dtos)
 
             return if (response.isSuccessful) {
-                // Mark all as synced in one pass
-                val now = System.currentTimeMillis()
-                validInvoices.forEach { invoice ->
-                    invoiceDao.updateInvoice(invoice.copy(lastUpdated = now))
-                }
+                invoiceDao.markSynced(validInvoices.map { it.invoiceId })
                 val synced = response.body()?.get("synced") ?: validInvoices.size
                 Log.d(TAG, "✔ Batch sync complete — synced: $synced")
                 Result.success()

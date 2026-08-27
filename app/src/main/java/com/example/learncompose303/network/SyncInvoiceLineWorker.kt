@@ -118,14 +118,6 @@ class SyncInvoiceLineWorker @AssistedInject constructor(
 
             Log.d(TAG, "SyncInvoiceLineWorker — batch complete (${unsyncedInvoiceLines.size} lines)")
 
-            withContext(Dispatchers.Main) {
-                android.widget.Toast.makeText(
-                    applicationContext,
-                    "${unsyncedInvoiceLines.size} invoice lines synced successfully",
-                    android.widget.Toast.LENGTH_SHORT
-                ).show()
-            }
-
             Result.success()
         } catch (e: Exception) {
             Log.e(TAG, "SyncInvoiceLineWorker — batch error: ${e.message}", e)

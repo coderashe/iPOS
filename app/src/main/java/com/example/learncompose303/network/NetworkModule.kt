@@ -22,16 +22,16 @@ object NetworkModule {
 
         return Retrofit.Builder()
 //            .baseUrl("http://192.168.222.98:5000/") // Wi-Fi IP (old)
-            .baseUrl("http://192.168.43.217:5000/") // Wi-Fi IP (old)
-//            .baseUrl("http://192.168.223.126:5000/") // Wi-Fi IP (current)
+//            .baseUrl("http://192.168.43.217:5000/") // Wi-Fi IP (old)
+            .baseUrl("http://192.168.222.66:5000/") // Wi-Fi IP (current)
 //            .baseUrl("http://10.0.2.2:5000/") // Use 10.0.2.2 for localhost from Android emulator
             .addConverterFactory(GsonConverterFactory.create())
             .client(
                 OkHttpClient.Builder()
-                    .connectTimeout(60, TimeUnit.SECONDS)
-                    .readTimeout(60, TimeUnit.SECONDS)
-                    .writeTimeout(60, TimeUnit.SECONDS)
-                    .retryOnConnectionFailure(true)
+                    .connectTimeout(15, TimeUnit.SECONDS)  // short enough for WorkManager window
+                    .readTimeout(30, TimeUnit.SECONDS)
+                    .writeTimeout(30, TimeUnit.SECONDS)
+                    .retryOnConnectionFailure(false)        // BaseSyncWorker handles retries
                     .build()
             )
             .build()

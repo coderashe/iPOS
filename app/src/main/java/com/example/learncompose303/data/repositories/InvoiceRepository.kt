@@ -47,16 +47,14 @@ class InvoiceRepositoryImpl @Inject constructor(
 
     override suspend fun insertInvoice(invoice: Invoice): Long = withContext(Dispatchers.IO) {
         val timestampedInvoice = invoice.copy(
-            lastUpdated = null,
+            isSynced = false,
             deviceId = deviceSession.deviceId.ifBlank { invoice.deviceId ?: "" }.ifBlank { null },
             deviceName = deviceSession.deviceName.ifBlank { invoice.deviceName ?: "" }.ifBlank { null },
             storeId = deviceSession.storeId.ifBlank { invoice.storeId }
         )
 
-        // Insert into local database
         val id = invoiceDao.insertInvoice(timestampedInvoice)
 
-        // Automatically trigger sync for the new invoice
         if (id > 0) {
             syncManager.scheduleSingleInvoiceSync(id)
             Log.d(TAG, "Auto-sync scheduled for new invoice: $id")
@@ -66,13 +64,12 @@ class InvoiceRepositoryImpl @Inject constructor(
     }
 
     override suspend fun updateInvoice(invoice: Invoice): Unit = withContext(Dispatchers.IO) {
-        // Mark as needing sync by setting lastUpdated to null
-        val updatedInvoice = invoice.copy(lastUpdated = null)
-        invoiceDao.updateInvoice(updatedInvoice)
-
-        // Automatically trigger sync for the updated invoice
-        syncManager.scheduleSingleInvoiceSync(updatedInvoice.invoiceId)
-        Log.d(TAG, "Auto-sync scheduled for updated invoice: ${updatedInvoice.invoiceId}")
+        invoiceDao.updateInvoice(invoice)
+        // Only re-queue sync if not already synced
+        if (!invoice.isSynced) {
+            syncManager.scheduleSingleInvoiceSync(invoice.invoiceId)
+            Log.d(TAG, "Auto-sync scheduled for updated invoice: ${invoice.invoiceId}")
+        }
     }
 
     override suspend fun deleteInvoice(invoice: Invoice): Unit = withContext(Dispatchers.IO) {
