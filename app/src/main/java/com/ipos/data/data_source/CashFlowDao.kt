@@ -1,0 +1,41 @@
+﻿package com.ipos.data.data_source
+
+import androidx.room.Dao
+import androidx.room.Delete
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import androidx.room.Update
+import kotlinx.coroutines.flow.Flow
+import com.ipos.data.entities.CashFlow
+
+@Dao
+interface CashFlowDao {
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertCashFlow(cashFlow: CashFlow)
+
+    @Update
+    suspend fun updateCashFlow(cashFlow: CashFlow)
+
+    @Delete
+    suspend fun deleteCashFlow(cashFlow: CashFlow)
+
+    @Query("SELECT * FROM cashflow WHERE cashFlowId = :id")
+    suspend fun getCashFlowById(id: Long): CashFlow?
+
+    @Query("SELECT * FROM cashflow ORDER BY transactionDate DESC")
+    fun getAllCashFlows(): Flow<List<CashFlow>>
+
+    @Query("SELECT * FROM cashflow WHERE isSynced = 0 AND storeId != '' AND storeId IS NOT NULL LIMIT :limit")
+    suspend fun getUnsynced(limit: Int): List<CashFlow>
+
+    @Query("UPDATE cashflow SET isSynced = 1 WHERE cashFlowId IN (:ids)")
+    suspend fun markSynced(ids: List<Long>)
+
+    @Query("SELECT COUNT(*) FROM cashflow WHERE isSynced = 0")
+    fun getUnsyncedCount(): Flow<Int>
+
+    @Query("UPDATE cashflow SET deviceId = :deviceId, storeId = :storeId WHERE deviceId = '' OR deviceId IS NULL")
+    suspend fun backfillDeviceAndStore(deviceId: String, storeId: String)
+}

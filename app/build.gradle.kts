@@ -12,11 +12,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.learncompose303"
+    namespace = "com.ipos"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.example.learncompose303"
+        applicationId = "com.ipos"
         minSdk = 28
         targetSdk = 34
         versionCode = 1
