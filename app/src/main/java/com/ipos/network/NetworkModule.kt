@@ -1,6 +1,7 @@
 ﻿package com.ipos.network
 
 import com.google.firebase.firestore.FirebaseFirestore
+import com.ipos.BuildConfig
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -18,13 +19,8 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideRetrofit(): Retrofit {
-        //     "DefaultConnection_RABCHITSERVER": "Server=RABCHITSERVER;Database=iPosDb;User Id=Aximos;Password=$(db_password);Integrated Security=True;MultipleActiveResultSets=True;Trusted_Connection=True;TrustServerCertificate=True"
-
         return Retrofit.Builder()
-//            .baseUrl("http://192.168.222.98:5000/") // Wi-Fi IP (old)
-//            .baseUrl("http://192.168.43.217:5000/") // Wi-Fi IP (old)
-            .baseUrl("http://192.168.222.66:5000/") // Wi-Fi IP (current)
-//            .baseUrl("http://10.0.2.2:5000/") // Use 10.0.2.2 for localhost from Android emulator
+            .baseUrl(BuildConfig.API_BASE_URL) // Set via BuildConfig — debug/release values in build.gradle.kts
             .addConverterFactory(GsonConverterFactory.create())
             .client(
                 OkHttpClient.Builder()

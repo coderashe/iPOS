@@ -106,7 +106,12 @@ using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     context.Database.Migrate();
-    DataSeeder.SeedData(context);
+
+    // Only seed in Development — never run DataSeeder in Production
+    if (app.Environment.IsDevelopment())
+    {
+        DataSeeder.SeedData(context);
+    }
 }
 
 // ── Middleware pipeline ───────────────────────────────────────────────────────

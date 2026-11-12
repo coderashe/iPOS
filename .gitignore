@@ -19,6 +19,11 @@ backend/bin/
 backend/obj/
 backend/out/
 backend/backend/
+
+# Backend secrets — never commit real connection strings or JWT keys
+backend/appsettings.Development.json
+backend/appsettings.*.json
+!backend/appsettings.json
 frontend/*/bin/
 frontend/*/obj/
 *.user

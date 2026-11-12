@@ -28,15 +28,7 @@ android {
         }
     }
 
-    buildTypes {
-        release {
-            isMinifyEnabled = false
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
-        }
-    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -47,6 +39,21 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
+    }
+
+    buildTypes {
+        debug {
+            buildConfigField("String", "API_BASE_URL", "\"http://192.168.222.66:5000/\"")
+        }
+        release {
+            buildConfigField("String", "API_BASE_URL", "\"https://api.ipos.app/\"") // TODO: replace with production URL
+            isMinifyEnabled = false
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+        }
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.1"
