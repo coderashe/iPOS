@@ -6,6 +6,7 @@ on:
       - feature/frontend-github-pages
     paths:
       - 'frontend/ipos-dashboard/**'
+      - '.github/workflows/deploy-frontend.yml'
   workflow_dispatch: # allow manual trigger
 
 permissions:
@@ -36,13 +37,10 @@ jobs:
           cache-dependency-path: frontend/ipos-dashboard/package-lock.json
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --legacy-peer-deps
 
       - name: Build (static, base-href /iPOS/)
         run: npm run build:gh-pages
-
-      - name: Copy 404.html for SPA routing
-        run: cp dist/ipos-dashboard/browser/index.html dist/ipos-dashboard/browser/404.html
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
