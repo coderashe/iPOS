@@ -106,11 +106,6 @@ using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     context.Database.Migrate();
-// ── Database init ─────────────────────────────────────────────────────────────
-using (var scope = app.Services.CreateScope())
-{
-    var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    context.Database.Migrate();
 
     // Only seed in Development — never run DataSeeder in Production
     if (app.Environment.IsDevelopment())
@@ -118,7 +113,6 @@ using (var scope = app.Services.CreateScope())
         try { DataSeeder.SeedData(context); }
         catch (Exception ex) { Console.WriteLine($"Seeding skipped: {ex.Message}"); }
     }
-}
 }
 
 // ── Middleware pipeline ───────────────────────────────────────────────────────
