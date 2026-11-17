@@ -1,8 +1,11 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { switchMap } from 'rxjs/operators';
+import { from, of } from 'rxjs';
+import { switchMap, catchError } from 'rxjs/operators';
 import { ApiService } from '../../core/services/api.service';
 import { DashboardStateService } from '../../core/services/dashboard-state.service';
+import { FirestoreDataService } from '../../core/services/firestore-data.service';
+import { AuthService } from '../../core/services/auth.service';
 import { SummaryCardComponent } from '../../shared/components/summary-card/summary-card.component';
 import { DateRangePickerComponent } from '../../shared/components/date-range-picker/date-range-picker.component';
 import { DeviceFilterComponent } from '../../shared/components/device-filter/device-filter.component';
@@ -22,30 +25,62 @@ interface SummaryCard {
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.scss']
 })
-export class DashboardComponent implements OnInit {
+export class DashboardComponent implements OnInit, OnDestroy {
   private apiService = inject(ApiService);
   private stateService = inject(DashboardStateService);
+  private firestoreService = inject(FirestoreDataService);
+  private authService = inject(AuthService);
 
   summary: DashboardSummary | null = null;
   summaryCards: SummaryCard[] = [];
   loading = true;
   error: string | null = null;
   selectedDeviceId: string = '';
+  private unsubscribeLive?: () => void;
 
   ngOnInit(): void {
     this.loadDashboardData();
+    this.startLiveSalesSubscription();
+  }
+
+  ngOnDestroy(): void {
+    if (this.unsubscribeLive) {
+      this.unsubscribeLive();
+    }
+  }
+
+  private startLiveSalesSubscription(): void {
+    const storeId = this.authService.getStoreId() || 'ISTART';
+    this.unsubscribeLive = this.firestoreService.subscribeToLiveSales(storeId, () => {
+      // When live sales update in Firestore, refresh dashboard
+      this.loadDashboardData();
+    });
   }
 
   private loadDashboardData(): void {
-    // Subscribe to date range changes and reload dashboard
+    const storeId = this.authService.getStoreId() || 'ISTART';
+
     this.stateService.dateRange$.pipe(
       switchMap(range => {
         this.loading = true;
         this.error = null;
+
+        // 1. Try REST API
         return this.apiService.getDashboardSummary(
           range.startDate.toISOString(),
           range.endDate.toISOString(),
           this.selectedDeviceId || undefined
+        ).pipe(
+          catchError((apiErr) => {
+            console.info('REST API unreachable, pulling sales from Cloud Firestore...');
+            // 2. Seamlessly fall back to Cloud Firestore
+            return from(this.firestoreService.getDashboardSummary(storeId, range.startDate, range.endDate)).pipe(
+              catchError((fsErr) => {
+                console.error('Firestore error:', fsErr);
+                throw fsErr;
+              })
+            );
+          })
         );
       })
     ).subscribe({
@@ -55,7 +90,7 @@ export class DashboardComponent implements OnInit {
         this.loading = false;
       },
       error: (err) => {
-        this.error = 'Failed to load dashboard data. Please check if the API is running.';
+        this.error = 'Unable to load dashboard data. Please check connection.';
         this.loading = false;
         console.error('Dashboard error:', err);
       }

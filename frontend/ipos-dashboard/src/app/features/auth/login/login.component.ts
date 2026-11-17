@@ -157,8 +157,12 @@ export class LoginComponent implements OnInit {
       },
       error: (err) => {
         this.loading = false;
-        if (err?.status === 401 || err?.message?.includes('401')) {
-          this.errorMessage = 'Invalid credentials or access denied';
+        if (err?.code === 'auth/invalid-credential' || err?.code === 'auth/wrong-password' || err?.code === 'auth/user-not-found') {
+          this.errorMessage = 'Invalid email or password.';
+        } else if (err?.status === 401 || err?.message?.includes('401')) {
+          this.errorMessage = 'Invalid credentials or store ID.';
+        } else if (err?.message) {
+          this.errorMessage = err.message;
         } else {
           this.errorMessage = 'Unable to connect. Please try again.';
         }

@@ -22,7 +22,8 @@ class SyncInvoiceWorker @AssistedInject constructor(
     private val invoiceDao: InvoiceDao,
     private val invoiceApiService: InvoiceApiService,
     private val deviceManager: com.ipos.app.core.DeviceManager,
-    private val connectivityHelper: ConnectivityHelper
+    private val connectivityHelper: ConnectivityHelper,
+    private val firestore: com.google.firebase.firestore.FirebaseFirestore
 ) : CoroutineWorker(appContext, params) {
 
     // Required companion interface
@@ -100,6 +101,9 @@ class SyncInvoiceWorker @AssistedInject constructor(
         )
         Log.e(TAG, "Trying to sync invoice $invoiceDto")
 
+        // Also sync to Cloud Firestore for real-time web dashboard
+        syncInvoiceToFirestore(invoice)
+
         return try {
             val response = invoiceApiService.saveInvoice(invoiceDto)
             if (response.isSuccessful) {
@@ -163,6 +167,23 @@ class SyncInvoiceWorker @AssistedInject constructor(
                 deviceName = deviceManager.getDeviceName()
             )}
 
+            // Batch sync to Cloud Firestore for real-time web dashboard
+            try {
+                val batch = firestore.batch()
+                validInvoices.forEach { inv ->
+                    val storeId = if (inv.storeId.isNotEmpty()) inv.storeId else "ISTART"
+                    val docRef = firestore.collection("stores").document(storeId)
+                        .collection("invoices").document(inv.invoiceId.toString())
+                    val map = com.ipos.data.entities.mapInvoiceToFirestore(inv).toMutableMap()
+                    map["storeId"] = storeId
+                    batch.set(docRef, map)
+                }
+                batch.commit()
+                Log.d(TAG, "Batch synced ${validInvoices.size} invoices to Firestore")
+            } catch (e: Exception) {
+                Log.w(TAG, "Batch Firestore sync skipped or failed: ${e.message}")
+            }
+
             val response = invoiceApiService.syncInvoices(dtos)
 
             return if (response.isSuccessful) {
@@ -189,4 +210,17 @@ class SyncInvoiceWorker @AssistedInject constructor(
         }
     }
 
+    private fun syncInvoiceToFirestore(invoice: com.ipos.data.entities.Invoice) {
+        try {
+            val storeId = if (invoice.storeId.isNotEmpty()) invoice.storeId else "ISTART"
+            val map = com.ipos.data.entities.mapInvoiceToFirestore(invoice).toMutableMap()
+            map["storeId"] = storeId
+            firestore.collection("stores").document(storeId)
+                .collection("invoices").document(invoice.invoiceId.toString())
+                .set(map)
+            Log.d(TAG, "Synced invoice ${invoice.invoiceId} to Firestore (stores/$storeId/invoices)")
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to sync invoice to Firestore: ${e.message}")
+        }
+    }
 }
