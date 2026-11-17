@@ -3,6 +3,7 @@ name: Deploy Angular Dashboard to GitHub Pages
 on:
   push:
     branches:
+      - main
       - feature/frontend-github-pages
     paths:
       - 'frontend/ipos-dashboard/**'
