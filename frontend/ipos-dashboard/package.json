@@ -5,9 +5,9 @@
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
+    "build:gh-pages": "ng build --base-href /iPOS/",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test",
-    "serve:ssr:ipos-dashboard": "node dist/ipos-dashboard/server/server.mjs"
+    "test": "ng test"
   },
   "private": true,
   "dependencies": {
