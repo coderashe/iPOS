@@ -78,10 +78,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
             ).pipe(
               catchError((apiErr) => {
                 console.info('REST API unreachable, pulling sales from Cloud Firestore...');
-                return from(this.firestoreService.getDashboardSummary(storeId, range.startDate, range.endDate));
+                return from(this.firestoreService.getDashboardSummary(storeId, range.startDate, range.endDate, this.selectedDeviceId));
               })
             )
-          : from(this.firestoreService.getDashboardSummary(storeId, range.startDate, range.endDate));
+          : from(this.firestoreService.getDashboardSummary(storeId, range.startDate, range.endDate, this.selectedDeviceId));
 
         return source$;
       })

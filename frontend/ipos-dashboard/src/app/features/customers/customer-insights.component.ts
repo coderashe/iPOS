@@ -2,6 +2,8 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { switchMap } from 'rxjs/operators';
 import { ApiService } from '../../core/services/api.service';
+import { FirestoreDataService } from '../../core/services/firestore-data.service';
+import { AuthService } from '../../core/services/auth.service';
 import { DashboardStateService } from '../../core/services/dashboard-state.service';
 import { DateRangePickerComponent } from '../../shared/components/date-range-picker/date-range-picker.component';
 import { SummaryCardComponent } from '../../shared/components/summary-card/summary-card.component';
@@ -191,6 +193,8 @@ import { CustomerInsights } from '../../core/models/api-models';
 })
 export class CustomerInsightsComponent implements OnInit {
   private apiService = inject(ApiService);
+  private firestoreService = inject(FirestoreDataService);
+  private authService = inject(AuthService);
   private stateService = inject(DashboardStateService);
 
   insights: CustomerInsights | null = null;
@@ -198,6 +202,8 @@ export class CustomerInsightsComponent implements OnInit {
   error: string | null = null;
 
   ngOnInit(): void {
+    const storeId = this.authService.getStoreId() || 'ISTART';
+
     this.stateService.dateRange$.pipe(
       switchMap(range => {
         this.loading = true;
@@ -209,14 +215,28 @@ export class CustomerInsightsComponent implements OnInit {
       })
     ).subscribe({
       next: (data) => {
-        this.insights = data;
-        this.loading = false;
+        if (data && data.totalCustomers > 0) {
+          this.insights = data;
+          this.loading = false;
+        } else {
+          this.loadFromFirestore(storeId);
+        }
       },
-      error: (err) => {
-        this.error = 'Failed to load customer data. Please check if the API is running.';
-        this.loading = false;
-        console.error('Customer insights error:', err);
+      error: () => {
+        this.loadFromFirestore(storeId);
       }
     });
+  }
+
+  private async loadFromFirestore(storeId: string): Promise<void> {
+    try {
+      const data = await this.firestoreService.getCustomerInsights(storeId);
+      this.insights = data;
+      this.loading = false;
+    } catch (e) {
+      console.warn('Customer insights error:', e);
+      this.error = 'Failed to load customer data.';
+      this.loading = false;
+    }
   }
 }

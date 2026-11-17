@@ -1,6 +1,8 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ApiService } from '../../core/services/api.service';
+import { FirestoreDataService } from '../../core/services/firestore-data.service';
+import { AuthService } from '../../core/services/auth.service';
 import { StockLevel } from '../../core/models/api-models';
 
 @Component({
@@ -211,6 +213,8 @@ import { StockLevel } from '../../core/models/api-models';
 })
 export class InventoryReportsComponent implements OnInit {
   private apiService = inject(ApiService);
+  private firestoreService = inject(FirestoreDataService);
+  private authService = inject(AuthService);
 
   stockLevels: StockLevel[] = [];
   lowStockItems: StockLevel[] = [];
@@ -224,18 +228,34 @@ export class InventoryReportsComponent implements OnInit {
   private loadInventoryData(): void {
     this.loading = true;
     this.error = null;
+    const storeId = this.authService.getStoreId() || 'ISTART';
 
     this.apiService.getLowStock(7).subscribe({
       next: (data) => {
-        this.lowStockItems = data;
-        this.loadAllStockLevels();
+        if (data && data.length > 0) {
+          this.lowStockItems = data;
+          this.loadAllStockLevels();
+        } else {
+          this.loadFromFirestore(storeId);
+        }
       },
-      error: (err) => {
-        this.error = 'Failed to load inventory data. Please check if the API is running.';
-        this.loading = false;
-        console.error('Inventory error:', err);
+      error: () => {
+        this.loadFromFirestore(storeId);
       }
     });
+  }
+
+  private async loadFromFirestore(storeId: string): Promise<void> {
+    try {
+      const products = await this.firestoreService.getProducts(storeId);
+      this.stockLevels = products;
+      this.lowStockItems = products.filter(p => p.currentStock <= 5);
+      this.loading = false;
+    } catch (e) {
+      console.warn('Could not load inventory from Firestore:', e);
+      this.error = 'Failed to load inventory data.';
+      this.loading = false;
+    }
   }
 
   private loadAllStockLevels(): void {

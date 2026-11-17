@@ -7,7 +7,7 @@ import {
   Timestamp
 } from 'firebase/firestore';
 import { FirebaseService } from './firebase.service';
-import { DashboardSummary, TopProduct } from '../models/api-models';
+import { DashboardSummary, TopProduct, StockLevel, CustomerInsights } from '../models/api-models';
 
 export interface FirestoreInvoice {
   invoiceId?: number | string;
@@ -17,6 +17,8 @@ export interface FirestoreInvoice {
   currencyCode?: string;
   status?: string;
   storeId?: string;
+  deviceId?: string;
+  deviceName?: string;
   items?: Array<{
     productId?: number;
     productName?: string;
@@ -26,15 +28,39 @@ export interface FirestoreInvoice {
   }>;
 }
 
+export interface FirestoreDevice {
+  deviceId: string;
+  deviceName: string;
+  storeId?: string;
+  lastSeen?: number | string;
+}
+
+export interface FirestoreProduct {
+  productId: number;
+  productCode: string;
+  productName: string;
+  currentStock: number;
+  sellingPrice: number;
+  unitCost: number;
+  markupPercentage?: number;
+  storeId?: string;
+  lastUpdated?: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class FirestoreDataService {
   private fb = inject(FirebaseService);
 
   /**
-   * Fetch and calculate dashboard summary from Firestore for a given store and date range
+   * Fetch and calculate dashboard summary from Firestore for a given store, date range, and device
    */
-  async getDashboardSummary(storeId: string, startDate?: Date, endDate?: Date): Promise<DashboardSummary> {
-    const invoices = await this.getStoreInvoices(storeId, startDate, endDate);
+  async getDashboardSummary(storeId: string, startDate?: Date, endDate?: Date, deviceId?: string): Promise<DashboardSummary> {
+    const rawInvoices = await this.getStoreInvoices(storeId, startDate, endDate);
+    
+    // Filter by device if selected
+    const invoices = (deviceId && deviceId.trim() !== '')
+      ? rawInvoices.filter(inv => inv.deviceId === deviceId || (inv as any).deviceName === deviceId)
+      : rawInvoices;
 
     let totalRevenue = 0;
     let transactionCount = invoices.length;
@@ -74,13 +100,22 @@ export class FirestoreDataService {
 
     const avgValue = transactionCount > 0 ? totalRevenue / transactionCount : 0;
 
+    // Get live low stock count from Firestore products
+    let lowStockCount = 0;
+    try {
+      const products = await this.getProducts(storeId);
+      lowStockCount = products.filter(p => p.currentStock <= 5).length;
+    } catch {
+      // ignore
+    }
+
     return {
       totalSales: Math.round(totalRevenue * 100) / 100,
       totalRevenue: Math.round(totalRevenue * 100) / 100,
       transactionCount: transactionCount,
       averageTransactionValue: Math.round(avgValue * 100) / 100,
       topProducts: topProducts,
-      lowStockCount: 0,
+      lowStockCount: lowStockCount,
       activeCustomersCount: transactionCount,
       lastSyncTime: new Date().toISOString()
     };
@@ -93,7 +128,6 @@ export class FirestoreDataService {
     const resolvedStore = (storeId || 'ISTART').trim();
     const colRef = collection(this.fb.firestore, 'stores', resolvedStore, 'invoices');
 
-    // Subscribe without orderBy to prevent any index requirement failures
     return onSnapshot(colRef, (snapshot) => {
       const list: FirestoreInvoice[] = [];
       snapshot.forEach(doc => {
@@ -103,6 +137,107 @@ export class FirestoreDataService {
     }, (error) => {
       console.warn('Firestore real-time subscription notice:', error);
     });
+  }
+
+  /**
+   * Get registered devices for store
+   */
+  async getDevices(storeId: string): Promise<Array<{ deviceId: string; deviceName: string }>> {
+    const resolvedStore = (storeId || 'ISTART').trim();
+    const deviceMap = new Map<string, string>();
+
+    try {
+      const colRef = collection(this.fb.firestore, 'stores', resolvedStore, 'devices');
+      const snap = await getDocs(colRef);
+      snap.forEach(doc => {
+        const data = doc.data() as FirestoreDevice;
+        if (data.deviceId) {
+          deviceMap.set(data.deviceId, data.deviceName || data.deviceId);
+        }
+      });
+    } catch (e) {
+      console.warn('Could not read devices collection:', e);
+    }
+
+    // Also extract devices from synced invoices if collection is empty
+    try {
+      const invoices = await this.getStoreInvoices(resolvedStore);
+      for (const inv of invoices) {
+        if (inv.deviceId && !deviceMap.has(inv.deviceId)) {
+          deviceMap.set(inv.deviceId, inv.deviceName || inv.deviceId);
+        }
+      }
+    } catch {}
+
+    return Array.from(deviceMap.entries()).map(([deviceId, deviceName]) => ({
+      deviceId,
+      deviceName
+    }));
+  }
+
+  /**
+   * Get products/inventory stock levels from Firestore
+   */
+  async getProducts(storeId: string): Promise<StockLevel[]> {
+    const resolvedStore = (storeId || 'ISTART').trim();
+    try {
+      const colRef = collection(this.fb.firestore, 'stores', resolvedStore, 'products');
+      const snap = await getDocs(colRef);
+      const list: StockLevel[] = [];
+
+      snap.forEach(doc => {
+        const data = doc.data() as FirestoreProduct;
+        list.push({
+          productId: data.productId || Number(doc.id) || 0,
+          productCode: data.productCode || `P-${doc.id}`,
+          productName: data.productName || 'Unnamed Product',
+          currentStock: Number(data.currentStock) || 0,
+          averageDailySales: 0,
+          daysRemaining: data.currentStock <= 5 ? Math.max(1, Math.round(data.currentStock / 2)) : 30
+        });
+      });
+
+      return list;
+    } catch (e) {
+      console.warn('Could not read products from Firestore:', e);
+      return [];
+    }
+  }
+
+  /**
+   * Get customer insights from Firestore
+   */
+  async getCustomerInsights(storeId: string): Promise<CustomerInsights> {
+    const resolvedStore = (storeId || 'ISTART').trim();
+    try {
+      const colRef = collection(this.fb.firestore, 'stores', resolvedStore, 'customers');
+      const snap = await getDocs(colRef);
+      const customers: any[] = [];
+      snap.forEach(doc => customers.push(doc.data()));
+
+      const totalCust = customers.length;
+      return {
+        totalCustomers: totalCust,
+        newCustomers: totalCust,
+        topCustomers: customers.slice(0, 10).map(c => ({
+          customerId: c.customerId || 0,
+          customerName: c.name || 'Walk-in Customer',
+          customerPhone: c.phone || '',
+          totalSpent: 0,
+          purchaseCount: 1
+        })),
+        averageCustomerValue: 0,
+        totalReceivables: 0
+      };
+    } catch {
+      return {
+        totalCustomers: 0,
+        newCustomers: 0,
+        topCustomers: [],
+        averageCustomerValue: 0,
+        totalReceivables: 0
+      };
+    }
   }
 
   private async getStoreInvoices(storeId: string, startDate?: Date, endDate?: Date): Promise<FirestoreInvoice[]> {

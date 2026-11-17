@@ -2,6 +2,8 @@ import { Component, OnInit, Output, EventEmitter, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../../core/services/api.service';
+import { FirestoreDataService } from '../../../core/services/firestore-data.service';
+import { AuthService } from '../../../core/services/auth.service';
 
 export interface DeviceOption {
   deviceId: string;
@@ -19,7 +21,7 @@ export interface DeviceOption {
         Filter by Device/Store:
       </label>
       <select 
-        id="device-select"
+        id="device-select" 
         [(ngModel)]="selectedDeviceId" 
         (ngModelChange)="onDeviceChange()"
         class="device-select"
@@ -103,6 +105,8 @@ export interface DeviceOption {
 })
 export class DeviceFilterComponent implements OnInit {
   private apiService = inject(ApiService);
+  private firestoreService = inject(FirestoreDataService);
+  private authService = inject(AuthService);
 
   devices: DeviceOption[] = [];
   selectedDeviceId: string = '';
@@ -114,16 +118,29 @@ export class DeviceFilterComponent implements OnInit {
   }
 
   private loadDevices(): void {
+    const storeId = this.authService.getStoreId() || 'ISTART';
     this.apiService.getDevices().subscribe({
       next: (devices) => {
-        this.devices = devices;
+        if (devices && devices.length > 0) {
+          this.devices = devices;
+        } else {
+          this.loadFromFirestore(storeId);
+        }
       },
-      error: (err) => {
-        console.error('Failed to load devices:', err);
-        // Fallback to mock data if API fails
-        this.devices = [];
+      error: () => {
+        this.loadFromFirestore(storeId);
       }
     });
+  }
+
+  private async loadFromFirestore(storeId: string): Promise<void> {
+    try {
+      const fsDevices = await this.firestoreService.getDevices(storeId);
+      this.devices = fsDevices;
+    } catch (e) {
+      console.warn('Could not load devices from Firestore:', e);
+      this.devices = [];
+    }
   }
 
   onDeviceChange(): void {
