@@ -1,6 +1,8 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using iPosApi.Dtos;
+using iPosApi.Extensions;
 using iPosApi.Models.Data;
 using iPosApi.Services;
 
@@ -12,12 +14,31 @@ public class CashFlowsController : ControllerBase
 {
     private readonly ISyncService _sync;
     private readonly AppDbContext _db;
-    public CashFlowsController(ISyncService sync, AppDbContext db) { _sync = sync; _db = db; }
+    private readonly IStoreDeviceService _storeDeviceService;
+
+    public CashFlowsController(ISyncService sync, AppDbContext db, IStoreDeviceService storeDeviceService)
+    {
+        _sync = sync; _db = db; _storeDeviceService = storeDeviceService;
+    }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll() => Ok(await _db.CashFlows.AsNoTracking().ToListAsync());
+    [Authorize]
+    public async Task<IActionResult> GetAll()
+    {
+        var storeId = User.GetStoreId();
+        var query = _db.CashFlows.AsNoTracking();
+
+        if (!string.IsNullOrEmpty(storeId))
+            query = query.Where(c => c.StoreId == storeId);
+
+        return Ok(await query.ToListAsync());
+    }
 
     [HttpPost("sync")]
-    public async Task<IActionResult> Sync([FromBody] List<CashFlowDto> items) =>
-        Ok(new { synced = await _sync.SyncCashFlowsAsync(items) });
+    public async Task<IActionResult> Sync([FromBody] List<CashFlowDto> items)
+    {
+        if (items.Any(i => string.IsNullOrEmpty(i.StoreId)))
+            return BadRequest("All items must include a StoreId.");
+        return Ok(new { synced = await _sync.SyncCashFlowsAsync(items) });
+    }
 }

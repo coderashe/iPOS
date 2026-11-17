@@ -26,6 +26,7 @@ public class SalesByCashierDto
 public class StockLevelDto
 {
     public long ProductId { get; set; }
+    public string ProductCode { get; set; } = string.Empty;
     public string ProductName { get; set; } = string.Empty;
     public double CurrentStock { get; set; }
     public double AverageDailySales { get; set; }

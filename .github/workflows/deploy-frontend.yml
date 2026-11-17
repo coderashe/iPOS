@@ -1,18 +1,33 @@
-name: Deploy Frontend
+name: Deploy Angular Dashboard to GitHub Pages
 
 on:
   push:
     branches:
       - main
+      - feature/frontend-github-pages
     paths:
-      - 'frontend/**'
+      - 'frontend/ipos-dashboard/**'
+      - '.github/workflows/deploy-frontend.yml'
+  workflow_dispatch: # allow manual trigger
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
 
 jobs:
-  build-and-deploy-frontend:
-    runs-on: self-hosted
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend/ipos-dashboard
 
     steps:
-      - name: Checkout Repository
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup Node.js
@@ -20,34 +35,25 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install Angular dependencies
-        shell: cmd
-        working-directory: frontend/ipos-dashboard
+      - name: Install dependencies
         run: npm install --legacy-peer-deps
 
-      - name: Build Angular app
-        shell: cmd
-        working-directory: frontend/ipos-dashboard
-        run: npm run build -- --configuration production
+      - name: Build (static, base-href /iPOS/)
+        run: npm run build:gh-pages
 
-      - name: Deploy Frontend to IIS
-        shell: powershell -ExecutionPolicy Bypass -Command "{0}"
-        run: |
-          $appcmd = "$env:SystemRoot\system32\inetsrv\appcmd.exe"
-          $dest = "C:\inetpub\wwwroot\ipos-dashboard"
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: frontend/ipos-dashboard/dist/ipos-dashboard/browser
 
-          # Stop app pool to release file locks
-          & $appcmd stop apppool /apppool.name:"ipos-dashboard" | Out-Null
-          Start-Sleep -Seconds 5
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
 
-          # Clear contents without deleting the folder (avoids permission issues on folder itself)
-          if (Test-Path $dest) {
-            Remove-Item "$dest\*" -Recurse -Force
-          }
-
-          # Copy new files
-          robocopy ".\frontend\ipos-dashboard\dist\ipos-dashboard\browser" $dest /E /IS /IT /R:2 /W:3
-          if ($LASTEXITCODE -le 7) { $LASTEXITCODE = 0 }
-
-          # Recycle app pool
-          & $appcmd start apppool /apppool.name:"ipos-dashboard" | Out-Null
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -23,4 +23,6 @@ public class InvoiceLine
     public double CurrentStock { get; set; }
     public long CreatedAt { get; set; } = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
     public long? UpdatedAt { get; set; }
+    public string? DeviceId { get; set; }
+    public string? StoreId { get; set; }
 }

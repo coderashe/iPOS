@@ -43,12 +43,43 @@ public class InvoiceService : IInvoiceService
             existing.InvoiceDate = invoice.InvoiceDate; existing.DueDate = invoice.DueDate;
             existing.TheStatus = invoice.TheStatus; existing.CurrencyCode = invoice.CurrencyCode;
             existing.IsArchived = invoice.IsArchived; existing.DeviceId = invoice.DeviceId;
-            existing.DeviceName = invoice.DeviceName;
+            existing.DeviceName = invoice.DeviceName; existing.StoreId = invoice.StoreId;
             existing.LastUpdated = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             _logger.LogInformation("Updated invoice {InvoiceId}", invoice.InvoiceId);
         }
         await _db.SaveChangesAsync();
         return existing ?? invoice;
+    }
+
+    /// <summary>Upsert a batch of invoices in a single SaveChanges call — much faster than one-by-one.</summary>
+    public async Task UpsertBatchAsync(List<Invoice> invoices)
+    {
+        if (invoices.Count == 0) return;
+
+        var ids = invoices.Select(i => i.InvoiceId).ToList();
+        var existingMap = await _db.Invoices
+            .Where(i => ids.Contains(i.InvoiceId))
+            .ToDictionaryAsync(i => i.InvoiceId);
+
+        foreach (var invoice in invoices)
+        {
+            if (existingMap.TryGetValue(invoice.InvoiceId, out var existing))
+            {
+                existing.CustomerId = invoice.CustomerId; existing.TotalAmount = invoice.TotalAmount;
+                existing.InvoiceDate = invoice.InvoiceDate; existing.DueDate = invoice.DueDate;
+                existing.TheStatus = invoice.TheStatus; existing.CurrencyCode = invoice.CurrencyCode;
+                existing.IsArchived = invoice.IsArchived; existing.DeviceId = invoice.DeviceId;
+                existing.DeviceName = invoice.DeviceName; existing.StoreId = invoice.StoreId;
+                existing.LastUpdated = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            }
+            else
+            {
+                _db.Invoices.Add(invoice);
+            }
+        }
+
+        await _db.SaveChangesAsync(); // Single round trip for the whole batch
+        _logger.LogInformation("Batch upserted {Count} invoices", invoices.Count);
     }
 
     public async Task<bool> DeleteAsync(long id)

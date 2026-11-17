@@ -9,6 +9,43 @@
       "client_info": {
         "mobilesdk_app_id": "1:119931028929:android:06799b4a2106b1998d9b40",
         "android_client_info": {
+          "package_name": "com.ipos"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "119931028929-a9p2dos0uelf9pf640mf2i9bsepk8noa.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.ipos",
+            "certificate_hash": "874f2f9f8f934e1d4ecbc5bde8110304a40fde3b"
+          }
+        },
+        {
+          "client_id": "119931028929-dq8jjo1i8i06hfsuq55vob5jqbg95hjc.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAq5AgnbH2-8AnMuVxTd_QSiEFnOXQlZXA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "119931028929-dq8jjo1i8i06hfsuq55vob5jqbg95hjc.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:119931028929:android:06799b4a2106b1998d9b40",
+        "android_client_info": {
           "package_name": "com.example.learncompose303"
         }
       },

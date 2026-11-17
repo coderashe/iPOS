@@ -24,4 +24,5 @@ public class Product
     public long? LastUpdated { get; set; }
     public string? DeviceId { get; set; }
     public string? DeviceName { get; set; }
+    public string? StoreId { get; set; }
 }

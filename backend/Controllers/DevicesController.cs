@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using iPosApi.Dtos;
 using iPosApi.Models;
 using iPosApi.Services;
 
@@ -22,10 +23,18 @@ public class DevicesController : ControllerBase
         return device is null ? NotFound() : Ok(device);
     }
 
-    /// <summary>Batch sync devices from Android. Same upsert logic, returns count synced.</summary>
+    /// <summary>Batch sync devices from Android. Accepts DeviceSyncDto list.</summary>
     [HttpPost("sync")]
-    public async Task<IActionResult> Sync([FromBody] List<Device> devices)
+    public async Task<IActionResult> Sync([FromBody] List<DeviceSyncDto> dtos)
     {
+        var devices = dtos.Select(d => new Device
+        {
+            DeviceId = d.DeviceId,
+            DeviceName = d.DeviceName,
+            StoreId = d.StoreId,
+            LastSeen = d.LastSeen
+        }).ToList();
+
         var count = await _service.SyncAsync(devices);
         return Ok(new { synced = count });
     }

@@ -11,4 +11,6 @@ public class CashFlow
     public bool CashOutflow { get; set; }
     public long TransactionDate { get; set; }
     public string? Description { get; set; }
+    public string? DeviceId { get; set; }
+    public string? StoreId { get; set; }
 }

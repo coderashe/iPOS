@@ -1,3 +1,6 @@
+# Local dev notes — never push
+DEVNOTES.md
+
 *.iml
 .gradle
 /local.properties
@@ -17,6 +20,13 @@ local.properties
 # .NET build artifacts
 backend/bin/
 backend/obj/
+backend/out/
+backend/backend/
+
+# Backend secrets — never commit real connection strings or JWT keys
+backend/appsettings.Development.json
+backend/appsettings.*.json
+!backend/appsettings.json
 frontend/*/bin/
 frontend/*/obj/
 *.user

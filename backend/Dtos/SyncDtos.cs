@@ -19,6 +19,8 @@ public class PaymentDto
     public long PaymentDate { get; set; }
     public double Amount { get; set; }
     public string Method { get; set; } = string.Empty;
+    public string? DeviceId { get; set; }
+    public string? StoreId { get; set; }
 }
 
 public class CartItemDto
@@ -34,6 +36,8 @@ public class CartItemDto
     public double? DiscountAmount { get; set; }
     public long CreatedAt { get; set; }
     public long? UpdatedAt { get; set; }
+    public string? DeviceId { get; set; }
+    public string? StoreId { get; set; }
 }
 
 public class InvoiceItemDto
@@ -65,6 +69,8 @@ public class ExpenseDto
     public double Amount { get; set; }
     public long ExpenseDate { get; set; }
     public string Category { get; set; } = string.Empty;
+    public string? DeviceId { get; set; }
+    public string? StoreId { get; set; }
 }
 
 public class DayReportDto
@@ -77,6 +83,8 @@ public class DayReportDto
     public long ReportDate { get; set; }
     public long StartTime { get; set; }
     public long EndTime { get; set; }
+    public string? DeviceId { get; set; }
+    public string? StoreId { get; set; }
 }
 
 public class ProductDayReportDto
@@ -108,6 +116,8 @@ public class CashFlowDto
     public bool CashOutflow { get; set; }
     public long TransactionDate { get; set; }
     public string? Description { get; set; }
+    public string? DeviceId { get; set; }
+    public string? StoreId { get; set; }
 }
 
 public class TradeReceivableDto
@@ -120,6 +130,8 @@ public class TradeReceivableDto
     public long DueDate { get; set; }
     public string PaymentStatus { get; set; } = string.Empty;
     public long DateCreated { get; set; }
+    public string? DeviceId { get; set; }
+    public string? StoreId { get; set; }
 }
 
 public class DiscountReceivedDto
@@ -128,6 +140,8 @@ public class DiscountReceivedDto
     public long OrderId { get; set; }
     public double DiscountAmount { get; set; }
     public long DateReceived { get; set; }
+    public string? DeviceId { get; set; }
+    public string? StoreId { get; set; }
 }
 
 public class ShoeBrandDto
@@ -154,6 +168,8 @@ public class StockTakeDto
     public string? VarianceReason { get; set; }
     public long DateRecorded { get; set; }
     public string RecordedBy { get; set; } = string.Empty;
+    public string? DeviceId { get; set; }
+    public string? StoreId { get; set; }
 }
 
 public class FailedInvoiceItemDto
@@ -169,4 +185,26 @@ public class FailedInvoiceItemDto
     public string FailureReason { get; set; } = string.Empty;
     public long Timestamp { get; set; }
     public string? SuggestedMatches { get; set; }
+}
+
+/// <summary>DTO for device registration sync from Android.</summary>
+public class DeviceSyncDto
+{
+    public string DeviceId { get; set; } = string.Empty;
+    public string DeviceName { get; set; } = string.Empty;
+    public string StoreId { get; set; } = string.Empty;
+    public long LastSeen { get; set; }
+}
+
+/// <summary>DTO for user sync from Android.</summary>
+public class UserSyncDto
+{
+    public long UserId { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Contact { get; set; } = string.Empty;
+    public string Role { get; set; } = string.Empty;
+    public string Password { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string? StoreId { get; set; }
+    public string? Address { get; set; }
 }

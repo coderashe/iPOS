@@ -12,11 +12,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.learncompose303"
+    namespace = "com.ipos"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.example.learncompose303"
+        applicationId = "com.ipos"
         minSdk = 28
         targetSdk = 34
         versionCode = 1
@@ -28,25 +28,32 @@ android {
         }
     }
 
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+        isCoreLibraryDesugaringEnabled = true
+    }
+    kotlinOptions {
+        jvmTarget = "17"
+    }
+    buildFeatures {
+        compose = true
+        buildConfig = true
+    }
+
     buildTypes {
+        debug {
+            buildConfigField("String", "API_BASE_URL", "\"http://192.168.222.66:5000/\"")
+        }
         release {
+            buildConfigField("String", "API_BASE_URL", "\"https://api.ipos.app/\"") // TODO: replace with production URL
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
         }
-    }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
-        isCoreLibraryDesugaringEnabled = true
-    }
-    kotlinOptions {
-        jvmTarget = "1.8"
-    }
-    buildFeatures {
-        compose = true
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.1"

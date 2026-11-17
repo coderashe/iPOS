@@ -10,4 +10,6 @@ public class Payment
     public long PaymentDate { get; set; }
     public double Amount { get; set; }
     public string Method { get; set; } = string.Empty;
+    public string? DeviceId { get; set; }
+    public string? StoreId { get; set; }
 }

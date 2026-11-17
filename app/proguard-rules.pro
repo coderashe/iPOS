@@ -19,3 +19,16 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# ── Strip all Android Log calls from release builds ──────────────────────────
+# Log.v/d/i/w/e calls are removed entirely by R8 — zero runtime cost in release.
+# Errors/crashes still surface through Firebase Crashlytics / system logs.
+-assumenosideeffects class android.util.Log {
+    public static int v(...);
+    public static int d(...);
+    public static int i(...);
+    public static int w(...);
+    public static int e(...);
+    public static int wtf(...);
+    public static boolean isLoggable(...);
+}

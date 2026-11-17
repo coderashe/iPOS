@@ -17,6 +17,74 @@ public class ProductsController : ControllerBase
         _logger = logger;
     }
 
+    [HttpPost("batch")]
+    public IActionResult CreateBatch([FromBody] List<ProductDto> productDtos)
+    {
+        if (productDtos == null || productDtos.Count == 0)
+            return BadRequest("No products provided.");
+
+        int synced = 0;
+        foreach (var productDto in productDtos)
+        {
+            if (productDto.SellingPrice <= 0) continue;
+
+            var existing = _context.Products.Find(productDto.ProductId);
+            if (existing != null)
+            {
+                existing.Name = productDto.ProductDescription;
+                existing.ProductCode = productDto.ProductCode;
+                existing.Price = (decimal)productDto.SellingPrice;
+                existing.CurrentStock = (double)productDto.ProductQty;
+                existing.BrandId = productDto.BrandId;
+                existing.ShoeSizeId = productDto.ShoeSizeId;
+                existing.Saleable = productDto.Saleable;
+                existing.Purchasable = productDto.Purchasable;
+                existing.AverageCost = productDto.AverageCost;
+                existing.StandardCost = productDto.StandardCost;
+                existing.SalesTaxCode = productDto.SalesTaxCode;
+                existing.InclusiveTaxed = productDto.InclusiveTaxed;
+                existing.ImageUri = productDto.ImageUri;
+                existing.UnitCost = productDto.UnitCost;
+                existing.MarkupPercentage = productDto.MarkupPercentage;
+                existing.LastUpdated = productDto.LastUpdated ?? DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                existing.DeviceId = productDto.DeviceId;
+                existing.DeviceName = productDto.DeviceName;
+                existing.StoreId = productDto.StoreId;
+            }
+            else
+            {
+                _context.Products.Add(new Product
+                {
+                    Id = productDto.ProductId,
+                    Name = productDto.ProductDescription,
+                    ProductCode = productDto.ProductCode,
+                    Price = (decimal)productDto.SellingPrice,
+                    CurrentStock = (double)productDto.ProductQty,
+                    BrandId = productDto.BrandId,
+                    ShoeSizeId = productDto.ShoeSizeId,
+                    Saleable = productDto.Saleable,
+                    Purchasable = productDto.Purchasable,
+                    AverageCost = productDto.AverageCost,
+                    StandardCost = productDto.StandardCost,
+                    SalesTaxCode = productDto.SalesTaxCode,
+                    InclusiveTaxed = productDto.InclusiveTaxed,
+                    ImageUri = productDto.ImageUri,
+                    UnitCost = productDto.UnitCost,
+                    MarkupPercentage = productDto.MarkupPercentage,
+                    LastUpdated = productDto.LastUpdated ?? DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+                    DeviceId = productDto.DeviceId,
+                    DeviceName = productDto.DeviceName,
+                    StoreId = productDto.StoreId
+                });
+            }
+            synced++;
+        }
+
+        _context.SaveChanges();
+        _logger.LogInformation("Batch synced {Count} products", synced);
+        return Ok(new { synced });
+    }
+
     [HttpPost]
     public IActionResult Create([FromBody] ProductDto productDto)
     {
@@ -51,6 +119,7 @@ public class ProductsController : ControllerBase
             existingProduct.LastUpdated = productDto.LastUpdated ?? DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             existingProduct.DeviceId = productDto.DeviceId;
             existingProduct.DeviceName = productDto.DeviceName;
+            existingProduct.StoreId = productDto.StoreId;
             
             _context.SaveChanges();
             _logger.LogInformation("Updated product {ProductId} - {ProductCode}", existingProduct.Id, existingProduct.ProductCode);
@@ -79,7 +148,8 @@ public class ProductsController : ControllerBase
                 MarkupPercentage = productDto.MarkupPercentage,
                 LastUpdated = productDto.LastUpdated ?? DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
                 DeviceId = productDto.DeviceId,
-                DeviceName = productDto.DeviceName
+                DeviceName = productDto.DeviceName,
+                StoreId = productDto.StoreId
             };
 
             _context.Products.Add(product);
@@ -127,4 +197,5 @@ public class ProductDto
     public long? LastUpdated { get; set; }
     public string? DeviceId { get; set; }
     public string? DeviceName { get; set; }
+    public string? StoreId { get; set; }
 }

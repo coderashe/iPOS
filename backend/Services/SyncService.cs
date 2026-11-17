@@ -56,13 +56,15 @@ public class SyncService : ISyncService
             {
                 entity.InvoiceId = dto.InvoiceId; entity.PaymentDate = dto.PaymentDate;
                 entity.Amount = dto.Amount; entity.Method = dto.Method;
+                entity.DeviceId = dto.DeviceId; entity.StoreId = dto.StoreId;
             }
             else
             {
                 _db.Payments.Add(new Payment
                 {
                     PaymentId = dto.PaymentId, InvoiceId = dto.InvoiceId,
-                    PaymentDate = dto.PaymentDate, Amount = dto.Amount, Method = dto.Method
+                    PaymentDate = dto.PaymentDate, Amount = dto.Amount, Method = dto.Method,
+                    DeviceId = dto.DeviceId, StoreId = dto.StoreId
                 });
             }
         }
@@ -83,6 +85,7 @@ public class SyncService : ISyncService
                 entity.TotalAmount = dto.TotalAmount; entity.TotalAmountTendered = dto.TotalAmountTendered;
                 entity.Change = dto.Change; entity.TaxAmount = dto.TaxAmount;
                 entity.DiscountAmount = dto.DiscountAmount; entity.UpdatedAt = dto.UpdatedAt;
+                entity.DeviceId = dto.DeviceId; entity.StoreId = dto.StoreId;
             }
             else
             {
@@ -92,7 +95,8 @@ public class SyncService : ISyncService
                     InvoiceId = dto.InvoiceId, TotalAmount = dto.TotalAmount,
                     TotalAmountTendered = dto.TotalAmountTendered, Change = dto.Change,
                     TaxAmount = dto.TaxAmount, DiscountAmount = dto.DiscountAmount,
-                    CreatedAt = dto.CreatedAt, UpdatedAt = dto.UpdatedAt
+                    CreatedAt = dto.CreatedAt, UpdatedAt = dto.UpdatedAt,
+                    DeviceId = dto.DeviceId, StoreId = dto.StoreId
                 });
             }
         }
@@ -166,13 +170,15 @@ public class SyncService : ISyncService
             {
                 entity.Description = dto.Description; entity.Amount = dto.Amount;
                 entity.ExpenseDate = dto.ExpenseDate; entity.Category = dto.Category;
+                entity.DeviceId = dto.DeviceId; entity.StoreId = dto.StoreId;
             }
             else
             {
                 _db.Expenses.Add(new Expense
                 {
                     ExpenseId = dto.ExpenseId, Description = dto.Description,
-                    Amount = dto.Amount, ExpenseDate = dto.ExpenseDate, Category = dto.Category
+                    Amount = dto.Amount, ExpenseDate = dto.ExpenseDate, Category = dto.Category,
+                    DeviceId = dto.DeviceId, StoreId = dto.StoreId
                 });
             }
         }
@@ -193,6 +199,7 @@ public class SyncService : ISyncService
                 entity.TotalInvoices = dto.TotalInvoices; entity.TotalOrders = dto.TotalOrders;
                 entity.TotalProductsSold = dto.TotalProductsSold;
                 entity.TotalInvoiceSales = dto.TotalInvoiceSales; entity.EndTime = dto.EndTime;
+                entity.DeviceId = dto.DeviceId; entity.StoreId = dto.StoreId;
             }
             else
             {
@@ -201,7 +208,8 @@ public class SyncService : ISyncService
                     ReportId = dto.ReportId, TotalInvoices = dto.TotalInvoices,
                     TotalOrders = dto.TotalOrders, TotalProductsSold = dto.TotalProductsSold,
                     TotalInvoiceSales = dto.TotalInvoiceSales, ReportDate = dto.ReportDate,
-                    StartTime = dto.StartTime, EndTime = dto.EndTime
+                    StartTime = dto.StartTime, EndTime = dto.EndTime,
+                    DeviceId = dto.DeviceId, StoreId = dto.StoreId
                 });
             }
         }
@@ -271,6 +279,7 @@ public class SyncService : ISyncService
             {
                 entity.Amount = dto.Amount; entity.CashOutflow = dto.CashOutflow;
                 entity.Description = dto.Description;
+                entity.DeviceId = dto.DeviceId; entity.StoreId = dto.StoreId;
             }
             else
             {
@@ -278,7 +287,8 @@ public class SyncService : ISyncService
                 {
                     CashFlowId = dto.CashFlowId, OrderId = dto.OrderId, Amount = dto.Amount,
                     CashOutflow = dto.CashOutflow, TransactionDate = dto.TransactionDate,
-                    Description = dto.Description
+                    Description = dto.Description,
+                    DeviceId = dto.DeviceId, StoreId = dto.StoreId
                 });
             }
         }
@@ -298,6 +308,7 @@ public class SyncService : ISyncService
             {
                 entity.AmountPaid = dto.AmountPaid; entity.PaymentStatus = dto.PaymentStatus;
                 entity.DueDate = dto.DueDate;
+                entity.DeviceId = dto.DeviceId; entity.StoreId = dto.StoreId;
             }
             else
             {
@@ -306,7 +317,8 @@ public class SyncService : ISyncService
                     ReceivableId = dto.ReceivableId, OrderId = dto.OrderId,
                     TotalAmount = dto.TotalAmount, AmountPaid = dto.AmountPaid,
                     CreditPeriod = dto.CreditPeriod, DueDate = dto.DueDate,
-                    PaymentStatus = dto.PaymentStatus, DateCreated = dto.DateCreated
+                    PaymentStatus = dto.PaymentStatus, DateCreated = dto.DateCreated,
+                    DeviceId = dto.DeviceId, StoreId = dto.StoreId
                 });
             }
         }
@@ -325,13 +337,15 @@ public class SyncService : ISyncService
             if (existing.TryGetValue(dto.DiscountId, out var entity))
             {
                 entity.DiscountAmount = dto.DiscountAmount;
+                entity.DeviceId = dto.DeviceId; entity.StoreId = dto.StoreId;
             }
             else
             {
                 _db.DiscountsReceived.Add(new DiscountReceived
                 {
                     DiscountId = dto.DiscountId, OrderId = dto.OrderId,
-                    DiscountAmount = dto.DiscountAmount, DateReceived = dto.DateReceived
+                    DiscountAmount = dto.DiscountAmount, DateReceived = dto.DateReceived,
+                    DeviceId = dto.DeviceId, StoreId = dto.StoreId
                 });
             }
         }
@@ -393,6 +407,7 @@ public class SyncService : ISyncService
             {
                 entity.CountedStock = dto.CountedStock; entity.Variance = dto.Variance;
                 entity.VarianceReason = dto.VarianceReason;
+                entity.DeviceId = dto.DeviceId; entity.StoreId = dto.StoreId;
             }
             else
             {
@@ -401,7 +416,8 @@ public class SyncService : ISyncService
                     Id = dto.Id, ProductId = dto.ProductId, RecordedStock = dto.RecordedStock,
                     CountedStock = dto.CountedStock, Variance = dto.Variance,
                     VarianceReason = dto.VarianceReason, DateRecorded = dto.DateRecorded,
-                    RecordedBy = dto.RecordedBy
+                    RecordedBy = dto.RecordedBy,
+                    DeviceId = dto.DeviceId, StoreId = dto.StoreId
                 });
             }
         }

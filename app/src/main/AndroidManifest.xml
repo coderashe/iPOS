@@ -48,18 +48,6 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-
-                <data android:scheme="https" />
-                <data android:host="fblikeapp.com" />
-                <data android:scheme="https" />
-                <data android:host="www.fblikeapp.com" />
-            </intent-filter>
         </activity>
 
         <!-- Edit Activity -->
@@ -76,7 +64,7 @@
         <!-- FileProvider -->
         <provider
             android:name="androidx.core.content.FileProvider"
-            android:authorities="com.example.learncompose303.fileprovider"
+            android:authorities="${applicationId}.fileprovider"
             android:exported="false"
             android:grantUriPermissions="true">
             <meta-data
