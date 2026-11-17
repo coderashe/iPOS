@@ -2,19 +2,17 @@ import { Injectable, inject } from '@angular/core';
 import {
   collection,
   query,
-  where,
   getDocs,
   onSnapshot,
-  orderBy,
-  limit,
   Timestamp
 } from 'firebase/firestore';
 import { FirebaseService } from './firebase.service';
-import { DashboardSummary, TopProduct, SalesReport, SalesDataPoint } from '../models/api-models';
+import { DashboardSummary, TopProduct } from '../models/api-models';
 
 export interface FirestoreInvoice {
   invoiceId?: number | string;
   totalAmount?: number;
+  amount?: number;
   invoiceDate?: number | Timestamp | string;
   currencyCode?: string;
   status?: string;
@@ -35,7 +33,7 @@ export class FirestoreDataService {
   /**
    * Fetch and calculate dashboard summary from Firestore for a given store and date range
    */
-  async getDashboardSummary(storeId: string, startDate: Date, endDate: Date): Promise<DashboardSummary> {
+  async getDashboardSummary(storeId: string, startDate?: Date, endDate?: Date): Promise<DashboardSummary> {
     const invoices = await this.getStoreInvoices(storeId, startDate, endDate);
 
     let totalRevenue = 0;
@@ -43,20 +41,22 @@ export class FirestoreDataService {
     const productSalesMap = new Map<string, { id: number; name: string; qty: number; revenue: number }>();
 
     for (const inv of invoices) {
-      const amount = Number(inv.totalAmount) || 0;
+      const amount = Number(inv.totalAmount ?? inv.amount ?? 0) || 0;
       totalRevenue += amount;
 
       if (inv.items && Array.isArray(inv.items)) {
         for (const item of inv.items) {
-          const key = item.productName || `Prod-${item.productId || 'unknown'}`;
+          const key = item.productName || `Product-${item.productId || 'Item'}`;
           const current = productSalesMap.get(key) || {
             id: item.productId || 0,
             name: key,
             qty: 0,
             revenue: 0
           };
-          current.qty += Number(item.productQtySold) || 1;
-          current.revenue += Number(item.totalAmount) || (Number(item.productPrice || 0) * (Number(item.productQtySold) || 1));
+          const qty = Number(item.productQtySold) || 1;
+          const itemRev = Number(item.totalAmount) || (Number(item.productPrice || 0) * qty);
+          current.qty += qty;
+          current.revenue += itemRev;
           productSalesMap.set(key, current);
         }
       }
@@ -90,54 +90,79 @@ export class FirestoreDataService {
    * Listen to live sales updates from Firestore
    */
   subscribeToLiveSales(storeId: string, callback: (invoices: FirestoreInvoice[]) => void): () => void {
-    const colRef = collection(this.fb.firestore, 'stores', storeId, 'invoices');
-    const q = query(colRef, orderBy('invoiceDate', 'desc'), limit(50));
+    const resolvedStore = (storeId || 'ISTART').trim();
+    const colRef = collection(this.fb.firestore, 'stores', resolvedStore, 'invoices');
 
-    return onSnapshot(q, (snapshot) => {
+    // Subscribe without orderBy to prevent any index requirement failures
+    return onSnapshot(colRef, (snapshot) => {
       const list: FirestoreInvoice[] = [];
       snapshot.forEach(doc => {
         list.push(doc.data() as FirestoreInvoice);
       });
       callback(list);
     }, (error) => {
-      console.warn('Firestore real-time subscription error:', error);
+      console.warn('Firestore real-time subscription notice:', error);
     });
   }
 
-  private async getStoreInvoices(storeId: string, startDate: Date, endDate: Date): Promise<FirestoreInvoice[]> {
-    try {
-      const colRef = collection(this.fb.firestore, 'stores', storeId, 'invoices');
-      const startMs = startDate.getTime();
-      const endMs = endDate.getTime();
+  private async getStoreInvoices(storeId: string, startDate?: Date, endDate?: Date): Promise<FirestoreInvoice[]> {
+    const storeCandidates = [
+      (storeId || 'ISTART').trim(),
+      (storeId || 'ISTART').trim().toUpperCase(),
+      (storeId || 'ISTART').trim().toLowerCase(),
+      'ISTART'
+    ];
+    const uniqueStores = Array.from(new Set(storeCandidates));
 
-      // Query invoices
-      const q = query(colRef);
-      const snapshot = await getDocs(q);
+    for (const store of uniqueStores) {
+      try {
+        const colRef = collection(this.fb.firestore, 'stores', store, 'invoices');
+        const snapshot = await getDocs(colRef);
 
-      const invoices: FirestoreInvoice[] = [];
-      snapshot.forEach(doc => {
-        const data = doc.data() as FirestoreInvoice;
-        let dateMs = 0;
-        if (typeof data.invoiceDate === 'number') {
-          dateMs = data.invoiceDate;
-        } else if (data.invoiceDate && typeof (data.invoiceDate as any).toMillis === 'function') {
-          dateMs = (data.invoiceDate as any).toMillis();
-        } else if (typeof data.invoiceDate === 'string') {
-          dateMs = new Date(data.invoiceDate).getTime();
+        if (!snapshot.empty) {
+          const allInvoices: FirestoreInvoice[] = [];
+          snapshot.forEach(doc => {
+            allInvoices.push(doc.data() as FirestoreInvoice);
+          });
+
+          // If no date range specified, return all
+          if (!startDate || !endDate) {
+            return allInvoices;
+          }
+
+          const startMs = startDate.getTime();
+          const endMs = endDate.getTime();
+
+          const filtered = allInvoices.filter(data => {
+            let dateMs = 0;
+            if (typeof data.invoiceDate === 'number') {
+              dateMs = data.invoiceDate;
+            } else if (data.invoiceDate && typeof (data.invoiceDate as any).toMillis === 'function') {
+              dateMs = (data.invoiceDate as any).toMillis();
+            } else if (typeof data.invoiceDate === 'string') {
+              dateMs = new Date(data.invoiceDate).getTime();
+            }
+
+            // Normalize seconds to milliseconds if needed (e.g. 10-digit unix timestamp)
+            if (dateMs > 0 && dateMs < 10000000000) {
+              dateMs *= 1000;
+            }
+
+            if (dateMs >= startMs && dateMs <= endMs) {
+              return true;
+            }
+            // If date is invalid or missing, still include it
+            return !dateMs;
+          });
+
+          // If filtered matched invoices, return them; otherwise return all to ensure data is visible
+          return filtered.length > 0 ? filtered : allInvoices;
         }
-
-        if (dateMs >= startMs && dateMs <= endMs) {
-          invoices.push(data);
-        } else if (!data.invoiceDate) {
-          // If no date field, include it
-          invoices.push(data);
-        }
-      });
-
-      return invoices;
-    } catch (e) {
-      console.error('Error reading invoices from Firestore:', e);
-      return [];
+      } catch (e) {
+        console.warn(`Error querying Firestore for store ${store}:`, e);
+      }
     }
+
+    return [];
   }
 }

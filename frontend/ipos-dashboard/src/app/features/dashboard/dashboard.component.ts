@@ -10,6 +10,7 @@ import { SummaryCardComponent } from '../../shared/components/summary-card/summa
 import { DateRangePickerComponent } from '../../shared/components/date-range-picker/date-range-picker.component';
 import { DeviceFilterComponent } from '../../shared/components/device-filter/device-filter.component';
 import { DashboardSummary } from '../../core/models/api-models';
+import { environment } from '../../../environments/environment';
 
 interface SummaryCard {
   title: string;
@@ -65,23 +66,24 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.loading = true;
         this.error = null;
 
-        // 1. Try REST API
-        return this.apiService.getDashboardSummary(
-          range.startDate.toISOString(),
-          range.endDate.toISOString(),
-          this.selectedDeviceId || undefined
-        ).pipe(
-          catchError((apiErr) => {
-            console.info('REST API unreachable, pulling sales from Cloud Firestore...');
-            // 2. Seamlessly fall back to Cloud Firestore
-            return from(this.firestoreService.getDashboardSummary(storeId, range.startDate, range.endDate)).pipe(
-              catchError((fsErr) => {
-                console.error('Firestore error:', fsErr);
-                throw fsErr;
+        const hasCustomApi = environment.apiUrl &&
+                             environment.apiUrl.trim() !== '' &&
+                             !environment.apiUrl.includes('your-production-api-url');
+
+        const source$ = hasCustomApi
+          ? this.apiService.getDashboardSummary(
+              range.startDate.toISOString(),
+              range.endDate.toISOString(),
+              this.selectedDeviceId || undefined
+            ).pipe(
+              catchError((apiErr) => {
+                console.info('REST API unreachable, pulling sales from Cloud Firestore...');
+                return from(this.firestoreService.getDashboardSummary(storeId, range.startDate, range.endDate));
               })
-            );
-          })
-        );
+            )
+          : from(this.firestoreService.getDashboardSummary(storeId, range.startDate, range.endDate));
+
+        return source$;
       })
     ).subscribe({
       next: (data) => {

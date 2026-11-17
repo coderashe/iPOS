@@ -1,6 +1,6 @@
 export const environment = {
   production: true,
-  apiUrl: 'https://your-production-api-url.com/api',
+  apiUrl: '', // Direct serverless Firebase on GitHub Pages
   firebase: {
     apiKey: "AIzaSyAq5AgnbH2-8AnMuVxTd_QSiEFnOXQlZXA",
     authDomain: "ipos-app-d7eb7.firebaseapp.com",
