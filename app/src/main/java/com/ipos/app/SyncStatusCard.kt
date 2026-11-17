@@ -92,7 +92,7 @@ fun SyncStatusCard(
             .padding(16.dp)
             .clickable {
                 if (canClick) {
-                    viewModel.syncInvoiceLines()
+                    viewModel.syncAllNow()
                 }
             },
         shape     = RoundedCornerShape(16.dp),

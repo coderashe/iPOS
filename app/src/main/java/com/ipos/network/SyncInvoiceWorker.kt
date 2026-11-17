@@ -2,8 +2,10 @@
 
 import android.annotation.SuppressLint
 import com.ipos.data.data_source.InvoiceDao
+import com.ipos.data.data_source.InvoiceLineDao
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.tasks.await
 import android.content.Context
 import android.util.Log
 import androidx.hilt.work.HiltWorker
@@ -20,6 +22,7 @@ class SyncInvoiceWorker @AssistedInject constructor(
     @Assisted appContext: Context,
     @Assisted params: WorkerParameters,
     private val invoiceDao: InvoiceDao,
+    private val invoiceLineDao: InvoiceLineDao,
     private val invoiceApiService: InvoiceApiService,
     private val deviceManager: com.ipos.app.core.DeviceManager,
     private val connectivityHelper: ConnectivityHelper,
@@ -94,57 +97,41 @@ class SyncInvoiceWorker @AssistedInject constructor(
             return Result.failure()
         }
 
-        // Convert to DTO for API
-        val invoiceDto = invoice.toDto(
-            deviceId = deviceManager.getDeviceId(),
-            deviceName = deviceManager.getDeviceName()
-        )
-        Log.e(TAG, "Trying to sync invoice $invoiceDto")
+        var firestoreSynced = false
+        // 1. Sync directly to Cloud Firestore (awaits completion)
+        try {
+            syncInvoiceToFirestore(invoice)
+            firestoreSynced = true
+        } catch (e: Exception) {
+            Log.e(TAG, "Firestore sync failed for invoice $invoiceId: ${e.message}", e)
+        }
 
-        // Also sync to Cloud Firestore for real-time web dashboard
-        syncInvoiceToFirestore(invoice)
-
-        return try {
+        // 2. Also try REST API if available
+        var apiSynced = false
+        try {
+            val invoiceDto = invoice.toDto(
+                deviceId = deviceManager.getDeviceId(),
+                deviceName = deviceManager.getDeviceName()
+            )
             val response = invoiceApiService.saveInvoice(invoiceDto)
             if (response.isSuccessful) {
-                // Mark as synced unconditionally on any 2xx — don't depend on response body
-                invoiceDao.markSynced(listOf(invoice.invoiceId))
-                Log.d(TAG, "Successfully synced invoice $invoiceId")
-                Result.success()
+                apiSynced = true
+                Log.d(TAG, "Successfully synced invoice $invoiceId via REST API")
             } else {
-                val errorCode = response.code()
-                val errorBody = response.errorBody()?.string() ?: "No error details"
-                Log.e(TAG, "Failed to sync invoice: $errorCode - $errorBody")
-
-                // Don't retry on client errors (4xx)
-                if (errorCode in 400..499) {
-                    Log.e(TAG, "Client error ($errorCode), not retrying")
-                    return Result.failure()
-                }
-
-                if (shouldRetry) {
-                    Result.retry()
-                } else {
-                    Result.failure()
-                }
+                Log.w(TAG, "REST API sync returned code ${response.code()}")
             }
-        } catch (e: java.net.UnknownHostException) {
-            Log.e(TAG, "Cannot reach server: ${e.message}", e)
-            if (shouldRetry) Result.retry() else Result.failure()
-        } catch (e: java.net.SocketTimeoutException) {
-            Log.e(TAG, "Server timeout: ${e.message}", e)
-            if (shouldRetry) Result.retry() else Result.failure()
-        } catch (e: java.io.IOException) {
-            Log.e(TAG, "Network I/O error: ${e.message}", e)
-            if (shouldRetry) Result.retry() else Result.failure()
         } catch (e: Exception) {
-            Log.e(TAG, "Error syncing invoice: ${e.message}", e)
-            if (shouldRetry) {
-                Result.retry()
-            } else {
-                Result.failure()
-            }
+            Log.w(TAG, "REST API sync skipped/unreachable: ${e.message}")
         }
+
+        // If either Firestore or REST API succeeded, mark invoice as synced
+        if (firestoreSynced || apiSynced) {
+            invoiceDao.markSynced(listOf(invoice.invoiceId))
+            Log.d(TAG, "✔ Invoice $invoiceId marked synced (Firestore: $firestoreSynced, API: $apiSynced)")
+            return Result.success()
+        }
+
+        return if (shouldRetry) Result.retry() else Result.failure()
     }
 
     @SuppressLint("RestrictedApi")
@@ -162,47 +149,61 @@ class SyncInvoiceWorker @AssistedInject constructor(
             val skipped = unsyncedInvoices.size - validInvoices.size
             if (skipped > 0) Log.w(TAG, "Skipping $skipped invoices with empty status")
 
-            val dtos = validInvoices.map { it.toDto(
-                deviceId = deviceManager.getDeviceId(),
-                deviceName = deviceManager.getDeviceName()
-            )}
-
-            // Batch sync to Cloud Firestore for real-time web dashboard
+            var firestoreSyncedCount = 0
+            // 1. Batch sync to Cloud Firestore
             try {
                 val batch = firestore.batch()
-                validInvoices.forEach { inv ->
+                for (inv in validInvoices) {
                     val storeId = if (inv.storeId.isNotEmpty()) inv.storeId else "ISTART"
                     val docRef = firestore.collection("stores").document(storeId)
                         .collection("invoices").document(inv.invoiceId.toString())
+                    
                     val map = com.ipos.data.entities.mapInvoiceToFirestore(inv).toMutableMap()
                     map["storeId"] = storeId
+
+                    // Include line items
+                    val lines = invoiceLineDao.getInvoiceLinesByInvoiceId(inv.invoiceId)
+                    if (lines.isNotEmpty()) {
+                        map["items"] = lines.map { line ->
+                            mapOf(
+                                "productName" to line.productName,
+                                "productPrice" to line.productPrice,
+                                "productQtySold" to line.productQtySold,
+                                "totalAmount" to line.totalAmount
+                            )
+                        }
+                    }
                     batch.set(docRef, map)
                 }
-                batch.commit()
-                Log.d(TAG, "Batch synced ${validInvoices.size} invoices to Firestore")
+                batch.commit().await()
+                firestoreSyncedCount = validInvoices.size
+                Log.d(TAG, "✔ Batch synced $firestoreSyncedCount invoices to Cloud Firestore!")
             } catch (e: Exception) {
-                Log.w(TAG, "Batch Firestore sync skipped or failed: ${e.message}")
+                Log.e(TAG, "Batch Firestore sync error: ${e.message}", e)
             }
 
-            val response = invoiceApiService.syncInvoices(dtos)
+            // 2. Try REST API in parallel/fallback
+            var apiSynced = false
+            try {
+                val dtos = validInvoices.map { it.toDto(
+                    deviceId = deviceManager.getDeviceId(),
+                    deviceName = deviceManager.getDeviceName()
+                )}
+                val response = invoiceApiService.syncInvoices(dtos)
+                if (response.isSuccessful) {
+                    apiSynced = true
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "REST API batch sync skipped/unreachable: ${e.message}")
+            }
 
-            return if (response.isSuccessful) {
+            // If Firestore batch or REST API succeeded, mark all valid invoices as synced
+            if (firestoreSyncedCount > 0 || apiSynced) {
                 invoiceDao.markSynced(validInvoices.map { it.invoiceId })
-                val synced = response.body()?.get("synced") ?: validInvoices.size
-                Log.d(TAG, "✔ Batch sync complete — synced: $synced")
-                Result.success()
-            } else {
-                val code = response.code()
-                val error = response.errorBody()?.string() ?: ""
-                Log.e(TAG, "✘ Batch sync failed — HTTP $code: $error")
-                if (code in 400..499) Result.failure()
-                else if (shouldRetry) Result.retry() else Result.failure()
+                Log.d(TAG, "✔ Marked ${validInvoices.size} invoices as synced in local DB")
+                return Result.success()
             }
-        } catch (e: java.net.SocketTimeoutException) {
-            Log.e(TAG, "Batch sync timeout: ${e.message}")
-            return if (shouldRetry) Result.retry() else Result.failure()
-        } catch (e: java.io.IOException) {
-            Log.e(TAG, "Batch sync IO error: ${e.message}")
+
             return if (shouldRetry) Result.retry() else Result.failure()
         } catch (e: Exception) {
             Log.e(TAG, "Batch sync unexpected error: ${e.message}", e)
@@ -210,17 +211,29 @@ class SyncInvoiceWorker @AssistedInject constructor(
         }
     }
 
-    private fun syncInvoiceToFirestore(invoice: com.ipos.data.entities.Invoice) {
-        try {
-            val storeId = if (invoice.storeId.isNotEmpty()) invoice.storeId else "ISTART"
-            val map = com.ipos.data.entities.mapInvoiceToFirestore(invoice).toMutableMap()
-            map["storeId"] = storeId
-            firestore.collection("stores").document(storeId)
-                .collection("invoices").document(invoice.invoiceId.toString())
-                .set(map)
-            Log.d(TAG, "Synced invoice ${invoice.invoiceId} to Firestore (stores/$storeId/invoices)")
-        } catch (e: Exception) {
-            Log.w(TAG, "Failed to sync invoice to Firestore: ${e.message}")
+    private suspend fun syncInvoiceToFirestore(invoice: com.ipos.data.entities.Invoice) {
+        val storeId = if (invoice.storeId.isNotEmpty()) invoice.storeId else "ISTART"
+        val map = com.ipos.data.entities.mapInvoiceToFirestore(invoice).toMutableMap()
+        map["storeId"] = storeId
+
+        // Attach line items so web dashboard shows top products and details
+        val lines = invoiceLineDao.getInvoiceLinesByInvoiceId(invoice.invoiceId)
+        if (lines.isNotEmpty()) {
+            map["items"] = lines.map { line ->
+                mapOf(
+                    "productName" to line.productName,
+                    "productPrice" to line.productPrice,
+                    "productQtySold" to line.productQtySold,
+                    "totalAmount" to line.totalAmount
+                )
+            }
         }
+
+        firestore.collection("stores").document(storeId)
+            .collection("invoices").document(invoice.invoiceId.toString())
+            .set(map)
+            .await()
+
+        Log.d(TAG, "✔ Synced invoice ${invoice.invoiceId} with ${lines.size} items to Firestore (stores/$storeId/invoices)")
     }
 }

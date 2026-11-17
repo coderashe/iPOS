@@ -88,6 +88,9 @@ class MainActivity : ComponentActivity() {
                 )
             }
         }
+        // Schedule background periodic sync (runs every 15 min - Android platform minimum)
+        setupPeriodicSync()
+
         setContent {
             LearnCompose303Theme {
                 val trialViewModel: TrialViewModel = hiltViewModel()
@@ -155,7 +158,7 @@ class MainActivity : ComponentActivity() {
      */
     fun setupPeriodicSync() {
         val periodicSyncRequest = PeriodicWorkRequestBuilder<SyncInvoiceWorker>(
-            30, TimeUnit.MINUTES
+            15, TimeUnit.MINUTES // Android platform minimum for periodic work
         )
             .setInputData(
                 workDataOf(
