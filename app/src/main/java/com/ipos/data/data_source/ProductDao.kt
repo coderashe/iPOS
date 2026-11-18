@@ -123,8 +123,6 @@ interface ProductDao {
     WHERE isSynced = 0
     AND productDescription IS NOT NULL 
     AND productDescription != ''
-    AND productCode IS NOT NULL 
-    AND productCode != ''
     ORDER BY productId DESC 
     LIMIT :limit
 """

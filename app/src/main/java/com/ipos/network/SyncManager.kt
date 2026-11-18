@@ -234,23 +234,20 @@ class SyncManager @Inject constructor(
      * Sync all data types immediately, including the full entity DAG.
      */
     fun syncAllNow() {
+        scheduleProductBatchSync()
+        scheduleInvoiceBatchSync()
+        scheduleInvoiceLineBatchSync()
         scheduleFullSync()
         unsyncedInvoiceCount = 0
         unsyncedProductCount = 0
     }
 
     /**
-     * Schedule a full DAG sync for all entities, respecting FK dependency order.
-     * Uses a timestamped unique name to avoid WorkManager chain conflicts.
-     *
-     * Layer 1 (no deps):  ShoeBrand, Currency, Expense, DayReports, CashFlow, DiscountsReceived, TradeReceivables, User, Device
-     * Layer 2 (after L1): ShoeSize, Customer
-     * Layer 3 (after L2): Product, PriceList
-     * Layer 4 (after L3): Invoice
-     * Layer 5 (after L4): InvoiceLine, Payment, CartItem, StockTake, ProductDayReport
+     * Schedule a full sync for all entities.
+     * Enqueued as parallel requests under unique work "full_sync" so failures in optional tables
+     * (e.g. expenses, day reports) never block core tables (products, invoices, devices).
      */
     fun scheduleFullSync() {
-
         // Cancel any existing sync chain before starting a new one
         workManager.cancelUniqueWork("full_sync")
 
@@ -262,49 +259,33 @@ class SyncManager @Inject constructor(
             androidx.work.OneTimeWorkRequest.Builder(clazz)
                 .setConstraints(constraints)
                 .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, SYNC_BACKOFF_DELAY, TimeUnit.MINUTES)
-                .setInputData(workDataOf(BaseSyncWorker.KEY_RETRY to true, "batchSync" to true))
+                .setInputData(workDataOf(BaseSyncWorker.KEY_RETRY to false, "batchSync" to true))
                 .build()
 
-        val layer1 = listOf(
-            buildRequest(SyncShoeBrandWorker::class.java),
-            buildRequest(SyncCurrencyWorker::class.java),
-            buildRequest(SyncExpenseWorker::class.java),
-            buildRequest(SyncDayReportsWorker::class.java),
-            buildRequest(SyncCashFlowWorker::class.java),
-            buildRequest(SyncDiscountsReceivedWorker::class.java),
-            buildRequest(SyncTradeReceivablesWorker::class.java),
+        val allRequests = listOf(
+            buildRequest(SyncDeviceWorker::class.java),
             buildRequest(SyncUserWorker::class.java),
-            buildRequest(SyncDeviceWorker::class.java)
-        )
-
-        val layer2 = listOf(
-            buildRequest(SyncShoeSizeWorker::class.java),
-            buildRequest(SyncCustomerWorker::class.java)
-        )
-
-        val layer3 = listOf(
+            buildRequest(SyncCustomerWorker::class.java),
             buildRequest(SyncProductWorker::class.java),
-            buildRequest(SyncPriceListWorker::class.java)
-        )
-
-        val layer4 = listOf(
-            buildRequest(SyncInvoiceWorker::class.java)
-        )
-
-        val layer5 = listOf(
+            buildRequest(SyncPriceListWorker::class.java),
+            buildRequest(SyncInvoiceWorker::class.java),
             buildRequest(SyncInvoiceLineWorker::class.java),
             buildRequest(SyncPaymentWorker::class.java),
+            buildRequest(SyncShoeBrandWorker::class.java),
+            buildRequest(SyncShoeSizeWorker::class.java),
             buildRequest(SyncCartItemWorker::class.java),
             buildRequest(SyncStockTakeWorker::class.java),
-            buildRequest(SyncProductDayReportWorker::class.java)
+            buildRequest(SyncProductDayReportWorker::class.java),
+            buildRequest(SyncDayReportsWorker::class.java),
+            buildRequest(SyncCashFlowWorker::class.java),
+            buildRequest(SyncExpenseWorker::class.java),
+            buildRequest(SyncTradeReceivablesWorker::class.java),
+            buildRequest(SyncDiscountsReceivedWorker::class.java),
+            buildRequest(SyncCurrencyWorker::class.java)
         )
 
         workManager
-            .beginUniqueWork("full_sync", ExistingWorkPolicy.REPLACE, layer1)
-            .then(layer2)
-            .then(layer3)
-            .then(layer4)
-            .then(layer5)
+            .beginUniqueWork("full_sync", ExistingWorkPolicy.REPLACE, allRequests)
             .enqueue()
     }
 

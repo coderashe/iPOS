@@ -63,12 +63,15 @@ export class FirestoreDataService {
       : rawInvoices;
 
     let totalRevenue = 0;
+    const currencyTotals: { [curr: string]: number } = {};
     let transactionCount = invoices.length;
     const productSalesMap = new Map<string, { id: number; name: string; qty: number; revenue: number }>();
 
     for (const inv of invoices) {
       const amount = Number(inv.totalAmount ?? inv.amount ?? 0) || 0;
       totalRevenue += amount;
+      const currency = (inv.currencyCode || 'USD').toUpperCase().trim();
+      currencyTotals[currency] = (currencyTotals[currency] || 0) + amount;
 
       if (inv.items && Array.isArray(inv.items)) {
         for (const item of inv.items) {
@@ -88,6 +91,29 @@ export class FirestoreDataService {
       }
     }
 
+    const formattedParts: string[] = [];
+    const sortedCurrencies = Object.keys(currencyTotals).sort((a, b) => {
+      if (a === 'USD') return -1;
+      if (b === 'USD') return 1;
+      return a.localeCompare(b);
+    });
+
+    for (const curr of sortedCurrencies) {
+      const total = currencyTotals[curr];
+      const rounded = Math.round(total * 100) / 100;
+      if (curr === 'USD') {
+        formattedParts.push(`$${rounded.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+      } else if (curr === 'ZAR') {
+        formattedParts.push(`R${rounded.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+      } else if (curr === 'ZIG') {
+        formattedParts.push(`ZiG ${rounded.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+      } else {
+        formattedParts.push(`${curr} ${rounded.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+      }
+    }
+    const revenueFormatted = formattedParts.length > 0 ? formattedParts.join(' · ') : '$0.00';
+    const primaryRevenue = currencyTotals['USD'] || (Object.values(currencyTotals)[0] || 0);
+
     const topProducts: TopProduct[] = Array.from(productSalesMap.values())
       .sort((a, b) => b.revenue - a.revenue)
       .slice(0, 5)
@@ -98,7 +124,7 @@ export class FirestoreDataService {
         revenue: Math.round(p.revenue * 100) / 100
       }));
 
-    const avgValue = transactionCount > 0 ? totalRevenue / transactionCount : 0;
+    const avgValue = transactionCount > 0 ? (primaryRevenue / transactionCount) : 0;
 
     // Get live low stock count from Firestore products
     let lowStockCount = 0;
@@ -110,8 +136,10 @@ export class FirestoreDataService {
     }
 
     return {
-      totalSales: Math.round(totalRevenue * 100) / 100,
-      totalRevenue: Math.round(totalRevenue * 100) / 100,
+      totalSales: transactionCount,
+      totalRevenue: Math.round(primaryRevenue * 100) / 100,
+      currencyTotals: currencyTotals,
+      revenueFormatted: revenueFormatted,
       transactionCount: transactionCount,
       averageTransactionValue: Math.round(avgValue * 100) / 100,
       topProducts: topProducts,

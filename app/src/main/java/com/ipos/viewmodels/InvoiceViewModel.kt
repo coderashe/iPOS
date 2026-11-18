@@ -43,6 +43,7 @@ import com.ipos.data.repositories.ShoeSizeRepository
 import com.ipos.data.repositories.StockTakeRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -239,7 +240,7 @@ class InvoiceViewModel @Inject constructor(
         workManager.getWorkInfosForUniqueWorkFlow("full_sync")
             .map { infos ->
                 when {
-                    infos.any { it.state == WorkInfo.State.RUNNING || it.state == WorkInfo.State.ENQUEUED } ->
+                    infos.any { it.state == WorkInfo.State.RUNNING } ->
                         SyncState.SYNCING
                     infos.isNotEmpty() && infos.all { it.state == WorkInfo.State.SUCCEEDED } ->
                         SyncState.SUCCESS
@@ -1918,6 +1919,8 @@ class InvoiceViewModel @Inject constructor(
         // This method is kept for any additional logic that might be needed
     }
 
+    private var syncTimeoutJob: kotlinx.coroutines.Job? = null
+
     private fun monitorSyncProgress() {
         viewModelScope.launch {
             combine(syncState, notsyncedCount) { state, unsynced ->
@@ -1928,10 +1931,13 @@ class InvoiceViewModel @Inject constructor(
                         initialUnsyncedAtStart = maxOf(unsynced, 1)
                     }
                     val syncedSoFar = (initialUnsyncedAtStart - unsynced).coerceAtLeast(0)
-                    val fraction = (syncedSoFar.toFloat() / initialUnsyncedAtStart.toFloat()).coerceIn(0.1f, 0.95f)
+                    val fraction = if (initialUnsyncedAtStart > 0) {
+                        (syncedSoFar.toFloat() / initialUnsyncedAtStart.toFloat()).coerceIn(0.05f, 0.95f)
+                    } else 0.5f
                     _syncProgress.value = fraction
                 } else if (state == SyncState.SUCCESS) {
                     _syncProgress.value = 1.0f
+                    syncTimeoutJob?.cancel()
                     initialUnsyncedAtStart = 0
                 } else {
                     _syncProgress.value = 0f
@@ -1946,6 +1952,21 @@ class InvoiceViewModel @Inject constructor(
             initialUnsyncedAtStart = maxOf(notsyncedCount.value, 1)
         }
         _syncProgress.value = 0.05f
+
+        // 90-second timeout safety guard: stops animation/worker if running too long
+        syncTimeoutJob?.cancel()
+        syncTimeoutJob = viewModelScope.launch {
+            delay(90_000L)
+            if (syncState.value == SyncState.SYNCING) {
+                android.util.Log.w("InvoiceViewModel", "Sync operation reached 90s timeout — cancelling full_sync")
+                workManager.cancelUniqueWork("full_sync")
+                _syncProgress.value = 1.0f
+                delay(1500L)
+                _syncProgress.value = 0f
+                initialUnsyncedAtStart = 0
+            }
+        }
+
         syncManager.syncAllNow()
     }
 

@@ -81,26 +81,36 @@ class SyncProductWorker @AssistedInject constructor(
         }
 
         // Validate required fields
-        if (product.productDescription.isBlank() || product.productCode.isBlank()) {
-            Log.e(TAG, "Product $productId has invalid required fields, skipping sync")
-            return Result.failure()
-        }
-
-        // Fetch price from PriceList
-        val priceList = priceListDao.getPriceListByProductId(productId)
-        val sellingPrice = priceList?.sellingPrice ?: 0.0
-        val unitCost = priceList?.unitCost ?: 0.0
-        val markupPercentage = priceList?.markupPercentage ?: 0.0
-
-        if (sellingPrice <= 0.0) {
-            Log.w(TAG, "Product $productId has no valid price — skipping, marking as synced")
+        if (product.productDescription.isBlank()) {
+            Log.e(TAG, "Product $productId has empty description, skipping sync")
             productDao.markSynced(productId)
             return Result.success()
         }
 
+        val storeId = getResolvedStoreId()
+        val effectiveProductCode = product.productCode.ifBlank {
+            if (storeId.isNotBlank()) "${storeId}_$productId" else "PROD_$productId"
+        }
+
+        // Fetch price from PriceList or fallback to standardCost
+        val priceList = priceListDao.getPriceListByProductId(productId)
+        val sellingPrice = priceList?.sellingPrice
+            ?: product.standardCost.takeIf { it > 0.0 }
+            ?: product.averageCost.takeIf { it > 0.0 }
+            ?: 0.0
+        val unitCost = priceList?.unitCost
+            ?: product.averageCost.takeIf { it > 0.0 }
+            ?: product.standardCost.takeIf { it > 0.0 }
+            ?: 0.0
+        val markupPercentage = priceList?.markupPercentage ?: 0.0
+
+        val productToSync = if (product.productCode.isBlank()) {
+            product.copy(productCode = effectiveProductCode)
+        } else product
+
         var firestoreSynced = false
         try {
-            syncProductToFirestore(product, sellingPrice, unitCost, markupPercentage)
+            syncProductToFirestore(productToSync, sellingPrice, unitCost, markupPercentage)
             firestoreSynced = true
         } catch (e: Exception) {
             Log.e(TAG, "Firestore product sync failed for $productId: ${e.message}", e)
@@ -108,7 +118,7 @@ class SyncProductWorker @AssistedInject constructor(
 
         var apiSynced = false
         try {
-            val productDto = product.toDto(
+            val productDto = productToSync.toDto(
                 deviceId = deviceManager.getDeviceId(),
                 deviceName = deviceManager.getDeviceName(),
                 sellingPrice = sellingPrice,
@@ -157,46 +167,39 @@ class SyncProductWorker @AssistedInject constructor(
                     return Result.success()
                 }
 
-                val dtos = unsyncedProducts.mapNotNull { product ->
-                    if (product.productDescription.isBlank() || product.productCode.isBlank()) {
-                        productDao.markSynced(product.productId)
-                        null
-                    } else {
-                        val priceList = priceListDao.getPriceListByProductId(product.productId)
-                        product.toDto(
-                            deviceId = deviceManager.getDeviceId(),
-                            deviceName = deviceManager.getDeviceName(),
-                            sellingPrice = priceList?.sellingPrice ?: 0.0,
-                            unitCost = priceList?.unitCost ?: 0.0,
-                            markupPercentage = priceList?.markupPercentage ?: 0.0
-                        )
-                    }
-                }
-
-                if (dtos.isEmpty()) continue
-
-                // 1. Batch sync to Cloud Firestore
-                var firestoreSynced = false
                 val storeId = getResolvedStoreId()
                 if (storeId.isBlank()) {
                     Log.w(TAG, "Cannot batch sync products: storeId is blank. Register device first.")
                     return if (shouldRetry) Result.retry() else Result.failure()
                 }
 
+                // 1. Batch sync to Cloud Firestore
+                var firestoreSynced = false
                 try {
                     val batch = firestore.batch()
                     unsyncedProducts.forEach { p ->
                         val priceList = priceListDao.getPriceListByProductId(p.productId)
+                        val sellingPrice = priceList?.sellingPrice
+                            ?: p.standardCost.takeIf { it > 0.0 }
+                            ?: p.averageCost.takeIf { it > 0.0 }
+                            ?: 0.0
+                        val unitCost = priceList?.unitCost
+                            ?: p.averageCost.takeIf { it > 0.0 }
+                            ?: p.standardCost.takeIf { it > 0.0 }
+                            ?: 0.0
+                        val markupPercentage = priceList?.markupPercentage ?: 0.0
+                        val code = p.productCode.ifBlank { "${storeId}_${p.productId}" }
+
                         val docRef = firestore.collection("stores").document(storeId)
                             .collection("products").document(p.productId.toString())
                         val map = hashMapOf(
                             "productId" to p.productId,
-                            "productCode" to p.productCode,
+                            "productCode" to code,
                             "productName" to p.productDescription,
                             "currentStock" to p.productQty,
-                            "sellingPrice" to (priceList?.sellingPrice ?: 0.0),
-                            "unitCost" to (priceList?.unitCost ?: 0.0),
-                            "markupPercentage" to (priceList?.markupPercentage ?: 0.0),
+                            "sellingPrice" to sellingPrice,
+                            "unitCost" to unitCost,
+                            "markupPercentage" to markupPercentage,
                             "storeId" to storeId,
                             "lastUpdated" to System.currentTimeMillis()
                         )
@@ -212,6 +215,25 @@ class SyncProductWorker @AssistedInject constructor(
                 // 2. Try REST API in parallel/fallback
                 var apiSynced = false
                 try {
+                    val dtos = unsyncedProducts.map { product ->
+                        val priceList = priceListDao.getPriceListByProductId(product.productId)
+                        val sellingPrice = priceList?.sellingPrice
+                            ?: product.standardCost.takeIf { it > 0.0 }
+                            ?: 0.0
+                        val unitCost = priceList?.unitCost
+                            ?: product.averageCost.takeIf { it > 0.0 }
+                            ?: 0.0
+                        val markupPercentage = priceList?.markupPercentage ?: 0.0
+                        val code = product.productCode.ifBlank { "${storeId}_${product.productId}" }
+
+                        product.copy(productCode = code).toDto(
+                            deviceId = deviceManager.getDeviceId(),
+                            deviceName = deviceManager.getDeviceName(),
+                            sellingPrice = sellingPrice,
+                            unitCost = unitCost,
+                            markupPercentage = markupPercentage
+                        )
+                    }
                     val response = productApiService.saveProducts(dtos)
                     if (response.isSuccessful) {
                         apiSynced = true

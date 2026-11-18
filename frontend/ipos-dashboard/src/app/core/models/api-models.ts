@@ -2,6 +2,8 @@
 export interface DashboardSummary {
   totalSales: number;
   totalRevenue: number;
+  currencyTotals?: { [currencyCode: string]: number };
+  revenueFormatted?: string;
   transactionCount: number;
   averageTransactionValue: number;
   topProducts: TopProduct[];

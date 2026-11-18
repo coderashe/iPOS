@@ -29,10 +29,12 @@
   }
 
   .card-value {
-    font-size: 32px;
+    font-size: clamp(20px, 2.2vw, 30px);
     font-weight: bold;
     color: #333;
     margin-bottom: 10px;
+    word-break: break-word;
+    line-height: 1.25;
   }
 
   .card-trend {

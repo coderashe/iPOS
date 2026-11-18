@@ -105,12 +105,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   private updateSummaryCards(data: DashboardSummary): void {
+    const revenueDisplay = data.revenueFormatted || (data.totalRevenue ? `$${data.totalRevenue.toFixed(2)}` : '$0.00');
     this.summaryCards = [
       {
         title: 'Total Revenue',
-        value: data.totalRevenue,
+        value: revenueDisplay,
         icon: '💰',
-        format: 'currency'
+        format: 'number'
       },
       {
         title: 'Total Sales',
