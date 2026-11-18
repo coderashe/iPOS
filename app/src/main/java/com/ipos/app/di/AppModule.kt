@@ -399,12 +399,13 @@ object AppModule {
         orderDao: OrderDao,
         userDao: UserDao,
         productDao: ProductDao,
-        customerDao: CustomerDao
+        customerDao: CustomerDao,
+        currencyDao: com.ipos.data.data_source.CurrencyDao
     ): com.ipos.data.repositories.BackfillRepository {
         return com.ipos.data.repositories.BackfillRepository(
             invoiceDao, invoiceLineDao, expenseDao, paymentDao, cashFlowDao,
             stockTakeDao, dayReportsDao, tradeReceivablesDao, discountsReceivedDao, orderDao,
-            userDao, productDao, customerDao
+            userDao, productDao, customerDao, currencyDao
         )
     }
 

@@ -7,7 +7,7 @@ import {
   Timestamp
 } from 'firebase/firestore';
 import { FirebaseService } from './firebase.service';
-import { DashboardSummary, TopProduct, StockLevel, CustomerInsights } from '../models/api-models';
+import { DashboardSummary, TopProduct, StockLevel, CustomerInsights, SalesReport, SalesByCashier, RevenueTrend } from '../models/api-models';
 
 export interface FirestoreInvoice {
   invoiceId?: number | string;
@@ -15,6 +15,7 @@ export interface FirestoreInvoice {
   amount?: number;
   invoiceDate?: number | Timestamp | string;
   currencyCode?: string;
+  currency?: string;
   status?: string;
   storeId?: string;
   deviceId?: string;
@@ -26,6 +27,13 @@ export interface FirestoreInvoice {
     productQtySold?: number;
     totalAmount?: number;
   }>;
+}
+
+export interface FirestoreCurrency {
+  code: string;
+  name: string;
+  rateToBase: number;
+  storeId?: string;
 }
 
 export interface FirestoreDevice {
@@ -268,6 +276,116 @@ export class FirestoreDataService {
     }
   }
 
+  /**
+   * Get supported currencies and exchange rates from Firestore
+   */
+  async getCurrencies(storeId: string): Promise<FirestoreCurrency[]> {
+    const resolvedStore = (storeId || 'ISTART').trim();
+    try {
+      const colRef = collection(this.fb.firestore, 'stores', resolvedStore, 'currencies');
+      const snap = await getDocs(colRef);
+      const list: FirestoreCurrency[] = [];
+      snap.forEach(doc => {
+        const d = doc.data() as FirestoreCurrency;
+        list.push({
+          code: d.code || doc.id,
+          name: d.name || doc.id,
+          rateToBase: Number(d.rateToBase) || 1.0,
+          storeId: d.storeId || resolvedStore
+        });
+      });
+      return list;
+    } catch (e) {
+      console.warn('Could not read currencies from Firestore:', e);
+      return [];
+    }
+  }
+
+  /**
+   * Get sales report and cashier breakdown directly from Firestore
+   */
+  async getSalesReport(storeId: string, startDate?: Date, endDate?: Date, deviceId?: string): Promise<{ report: SalesReport, cashiers: SalesByCashier[] }> {
+    const rawInvoices = await this.getStoreInvoices(storeId, startDate, endDate);
+    const invoices = (deviceId && deviceId.trim() !== '')
+      ? rawInvoices.filter(inv => inv.deviceId === deviceId || (inv as any).deviceName === deviceId)
+      : rawInvoices;
+
+    const currencyTotals: { [curr: string]: number } = {};
+    const cashierMap = new Map<string, { total: number; count: number; currencies: { [c: string]: number } }>();
+
+    for (const inv of invoices) {
+      const amount = Number(inv.totalAmount ?? inv.amount ?? 0) || 0;
+      const currency = (inv.currencyCode || (inv as any).currency || 'USD').toUpperCase().trim();
+      currencyTotals[currency] = (currencyTotals[currency] || 0) + amount;
+
+      const cashier = inv.deviceName || inv.deviceId || 'Main Register';
+      const current = cashierMap.get(cashier) || { total: 0, count: 0, currencies: {} };
+      current.total += amount;
+      current.count += 1;
+      current.currencies[currency] = (current.currencies[currency] || 0) + amount;
+      cashierMap.set(cashier, current);
+    }
+
+    const cashiers: SalesByCashier[] = Array.from(cashierMap.entries()).map(([name, data]) => ({
+      cashierName: name,
+      totalSales: Math.round(data.total * 100) / 100,
+      transactionCount: data.count,
+      averageTransactionValue: data.count > 0 ? Math.round((data.total / data.count) * 100) / 100 : 0
+    }));
+
+    const formattedParts: string[] = [];
+    for (const [curr, total] of Object.entries(currencyTotals)) {
+      const rounded = Math.round(total * 100) / 100;
+      if (curr === 'USD') formattedParts.push(`$${rounded.toFixed(2)}`);
+      else if (curr === 'ZAR') formattedParts.push(`R${rounded.toFixed(2)}`);
+      else if (curr === 'ZIG') formattedParts.push(`ZiG ${rounded.toLocaleString()}`);
+      else formattedParts.push(`${curr} ${rounded.toFixed(2)}`);
+    }
+    const revFormatted = formattedParts.length > 0 ? formattedParts.join(' · ') : '$0.00';
+    const primaryTotal = currencyTotals['USD'] || (Object.values(currencyTotals)[0] || 0);
+
+    return {
+      report: {
+        dataPoints: [],
+        totalRevenue: Math.round(primaryTotal * 100) / 100,
+        revenueFormatted: revFormatted,
+        totalTransactions: invoices.length
+      },
+      cashiers
+    };
+  }
+
+  /**
+   * Get revenue trends directly from Firestore
+   */
+  async getRevenueTrends(storeId: string, startDate?: Date, endDate?: Date, deviceId?: string): Promise<RevenueTrend> {
+    const rawInvoices = await this.getStoreInvoices(storeId, startDate, endDate);
+    const invoices = (deviceId && deviceId.trim() !== '')
+      ? rawInvoices.filter(inv => inv.deviceId === deviceId || (inv as any).deviceName === deviceId)
+      : rawInvoices;
+
+    const dayMap = new Map<string, number>();
+    for (const inv of invoices) {
+      const amount = Number(inv.totalAmount ?? inv.amount ?? 0) || 0;
+      let dateStr = 'Recent';
+      if (typeof inv.invoiceDate === 'number') {
+        dateStr = new Date(inv.invoiceDate).toLocaleDateString();
+      }
+      dayMap.set(dateStr, (dayMap.get(dateStr) || 0) + amount);
+    }
+
+    const dataPoints = Array.from(dayMap.entries()).map(([dateStr, value]) => ({
+      date: dateStr,
+      value: Math.round(value * 100) / 100
+    }));
+
+    return {
+      dataPoints,
+      growthRate: 0,
+      trend: 'stable'
+    };
+  }
+
   private async getStoreInvoices(storeId: string, startDate?: Date, endDate?: Date): Promise<FirestoreInvoice[]> {
     const storeCandidates = [
       (storeId || 'ISTART').trim(),
@@ -311,15 +429,13 @@ export class FirestoreDataService {
               dateMs *= 1000;
             }
 
-            if (dateMs >= startMs && dateMs <= endMs) {
-              return true;
+            if (dateMs > 0) {
+              return dateMs >= startMs && dateMs <= endMs;
             }
-            // If date is invalid or missing, still include it
-            return !dateMs;
+            return false;
           });
 
-          // If filtered matched invoices, return them; otherwise return all to ensure data is visible
-          return filtered.length > 0 ? filtered : allInvoices;
+          return filtered;
         }
       } catch (e) {
         console.warn(`Error querying Firestore for store ${store}:`, e);

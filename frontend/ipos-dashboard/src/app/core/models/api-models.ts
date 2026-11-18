@@ -23,6 +23,7 @@ export interface TopProduct {
 export interface SalesReport {
   dataPoints: SalesDataPoint[];
   totalRevenue: number;
+  revenueFormatted?: string;
   totalTransactions: number;
 }
 

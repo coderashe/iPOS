@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - feature/frontend-github-pages
+      - fix-storeid-sync
     paths:
       - 'frontend/ipos-dashboard/**'
       - '.github/workflows/deploy-frontend.yml'

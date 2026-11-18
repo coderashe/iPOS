@@ -34,6 +34,7 @@ data class MonthlySalesWithCurrency(
 
 
 fun mapInvoiceToFirestore(invoice: Invoice): Map<String, Any?> {
+    val currency = invoice.currencyCode.ifBlank { "USD" }
     return hashMapOf(
         "invoiceId" to invoice.invoiceId,
         "customerId" to invoice.customerId,
@@ -41,7 +42,8 @@ fun mapInvoiceToFirestore(invoice: Invoice): Map<String, Any?> {
         "invoiceDate" to invoice.invoiceDate,
         "dueDate" to invoice.dueDate,
         "status" to invoice.status,
-        "currencyCode" to invoice.currencyCode,
+        "currencyCode" to currency,
+        "currency" to currency,
         "lastUpdated" to invoice.lastUpdated,
         "isArchived" to invoice.isArchived,
         "deviceId" to invoice.deviceId,

@@ -1,8 +1,11 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { from } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
 import { ApiService } from '../../core/services/api.service';
 import { DashboardStateService } from '../../core/services/dashboard-state.service';
+import { FirestoreDataService } from '../../core/services/firestore-data.service';
+import { AuthService } from '../../core/services/auth.service';
 import { DateRangePickerComponent } from '../../shared/components/date-range-picker/date-range-picker.component';
 import { DeviceFilterComponent } from '../../shared/components/device-filter/device-filter.component';
 import { SalesReport, SalesByCashier } from '../../core/models/api-models';
@@ -35,7 +38,7 @@ import { SalesReport, SalesByCashier } from '../../core/models/api-models';
           <div class="stats-grid">
             <div class="stat-card">
               <h3>Total Revenue</h3>
-              <p class="stat-value">{{ salesReport?.totalRevenue | currency }}</p>
+              <p class="stat-value">{{ salesReport?.revenueFormatted || (salesReport?.totalRevenue | currency) }}</p>
             </div>
             <div class="stat-card">
               <h3>Total Transactions</h3>
@@ -197,6 +200,8 @@ import { SalesReport, SalesByCashier } from '../../core/models/api-models';
 export class SalesAnalyticsComponent implements OnInit {
   private apiService = inject(ApiService);
   private stateService = inject(DashboardStateService);
+  private firestoreService = inject(FirestoreDataService);
+  private authService = inject(AuthService);
 
   salesReport: SalesReport | null = null;
   salesByCashier: SalesByCashier[] = [];
@@ -209,27 +214,26 @@ export class SalesAnalyticsComponent implements OnInit {
   }
 
   private loadSalesData(): void {
+    const storeId = this.authService.getStoreId() || 'ISTART';
     this.stateService.dateRange$.pipe(
       switchMap(range => {
         this.loading = true;
         this.error = null;
-        const startDate = range.startDate.toISOString();
-        const endDate = range.endDate.toISOString();
-        
-        return this.apiService.getSalesReport({ 
-          startDate, 
-          endDate, 
-          groupBy: 'day',
-          deviceId: this.selectedDeviceId || undefined
-        });
+        return from(this.firestoreService.getSalesReport(
+          storeId,
+          range.startDate,
+          range.endDate,
+          this.selectedDeviceId || undefined
+        ));
       })
     ).subscribe({
-      next: (data) => {
-        this.salesReport = data;
-        this.loadCashierData();
+      next: (res) => {
+        this.salesReport = res.report;
+        this.salesByCashier = res.cashiers;
+        this.loading = false;
       },
       error: (err) => {
-        this.error = 'Failed to load sales data. Please check if the API is running.';
+        this.error = 'Failed to load sales data.';
         this.loading = false;
         console.error('Sales error:', err);
       }
@@ -239,23 +243,5 @@ export class SalesAnalyticsComponent implements OnInit {
   onDeviceChange(deviceId: string): void {
     this.selectedDeviceId = deviceId;
     this.loadSalesData();
-  }
-
-  private loadCashierData(): void {
-    const range = this.stateService.getCurrentDateRange();
-    this.apiService.getSalesByCashier(
-      range.startDate.toISOString(),
-      range.endDate.toISOString(),
-      this.selectedDeviceId || undefined
-    ).subscribe({
-      next: (data) => {
-        this.salesByCashier = data;
-        this.loading = false;
-      },
-      error: (err) => {
-        console.error('Cashier data error:', err);
-        this.loading = false;
-      }
-    });
   }
 }

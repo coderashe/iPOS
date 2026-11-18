@@ -1,8 +1,11 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { from } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
 import { ApiService } from '../../core/services/api.service';
 import { DashboardStateService } from '../../core/services/dashboard-state.service';
+import { FirestoreDataService } from '../../core/services/firestore-data.service';
+import { AuthService } from '../../core/services/auth.service';
 import { DateRangePickerComponent } from '../../shared/components/date-range-picker/date-range-picker.component';
 import { DeviceFilterComponent } from '../../shared/components/device-filter/device-filter.component';
 import { RevenueTrend } from '../../core/models/api-models';
@@ -236,6 +239,8 @@ import { RevenueTrend } from '../../core/models/api-models';
 export class FinancialReportsComponent implements OnInit {
   private apiService = inject(ApiService);
   private stateService = inject(DashboardStateService);
+  private firestoreService = inject(FirestoreDataService);
+  private authService = inject(AuthService);
 
   revenueTrend: RevenueTrend | null = null;
   loading = true;
@@ -247,16 +252,17 @@ export class FinancialReportsComponent implements OnInit {
   }
 
   private loadFinancialData(): void {
+    const storeId = this.authService.getStoreId() || 'ISTART';
     this.stateService.dateRange$.pipe(
       switchMap(range => {
         this.loading = true;
         this.error = null;
-        return this.apiService.getRevenueTrends({
-          startDate: range.startDate.toISOString(),
-          endDate: range.endDate.toISOString(),
-          groupBy: 'day',
-          deviceId: this.selectedDeviceId || undefined
-        });
+        return from(this.firestoreService.getRevenueTrends(
+          storeId,
+          range.startDate,
+          range.endDate,
+          this.selectedDeviceId || undefined
+        ));
       })
     ).subscribe({
       next: (data) => {
@@ -264,7 +270,7 @@ export class FinancialReportsComponent implements OnInit {
         this.loading = false;
       },
       error: (err) => {
-        this.error = 'Failed to load financial data. Please check if the API is running.';
+        this.error = 'Failed to load financial data.';
         this.loading = false;
         console.error('Financial reports error:', err);
       }

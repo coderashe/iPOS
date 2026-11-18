@@ -31,7 +31,8 @@ class BackfillRepository @Inject constructor(
     private val orderDao: OrderDao,
     private val userDao: UserDao,
     private val productDao: ProductDao,
-    private val customerDao: CustomerDao
+    private val customerDao: CustomerDao,
+    private val currencyDao: com.ipos.data.data_source.CurrencyDao
 ) {
     companion object {
         private const val TAG = "BackfillRepository"
@@ -64,9 +65,11 @@ class BackfillRepository @Inject constructor(
         run("discountsreceived"){ discountsReceivedDao.backfillDeviceAndStore(deviceId, storeId) }
         run("orders")           { orderDao.backfillDeviceAndStore(deviceId, storeId) }
         run("user")             { userDao.updateStoreId(storeId) }
+        run("invoice_default_currency") { invoiceDao.backfillDefaultCurrency() }
         run("reset_product_sync")  { productDao.resetSyncStatus() }
         run("reset_customer_sync") { customerDao.resetSyncStatus() }
         run("reset_invoice_sync")  { invoiceDao.resetSyncStatus() }
+        run("reset_currency_sync") { currencyDao.resetSyncStatus() }
 
         Log.d(TAG, "✅ Backfill & re-stamp complete for all tables")
         Log.d(TAG, "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")

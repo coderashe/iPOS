@@ -36,4 +36,7 @@ interface CurrencyDao {
 
     @Query("SELECT COUNT(*) FROM currencies WHERE isSynced = 0")
     fun getUnsyncedCount(): Flow<Int>
+
+    @Query("UPDATE currencies SET isSynced = 0")
+    suspend fun resetSyncStatus()
 }

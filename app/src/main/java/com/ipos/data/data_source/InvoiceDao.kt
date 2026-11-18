@@ -75,4 +75,7 @@ interface InvoiceDao {
 
     @Query("UPDATE invoice SET deviceId = :deviceId, storeId = :storeId WHERE deviceId = '' OR deviceId IS NULL OR storeId != :storeId")
     suspend fun backfillDeviceAndStore(deviceId: String, storeId: String)
+
+    @Query("UPDATE invoice SET currencyCode = 'USD' WHERE currencyCode IS NULL OR currencyCode = ''")
+    suspend fun backfillDefaultCurrency()
 }
