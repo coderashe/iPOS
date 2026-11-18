@@ -106,7 +106,8 @@ class InvoiceViewModel @Inject constructor(
     private val failedInvoiceRepository: FailedInvoiceRepository,
     private val workManager: WorkManager,
     private val syncManager: com.ipos.network.SyncManager,
-    private val deviceSession: DeviceSession
+    private val deviceSession: DeviceSession,
+    private val deviceManager: com.ipos.app.core.DeviceManager
 ) : ViewModel() {
 
     private val _shoeSizes = MutableStateFlow(emptyList<ShoeSize>())
@@ -714,16 +715,19 @@ class InvoiceViewModel @Inject constructor(
         val existingUsers = authRepository.getAllUsersOnce()
 
         if (existingUsers.isEmpty()) {
-            val initialUser = User(
-                userFullName = "Simba Start",
-                userContact = "0776815030",
-                userRole = "admin",
-                userPassword = "password",
-                storeID = "istart01",
-                userEmail = "dr.simbastart@gmail.com",
-                userAddress = "3 Maywood St, Kwekwe, Zimbabwe"
-            )
-            authRepository.signUpUser(initialUser)
+            val storeId = deviceSession.storeId.ifBlank { deviceManager.getStoreId() }
+            if (storeId.isNotBlank()) {
+                val initialUser = User(
+                    userFullName = "Simba Start",
+                    userContact = "0776815030",
+                    userRole = "admin",
+                    userPassword = "password",
+                    storeID = storeId,
+                    userEmail = "dr.simbastart@gmail.com",
+                    userAddress = "3 Maywood St, Kwekwe, Zimbabwe"
+                )
+                authRepository.signUpUser(initialUser)
+            }
         }
     }
 

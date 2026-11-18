@@ -28,7 +28,7 @@ fun DeviceRegistrationScreen(
 ) {
     val deviceManager = viewModel.deviceManager
     var deviceName by remember { mutableStateOf(deviceManager.getDeviceName()) }
-    var storeIdInput by remember { mutableStateOf(viewModel.deviceSession.storeId) }
+    var storeIdInput by remember { mutableStateOf(viewModel.deviceSession.storeId.ifBlank { deviceManager.getStoreId() }) }
     var isLoading by remember { mutableStateOf(false) }
     var backfillDone by remember { mutableStateOf(false) }
     val deviceId = deviceManager.getDeviceId()

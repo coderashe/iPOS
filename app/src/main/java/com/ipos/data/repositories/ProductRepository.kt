@@ -61,7 +61,8 @@ interface ProductRepository {
 
 class ProductRepositoryImpl @Inject constructor(
     private val productDao: ProductDao,
-    private val syncManager: com.ipos.network.SyncManager
+    private val syncManager: com.ipos.network.SyncManager,
+    private val deviceSession: com.ipos.app.core.DeviceSession
 ) : ProductRepository {
 
     companion object {
@@ -133,7 +134,8 @@ class ProductRepositoryImpl @Inject constructor(
             // Mark for sync by setting lastUpdated to null
             val productToInsert = products.copy(lastUpdated = null)
             val productId = productDao.insertProduct(productToInsert)
-            val productCode = "ISTART_$productId"
+            val prefix = if (deviceSession.storeId.isNotBlank()) deviceSession.storeId else "PROD"
+            val productCode = "${prefix}_$productId"
             productDao.updateProduct(
                 productToInsert.copy(
                     productId = productId,

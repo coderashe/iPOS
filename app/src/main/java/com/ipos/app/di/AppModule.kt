@@ -366,9 +366,10 @@ object AppModule {
     @Singleton
     fun provideProductRepository(
         appDatabase: AppDatabase,
-        syncManager: com.ipos.network.SyncManager
+        syncManager: com.ipos.network.SyncManager,
+        deviceSession: DeviceSession
     ): ProductRepository {
-        return ProductRepositoryImpl(appDatabase.productDao(), syncManager)
+        return ProductRepositoryImpl(appDatabase.productDao(), syncManager, deviceSession)
     }
 
     @Provides

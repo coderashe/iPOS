@@ -30,6 +30,7 @@ class DeviceManager @Inject constructor(
         private const val PREFS_NAME = "device_prefs"
         private const val KEY_DEVICE_ID = "device_id"
         private const val KEY_DEVICE_NAME = "device_name"
+        private const val KEY_STORE_ID = "store_id"
         private const val KEY_DEVICE_REGISTERED = "device_registered"
         private const val KEY_REGISTRATION_DATE = "registration_date"
         private const val DEFAULT_DEVICE_NAME = "POS Device"
@@ -75,6 +76,22 @@ class DeviceManager @Inject constructor(
     fun setDeviceName(name: String) {
         prefs.edit().putString(KEY_DEVICE_NAME, name).apply()
         Log.d(TAG, "Device name updated: $name")
+    }
+
+    /**
+     * Get the store ID associated with this device
+     */
+    fun getStoreId(): String {
+        return prefs.getString(KEY_STORE_ID, "") ?: ""
+    }
+
+    /**
+     * Set the store ID associated with this device
+     */
+    fun setStoreId(storeId: String) {
+        val trimmed = storeId.trim()
+        prefs.edit().putString(KEY_STORE_ID, trimmed).apply()
+        Log.d(TAG, "Store ID updated: $trimmed")
     }
 
     /**

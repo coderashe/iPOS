@@ -26,7 +26,9 @@ class SyncProductWorker @AssistedInject constructor(
     private val deviceManager: com.ipos.app.core.DeviceManager,
     private val connectivityHelper: ConnectivityHelper,
     private val priceListDao: com.ipos.data.data_source.PriceListDao,
-    private val firestore: com.google.firebase.firestore.FirebaseFirestore
+    private val firestore: com.google.firebase.firestore.FirebaseFirestore,
+    private val deviceSession: com.ipos.app.core.DeviceSession,
+    private val deviceInfoDao: com.ipos.data.data_source.DeviceInfoDao
 ) : CoroutineWorker(appContext, params) {
 
     interface Factory : WorkerAssistedFactory<SyncProductWorker>
@@ -130,6 +132,21 @@ class SyncProductWorker @AssistedInject constructor(
         return if (shouldRetry) Result.retry() else Result.failure()
     }
 
+    private suspend fun getResolvedStoreId(): String {
+        if (deviceSession.storeId.isNotBlank()) return deviceSession.storeId
+        val fromDao = deviceInfoDao.getActiveStoreId()
+        if (!fromDao.isNullOrBlank()) {
+            deviceSession.storeId = fromDao
+            return fromDao
+        }
+        val fromPrefs = deviceManager.getStoreId()
+        if (fromPrefs.isNotBlank()) {
+            deviceSession.storeId = fromPrefs
+            return fromPrefs
+        }
+        return ""
+    }
+
     private suspend fun performBatchSync(shouldRetry: Boolean): Result {
         try {
             var totalSynced = 0
@@ -160,11 +177,16 @@ class SyncProductWorker @AssistedInject constructor(
 
                 // 1. Batch sync to Cloud Firestore
                 var firestoreSynced = false
+                val storeId = getResolvedStoreId()
+                if (storeId.isBlank()) {
+                    Log.w(TAG, "Cannot batch sync products: storeId is blank. Register device first.")
+                    return if (shouldRetry) Result.retry() else Result.failure()
+                }
+
                 try {
                     val batch = firestore.batch()
                     unsyncedProducts.forEach { p ->
                         val priceList = priceListDao.getPriceListByProductId(p.productId)
-                        val storeId = "ISTART"
                         val docRef = firestore.collection("stores").document(storeId)
                             .collection("products").document(p.productId.toString())
                         val map = hashMapOf(
@@ -182,7 +204,7 @@ class SyncProductWorker @AssistedInject constructor(
                     }
                     batch.commit().await()
                     firestoreSynced = true
-                    Log.d(TAG, "✔ Batch synced ${unsyncedProducts.size} products to Cloud Firestore")
+                    Log.d(TAG, "✔ Batch synced ${unsyncedProducts.size} products to Cloud Firestore under store: $storeId")
                 } catch (e: Exception) {
                     Log.e(TAG, "Batch Firestore product sync error: ${e.message}", e)
                 }
@@ -221,7 +243,11 @@ class SyncProductWorker @AssistedInject constructor(
         unitCost: Double,
         markupPercentage: Double
     ) {
-        val storeId = "ISTART"
+        val storeId = getResolvedStoreId()
+        if (storeId.isBlank()) {
+            Log.w(TAG, "Cannot sync product to Firestore: storeId is blank")
+            return
+        }
         val map = hashMapOf(
             "productId" to product.productId,
             "productCode" to product.productCode,
@@ -239,6 +265,6 @@ class SyncProductWorker @AssistedInject constructor(
             .set(map)
             .await()
 
-        Log.d(TAG, "✔ Synced product ${product.productDescription} (Stock: ${product.productQty}) to Firestore")
+        Log.d(TAG, "✔ Synced product ${product.productDescription} (Stock: ${product.productQty}) to Firestore under store: $storeId")
     }
 }

@@ -4,8 +4,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ipos.app.core.DeviceManager
 import com.ipos.app.core.DeviceSession
+import com.ipos.data.data_source.CustomerDao
 import com.ipos.data.data_source.DeviceInfoDao
+import com.ipos.data.data_source.InvoiceDao
+import com.ipos.data.data_source.ProductDao
 import com.ipos.data.entities.DeviceInfo
+import com.ipos.network.SyncManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -14,26 +18,55 @@ import javax.inject.Inject
 class DeviceRegistrationViewModel @Inject constructor(
     val deviceManager: DeviceManager,
     private val deviceInfoDao: DeviceInfoDao,
-    val deviceSession: DeviceSession
+    val deviceSession: DeviceSession,
+    private val productDao: ProductDao,
+    private val customerDao: CustomerDao,
+    private val invoiceDao: InvoiceDao,
+    private val syncManager: SyncManager
 ) : ViewModel() {
 
     /** Save device info to Room (isSynced = false). SyncDeviceWorker handles the backend push. */
     fun registerDevice(deviceName: String, storeId: String, onComplete: () -> Unit) {
         viewModelScope.launch {
-            deviceManager.setDeviceName(deviceName)
+            val cleanStoreId = storeId.trim()
+            val cleanDeviceName = deviceName.trim()
+
+            deviceManager.setDeviceName(cleanDeviceName)
+            deviceManager.setStoreId(cleanStoreId)
             val deviceId = deviceManager.getDeviceId()
+
             deviceInfoDao.upsert(
                 DeviceInfo(
                     deviceId = deviceId,
-                    deviceName = deviceName,
-                    storeId = storeId,
+                    deviceName = cleanDeviceName,
+                    storeId = cleanStoreId,
                     isSynced = false
                 )
             )
+
             // Populate session immediately so backfill and sync use the correct storeId
             deviceSession.deviceId = deviceId
-            deviceSession.storeId = storeId
-            deviceSession.deviceName = deviceName
+            deviceSession.storeId = cleanStoreId
+            deviceSession.deviceName = cleanDeviceName
+
+            // Reset sync status on products, customers, and invoices so they re-sync to the registered store
+            try {
+                productDao.resetSyncStatus()
+                customerDao.resetSyncStatus()
+                invoiceDao.resetSyncStatus()
+                deviceInfoDao.resetSyncStatus()
+            } catch (e: Exception) {
+                // Non-fatal
+            }
+
+            // Trigger sync immediately to push data under the registered store
+            try {
+                syncManager.scheduleProductBatchSync()
+                syncManager.scheduleInvoiceBatchSync()
+            } catch (e: Exception) {
+                // Non-fatal
+            }
+
             onComplete()
         }
     }

@@ -18,7 +18,10 @@ class SyncUserWorker @AssistedInject constructor(
     private val userDao: UserDao,
     private val userApiService: UserApiService,
     connectivityHelper: ConnectivityHelper,
-    private val firestore: com.google.firebase.firestore.FirebaseFirestore
+    private val firestore: com.google.firebase.firestore.FirebaseFirestore,
+    private val deviceSession: com.ipos.app.core.DeviceSession,
+    private val deviceManager: com.ipos.app.core.DeviceManager,
+    private val deviceInfoDao: com.ipos.data.data_source.DeviceInfoDao
 ) : BaseSyncWorker(context, params, connectivityHelper) {
 
     interface Factory : WorkerAssistedFactory<SyncUserWorker>
@@ -28,7 +31,17 @@ class SyncUserWorker @AssistedInject constructor(
     override suspend fun syncToApi(entity: Any): Boolean {
         val user = entity as User
         var firestoreSynced = false
-        val storeId = if (user.storeID.isNotBlank()) user.storeID else "ISTART"
+        val storeId = when {
+            user.storeID.isNotBlank() -> user.storeID
+            deviceSession.storeId.isNotBlank() -> deviceSession.storeId
+            deviceManager.getStoreId().isNotBlank() -> deviceManager.getStoreId()
+            else -> deviceInfoDao.getActiveStoreId() ?: ""
+        }
+
+        if (storeId.isBlank()) {
+            Log.w("SyncUserWorker", "Cannot sync user: storeId is blank")
+            return false
+        }
 
         try {
             val map = hashMapOf(

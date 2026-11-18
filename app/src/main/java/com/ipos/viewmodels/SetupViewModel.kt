@@ -66,21 +66,30 @@ class SetupViewModel @Inject constructor(
             setStep(0, StepStatus.RUNNING)
             try {
                 val deviceId = deviceManager.getDeviceId()
-                val info = deviceInfoDao.getByDeviceId(deviceId)
-                if (info != null) {
-                    deviceSession.deviceId = info.deviceId
-                    deviceSession.storeId = info.storeId
-                    deviceSession.deviceName = info.deviceName
-                    Log.d(TAG, "Session loaded — deviceId=${info.deviceId} storeId=${info.storeId}")
-                } else {
-                    // Device not registered yet — try to get storeId from logged-in user
-                    val users = userDao.getAllUsersOnce()
-                    val storeId = users.firstOrNull()?.storeID ?: ""
-                    val deviceName = deviceManager.getDeviceName()
-                    deviceSession.deviceId = deviceId
-                    deviceSession.storeId = storeId
-                    deviceSession.deviceName = deviceName
-                    // Persist to Room so future launches load it
+                var info = deviceInfoDao.getByDeviceId(deviceId)
+                if (info == null) {
+                    info = deviceInfoDao.getActiveDevice()
+                }
+
+                val prefsStoreId = deviceManager.getStoreId()
+                val users = userDao.getAllUsersOnce()
+                val userStoreId = users.firstOrNull { it.storeID.isNotBlank() }?.storeID ?: ""
+
+                val storeId = when {
+                    !info?.storeId.isNullOrBlank() -> info!!.storeId
+                    prefsStoreId.isNotBlank() -> prefsStoreId
+                    userStoreId.isNotBlank() -> userStoreId
+                    else -> ""
+                }.trim()
+
+                val deviceName = info?.deviceName ?: deviceManager.getDeviceName()
+
+                deviceSession.deviceId = deviceId
+                deviceSession.storeId = storeId
+                deviceSession.deviceName = deviceName
+
+                if (storeId.isNotBlank()) {
+                    deviceManager.setStoreId(storeId)
                     deviceInfoDao.upsert(
                         DeviceInfo(
                             deviceId = deviceId,
@@ -89,7 +98,9 @@ class SetupViewModel @Inject constructor(
                             isSynced = false
                         )
                     )
-                    Log.d(TAG, "New device registered — deviceId=$deviceId storeId=$storeId")
+                    Log.d(TAG, "Session loaded/updated — deviceId=$deviceId storeId=$storeId")
+                } else {
+                    Log.d(TAG, "Session loaded with empty storeId — deviceId=$deviceId")
                 }
                 setStep(0, StepStatus.DONE)
             } catch (e: Exception) {

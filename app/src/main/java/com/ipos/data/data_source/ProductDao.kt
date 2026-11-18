@@ -137,4 +137,7 @@ interface ProductDao {
     @Query("UPDATE Products SET isSynced = 1 WHERE productId = :productId")
     suspend fun markSynced(productId: Long)
 
+    @Query("UPDATE Products SET isSynced = 0")
+    suspend fun resetSyncStatus()
+
 }

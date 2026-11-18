@@ -13,6 +13,15 @@ interface DeviceInfoDao {
     @Query("SELECT * FROM device_info WHERE deviceId = :deviceId LIMIT 1")
     suspend fun getByDeviceId(deviceId: String): DeviceInfo?
 
+    @Query("SELECT * FROM device_info LIMIT 1")
+    suspend fun getActiveDevice(): DeviceInfo?
+
+    @Query("SELECT storeId FROM device_info WHERE storeId != '' LIMIT 1")
+    suspend fun getActiveStoreId(): String?
+
+    @Query("UPDATE device_info SET isSynced = 0")
+    suspend fun resetSyncStatus()
+
     @Query("SELECT * FROM device_info WHERE isSynced = 0 LIMIT :limit")
     suspend fun getUnsynced(limit: Int): List<DeviceInfo>
 

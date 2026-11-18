@@ -26,7 +26,9 @@ class SyncInvoiceWorker @AssistedInject constructor(
     private val invoiceApiService: InvoiceApiService,
     private val deviceManager: com.ipos.app.core.DeviceManager,
     private val connectivityHelper: ConnectivityHelper,
-    private val firestore: com.google.firebase.firestore.FirebaseFirestore
+    private val firestore: com.google.firebase.firestore.FirebaseFirestore,
+    private val deviceSession: com.ipos.app.core.DeviceSession,
+    private val deviceInfoDao: com.ipos.data.data_source.DeviceInfoDao
 ) : CoroutineWorker(appContext, params) {
 
     // Required companion interface
@@ -152,9 +154,19 @@ class SyncInvoiceWorker @AssistedInject constructor(
             var firestoreSyncedCount = 0
             // 1. Batch sync to Cloud Firestore
             try {
+                val defaultStoreId = when {
+                    deviceSession.storeId.isNotBlank() -> deviceSession.storeId
+                    deviceManager.getStoreId().isNotBlank() -> deviceManager.getStoreId()
+                    else -> deviceInfoDao.getActiveStoreId() ?: ""
+                }
+
                 val batch = firestore.batch()
                 for (inv in validInvoices) {
-                    val storeId = if (inv.storeId.isNotEmpty()) inv.storeId else "ISTART"
+                    val storeId = if (inv.storeId.isNotBlank()) inv.storeId else defaultStoreId
+                    if (storeId.isBlank()) {
+                        Log.w(TAG, "Cannot sync invoice ${inv.invoiceId}: storeId is blank")
+                        continue
+                    }
                     val docRef = firestore.collection("stores").document(storeId)
                         .collection("invoices").document(inv.invoiceId.toString())
                     
@@ -212,7 +224,16 @@ class SyncInvoiceWorker @AssistedInject constructor(
     }
 
     private suspend fun syncInvoiceToFirestore(invoice: com.ipos.data.entities.Invoice) {
-        val storeId = if (invoice.storeId.isNotEmpty()) invoice.storeId else "ISTART"
+        val defaultStoreId = when {
+            deviceSession.storeId.isNotBlank() -> deviceSession.storeId
+            deviceManager.getStoreId().isNotBlank() -> deviceManager.getStoreId()
+            else -> deviceInfoDao.getActiveStoreId() ?: ""
+        }
+        val storeId = if (invoice.storeId.isNotBlank()) invoice.storeId else defaultStoreId
+        if (storeId.isBlank()) {
+            Log.w(TAG, "Cannot sync invoice ${invoice.invoiceId} to Firestore: storeId is blank")
+            return
+        }
         val map = com.ipos.data.entities.mapInvoiceToFirestore(invoice).toMutableMap()
         map["storeId"] = storeId
 
