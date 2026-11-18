@@ -10,6 +10,7 @@ import com.ipos.data.data_source.InvoiceDao
 import com.ipos.data.data_source.ProductDao
 import com.ipos.data.entities.DeviceInfo
 import com.ipos.network.SyncManager
+import com.ipos.data.repositories.BackfillRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -22,6 +23,7 @@ class DeviceRegistrationViewModel @Inject constructor(
     private val productDao: ProductDao,
     private val customerDao: CustomerDao,
     private val invoiceDao: InvoiceDao,
+    private val backfillRepository: BackfillRepository,
     private val syncManager: SyncManager
 ) : ViewModel() {
 
@@ -49,11 +51,9 @@ class DeviceRegistrationViewModel @Inject constructor(
             deviceSession.storeId = cleanStoreId
             deviceSession.deviceName = cleanDeviceName
 
-            // Reset sync status on products, customers, and invoices so they re-sync to the registered store
+            // Re-stamp all tables and reset sync status on products, customers, and invoices
             try {
-                productDao.resetSyncStatus()
-                customerDao.resetSyncStatus()
-                invoiceDao.resetSyncStatus()
+                backfillRepository.backfillDeviceAndStore(deviceId, cleanStoreId)
                 deviceInfoDao.resetSyncStatus()
             } catch (e: Exception) {
                 // Non-fatal
@@ -61,8 +61,7 @@ class DeviceRegistrationViewModel @Inject constructor(
 
             // Trigger sync immediately to push data under the registered store
             try {
-                syncManager.scheduleProductBatchSync()
-                syncManager.scheduleInvoiceBatchSync()
+                syncManager.syncAllNow()
             } catch (e: Exception) {
                 // Non-fatal
             }

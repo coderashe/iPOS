@@ -76,8 +76,8 @@ fun DashboardScreen(
         SalesmanInfoCard(
 //        SalesmanWeeklyInfoCard(
 //        SalesmanMonthlyInfoCard(
-            salesmanName = currentUser?.userFullName ?: "iSTART",
-            shopName = currentUser?.storeID ?: "ISTART CAPITAL STORE",
+            salesmanName = currentUser?.userFullName ?: "User",
+            shopName = currentUser?.storeID ?: "iPOS Store",
             viewModel = viewModel
         )
         SpacerHeight()

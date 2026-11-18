@@ -37,6 +37,9 @@ interface UserDao {
     @Query("UPDATE user SET isSynced = 0")
     suspend fun resetSyncStatus()
 
+    @Query("UPDATE user SET storeID = :storeId WHERE storeID != :storeId")
+    suspend fun updateStoreId(storeId: String)
+
     @Query("SELECT COUNT(*) FROM user WHERE isSynced = 0")
     fun getUnsyncedCount(): Flow<Int>
 

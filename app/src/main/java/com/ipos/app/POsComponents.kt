@@ -96,26 +96,27 @@ fun SwipeRefreshLayout(
     viewModel: InvoiceViewModel,
     navController: NavHostController
 ) {
-    var isRefreshing by remember { mutableStateOf(false) }
-    var reloadTrigger by remember { mutableStateOf(0) }
+    val syncState by viewModel.syncState.collectAsState()
+    var manualRefresh by remember { mutableStateOf(false) }
+
+    LaunchedEffect(syncState) {
+        if (syncState != InvoiceViewModel.SyncState.SYNCING) {
+            manualRefresh = false
+        }
+    }
+
+    val isRefreshing = manualRefresh || syncState == InvoiceViewModel.SyncState.SYNCING
 
     SwipeRefresh(
         state = rememberSwipeRefreshState(isRefreshing),
         onRefresh = {
-            isRefreshing = true
-            
-            // Sync all data types
-            viewModel.syncAllNow()  // Syncs invoices, products, and invoice lines
-            
-            // Stop refresh indicator after delay
+            manualRefresh = true
+            viewModel.syncAllNow()
             Handler(Looper.getMainLooper()).postDelayed({
-                isRefreshing = false
-                // Commented out: Navigation to login screen removed
-                // reloadTrigger++  // This was causing screen reload/navigation
-            }, 3000)  // Reduced delay from 5s to 3s
+                manualRefresh = false
+            }, 3000)
         },
     ) {
-        // Removed key(reloadTrigger) to prevent screen reload
         ShopLandingScreen()
     }
 }

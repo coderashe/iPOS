@@ -396,11 +396,15 @@ object AppModule {
         dayReportsDao: DayReportsDao,
         tradeReceivablesDao: TradeReceivablesDao,
         discountsReceivedDao: DiscountsReceivedDao,
-        orderDao: OrderDao
+        orderDao: OrderDao,
+        userDao: UserDao,
+        productDao: ProductDao,
+        customerDao: CustomerDao
     ): com.ipos.data.repositories.BackfillRepository {
         return com.ipos.data.repositories.BackfillRepository(
             invoiceDao, invoiceLineDao, expenseDao, paymentDao, cashFlowDao,
-            stockTakeDao, dayReportsDao, tradeReceivablesDao, discountsReceivedDao, orderDao
+            stockTakeDao, dayReportsDao, tradeReceivablesDao, discountsReceivedDao, orderDao,
+            userDao, productDao, customerDao
         )
     }
 

@@ -220,6 +220,11 @@ class InvoiceViewModel @Inject constructor(
     private val _unsyncedCount = MutableStateFlow(0)
     val notsyncedCount: StateFlow<Int> = _unsyncedCount.asStateFlow()
 
+    private val _syncProgress = MutableStateFlow(0f)
+    val syncProgress: StateFlow<Float> = _syncProgress.asStateFlow()
+
+    private var initialUnsyncedAtStart = 0
+
     // Track sync status
     private val _syncStatus = MutableLiveData<String>("Idle")
     val syncStatus: LiveData<String> = _syncStatus
@@ -276,6 +281,7 @@ class InvoiceViewModel @Inject constructor(
         fetchBrandProducts()
         // Monitor combined unsynced count (invoices + invoice lines)
         monitorUnsyncedCount()
+        monitorSyncProgress()
         fetchFailedInvoices()
     }
 
@@ -1912,7 +1918,34 @@ class InvoiceViewModel @Inject constructor(
         // This method is kept for any additional logic that might be needed
     }
 
+    private fun monitorSyncProgress() {
+        viewModelScope.launch {
+            combine(syncState, notsyncedCount) { state, unsynced ->
+                Pair(state, unsynced)
+            }.collect { (state, unsynced) ->
+                if (state == SyncState.SYNCING) {
+                    if (initialUnsyncedAtStart <= 0) {
+                        initialUnsyncedAtStart = maxOf(unsynced, 1)
+                    }
+                    val syncedSoFar = (initialUnsyncedAtStart - unsynced).coerceAtLeast(0)
+                    val fraction = (syncedSoFar.toFloat() / initialUnsyncedAtStart.toFloat()).coerceIn(0.1f, 0.95f)
+                    _syncProgress.value = fraction
+                } else if (state == SyncState.SUCCESS) {
+                    _syncProgress.value = 1.0f
+                    initialUnsyncedAtStart = 0
+                } else {
+                    _syncProgress.value = 0f
+                    initialUnsyncedAtStart = 0
+                }
+            }
+        }
+    }
+
     fun syncAllNow() {
+        if (initialUnsyncedAtStart <= 0) {
+            initialUnsyncedAtStart = maxOf(notsyncedCount.value, 1)
+        }
+        _syncProgress.value = 0.05f
         syncManager.syncAllNow()
     }
 
@@ -1953,11 +1986,18 @@ class InvoiceViewModel @Inject constructor(
         syncManager.scheduleInvoiceLineBatchSync()
     }
 
-    /** Reflects the real WorkManager state of the invoice-line batch sync job. */
+    /** Reflects the real WorkManager state of the full_sync job chain. */
     val syncWorkState: StateFlow<WorkInfo.State?> =
         workManager
-            .getWorkInfosForUniqueWorkFlow("invoice_line_batch_sync")
-            .map { infos -> infos.firstOrNull()?.state }
+            .getWorkInfosForUniqueWorkFlow("full_sync")
+            .map { infos ->
+                when {
+                    infos.any { it.state == WorkInfo.State.RUNNING || it.state == WorkInfo.State.ENQUEUED } -> WorkInfo.State.RUNNING
+                    infos.isNotEmpty() && infos.all { it.state == WorkInfo.State.SUCCEEDED } -> WorkInfo.State.SUCCEEDED
+                    infos.any { it.state == WorkInfo.State.FAILED } -> WorkInfo.State.FAILED
+                    else -> infos.firstOrNull()?.state
+                }
+            }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
 //    end syncInvoice

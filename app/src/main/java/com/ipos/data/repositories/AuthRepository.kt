@@ -89,7 +89,7 @@ class AuthRepositoryImpl @Inject constructor(
                         userRole = dto.role,
                         userPassword = dto.password,
                         userEmail = dto.email,
-                        storeID = dto.store ?: "iSTART001",
+                        storeID = dto.store ?: "",
                         userAddress = dto.address
                     )
                 }

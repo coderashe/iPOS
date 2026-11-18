@@ -2,6 +2,7 @@
 
 import android.util.Log
 import com.ipos.data.data_source.CashFlowDao
+import com.ipos.data.data_source.CustomerDao
 import com.ipos.data.data_source.DayReportsDao
 import com.ipos.data.data_source.DiscountsReceivedDao
 import com.ipos.data.data_source.ExpenseDao
@@ -9,8 +10,10 @@ import com.ipos.data.data_source.InvoiceDao
 import com.ipos.data.data_source.InvoiceLineDao
 import com.ipos.data.data_source.OrderDao
 import com.ipos.data.data_source.PaymentDao
+import com.ipos.data.data_source.ProductDao
 import com.ipos.data.data_source.StockTakeDao
 import com.ipos.data.data_source.TradeReceivablesDao
+import com.ipos.data.data_source.UserDao
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -25,7 +28,10 @@ class BackfillRepository @Inject constructor(
     private val dayReportsDao: DayReportsDao,
     private val tradeReceivablesDao: TradeReceivablesDao,
     private val discountsReceivedDao: DiscountsReceivedDao,
-    private val orderDao: OrderDao
+    private val orderDao: OrderDao,
+    private val userDao: UserDao,
+    private val productDao: ProductDao,
+    private val customerDao: CustomerDao
 ) {
     companion object {
         private const val TAG = "BackfillRepository"
@@ -42,7 +48,7 @@ class BackfillRepository @Inject constructor(
         }
 
         Log.d(TAG, "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-        Log.d(TAG, "🚀 Starting backfill")
+        Log.d(TAG, "🚀 Starting backfill & re-stamp")
         Log.d(TAG, "   deviceId = $deviceId")
         Log.d(TAG, "   storeId  = $storeId")
         Log.d(TAG, "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
@@ -57,8 +63,12 @@ class BackfillRepository @Inject constructor(
         run("tradereceivables") { tradeReceivablesDao.backfillDeviceAndStore(deviceId, storeId) }
         run("discountsreceived"){ discountsReceivedDao.backfillDeviceAndStore(deviceId, storeId) }
         run("orders")           { orderDao.backfillDeviceAndStore(deviceId, storeId) }
+        run("user")             { userDao.updateStoreId(storeId) }
+        run("reset_product_sync")  { productDao.resetSyncStatus() }
+        run("reset_customer_sync") { customerDao.resetSyncStatus() }
+        run("reset_invoice_sync")  { invoiceDao.resetSyncStatus() }
 
-        Log.d(TAG, "✅ Backfill complete for all tables")
+        Log.d(TAG, "✅ Backfill & re-stamp complete for all tables")
         Log.d(TAG, "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
     }
 

@@ -34,11 +34,14 @@ fun SyncStatusCard(
     viewModel: InvoiceViewModel = viewModel()
 ) {
     val unsyncedCount by viewModel.notsyncedCount.collectAsState()
-    val workState    by viewModel.syncWorkState.collectAsState()
+    val workState     by viewModel.syncWorkState.collectAsState()
+    val syncState     by viewModel.syncState.collectAsState()
+    val syncProgress  by viewModel.syncProgress.collectAsState()
 
-    val isRunning = workState == WorkInfo.State.RUNNING
-    val succeeded = workState == WorkInfo.State.SUCCEEDED
-    val failed    = workState == WorkInfo.State.FAILED ||
+    val isRunning = syncState == InvoiceViewModel.SyncState.SYNCING || workState == WorkInfo.State.RUNNING
+    val succeeded = syncState == InvoiceViewModel.SyncState.SUCCESS || workState == WorkInfo.State.SUCCEEDED
+    val failed    = syncState == InvoiceViewModel.SyncState.FAILED ||
+                    workState == WorkInfo.State.FAILED ||
                     workState == WorkInfo.State.CANCELLED
 
     // Always allow tapping — let the worker decide if there's anything to sync
@@ -112,7 +115,7 @@ fun SyncStatusCard(
                         showComplete      -> "Sync Complete!"
                         isRunning         -> "Syncing..."
                         failed            -> "Sync Failed — tap to retry"
-                        unsyncedCount > 0 -> "Unsynced Invoice Lines"
+                        unsyncedCount > 0 -> "Unsynced Items"
                         else              -> "All Synced"
                     },
                     style      = MaterialTheme.typography.titleMedium,
@@ -120,17 +123,31 @@ fun SyncStatusCard(
                     color      = iconColor
                 )
                 Spacer(modifier = Modifier.height(4.dp))
+                val percentInt = (syncProgress * 100).toInt()
                 Text(
                     text = when {
-                        showComplete      -> "All invoice lines are now synced"
-                        isRunning         -> "Please wait..."
-                        failed            -> "Check connection and try again"
+                        showComplete      -> "All data is up to date"
+                        isRunning         -> "Syncing $percentInt%..."
+                        failed            -> "Check connection and tap to retry"
                         unsyncedCount > 0 -> "$unsyncedCount items need syncing"
                         else              -> "Everything is up to date"
                     },
                     style = MaterialTheme.typography.bodyMedium,
                     color = iconColor.copy(alpha = 0.7f)
                 )
+
+                if (isRunning) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    LinearProgressIndicator(
+                        progress = syncProgress,
+                        modifier = Modifier
+                            .fillMaxWidth(0.9f)
+                            .height(6.dp)
+                            .clip(RoundedCornerShape(3.dp)),
+                        color = MaterialTheme.colorScheme.primary,
+                        trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                    )
+                }
             }
 
             Box(

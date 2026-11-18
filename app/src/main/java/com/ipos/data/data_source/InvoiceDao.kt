@@ -73,6 +73,6 @@ interface InvoiceDao {
     @Query("SELECT COUNT(*) FROM invoice WHERE isSynced = 0")
     fun getUnsyncedCount(): Flow<Int>
 
-    @Query("UPDATE invoice SET deviceId = :deviceId, storeId = :storeId WHERE deviceId = '' OR deviceId IS NULL")
+    @Query("UPDATE invoice SET deviceId = :deviceId, storeId = :storeId WHERE deviceId = '' OR deviceId IS NULL OR storeId != :storeId")
     suspend fun backfillDeviceAndStore(deviceId: String, storeId: String)
 }
