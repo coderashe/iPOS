@@ -17,7 +17,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.AlertDialog
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Undo
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -34,6 +34,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -47,8 +48,11 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.ipos.app.CustomHeadingMedium
+import com.ipos.app.utils.Utils
 import com.ipos.data.Destinations
+import com.ipos.data.entities.Invoice
 import com.ipos.data.entities.InvoiceLine
+import kotlinx.coroutines.launch
 import com.ipos.data.entities.PriceList
 import com.ipos.data.entities.Products
 import com.ipos.data.entities.ShoeBrand
@@ -65,10 +69,13 @@ fun InvoiceDetailScreen(
 ) {
     var showDialog by remember { mutableStateOf(false) }
     val errorMessage by remember { mutableStateOf<String?>(null) }
+    val scope = rememberCoroutineScope()
+    var invoice by remember { mutableStateOf<Invoice?>(null) }
 
-    // Trigger fetching invoiceLines based on the invoiceId
+    // Trigger fetching invoiceLines and invoice based on the invoiceId
     LaunchedEffect(key1 = invoiceId) {
         viewModel.fetchInvoiceLinesByInvoiceId(invoiceId)
+        invoice = viewModel.getInvoiceById(invoiceId)
     }
 
     // null = loading, emptyList = loaded but no lines, populated = has lines
@@ -81,10 +88,6 @@ fun InvoiceDetailScreen(
     var isFabEnabled by remember { mutableStateOf(true) }
 
     val context = LocalContext.current
-    // Build the order details string
-    val linesDetails = invoiceLines.joinToString("\n") { invoiceLine ->
-        "${invoiceLine.productName},     Qty: ${invoiceLine.productQtySold},     $${invoiceLine.productPrice}"
-    }
 
 //
     if (showDialog) {
@@ -240,39 +243,19 @@ fun InvoiceDetailScreen(
             }
         }
 
-        // Floating Action Button for sending report
+        // Floating Action Button for printing / sharing PDF receipt
         FloatingActionButton(
             onClick = {
-                // Code for sharing the invoice message...
-
-                val message = "*${Date(System.currentTimeMillis())} REPORT:*\n\n\n" +
-                        "*INVOICE RECEIPT: ${invoiceLine?.invoiceId}*\n" +
-                        "Cashier: ${invoiceLine?.cashier}\n\n" +
-                        "$linesDetails\n\n" +
-                        "THANK YOU!!!... powered by istartk \u00A92024"
-
-                val sendIntent = Intent(Intent.ACTION_SEND).apply {
-                    type = "text/plain"
-                    putExtra(Intent.EXTRA_TEXT, message)
-                }
-
-                try {
-                    val chooserIntent = Intent.createChooser(
-                        sendIntent,
-                        "Send via WhatsApp or WhatsApp Business"
+                scope.launch {
+                    val bizInfo = viewModel.getBusinessInfo()
+                    val inv = invoice ?: viewModel.getInvoiceById(invoiceId)
+                    Utils.generateAndShareReceiptPdf(
+                        context = context,
+                        businessInfo = bizInfo,
+                        invoice = inv,
+                        invoiceLine = invoiceLine,
+                        invoiceLines = invoiceLines
                     )
-                    chooserIntent.resolveActivity(context.packageManager)?.let {
-                        context.startActivity(chooserIntent)
-                    } ?: run {
-                        Toast.makeText(
-                            context,
-                            "No messaging app found",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                } catch (e: Exception) {
-                    Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT)
-                        .show()
                 }
             },
             modifier = Modifier
@@ -280,8 +263,8 @@ fun InvoiceDetailScreen(
                 .padding(16.dp) // Add padding from edges
         ) {
             Icon(
-                imageVector = Icons.Default.Send,
-                contentDescription = "Send Report",
+                imageVector = Icons.Default.Print,
+                contentDescription = "Print / Share Receipt",
                 tint = GreenColor
             )
         }

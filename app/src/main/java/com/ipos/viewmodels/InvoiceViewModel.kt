@@ -738,6 +738,31 @@ class InvoiceViewModel @Inject constructor(
         }
     }
 
+    fun getActiveStoreId(): String {
+        return deviceSession.storeId.ifBlank { deviceManager.getStoreId() }
+    }
+
+    fun getActiveDeviceName(): String {
+        return deviceSession.deviceName.ifBlank { deviceManager.getDeviceName() }
+    }
+
+    suspend fun getInvoiceById(id: Long): Invoice? {
+        return invoiceRepository.getInvoiceById(id)
+    }
+
+    suspend fun getBusinessInfo(): com.ipos.app.utils.BusinessInfo {
+        val store = getActiveStoreId()
+        val device = getActiveDeviceName()
+        val user = authRepository.getAllUsersOnce().firstOrNull()
+        return com.ipos.app.utils.BusinessInfo(
+            storeName = store.ifBlank { user?.storeID ?: "iPOS Store" },
+            deviceName = device,
+            contact = user?.userContact,
+            email = user?.userEmail,
+            address = user?.userAddress
+        )
+    }
+
     fun insertCurrency(currency: Currency) = viewModelScope.launch {
         invoiceRepository.insertCurrency(currency)
     }

@@ -14,7 +14,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.filled.Print
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -29,6 +29,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -38,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.ipos.app.utils.Utils
 import com.ipos.viewmodels.InvoiceViewModel
+import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -55,17 +57,10 @@ fun SalesReportScreen(
     val invoices by viewModel.invoiceList.collectAsState()
     val filteredInvoices = filterInvoicesByDate(invoices, filterOption)
     val context = LocalContext.current
-    val (_, numberOfTransactions) = viewModel.getTodaySalesInfo()
+    val scope = rememberCoroutineScope()
 
-    val today = LocalDate.now()
-    val todayInvoices = invoices.filter { invoice ->
-        Instant.ofEpochMilli(invoice.invoiceDate)
-            .atZone(ZoneId.systemDefault())
-            .toLocalDate()
-            .isEqual(today)
-    }
-    val currencyTotals = todayInvoices
-        .groupBy { it.currencyCode }
+    val filteredCurrencyTotals = filteredInvoices
+        .groupBy { it.currencyCode.ifBlank { "USD" } }
         .mapValues { e -> e.value.sumOf { it.totalAmount } }
 
     LaunchedEffect(Unit) { viewModel.fetchAllInvoices() }
@@ -89,13 +84,18 @@ fun SalesReportScreen(
         },
         floatingActionButton = {
             FloatingActionButton(onClick = {
-                val message = "*${Date(System.currentTimeMillis())} SALES REPORT:*\n\n" +
-                        "Total Sales: $currencyTotals\n" +
-                        "Total Invoices: $numberOfTransactions\n\n" +
-                        "Powered by iStart © 2024"
-                Utils.generateAndShareInvoice(message, context)
+                scope.launch {
+                    val bizInfo = viewModel.getBusinessInfo()
+                    Utils.generateAndShareSalesReportPdf(
+                        context = context,
+                        storeName = bizInfo.storeName,
+                        filterTitle = filterOption,
+                        invoices = filteredInvoices,
+                        currencyTotals = filteredCurrencyTotals
+                    )
+                }
             }) {
-                Icon(Icons.Default.Send, contentDescription = "Share report")
+                Icon(Icons.Default.Print, contentDescription = "Print / Share Sales Report")
             }
         }
     ) { padding ->

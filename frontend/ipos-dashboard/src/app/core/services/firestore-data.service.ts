@@ -304,7 +304,7 @@ export class FirestoreDataService {
   /**
    * Get sales report and cashier breakdown directly from Firestore
    */
-  async getSalesReport(storeId: string, startDate?: Date, endDate?: Date, deviceId?: string): Promise<{ report: SalesReport, cashiers: SalesByCashier[] }> {
+  async getSalesReport(storeId: string, startDate?: Date, endDate?: Date, deviceId?: string): Promise<{ report: SalesReport, cashiers: SalesByCashier[], invoices: FirestoreInvoice[] }> {
     const rawInvoices = await this.getStoreInvoices(storeId, startDate, endDate);
     const invoices = (deviceId && deviceId.trim() !== '')
       ? rawInvoices.filter(inv => inv.deviceId === deviceId || (inv as any).deviceName === deviceId)
@@ -351,7 +351,8 @@ export class FirestoreDataService {
         revenueFormatted: revFormatted,
         totalTransactions: invoices.length
       },
-      cashiers
+      cashiers,
+      invoices
     };
   }
 
