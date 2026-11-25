@@ -47,8 +47,8 @@ import com.ipos.ui.theme.MyGray
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun ShopLandingScreen() {
-    InDriveTopBottomNavigation()
+fun ShopLandingScreen(settingsViewModel: com.ipos.viewmodels.SettingsViewModel? = null) {
+    InDriveTopBottomNavigation(settingsViewModel)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

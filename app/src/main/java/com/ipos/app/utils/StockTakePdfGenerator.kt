@@ -261,7 +261,7 @@ object StockTakePdfGenerator {
                 y += LINE_H + 4f
                 detail.uncountedProducts.forEach { pwb ->
                     ensureSpace(LINE_H + 2f)
-                    val name = "${pwb.brand.brandName} - ${pwb.product.productDescription}"
+                    val name = if (pwb.brand != null) "${pwb.brand.brandName} - ${pwb.product.productDescription}" else pwb.product.productDescription
                     val truncated = if (name.length > 55) name.take(53) + "…" else name
                     canvas.drawText("• $truncated", MARGIN + 8f, y, smallPaint)
                     y += LINE_H

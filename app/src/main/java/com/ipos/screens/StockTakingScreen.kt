@@ -389,7 +389,7 @@ private fun StockTakeItemRow(
     onRecord: (countedStock: Double, reason: String) -> Unit
 ) {
     val product = productWithBrand.product
-    val brandName = productWithBrand.brand.brandName
+    val brandName = productWithBrand.brand?.brandName ?: (productWithBrand.product.category ?: "")
     var expanded by rememberSaveable(product.productId) { mutableStateOf(!isChecked) }
     var countedStockText by rememberSaveable(product.productId) { mutableStateOf("") }
     var varianceReason by rememberSaveable(product.productId) { mutableStateOf("") }

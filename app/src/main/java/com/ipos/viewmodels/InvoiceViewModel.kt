@@ -108,7 +108,8 @@ class InvoiceViewModel @Inject constructor(
     private val workManager: WorkManager,
     private val syncManager: com.ipos.network.SyncManager,
     private val deviceSession: DeviceSession,
-    private val deviceManager: com.ipos.app.core.DeviceManager
+    private val deviceManager: com.ipos.app.core.DeviceManager,
+    @dagger.hilt.android.qualifiers.ApplicationContext private val context: Context
 ) : ViewModel() {
 
     private val _shoeSizes = MutableStateFlow(emptyList<ShoeSize>())
@@ -689,13 +690,9 @@ class InvoiceViewModel @Inject constructor(
     private fun insertInitialCustomers() = viewModelScope.launch {
         val existingCustomers = customerRepository.getAllCustomersOnce()
         if (existingCustomers.isEmpty()) {
+            // Only seed the essential walk-in customer — no demo accounts
             val initialCustomers = listOf(
-                Customer(1, "Simba Start", "simba@istart.com", "123456789", "State House"),
-                Customer(2, "Jane Smith", "jane@istart.com", "987654321", "State House"),
-                Customer(3, "John Doe", "john@istart.com", "987654321", "State House"),
-                Customer(4, "Amy Petersen", "amy@istart.com", "987654321", "State House"),
-                Customer(5, "Amara Brown", "amara@istart.com", "987654321", "State House"),
-                Customer(6, "walkin", "i@start.com", "000", "State House"),
+                Customer(1, "walkin", "i@start.com", "000", "")
             )
             customerRepository.insertCustomers(initialCustomers)
         }
@@ -717,26 +714,9 @@ class InvoiceViewModel @Inject constructor(
         return customerList.value.firstOrNull { it.name == "walkin" }
     }
 
-    // Insert initial default user
-    private fun insertDefaultUser() = viewModelScope.launch {
-        val existingUsers = authRepository.getAllUsersOnce()
-
-        if (existingUsers.isEmpty()) {
-            val storeId = deviceSession.storeId.ifBlank { deviceManager.getStoreId() }
-            if (storeId.isNotBlank()) {
-                val initialUser = User(
-                    userFullName = "Simba Start",
-                    userContact = "0776815030",
-                    userRole = "admin",
-                    userPassword = "password",
-                    storeID = storeId,
-                    userEmail = "dr.simbastart@gmail.com",
-                    userAddress = "3 Maywood St, Kwekwe, Zimbabwe"
-                )
-                authRepository.signUpUser(initialUser)
-            }
-        }
-    }
+    // Insert initial default user - REMOVED: no seeding of accounts on fresh install
+    // Users must register their own account via SignUpPage
+    private fun insertDefaultUser() = viewModelScope.launch { /* no-op */ }
 
     fun getActiveStoreId(): String {
         return deviceSession.storeId.ifBlank { deviceManager.getStoreId() }
@@ -782,8 +762,18 @@ class InvoiceViewModel @Inject constructor(
         }
     }
 
-    // Insert initial shoe sizes
-    private fun insertInitialShoeSizes() = viewModelScope.launch {
+    fun getBusinessType(): com.ipos.app.core.BusinessType? {
+        val raw = context.getSharedPreferences("ipos_prefs", Context.MODE_PRIVATE)
+            .getString(com.ipos.data.entities.AppSettingsKeys.BUSINESS_TYPE, null)
+        return raw?.let { runCatching { com.ipos.app.core.BusinessType.valueOf(it) }.getOrNull() }
+    }
+
+    // Insert initial shoe sizes (only for SHOES business type)
+    fun insertInitialShoeSizes() = viewModelScope.launch {
+        if (getBusinessType() != com.ipos.app.core.BusinessType.SHOES) {
+            Log.d(TAG, "Skipping shoe sizes seeding — businessType is ${getBusinessType()}")
+            return@launch
+        }
         val existingSizes = shoeSizeRepository.getAllShoeSizesOnce()
 
         if (existingSizes.isEmpty()) {
@@ -804,8 +794,12 @@ class InvoiceViewModel @Inject constructor(
         }
     }
 
-    // Insert initial shoe brands with optimized batch processing
+    // Insert initial shoe brands with optimized batch processing (only for SHOES business type)
     fun insertInitialShoeBrands() = viewModelScope.launch {
+        if (getBusinessType() != com.ipos.app.core.BusinessType.SHOES) {
+            Log.d(TAG, "Skipping shoe brands seeding — businessType is ${getBusinessType()}")
+            return@launch
+        }
         val brandNames = listOf(
             "OLDSTOCK",
             "D166",

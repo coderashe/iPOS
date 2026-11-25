@@ -37,19 +37,28 @@ class SettingsViewModel @Inject constructor(
     /**
      * Called once from BusinessTypeScreen. Persists to both SharedPreferences (fast reads)
      * and the app_settings Room table (survives backup/restore and future sync).
+     *
+     * StateFlow and SharedPreferences are updated SYNCHRONOUSLY on the caller's thread
+     * so that subsequent screens and StateFlow observers immediately see the updated type,
+     * even before any background coroutine completes.
      */
     fun saveBusinessType(type: BusinessType) {
+        // 1. Immediately update in-memory state
+        _businessType.value = type
+
+        // 2. Synchronous commit to SharedPreferences
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putString(AppSettingsKeys.BUSINESS_TYPE, type.name)
+            .commit()
+
+        // 3. Durable, syncable Room persist in background
         viewModelScope.launch {
-            // SharedPreferences — instant read on next launch
-            context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-                .edit()
-                .putString(AppSettingsKeys.BUSINESS_TYPE, type.name)
-                .apply()
-
-            // Room — durable, syncable
-            appSettingsDao.setValue(AppSettings(key = AppSettingsKeys.BUSINESS_TYPE, value = type.name))
-
-            _businessType.value = type
+            try {
+                appSettingsDao.setValue(AppSettings(key = AppSettingsKeys.BUSINESS_TYPE, value = type.name))
+            } catch (e: Exception) {
+                android.util.Log.e("SettingsViewModel", "Failed to save business_type to Room: ${e.message}", e)
+            }
         }
     }
 

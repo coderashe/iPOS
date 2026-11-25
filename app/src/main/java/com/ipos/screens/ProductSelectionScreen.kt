@@ -104,7 +104,7 @@ fun ProductSelectionScreen(
     val filteredProducts = withBrandProducts.filter {
         query.isBlank() ||
         it.product.productDescription.lowercase().contains(query) ||
-        it.brand.brandName.lowercase().contains(query) ||
+        (it.brand?.brandName ?: "").lowercase().contains(query) ||
         it.product.productCode.lowercase().contains(query)
     }
 
@@ -243,7 +243,7 @@ fun ProductSelectionScreen(
                         val qty = selectedQuantities[pwb.product.productId] ?: 0
                         ProductSelectionRow(
                             name = pwb.product.productDescription,
-                            brand = pwb.brand.brandName,
+                            brand = pwb.brand?.brandName ?: (pwb.product.category ?: ""),
                             code = pwb.product.productCode,
                             price = price,
                             stock = pwb.product.productQty,

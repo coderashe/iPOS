@@ -11,5 +11,5 @@ data class ProductWithBrand(
         parentColumn = "brandID",
         entityColumn = "brandID"
     )
-    val brand: ShoeBrand
+    val brand: ShoeBrand? = null
 )

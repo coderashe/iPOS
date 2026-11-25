@@ -142,7 +142,14 @@ class MainActivity : ComponentActivity() {
                                 when {
                                     !businessTypeDone -> {
                                         BusinessTypeScreen(
-                                            onComplete = { businessTypeDone = true }
+                                            onComplete = {
+                                                businessTypeDone = true
+                                                if (settingsViewModel.businessType.value == com.ipos.app.core.BusinessType.SHOES) {
+                                                    viewModel.insertInitialShoeBrands()
+                                                    viewModel.insertInitialShoeSizes()
+                                                }
+                                            },
+                                            viewModel = settingsViewModel
                                         )
                                     }
                                     showDeviceRegistration -> {
@@ -161,7 +168,7 @@ class MainActivity : ComponentActivity() {
                                         )
                                     }
                                     else -> {
-                                        SwipeRefreshLayout(viewModel, navController)
+                                        SwipeRefreshLayout(viewModel, navController, settingsViewModel)
                                     }
                                 }
                             }

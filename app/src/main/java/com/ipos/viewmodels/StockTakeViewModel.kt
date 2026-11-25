@@ -85,7 +85,7 @@ class StockTakeViewModel @Inject constructor(
                 else productsWithBrand.filter {
                     it.product.productDescription.contains(query, ignoreCase = true) ||
                             it.product.productCode.contains(query, ignoreCase = true) ||
-                            it.brand.brandName.contains(query, ignoreCase = true)
+                            (it.brand?.brandName ?: "").contains(query, ignoreCase = true)
                 }
                 Pair(productsWithBrand, filtered)
             }.collect { (all, filtered) ->
@@ -380,8 +380,10 @@ class StockTakeViewModel @Inject constructor(
                     .map { record ->
                         val pwb = productMap[record.productId]
                         VarianceRow(
-                            displayName = pwb?.let { "${it.brand.brandName} - ${it.product.productDescription}" }
-                                ?: "Product #${record.productId}",
+                            displayName = pwb?.let {
+                                val prefix = it.brand?.brandName?.let { b -> "$b - " } ?: ""
+                                "$prefix${it.product.productDescription}"
+                            } ?: "Product #${record.productId}",
                             systemQty = record.recordedStock,
                             countedQty = record.countedStock,
                             variance = record.variance,

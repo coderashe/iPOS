@@ -184,7 +184,15 @@ fun PINEntryDialog(
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun InDriveTopBottomNavigation() {
+fun InDriveTopBottomNavigation(
+    settingsViewModelParam: com.ipos.viewmodels.SettingsViewModel? = null
+) {
+    val context = LocalContext.current
+    val settingsViewModel: com.ipos.viewmodels.SettingsViewModel = settingsViewModelParam
+        ?: (context as? androidx.activity.ComponentActivity)?.let {
+            androidx.hilt.navigation.compose.hiltViewModel(it)
+        } ?: androidx.hilt.navigation.compose.hiltViewModel()
+
     val authViewModel: AuthViewModel = viewModel()
     val expenseViewModel: ExpenseViewModel = viewModel()
     val businessPerformanceViewModel: BusinessPerformanceViewModel = viewModel()
@@ -458,7 +466,11 @@ fun InDriveTopBottomNavigation() {
                 }
 
                 composable(Destinations.LoadStocks.route) {
-                    LoadStockScreen(viewModel = viewModel, navController) {}
+                    LoadStockScreen(
+                        viewModel = viewModel,
+                        navController = navController,
+                        settingsViewModel = settingsViewModel
+                    ) {}
                 }
 
                 // Navigation for ReportsScreen composable

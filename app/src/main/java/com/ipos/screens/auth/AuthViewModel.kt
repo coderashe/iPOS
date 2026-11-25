@@ -137,8 +137,14 @@ class AuthViewModel @Inject constructor(
                     _userEmail.value = auth.currentUser?.email
                     auth.currentUser?.email?.let { fetchUserRoleByEmail(it) }
                     resetLogoutState()
-                    // Backfill deviceId/storeId on any legacy records missing them
+                    // Bind storeId from the logged-in user's record, then backfill
                     viewModelScope.launch {
+                        val loggedInEmail = auth.currentUser?.email ?: return@launch
+                        val user = authRepository.getUserByEmail(loggedInEmail)
+                        if (user != null && user.storeID.isNotBlank()) {
+                            deviceSession.storeId = user.storeID
+                            Log.d("AuthViewModel", "StoreId bound from user record: ${user.storeID}")
+                        }
                         if (deviceSession.deviceId.isNotBlank() && deviceSession.storeId.isNotBlank()) {
                             backfillRepository.backfillDeviceAndStore(
                                 deviceId = deviceSession.deviceId,

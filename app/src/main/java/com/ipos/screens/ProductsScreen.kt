@@ -97,7 +97,7 @@ fun ProductsScreen(
     val query = searchQuery.trim().lowercase()
     val filteredProducts = withBranProducts.filter {
         it.product.productDescription.lowercase().contains(query) ||
-                it.brand.brandName.lowercase().contains(query)
+                (it.brand?.brandName ?: "").lowercase().contains(query)
     }
 
 //    old logic

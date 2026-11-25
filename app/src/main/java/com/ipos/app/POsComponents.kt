@@ -94,7 +94,8 @@ import java.time.temporal.TemporalAdjusters
 @Composable
 fun SwipeRefreshLayout(
     viewModel: InvoiceViewModel,
-    navController: NavHostController
+    navController: NavHostController,
+    settingsViewModel: com.ipos.viewmodels.SettingsViewModel? = null
 ) {
     val syncState by viewModel.syncState.collectAsState()
     var manualRefresh by remember { mutableStateOf(false) }
@@ -117,7 +118,7 @@ fun SwipeRefreshLayout(
             }, 3000)
         },
     ) {
-        ShopLandingScreen()
+        ShopLandingScreen(settingsViewModel)
     }
 }
 
