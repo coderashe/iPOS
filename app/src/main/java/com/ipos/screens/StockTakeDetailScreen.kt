@@ -201,7 +201,7 @@ private fun DetailContent(detail: StockTakeDetail, modifier: Modifier = Modifier
                 Spacer(Modifier.height(8.dp))
             }
             items(detail.uncountedProducts, key = { it.product.productId }) { pwb ->
-                val brandPrefix = pwb.brand?.brandName?.let { "$it - " } ?: ""
+                val brandPrefix = pwb.brand?.brandName?.let { bn -> "$bn - " } ?: ""
                 Text(
                     text = "• $brandPrefix${pwb.product.productDescription}",
                     style = MaterialTheme.typography.bodySmall,

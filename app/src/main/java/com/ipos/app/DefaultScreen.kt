@@ -34,6 +34,7 @@ import androidx.compose.material.icons.filled.AutoGraph
 import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Logout
@@ -608,21 +609,15 @@ fun IndriveDrawerHeader(authViewModel: AuthViewModel = viewModel()) {
     val userImage = painterResource(id = R.drawable.user)
     val currentUserEmail by authViewModel.userEmail.observeAsState()
 
-    // Trigger fetch when the email is available
     currentUserEmail?.let {
-        LaunchedEffect(it) {
-            authViewModel.fetchUserByEmail(it)
-        }
+        LaunchedEffect(it) { authViewModel.fetchUserByEmail(it) }
     }
 
     val currentUser by authViewModel.fetchedUser.observeAsState()
-    // Logging the fetched user once available
-    currentUser?.let {
-    } ?: run {
-    }
-
+    var expanded by remember { mutableStateOf(false) }
 
     Column(modifier = Modifier.background(MyGray)) {
+        // Tappable header row
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
@@ -630,62 +625,78 @@ fun IndriveDrawerHeader(authViewModel: AuthViewModel = viewModel()) {
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(8.dp))
                 .background(Color.White)
+                .clickable { expanded = !expanded }
         ) {
             Image(
-                painter = userImage, contentDescription = null,
+                painter = userImage,
+                contentDescription = null,
                 modifier = Modifier
                     .size(50.dp)
                     .padding(8.dp)
                     .clip(CircleShape)
             )
-
-            // Column containing text, star icons, and rating
             Column(
                 modifier = Modifier
                     .padding(8.dp)
                     .weight(1f)
             ) {
                 Text(
-                    text = currentUser?.userFullName ?: "Simba Start"
-                    ?: stringResource(id = R.string.myusername),
-                    color = Color.Black
+                    text = currentUser?.userFullName ?: "—",
+                    color = Color.Black,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Bold
                 )
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(top = 4.dp)
-                ) {
-                    repeat(5) {
-                        Icon(
-                            imageVector = Icons.Default.Star,
-                            contentDescription = "Star rating",
-                            modifier = Modifier.size(16.dp),
-                            tint = Color.Yellow
-                        )
-                    }
-                    Text(
-                        text = " 4.7",
-                        color = Color.Black,
-                        modifier = Modifier.padding(start = 4.dp)
-                    )
-
-                    Text(
-                        text = " (101) ",
-                        color = Color.Black,
-                        modifier = Modifier.padding(start = 4.dp)
-                    )
-                }
+                Text(
+                    text = currentUserEmail ?: "Not logged in",
+                    color = Color.Gray,
+                    style = MaterialTheme.typography.bodySmall
+                )
             }
-
             Icon(
-                imageVector = Icons.Default.KeyboardArrowRight,
-                contentDescription = "",
-                modifier = Modifier
-                    .padding(end = 8.dp)
-                    .size(22.dp),
+                imageVector = if (expanded) Icons.Default.KeyboardArrowDown else Icons.Default.KeyboardArrowRight,
+                contentDescription = if (expanded) "Collapse" else "Expand",
+                modifier = Modifier.padding(end = 8.dp).size(22.dp),
                 tint = Color.Black
             )
         }
+
+        // Expandable details section
+        if (expanded) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 4.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(Color.White)
+                    .padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                ProfileDetailRow(label = "Role", value = currentUser?.userRole ?: "—")
+                ProfileDetailRow(label = "Store ID", value = currentUser?.storeID?.ifBlank { "Not set" } ?: "Not set")
+                ProfileDetailRow(label = "Contact", value = currentUser?.userContact ?: "—")
+                ProfileDetailRow(label = "Address", value = currentUser?.userAddress ?: "—")
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProfileDetailRow(label: String, value: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodySmall,
+            color = Color.Gray,
+            fontWeight = FontWeight.SemiBold
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodySmall,
+            color = Color.Black
+        )
     }
 }
 

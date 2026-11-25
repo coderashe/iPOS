@@ -109,6 +109,7 @@ class InvoiceViewModel @Inject constructor(
     private val syncManager: com.ipos.network.SyncManager,
     private val deviceSession: DeviceSession,
     private val deviceManager: com.ipos.app.core.DeviceManager,
+    private val businessTypeRepository: com.ipos.data.repositories.BusinessTypeRepository,
     @dagger.hilt.android.qualifiers.ApplicationContext private val context: Context
 ) : ViewModel() {
 
@@ -763,9 +764,7 @@ class InvoiceViewModel @Inject constructor(
     }
 
     fun getBusinessType(): com.ipos.app.core.BusinessType? {
-        val raw = context.getSharedPreferences("ipos_prefs", Context.MODE_PRIVATE)
-            .getString(com.ipos.data.entities.AppSettingsKeys.BUSINESS_TYPE, null)
-        return raw?.let { runCatching { com.ipos.app.core.BusinessType.valueOf(it) }.getOrNull() }
+        return businessTypeRepository.businessType.value
     }
 
     // Insert initial shoe sizes (only for SHOES business type)

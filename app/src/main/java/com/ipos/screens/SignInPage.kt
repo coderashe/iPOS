@@ -45,6 +45,7 @@ fun SignInPage(
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var storeId by remember { mutableStateOf("") }
     val authState = authViewModel.authState.observeAsState()
     val context = LocalContext.current
     var passwordVisible by remember { mutableStateOf(false) }
@@ -57,24 +58,31 @@ fun SignInPage(
                 (authState.value as AuthState.Error).message,
                 Toast.LENGTH_LONG
             ).show()
-
             is AuthState.Success -> Toast.makeText(
                 context,
                 (authState.value as AuthState.Success).message,
                 Toast.LENGTH_SHORT
             ).show()
-
             else -> Unit
         }
     }
 
     Column(
-        modifier = Modifier
-            .fillMaxSize(),
+        modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         CustomHeadingMedium(heading = stringResource(id = R.string.login))
+
+        OutlinedTextField(
+            value = storeId,
+            onValueChange = { storeId = it.uppercase().trim() },
+            label = { Text("Store ID") },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
 
         OutlinedTextField(
             value = email,
@@ -93,24 +101,17 @@ fun SignInPage(
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             singleLine = true,
             trailingIcon = {
-                val image = if (passwordVisible)
-                    Icons.Default.Visibility
-                else Icons.Default.VisibilityOff
-
+                val image = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff
                 IconButton(onClick = { passwordVisible = !passwordVisible }) {
                     Icon(imageVector = image, contentDescription = null)
                 }
-            },
+            }
         )
 
         Spacer(modifier = Modifier.height(8.dp))
 
         Button(
-            onClick = {
-//                Test fetchAllUsers
-//                authViewModel.loadAllUsers()
-                authViewModel.login(email, password)
-            },
+            onClick = { authViewModel.login(email, password, storeId) },
             enabled = authState.value != AuthState.Loading
         ) {
             Text(text = stringResource(id = R.string.login))
@@ -118,19 +119,14 @@ fun SignInPage(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        TextButton(onClick = {
-            authViewModel.resetPassword(email)
-        }) {
+        TextButton(onClick = { authViewModel.resetPassword(email) }) {
             Text(text = "Forgot Password?")
         }
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        TextButton(onClick = {
-            navController.navigate(Destinations.SignUp.route)
-        }) {
+        TextButton(onClick = { navController.navigate(Destinations.SignUp.route) }) {
             Text(text = "Don't have an account? Sign up")
         }
     }
 }
-
