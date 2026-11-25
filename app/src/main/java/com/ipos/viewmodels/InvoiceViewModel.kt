@@ -1113,8 +1113,8 @@ class InvoiceViewModel @Inject constructor(
         viewModelScope.launch {
             val productId = productRepository.insertProduct(products)
 
-            // Update ShoeSize quantity
-            val shoeSize = shoeSizeRepository.getShoeSizeById(products.shoeSizeId)
+            // Update ShoeSize quantity (only relevant for SHOES; shoeSizeId is nullable for other types)
+            val shoeSize = products.shoeSizeId?.let { shoeSizeRepository.getShoeSizeById(it) }
             if (shoeSize != null) {
                 val updatedShoeSize =
                     shoeSize.copy(quantity = shoeSize.quantity + products.productQty)
@@ -1444,19 +1444,14 @@ class InvoiceViewModel @Inject constructor(
             }
 
             // Fetch the related ShoeBrand and ShoeSize entities (if applicable to butcher logic)
-            val shoeBrand = shoeBrandRepository.getShoeBrandById(product.brandID)
-            val shoeSize = shoeSizeRepository.getShoeSizeById(product.shoeSizeId)
-
-            if (shoeBrand == null || shoeSize == null) {
-                Log.e(
-                    "viewmodel",
-                    "ShoeBrand or ShoeSize not found for productId: $productId"
-                )
-                return
-            }
+            val shoeBrand = product.brandID?.let { shoeBrandRepository.getShoeBrandById(it) }
+            val shoeSize = product.shoeSizeId?.let { shoeSizeRepository.getShoeSizeById(it) }
 
             // Calculate the actual stock level by summing the quantity of all ShoeSizes for the brand
-            val totalStockLevel = shoeSizeRepository.getTotalQuantityByBrand(shoeBrand.brandID)
+            // shoeBrand is null for non-shoe products; skip shoe-stock accounting in that case
+            val totalStockLevel: Long = shoeBrand?.let {
+                shoeSizeRepository.getTotalQuantityByBrand(it.brandID).toLong()
+            } ?: product.productQty
 
             // Check if there is enough stock to sell the desired quantity
             if (totalStockLevel < quantitySold) {
@@ -1469,13 +1464,13 @@ class InvoiceViewModel @Inject constructor(
             }
 
             // Deduct the quantity sold from the total stock level
-            val newStockLevel = totalStockLevel - quantitySold
+            val newStockLevel = totalStockLevel - quantitySold.toLong()
 
             // Update the stock level for the ShoeSize entity
 //            shoeSizeRepository.updateShoeSizeStockLevel(shoeSize.shoeSizeId, newStockLevel)
 
             // Optionally update the Product entity if it tracks overall stock separately
-            val updatedProduct = product.copy(newStockLevel.toLong())
+            val updatedProduct = product.copy(productQty = newStockLevel)
             productRepository.updateProduct(updatedProduct)
 
         } catch (e: Exception) {
@@ -1906,17 +1901,17 @@ class InvoiceViewModel @Inject constructor(
 
             if (product != null) {
                 // Fetch the related ShoeBrand and ShoeSize entities
-                val shoeBrand = shoeBrandRepository.getShoeBrandById(product.brandID)
-                val shoeSize = shoeSizeRepository.getShoeSizeById(product.shoeSizeId)
+                val shoeBrand = product.brandID?.let { shoeBrandRepository.getShoeBrandById(it) }
+                val shoeSize = product.shoeSizeId?.let { shoeSizeRepository.getShoeSizeById(it) }
 
                 if (shoeBrand != null && shoeSize != null) {
                     // Calculate the actual current stock level by summing the quantity of all ShoeSizes
                     val totalQuantity =
-                        shoeSizeRepository.getTotalQuantityByBrand(shoeBrand.brandID)
+                        shoeSizeRepository.getTotalQuantityByBrand(shoeBrand.brandID).toLong()
 
                     // Update the stock level by adding the incoming quantity
                     val updatedStockLevel = totalQuantity + quantity
-                    val updatedProduct = product.copy(updatedStockLevel)
+                    val updatedProduct = product.copy(productQty = updatedStockLevel)
 
                     // Save the updated product back to the repository
                     productRepository.updateProduct(updatedProduct)
@@ -2377,7 +2372,7 @@ class InvoiceViewModel @Inject constructor(
             .filter { it.brandID == brand.brandID }
 
         return products.mapNotNull { product ->
-            shoeSizeRepository.getShoeSizeById(product.shoeSizeId)?.size
+            product.shoeSizeId?.let { shoeSizeRepository.getShoeSizeById(it) }?.size
         }.distinct().sorted()
     }
 

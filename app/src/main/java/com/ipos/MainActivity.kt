@@ -28,10 +28,12 @@ import com.ipos.viewmodels.InvoiceViewModel
 import com.ipos.viewmodels.TrialViewModel
 import com.ipos.app.core.TrialManager
 import com.ipos.screens.SetupScreen
+import com.ipos.screens.BusinessTypeScreen
 import com.ipos.screens.DeviceRegistrationScreen
 import com.ipos.screens.TrialBanner
 import com.ipos.screens.TrialExpiredScreen
 import com.ipos.viewmodels.SetupViewModel
+import com.ipos.viewmodels.SettingsViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import android.Manifest
 import androidx.navigation.compose.rememberNavController
@@ -64,6 +66,14 @@ class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // On a fresh install (no "app_installed" flag in prefs), sign out of Firebase
+        // so a previous user's session from another device/install doesn't auto-login.
+        val appPrefs = getSharedPreferences("ipos_prefs", MODE_PRIVATE)
+        if (!appPrefs.getBoolean("app_installed", false)) {
+            com.google.firebase.auth.FirebaseAuth.getInstance().signOut()
+            appPrefs.edit().putBoolean("app_installed", true).apply()
+        }
 
         // Check if the permission is already granted
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -114,9 +124,14 @@ class MainActivity : ComponentActivity() {
                             val navController = rememberNavController()
                             val viewModel: InvoiceViewModel = viewModel()
                             val setupViewModel: SetupViewModel = hiltViewModel()
+                            val settingsViewModel: SettingsViewModel = hiltViewModel()
                             val context = androidx.compose.ui.platform.LocalContext.current
 
-                            // Show setup gate if not yet completed
+                            // Business type gate — shown once on fresh install, locked in forever
+                            var businessTypeDone by remember {
+                                mutableStateOf(settingsViewModel.isOnboardingComplete())
+                            }
+                            // Setup gate — runs after business type is chosen
                             var setupDone by remember {
                                 mutableStateOf(setupViewModel.isSetupAlreadyDone(context))
                             }
@@ -125,11 +140,15 @@ class MainActivity : ComponentActivity() {
                             Column(modifier = Modifier.fillMaxSize()) {
                                 TrialBanner(daysLeft = status.daysLeft)
                                 when {
+                                    !businessTypeDone -> {
+                                        BusinessTypeScreen(
+                                            onComplete = { businessTypeDone = true }
+                                        )
+                                    }
                                     showDeviceRegistration -> {
                                         DeviceRegistrationScreen(
                                             onRegistrationComplete = {
                                                 showDeviceRegistration = false
-                                                // Re-run setup now that device is registered
                                                 setupViewModel.retry(context)
                                             }
                                         )

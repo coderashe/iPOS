@@ -4,6 +4,7 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.ipos.data.data_source.AppSettingsDao
 import com.ipos.data.data_source.CartItemDao
 import com.ipos.data.data_source.CashFlowDao
 import com.ipos.data.data_source.CurrencyDao
@@ -28,6 +29,7 @@ import com.ipos.data.data_source.TradeReceivablesDao
 import com.ipos.data.data_source.DeviceInfoDao
 import com.ipos.data.entities.DeviceInfo
 import com.ipos.data.data_source.UserDao
+import com.ipos.data.entities.AppSettings
 import com.ipos.data.entities.CartItem
 import com.ipos.data.entities.Currency
 import com.ipos.data.entities.Customer
@@ -61,9 +63,10 @@ import com.ipos.data.entities.User
         TradeReceivables::class, DiscountsReceived::class, Currency::class,
         CashFlow::class, ShoeBrand::class, ShoeSize::class, StockTake::class, StockTakeSession::class,
         FailedInvoiceItem::class,
-        DeviceInfo::class
+        DeviceInfo::class,
+        AppSettings::class
     ],
-    version = 13,
+    version = 14,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -94,6 +97,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun cashFlowDao(): CashFlowDao
     abstract fun currencyDao(): CurrencyDao
     abstract fun deviceInfoDao(): DeviceInfoDao
+    abstract fun appSettingsDao(): AppSettingsDao
 
     companion object {
         const val DATABASE_NAME = "ipos_db"
@@ -253,5 +257,72 @@ val MIGRATION_12_13 = object : Migration(12, 13) {
         db.execSQL("DROP TABLE IF EXISTS `Item`")
         db.execSQL("DROP TABLE IF EXISTS `Note`")
         db.execSQL("DROP TABLE IF EXISTS `student`")
+    }
+}
+
+val MIGRATION_13_14 = object : Migration(13, 14) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        // 1. Recreate products table with nullable brandID and shoeSizeId
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS `products_new` (
+                `productId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                `productDescription` TEXT NOT NULL,
+                `productQty` INTEGER NOT NULL,
+                `brandID` INTEGER,
+                `shoeSizeId` INTEGER,
+                `saleable` INTEGER NOT NULL,
+                `purchasable` INTEGER NOT NULL,
+                `averageCost` REAL NOT NULL,
+                `standardCost` REAL NOT NULL,
+                `salesTaxCode` TEXT,
+                `productCode` TEXT NOT NULL,
+                `inclusiveTaxed` INTEGER NOT NULL,
+                `imageUri` TEXT,
+                `lastUpdated` INTEGER,
+                `isSynced` INTEGER NOT NULL DEFAULT 0,
+                `category` TEXT,
+                `unit` TEXT,
+                `stockUnit` TEXT,
+                FOREIGN KEY(`brandID`) REFERENCES `shoeBrand`(`brandID`) ON DELETE SET NULL,
+                FOREIGN KEY(`shoeSizeId`) REFERENCES `shoe_sizes`(`shoeSizeId`) ON DELETE SET NULL
+            )
+            """.trimIndent()
+        )
+
+        // 2. Copy existing data
+        db.execSQL(
+            """
+            INSERT INTO `products_new` (
+                `productId`, `productDescription`, `productQty`, `brandID`, `shoeSizeId`,
+                `saleable`, `purchasable`, `averageCost`, `standardCost`, `salesTaxCode`,
+                `productCode`, `inclusiveTaxed`, `imageUri`, `lastUpdated`, `isSynced`
+            )
+            SELECT
+                `productId`, `productDescription`, `productQty`, `brandID`, `shoeSizeId`,
+                `saleable`, `purchasable`, `averageCost`, `standardCost`, `salesTaxCode`,
+                `productCode`, `inclusiveTaxed`, `imageUri`, `lastUpdated`, `isSynced`
+            FROM `products`
+            """.trimIndent()
+        )
+
+        // 3. Swap tables
+        db.execSQL("DROP TABLE `products`")
+        db.execSQL("ALTER TABLE `products_new` RENAME TO `products`")
+
+        // 4. Recreate indexes
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_products_brandID` ON `products` (`brandID`)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_products_shoeSizeId` ON `products` (`shoeSizeId`)")
+        db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_products_productCode` ON `products` (`productCode`)")
+
+        // 5. Create app_settings table
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS `app_settings` (
+                `key` TEXT NOT NULL PRIMARY KEY,
+                `value` TEXT NOT NULL
+            )
+            """.trimIndent()
+        )
     }
 }
