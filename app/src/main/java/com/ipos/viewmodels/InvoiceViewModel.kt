@@ -763,6 +763,8 @@ class InvoiceViewModel @Inject constructor(
         }
     }
 
+    val businessType: StateFlow<com.ipos.app.core.BusinessType?> = businessTypeRepository.businessType
+
     fun getBusinessType(): com.ipos.app.core.BusinessType? {
         return businessTypeRepository.businessType.value
     }
@@ -2486,6 +2488,75 @@ class InvoiceViewModel @Inject constructor(
                 Log.e("InvoiceVM", "Failed to add brand with products", e)
                 withContext(kotlinx.coroutines.Dispatchers.Main) {
                     onComplete("Failed to add brand: ${e.message}", true)
+                }
+            }
+        }
+    }
+
+    /**
+     * Creates a single product (for non-shoe businesses like Grocery, Butcher, General).
+     * Used from ProductSelectionScreen when a search returns no results.
+     */
+    fun addNewSingleProduct(
+        productName: String,
+        category: String,
+        unit: String,
+        sellingPrice: Double,
+        unitCost: Double,
+        stockQty: Double,
+        onComplete: (message: String, isError: Boolean) -> Unit
+    ) {
+        viewModelScope.launch {
+            try {
+                val cleanName = productName.trim()
+                val code = "PROD_${System.currentTimeMillis() % 100000}"
+                val product = com.ipos.data.entities.Products(
+                    productDescription = cleanName,
+                    productQty = stockQty.toLong(),
+                    brandID = null,
+                    shoeSizeId = null,
+                    category = category.trim(),
+                    stockUnit = unit.trim(),
+                    saleable = true,
+                    purchasable = true,
+                    averageCost = unitCost,
+                    standardCost = unitCost,
+                    salesTaxCode = "VAT",
+                    productCode = code,
+                    inclusiveTaxed = true,
+                    lastUpdated = System.currentTimeMillis()
+                )
+                val productId = productRepository.insertProduct(product)
+
+                priceListRepository.insertPriceLists(
+                    listOf(
+                        com.ipos.data.entities.PriceList(
+                            productId = productId,
+                            productDescription = cleanName,
+                            unitCost = unitCost,
+                            sellingPrice = sellingPrice,
+                            markupPercentage = 0.0,
+                            grossProfitPercentage = 0.0
+                        )
+                    )
+                )
+
+                fetchProducts()
+                fetchBrandProducts()
+                fetchPriceList()
+
+                // Automatically select 1 of the new product into the cart
+                setProductQuantity(productId, 1)
+
+                val msg = "\"$cleanName\" added successfully!"
+                Log.d("InvoiceVM", msg)
+                withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    onComplete(msg, false)
+                }
+            } catch (e: Exception) {
+                Log.e("InvoiceVM", "Failed to add single product", e)
+                withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    onComplete("Failed to add product: ${e.message}", true)
                 }
             }
         }

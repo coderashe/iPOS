@@ -151,6 +151,10 @@ class AuthViewModel @Inject constructor(
                             deviceSession.storeId = resolvedStoreId
                             deviceManager.setStoreId(resolvedStoreId)
                             Log.d("AuthViewModel", "StoreId bound on login: $resolvedStoreId")
+                            // Also update the Room user record so the drawer shows correct storeID
+                            if (user != null && user.storeID.isBlank()) {
+                                authRepository.signUpUser(user.copy(storeID = resolvedStoreId))
+                            }
                         }
                         if (deviceSession.deviceId.isNotBlank() && deviceSession.storeId.isNotBlank()) {
                             backfillRepository.backfillDeviceAndStore(

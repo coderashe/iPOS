@@ -50,8 +50,11 @@ class StockTakeViewModel @Inject constructor(
     private val productRepository: ProductRepository,
     private val priceListRepository: PriceListRepository,
     private val shoeBrandRepository: ShoeBrandRepository,
-    private val shoeSizeRepository: ShoeSizeRepository
+    private val shoeSizeRepository: ShoeSizeRepository,
+    private val businessTypeRepository: com.ipos.data.repositories.BusinessTypeRepository
 ) : ViewModel() {
+
+    val businessType: StateFlow<com.ipos.app.core.BusinessType?> = businessTypeRepository.businessType
 
     private val _uiState = MutableStateFlow(StockTakeUiState())
     val uiState: StateFlow<StockTakeUiState> = _uiState.asStateFlow()
@@ -319,6 +322,82 @@ class StockTakeViewModel @Inject constructor(
                 android.util.Log.e("StockTakeVM", "Failed to add brand with products", e)
                 _uiState.value = _uiState.value.copy(
                     message = "Failed to add brand: ${e.message}"
+                )
+            }
+        }
+    }
+
+    /**
+     * Creates a single product (for non-shoe businesses like Grocery, Butcher, General)
+     * and records it in the current stock take session.
+     */
+    fun addNewSingleProductAndRecord(
+        productName: String,
+        category: String,
+        unit: String,
+        sellingPrice: Double,
+        unitCost: Double,
+        countedQty: Double,
+        recordedBy: String
+    ) {
+        val sessionId = _uiState.value.openSession?.sessionId ?: return
+        viewModelScope.launch {
+            try {
+                val cleanName = productName.trim()
+                val code = "PROD_${System.currentTimeMillis() % 100000}"
+                val product = Products(
+                    productDescription = cleanName,
+                    productQty = countedQty.toLong(),
+                    brandID = null,
+                    shoeSizeId = null,
+                    category = category.trim(),
+                    stockUnit = unit.trim(),
+                    saleable = true,
+                    purchasable = true,
+                    averageCost = unitCost,
+                    standardCost = unitCost,
+                    salesTaxCode = "VAT",
+                    productCode = code,
+                    inclusiveTaxed = true,
+                    lastUpdated = System.currentTimeMillis()
+                )
+                val productId = productRepository.insertProduct(product)
+
+                priceListRepository.insertPriceLists(
+                    listOf(
+                        PriceList(
+                            productId = productId,
+                            productDescription = cleanName,
+                            unitCost = unitCost,
+                            sellingPrice = sellingPrice,
+                            markupPercentage = 0.0,
+                            grossProfitPercentage = 0.0
+                        )
+                    )
+                )
+
+                stockTakeRepository.upsertStockTakeRecord(
+                    StockTake(
+                        sessionId = sessionId,
+                        productId = productId,
+                        recordedStock = countedQty.toLong(),
+                        countedStock = countedQty,
+                        variance = 0.0,
+                        varianceReason = "New product added during stock take",
+                        dateRecorded = System.currentTimeMillis(),
+                        recordedBy = recordedBy
+                    )
+                )
+
+                _uiState.value = _uiState.value.copy(
+                    showAddProductDialog = false,
+                    searchQuery = "",
+                    message = "\"$cleanName\" created and recorded."
+                )
+            } catch (e: Exception) {
+                android.util.Log.e("StockTakeVM", "Failed to add single product", e)
+                _uiState.value = _uiState.value.copy(
+                    message = "Failed to add product: ${e.message}"
                 )
             }
         }
