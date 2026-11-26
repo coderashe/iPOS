@@ -221,6 +221,7 @@ fun InDriveTopBottomNavigation(
 
     Scaffold(
         scaffoldState = scaffoldState,
+        backgroundColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
                 title = {
@@ -248,7 +249,7 @@ fun InDriveTopBottomNavigation(
                         )
                     }
                 },
-                backgroundColor = Color.White,
+                backgroundColor = MaterialTheme.colorScheme.surface,
                 navigationIcon = {
                     IconButton(
                         onClick = {
@@ -580,7 +581,7 @@ fun IndriveDrawerNav(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(MyGray)
+                .background(MaterialTheme.colorScheme.surface)
         ) {
             // Make the header and body scrollable and take up remaining space
             Column(
@@ -620,7 +621,7 @@ fun IndriveDrawerHeader(
     val currentUser by authViewModel.fetchedUser.observeAsState()
     var expanded by remember { mutableStateOf(false) }
 
-    Column(modifier = Modifier.background(MyGray)) {
+    Column(modifier = Modifier.background(MaterialTheme.colorScheme.surface)) {
         // Tappable header row
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -628,7 +629,7 @@ fun IndriveDrawerHeader(
                 .padding(8.dp)
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(8.dp))
-                .background(Color.White)
+                .background(MaterialTheme.colorScheme.surfaceVariant)
                 .clickable { expanded = !expanded }
         ) {
             Image(
@@ -646,13 +647,13 @@ fun IndriveDrawerHeader(
             ) {
                 Text(
                     text = currentUser?.userFullName ?: "—",
-                    color = Color.Black,
+                    color = MaterialTheme.colorScheme.onSurface,
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
                     text = currentUserEmail ?: "Not logged in",
-                    color = Color.Gray,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodySmall
                 )
             }
@@ -660,7 +661,7 @@ fun IndriveDrawerHeader(
                 imageVector = if (expanded) Icons.Default.KeyboardArrowDown else Icons.Default.KeyboardArrowRight,
                 contentDescription = if (expanded) "Collapse" else "Expand",
                 modifier = Modifier.padding(end = 8.dp).size(22.dp),
-                tint = Color.Black
+                tint = MaterialTheme.colorScheme.onSurface
             )
         }
 
@@ -671,7 +672,7 @@ fun IndriveDrawerHeader(
                     .fillMaxWidth()
                     .padding(horizontal = 12.dp, vertical = 4.dp)
                     .clip(RoundedCornerShape(8.dp))
-                    .background(Color.White)
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
                     .padding(12.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
@@ -694,13 +695,13 @@ private fun ProfileDetailRow(label: String, value: String) {
         Text(
             text = label,
             style = MaterialTheme.typography.bodySmall,
-            color = Color.Gray,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontWeight = FontWeight.SemiBold
         )
         Text(
             text = value,
             style = MaterialTheme.typography.bodySmall,
-            color = Color.Black
+            color = MaterialTheme.colorScheme.onSurface
         )
     }
 }
@@ -726,7 +727,7 @@ fun IndriveDrawerBody(navController: NavController, scaffoldState: ScaffoldState
         ) {
             Icon(Icons.Default.Home, contentDescription = null)
             Spacer(modifier = Modifier.width(20.dp))
-            Text(text = stringResource(id = R.string.home), color = Color.Black)
+            Text(text = stringResource(id = R.string.home), color = MaterialTheme.colorScheme.onSurface)
         }
 
         Row(
@@ -740,7 +741,7 @@ fun IndriveDrawerBody(navController: NavController, scaffoldState: ScaffoldState
         ) {
             Icon(Icons.Default.ShoppingCart, contentDescription = null)
             Spacer(modifier = Modifier.width(20.dp))
-            Text(text = stringResource(id = R.string.orders1), color = Color.Black)
+            Text(text = stringResource(id = R.string.orders1), color = MaterialTheme.colorScheme.onSurface)
         }
 
         Row(
@@ -754,7 +755,7 @@ fun IndriveDrawerBody(navController: NavController, scaffoldState: ScaffoldState
         ) {
             Icon(Icons.Default.LocationOn, contentDescription = null)
             Spacer(modifier = Modifier.width(20.dp))
-            Text(text = stringResource(id = R.string.reports1), color = Color.Black)
+            Text(text = stringResource(id = R.string.reports1), color = MaterialTheme.colorScheme.onSurface)
         }
 
         Row(
@@ -768,7 +769,7 @@ fun IndriveDrawerBody(navController: NavController, scaffoldState: ScaffoldState
         ) {
             Icon(Icons.Default.Settings, contentDescription = null)
             Spacer(modifier = Modifier.width(20.dp))
-            Text(text = stringResource(id = R.string.load_stocks1), color = Color.Black)
+            Text(text = stringResource(id = R.string.load_stocks1), color = MaterialTheme.colorScheme.onSurface)
         }
 
         Row(
@@ -782,9 +783,8 @@ fun IndriveDrawerBody(navController: NavController, scaffoldState: ScaffoldState
         ) {
             Icon(Icons.Default.Face, contentDescription = null)
             Spacer(modifier = Modifier.width(20.dp))
-            Text(text = "OCR Invoice Upload", color = Color.Black)
+            Text(text = "OCR Invoice Upload", color = MaterialTheme.colorScheme.onSurface)
         }
-//
 
         Row(
             modifier = Modifier
@@ -797,9 +797,8 @@ fun IndriveDrawerBody(navController: NavController, scaffoldState: ScaffoldState
         ) {
             Icon(Icons.Default.Settings, contentDescription = null)
             Spacer(modifier = Modifier.width(20.dp))
-            Text(text = stringResource(id = R.string.customers), color = Color.Black)
+            Text(text = stringResource(id = R.string.customers), color = MaterialTheme.colorScheme.onSurface)
         }
-//
 
         Row(
             modifier = Modifier
@@ -812,9 +811,8 @@ fun IndriveDrawerBody(navController: NavController, scaffoldState: ScaffoldState
         ) {
             Icon(Icons.Default.Search, contentDescription = null)
             Spacer(modifier = Modifier.width(20.dp))
-            Text(text = stringResource(id = R.string.products), color = Color.Black)
+            Text(text = stringResource(id = R.string.products), color = MaterialTheme.colorScheme.onSurface)
         }
-//
 
         Row(
             modifier = Modifier
@@ -827,7 +825,7 @@ fun IndriveDrawerBody(navController: NavController, scaffoldState: ScaffoldState
         ) {
             Icon(Icons.Default.Face, contentDescription = null)
             Spacer(modifier = Modifier.width(20.dp))
-            Text(text = stringResource(R.string.faq), color = Color.Black)
+            Text(text = stringResource(R.string.faq), color = MaterialTheme.colorScheme.onSurface)
         }
 
         Row(
@@ -841,7 +839,7 @@ fun IndriveDrawerBody(navController: NavController, scaffoldState: ScaffoldState
         ) {
             Icon(Icons.Default.Face, contentDescription = null)
             Spacer(modifier = Modifier.width(20.dp))
-            Text(text = "Failed Invoices (${failedCount.size})", color = Color.Black)
+            Text(text = "Failed Invoices (${failedCount.size})", color = MaterialTheme.colorScheme.onSurface)
         }
 
         Row(
@@ -855,7 +853,7 @@ fun IndriveDrawerBody(navController: NavController, scaffoldState: ScaffoldState
         ) {
             Icon(Icons.Default.Sync, contentDescription = null)
             Spacer(modifier = Modifier.width(20.dp))
-            Text(text = "Sync Status", color = Color.Black)
+            Text(text = "Sync Status", color = MaterialTheme.colorScheme.onSurface)
         }
 
         Row(
@@ -869,9 +867,8 @@ fun IndriveDrawerBody(navController: NavController, scaffoldState: ScaffoldState
         ) {
             Icon(Icons.Default.Settings, contentDescription = null)
             Spacer(modifier = Modifier.width(20.dp))
-            Text(text = "Device Setup", color = Color.Black)
+            Text(text = "Device Setup", color = MaterialTheme.colorScheme.onSurface)
         }
-//
 
         Row(
             modifier = Modifier
@@ -880,17 +877,14 @@ fun IndriveDrawerBody(navController: NavController, scaffoldState: ScaffoldState
                 .clickable {
                     authViewModel.signout()
                     navController.navigate(Destinations.SignIn.route)
-                    Toast
-                        .makeText(context, "Sign out successful", Toast.LENGTH_SHORT)
-                        .show()
+                    Toast.makeText(context, "Sign out successful", Toast.LENGTH_SHORT).show()
                     coroutineScope.launch { scaffoldState.drawerState.close() }
                 }
         ) {
             Icon(Icons.Default.Logout, contentDescription = null)
             Spacer(modifier = Modifier.width(20.dp))
-            Text(text = stringResource(id = R.string.sign_out), color = Color.Black)
+            Text(text = stringResource(id = R.string.sign_out), color = MaterialTheme.colorScheme.onSurface)
         }
-
     }
 }
 
@@ -973,16 +967,17 @@ fun IndriveBottomNavigation(
     val isSignUpRoute = currentDestination?.route == Destinations.SignUp.route
 
     if (currentDestination != null && !isSignInRoute && !isSignUpRoute) {
-        BottomNavigation(backgroundColor = Color.White) {
+        BottomNavigation(backgroundColor = MaterialTheme.colorScheme.surface) {
             val userRole by authViewModel.userRole.observeAsState()
             val isAdmin = userRole == "admin"
+            val contentColor = MaterialTheme.colorScheme.onSurface
 
             // Home — always visible
             BottomNavigationItem(
                 selected = currentDestination.route == Destinations.Dashboard.route,
                 onClick = { navController.navigate(Destinations.Dashboard.route) },
                 icon = { Icon(Icons.Default.Home, contentDescription = null) },
-                label = { Text(text = stringResource(id = R.string.navhome), color = Color.Black) }
+                label = { Text(text = stringResource(id = R.string.navhome), color = contentColor) }
             )
 
             if (isAdmin) {
@@ -991,21 +986,21 @@ fun IndriveBottomNavigation(
                     selected = currentDestination.route == Destinations.Income.route,
                     onClick = { navController.navigate(Destinations.Income.route) },
                     icon = { Icon(Icons.Default.MonetizationOn, contentDescription = null) },
-                    label = { Text(text = stringResource(id = R.string.navincome), color = Color.Black) }
+                    label = { Text(text = stringResource(id = R.string.navincome), color = contentColor) }
                 )
                 // Admin: Business Performance
                 BottomNavigationItem(
                     selected = currentDestination.route == Destinations.BusinessPerformance.route,
                     onClick = { navController.navigate(Destinations.BusinessPerformance.route) },
                     icon = { Icon(Icons.Default.AutoGraph, contentDescription = null) },
-                    label = { Text(text = stringResource(id = R.string.navbusiness), color = Color.Black) }
+                    label = { Text(text = stringResource(id = R.string.navbusiness), color = contentColor) }
                 )
                 // Admin: Products
                 BottomNavigationItem(
                     selected = currentDestination.route == Destinations.Products.route,
                     onClick = { navController.navigate(Destinations.Products.route) },
                     icon = { Icon(Icons.Default.ProductionQuantityLimits, contentDescription = null) },
-                    label = { Text(text = stringResource(id = R.string.navproducts), color = Color.Black) }
+                    label = { Text(text = stringResource(id = R.string.navproducts), color = contentColor) }
                 )
             } else {
                 // Non-admin: Reports
@@ -1013,7 +1008,7 @@ fun IndriveBottomNavigation(
                     selected = currentDestination.route == Destinations.Reports.route,
                     onClick = { navController.navigate(Destinations.Reports.route) },
                     icon = { Icon(Icons.Default.LocationOn, contentDescription = null) },
-                    label = { Text(text = stringResource(id = R.string.reports1), color = Color.Black) }
+                    label = { Text(text = stringResource(id = R.string.reports1), color = contentColor) }
                 )
             }
 
@@ -1022,7 +1017,7 @@ fun IndriveBottomNavigation(
                 selected = currentDestination.route == Destinations.ProductSelection.route,
                 onClick = { navController.navigate(Destinations.ProductSelection.route) },
                 icon = { Icon(Icons.Default.ShoppingCart, contentDescription = null) },
-                label = { Text(text = stringResource(id = R.string.navinvoicing), color = Color.Black) }
+                label = { Text(text = stringResource(id = R.string.navinvoicing), color = contentColor) }
             )
         }
     }
