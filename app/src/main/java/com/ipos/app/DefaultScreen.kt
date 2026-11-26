@@ -221,6 +221,7 @@ fun InDriveTopBottomNavigation(
 
     Scaffold(
         scaffoldState = scaffoldState,
+        backgroundColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
                 title = {

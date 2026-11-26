@@ -67,7 +67,6 @@ import coil.compose.rememberAsyncImagePainter
 import com.ipos.R
 import com.ipos.data.Destinations
 import com.ipos.screens.ShopLandingScreen
-import com.ipos.ui.theme.Gray1
 import com.ipos.ui.theme.Green1
 import com.ipos.viewmodels.InvoiceViewModel
 import com.google.accompanist.swiperefresh.SwipeRefresh
@@ -331,7 +330,7 @@ fun SalesmanInfoCard(
             Text(
                 text = "@$shopName",
                 style = MaterialTheme.typography.bodySmall,
-                color = Gray1
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Divider(
                 modifier = Modifier.padding(vertical = 4.dp),
@@ -421,7 +420,7 @@ fun SalesmanWeeklyInfoCard(
             Text(
                 text = "@$shopName",
                 style = MaterialTheme.typography.bodySmall,
-                color = Gray1
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             // Date range
             Text(
@@ -431,7 +430,7 @@ fun SalesmanWeeklyInfoCard(
                     )
                 }",
                 style = MaterialTheme.typography.bodySmall,
-                color = Gray1
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Divider(
                 modifier = Modifier.padding(vertical = 4.dp),
@@ -523,13 +522,13 @@ fun SalesmanMonthlyInfoCard(
             Text(
                 text = "@$shopName",
                 style = MaterialTheme.typography.bodySmall,
-                color = Gray1
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             // Month and year
             Text(
                 text = today.format(DateTimeFormatter.ofPattern("MMMM yyyy")),
                 style = MaterialTheme.typography.bodySmall,
-                color = Gray1
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Divider(
                 modifier = Modifier.padding(vertical = 4.dp),
