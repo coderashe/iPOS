@@ -605,9 +605,13 @@ fun IndriveDrawerNav(
 }
 
 @Composable
-fun IndriveDrawerHeader(authViewModel: AuthViewModel = viewModel()) {
+fun IndriveDrawerHeader(
+    authViewModel: AuthViewModel = viewModel(),
+    settingsViewModel: com.ipos.viewmodels.SettingsViewModel = androidx.hilt.navigation.compose.hiltViewModel()
+) {
     val userImage = painterResource(id = R.drawable.user)
     val currentUserEmail by authViewModel.userEmail.observeAsState()
+    val businessType by settingsViewModel.businessType.collectAsState()
 
     currentUserEmail?.let {
         LaunchedEffect(it) { authViewModel.fetchUserByEmail(it) }
@@ -673,6 +677,7 @@ fun IndriveDrawerHeader(authViewModel: AuthViewModel = viewModel()) {
             ) {
                 ProfileDetailRow(label = "Role", value = currentUser?.userRole ?: "—")
                 ProfileDetailRow(label = "Store ID", value = currentUser?.storeID?.ifBlank { "Not set" } ?: "Not set")
+                ProfileDetailRow(label = "Business", value = businessType?.displayName ?: "Not set")
                 ProfileDetailRow(label = "Contact", value = currentUser?.userContact ?: "—")
                 ProfileDetailRow(label = "Address", value = currentUser?.userAddress ?: "—")
             }
