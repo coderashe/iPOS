@@ -16,8 +16,10 @@ import com.ipos.data.MIGRATION_9_10
 import com.ipos.data.MIGRATION_10_11
 import com.ipos.data.MIGRATION_11_12
 import com.ipos.data.MIGRATION_12_13
+import com.ipos.data.MIGRATION_13_14
 import com.ipos.app.core.DeviceSession
 import com.ipos.data.data_source.DeviceInfoDao
+import com.ipos.data.data_source.AppSettingsDao
 import com.ipos.data.data_source.CartItemDao
 import com.ipos.data.data_source.CashFlowDao
 import com.ipos.data.data_source.CurrencyDao
@@ -116,7 +118,8 @@ object AppModule {
                 MIGRATION_9_10,
                 MIGRATION_10_11,
                 MIGRATION_11_12,
-                MIGRATION_12_13
+                MIGRATION_12_13,
+                MIGRATION_13_14
             )
             .build()
     }
@@ -383,6 +386,9 @@ object AppModule {
 
     @Provides
     fun provideDeviceInfoDao(appDatabase: AppDatabase): DeviceInfoDao = appDatabase.deviceInfoDao()
+
+    @Provides
+    fun provideAppSettingsDao(appDatabase: AppDatabase): AppSettingsDao = appDatabase.appSettingsDao()
 
     @Provides
     @Singleton

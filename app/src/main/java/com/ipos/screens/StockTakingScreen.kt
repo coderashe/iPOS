@@ -79,9 +79,12 @@ import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.ipos.app.AddBrandWithProductsDialog
+import com.ipos.app.AddSingleProductDialog
+import com.ipos.app.core.BusinessType
 import com.ipos.data.domain.ProductWithBrand
 import com.ipos.data.entities.StockTakeSessionStatus
 import com.ipos.screens.auth.AuthViewModel
+import com.ipos.viewmodels.SettingsViewModel
 import com.ipos.viewmodels.StockTakeViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -92,10 +95,12 @@ import java.util.Locale
 fun StockTakingScreen(
     stockTakeViewModel: StockTakeViewModel = hiltViewModel(),
     authViewModel: AuthViewModel,
-    navController: NavController
+    navController: NavController,
+    settingsViewModel: SettingsViewModel = hiltViewModel()
 ) {
     val uiState by stockTakeViewModel.uiState.collectAsState()
     val loggedInUser by authViewModel.userEmail.observeAsState()
+    val businessType by settingsViewModel.businessType.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
     // Show snackbar messages
@@ -229,22 +234,41 @@ fun StockTakingScreen(
         }
     }
 
-    // Add new product dialog
+    // Add new product dialog — branches on business type
     if (uiState.showAddProductDialog) {
-        AddBrandWithProductsDialog(
-            initialBrandName = uiState.searchQuery,
-            onDismiss = { stockTakeViewModel.dismissAddProductDialog() },
-            onConfirm = { brandName, desc, avgCost, stdCost, qty ->
-                stockTakeViewModel.addNewBrandWithProductsAndRecord(
-                    brandName = brandName,
-                    productDescription = desc,
-                    averageCost = avgCost,
-                    standardCost = stdCost,
-                    countedQtyPerSize = qty,
-                    recordedBy = loggedInUser ?: "unknown"
-                )
-            }
-        )
+        if (businessType == BusinessType.SHOES) {
+            AddBrandWithProductsDialog(
+                initialBrandName = uiState.searchQuery,
+                onDismiss = { stockTakeViewModel.dismissAddProductDialog() },
+                onConfirm = { brandName, desc, avgCost, stdCost, qty ->
+                    stockTakeViewModel.addNewBrandWithProductsAndRecord(
+                        brandName = brandName,
+                        productDescription = desc,
+                        averageCost = avgCost,
+                        standardCost = stdCost,
+                        countedQtyPerSize = qty,
+                        recordedBy = loggedInUser ?: "unknown"
+                    )
+                }
+            )
+        } else {
+            AddSingleProductDialog(
+                initialName = uiState.searchQuery,
+                businessType = businessType,
+                onDismiss = { stockTakeViewModel.dismissAddProductDialog() },
+                onConfirm = { name, category, unit, sellingPrice, unitCost, qty ->
+                    stockTakeViewModel.addNewSingleProductAndRecord(
+                        productName = name,
+                        category = category,
+                        unit = unit,
+                        sellingPrice = sellingPrice,
+                        unitCost = unitCost,
+                        countedQty = qty,
+                        recordedBy = loggedInUser ?: "unknown"
+                    )
+                }
+            )
+        }
     }
 }
 
@@ -389,7 +413,7 @@ private fun StockTakeItemRow(
     onRecord: (countedStock: Double, reason: String) -> Unit
 ) {
     val product = productWithBrand.product
-    val brandName = productWithBrand.brand.brandName
+    val brandName = productWithBrand.brand?.brandName ?: (productWithBrand.product.category ?: "")
     var expanded by rememberSaveable(product.productId) { mutableStateOf(!isChecked) }
     var countedStockText by rememberSaveable(product.productId) { mutableStateOf("") }
     var varianceReason by rememberSaveable(product.productId) { mutableStateOf("") }

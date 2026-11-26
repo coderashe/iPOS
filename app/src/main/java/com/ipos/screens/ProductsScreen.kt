@@ -97,7 +97,7 @@ fun ProductsScreen(
     val query = searchQuery.trim().lowercase()
     val filteredProducts = withBranProducts.filter {
         it.product.productDescription.lowercase().contains(query) ||
-                it.brand.brandName.lowercase().contains(query)
+                (it.brand?.brandName ?: "").lowercase().contains(query)
     }
 
 //    old logic
@@ -203,20 +203,23 @@ fun TheProductCard(
     var editedPrice by remember { mutableStateOf(initialPrice.toString()) }
     var price by remember { mutableStateOf(initialPrice) }
 
-    // Collect shoe size state from ViewModel
-    val shoeSizeState = viewModel.getShoeSizeById(products.shoeSizeId)
-        .collectAsState(initial = null)
+    // Collect shoe size state from ViewModel (shoeSizeId is nullable for non-shoe products)
+    val shoeSizeState = products.shoeSizeId?.let {
+        viewModel.getShoeSizeById(it).collectAsState(initial = null)
+    }
 
 //    fetch brandName
     var brand by remember { mutableStateOf<ShoeBrand?>(null) }
     // Use LaunchedEffect to collect the Flow in a coroutine
     LaunchedEffect(products.brandID) {
-        viewModel.getBrandById(products.brandID).collect { fetchedBrand ->
-            brand = fetchedBrand
+        products.brandID?.let { brandId ->
+            viewModel.getBrandById(brandId).collect { fetchedBrand ->
+                brand = fetchedBrand
+            }
         }
     }
     val brandName = brand?.brandName ?: "Unknown Brand"
-    val shoeSize = shoeSizeState.value?.size?.toString() ?: "N/A"
+    val shoeSize = shoeSizeState?.value?.size?.toString() ?: "N/A"
 
     // Fetch stock level when productId changes
     LaunchedEffect(products.productId) {

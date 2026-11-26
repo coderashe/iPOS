@@ -187,6 +187,9 @@ fun TrialExpiredScreen(
 
 @Composable
 fun TrialBanner(daysLeft: Long) {
+    // Activated devices have daysLeft = Long.MAX_VALUE — no banner needed
+    if (daysLeft == Long.MAX_VALUE) return
+
     val isUrgent = daysLeft <= 2
     Surface(
         modifier = Modifier.fillMaxWidth(),

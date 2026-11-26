@@ -58,6 +58,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.ipos.app.AddBrandWithProductsDialog
+import com.ipos.app.AddSingleProductDialog
+import com.ipos.app.core.BusinessType
 import com.ipos.data.entities.Customer
 import com.ipos.viewmodels.InvoiceViewModel
 import kotlinx.coroutines.launch
@@ -83,11 +85,12 @@ fun ProductSelectionScreen(
     val withBrandProducts by viewModel.withBrandProductList.collectAsState()
     val selectedProducts by viewModel.selectedProducts.collectAsState()
     val selectedQuantities by viewModel.selectedQuantities.collectAsState()
+    val businessType by viewModel.businessType.collectAsState()
 
     // No local qty map — quantities live in the ViewModel
 
     var searchQuery by remember { mutableStateOf("") }
-    var showAddBrandDialog by remember { mutableStateOf(false) }
+    var showAddProductDialog by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -104,7 +107,7 @@ fun ProductSelectionScreen(
     val filteredProducts = withBrandProducts.filter {
         query.isBlank() ||
         it.product.productDescription.lowercase().contains(query) ||
-        it.brand.brandName.lowercase().contains(query) ||
+        (it.brand?.brandName ?: "").lowercase().contains(query) ||
         it.product.productCode.lowercase().contains(query)
     }
 
@@ -222,10 +225,15 @@ fun ProductSelectionScreen(
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    FilledTonalButton(onClick = { showAddBrandDialog = true }) {
+                    val btnText = if (businessType == BusinessType.SHOES) {
+                        "Add \"$searchQuery\" as new brand"
+                    } else {
+                        "Add \"$searchQuery\" as new product"
+                    }
+                    FilledTonalButton(onClick = { showAddProductDialog = true }) {
                         Icon(Icons.Default.Add, contentDescription = null)
                         Spacer(Modifier.width(6.dp))
-                        Text("Add \"$searchQuery\" as new brand")
+                        Text(btnText)
                     }
                 }
             } else {
@@ -243,7 +251,7 @@ fun ProductSelectionScreen(
                         val qty = selectedQuantities[pwb.product.productId] ?: 0
                         ProductSelectionRow(
                             name = pwb.product.productDescription,
-                            brand = pwb.brand.brandName,
+                            brand = pwb.brand?.brandName ?: (pwb.product.category ?: ""),
                             code = pwb.product.productCode,
                             price = price,
                             stock = pwb.product.productQty,
@@ -266,26 +274,49 @@ fun ProductSelectionScreen(
         }
     }
 
-    // ── Add brand dialog ─────────────────────────────────────────────────────
-    if (showAddBrandDialog) {
-        AddBrandWithProductsDialog(
-            initialBrandName = searchQuery,
-            onDismiss = { showAddBrandDialog = false },
-            onConfirm = { brandName, desc, avgCost, stdCost, qty ->
-                viewModel.addNewBrandWithProducts(
-                    brandName = brandName,
-                    productDescription = desc,
-                    averageCost = avgCost,
-                    standardCost = stdCost,
-                    qtyPerSize = qty,
-                    onComplete = { message, _ ->
-                        showAddBrandDialog = false
-                        searchQuery = ""
-                        scope.launch { snackbarHostState.showSnackbar(message) }
-                    }
-                )
-            }
-        )
+    // ── Add product dialog (Shoe brand+sizes OR Single product) ─────────────
+    if (showAddProductDialog) {
+        if (businessType == BusinessType.SHOES) {
+            AddBrandWithProductsDialog(
+                initialBrandName = searchQuery,
+                onDismiss = { showAddProductDialog = false },
+                onConfirm = { brandName, desc, avgCost, stdCost, qty ->
+                    viewModel.addNewBrandWithProducts(
+                        brandName = brandName,
+                        productDescription = desc,
+                        averageCost = avgCost,
+                        standardCost = stdCost,
+                        qtyPerSize = qty,
+                        onComplete = { message, _ ->
+                            showAddProductDialog = false
+                            searchQuery = ""
+                            scope.launch { snackbarHostState.showSnackbar(message) }
+                        }
+                    )
+                }
+            )
+        } else {
+            AddSingleProductDialog(
+                initialName = searchQuery,
+                businessType = businessType,
+                onDismiss = { showAddProductDialog = false },
+                onConfirm = { name, category, unit, sellingPrice, unitCost, qty ->
+                    viewModel.addNewSingleProduct(
+                        productName = name,
+                        category = category,
+                        unit = unit,
+                        sellingPrice = sellingPrice,
+                        unitCost = unitCost,
+                        stockQty = qty,
+                        onComplete = { message, _ ->
+                            showAddProductDialog = false
+                            searchQuery = ""
+                            scope.launch { snackbarHostState.showSnackbar(message) }
+                        }
+                    )
+                }
+            )
+        }
     }
 }
 

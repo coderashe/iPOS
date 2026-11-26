@@ -12,37 +12,42 @@ import androidx.room.PrimaryKey
             entity = ShoeBrand::class,
             parentColumns = ["brandID"],
             childColumns = ["brandID"],
-            onDelete = ForeignKey.CASCADE
+            onDelete = ForeignKey.SET_NULL
         ),
         ForeignKey(
             entity = ShoeSize::class,
             parentColumns = ["shoeSizeId"],
             childColumns = ["shoeSizeId"],
-            onDelete = ForeignKey.CASCADE
+            onDelete = ForeignKey.SET_NULL
         )
     ],
     indices = [
         Index(value = ["brandID"]),
         Index(value = ["shoeSizeId"]),
-        Index(value = ["productCode"], unique = true) // Ensure productCode is unique
+        Index(value = ["productCode"], unique = true)
     ]
 )
 data class Products(
     @PrimaryKey(autoGenerate = true)
     val productId: Long = 0,
-    val productDescription: String, // e.g., "Nike Air Max Size 10"
+    val productDescription: String,
     val productQty: Long,
-    val brandID: Long, // Foreign key linking to Label
-    val shoeSizeId: Long, // Foreign key linking to ShoeSize
-    val saleable: Boolean, // Indicates if the product can be sold
-    val purchasable: Boolean, // Indicates if the product can be purchased
-    val averageCost: Double, // Average cost of the product
-    val standardCost: Double, // Standard cost of the product
-    val salesTaxCode: String?, // Tax code for sales
-    val productCode: String, // Unique product code (storeID + productId)
-    val inclusiveTaxed: Boolean, // Indicates if the price is inclusive of tax
-    val imageUri: String? = null, // Optional URI for product image
+    // Nullable — only used for SHOES business type
+    val brandID: Long? = null,
+    val shoeSizeId: Long? = null,
+    val saleable: Boolean,
+    val purchasable: Boolean,
+    val averageCost: Double,
+    val standardCost: Double,
+    val salesTaxCode: String?,
+    val productCode: String,
+    val inclusiveTaxed: Boolean,
+    val imageUri: String? = null,
     val lastUpdated: Long? = null,
-    val isSynced: Boolean = false
+    val isSynced: Boolean = false,
+    // Multi-business fields (nullable for backward compatibility)
+    val category: String? = null,   // e.g. "Food", "Drinks", "Beef", "Chicken"
+    val unit: String? = null,       // e.g. "each", "kg", "g"
+    val stockUnit: String? = null   // "count" or "weight" — drives butcher cart input
 )
 

@@ -108,7 +108,9 @@ class InvoiceViewModel @Inject constructor(
     private val workManager: WorkManager,
     private val syncManager: com.ipos.network.SyncManager,
     private val deviceSession: DeviceSession,
-    private val deviceManager: com.ipos.app.core.DeviceManager
+    private val deviceManager: com.ipos.app.core.DeviceManager,
+    private val businessTypeRepository: com.ipos.data.repositories.BusinessTypeRepository,
+    @dagger.hilt.android.qualifiers.ApplicationContext private val context: Context
 ) : ViewModel() {
 
     private val _shoeSizes = MutableStateFlow(emptyList<ShoeSize>())
@@ -689,13 +691,9 @@ class InvoiceViewModel @Inject constructor(
     private fun insertInitialCustomers() = viewModelScope.launch {
         val existingCustomers = customerRepository.getAllCustomersOnce()
         if (existingCustomers.isEmpty()) {
+            // Only seed the essential walk-in customer — no demo accounts
             val initialCustomers = listOf(
-                Customer(1, "Simba Start", "simba@istart.com", "123456789", "State House"),
-                Customer(2, "Jane Smith", "jane@istart.com", "987654321", "State House"),
-                Customer(3, "John Doe", "john@istart.com", "987654321", "State House"),
-                Customer(4, "Amy Petersen", "amy@istart.com", "987654321", "State House"),
-                Customer(5, "Amara Brown", "amara@istart.com", "987654321", "State House"),
-                Customer(6, "walkin", "i@start.com", "000", "State House"),
+                Customer(1, "walkin", "i@start.com", "000", "")
             )
             customerRepository.insertCustomers(initialCustomers)
         }
@@ -717,26 +715,9 @@ class InvoiceViewModel @Inject constructor(
         return customerList.value.firstOrNull { it.name == "walkin" }
     }
 
-    // Insert initial default user
-    private fun insertDefaultUser() = viewModelScope.launch {
-        val existingUsers = authRepository.getAllUsersOnce()
-
-        if (existingUsers.isEmpty()) {
-            val storeId = deviceSession.storeId.ifBlank { deviceManager.getStoreId() }
-            if (storeId.isNotBlank()) {
-                val initialUser = User(
-                    userFullName = "Simba Start",
-                    userContact = "0776815030",
-                    userRole = "admin",
-                    userPassword = "password",
-                    storeID = storeId,
-                    userEmail = "dr.simbastart@gmail.com",
-                    userAddress = "3 Maywood St, Kwekwe, Zimbabwe"
-                )
-                authRepository.signUpUser(initialUser)
-            }
-        }
-    }
+    // Insert initial default user - REMOVED: no seeding of accounts on fresh install
+    // Users must register their own account via SignUpPage
+    private fun insertDefaultUser() = viewModelScope.launch { /* no-op */ }
 
     fun getActiveStoreId(): String {
         return deviceSession.storeId.ifBlank { deviceManager.getStoreId() }
@@ -782,8 +763,18 @@ class InvoiceViewModel @Inject constructor(
         }
     }
 
-    // Insert initial shoe sizes
-    private fun insertInitialShoeSizes() = viewModelScope.launch {
+    val businessType: StateFlow<com.ipos.app.core.BusinessType?> = businessTypeRepository.businessType
+
+    fun getBusinessType(): com.ipos.app.core.BusinessType? {
+        return businessTypeRepository.businessType.value
+    }
+
+    // Insert initial shoe sizes (only for SHOES business type)
+    fun insertInitialShoeSizes() = viewModelScope.launch {
+        if (getBusinessType() != com.ipos.app.core.BusinessType.SHOES) {
+            Log.d(TAG, "Skipping shoe sizes seeding — businessType is ${getBusinessType()}")
+            return@launch
+        }
         val existingSizes = shoeSizeRepository.getAllShoeSizesOnce()
 
         if (existingSizes.isEmpty()) {
@@ -804,8 +795,12 @@ class InvoiceViewModel @Inject constructor(
         }
     }
 
-    // Insert initial shoe brands with optimized batch processing
+    // Insert initial shoe brands with optimized batch processing (only for SHOES business type)
     fun insertInitialShoeBrands() = viewModelScope.launch {
+        if (getBusinessType() != com.ipos.app.core.BusinessType.SHOES) {
+            Log.d(TAG, "Skipping shoe brands seeding — businessType is ${getBusinessType()}")
+            return@launch
+        }
         val brandNames = listOf(
             "OLDSTOCK",
             "D166",
@@ -1113,8 +1108,8 @@ class InvoiceViewModel @Inject constructor(
         viewModelScope.launch {
             val productId = productRepository.insertProduct(products)
 
-            // Update ShoeSize quantity
-            val shoeSize = shoeSizeRepository.getShoeSizeById(products.shoeSizeId)
+            // Update ShoeSize quantity (only relevant for SHOES; shoeSizeId is nullable for other types)
+            val shoeSize = products.shoeSizeId?.let { shoeSizeRepository.getShoeSizeById(it) }
             if (shoeSize != null) {
                 val updatedShoeSize =
                     shoeSize.copy(quantity = shoeSize.quantity + products.productQty)
@@ -1444,19 +1439,14 @@ class InvoiceViewModel @Inject constructor(
             }
 
             // Fetch the related ShoeBrand and ShoeSize entities (if applicable to butcher logic)
-            val shoeBrand = shoeBrandRepository.getShoeBrandById(product.brandID)
-            val shoeSize = shoeSizeRepository.getShoeSizeById(product.shoeSizeId)
-
-            if (shoeBrand == null || shoeSize == null) {
-                Log.e(
-                    "viewmodel",
-                    "ShoeBrand or ShoeSize not found for productId: $productId"
-                )
-                return
-            }
+            val shoeBrand = product.brandID?.let { shoeBrandRepository.getShoeBrandById(it) }
+            val shoeSize = product.shoeSizeId?.let { shoeSizeRepository.getShoeSizeById(it) }
 
             // Calculate the actual stock level by summing the quantity of all ShoeSizes for the brand
-            val totalStockLevel = shoeSizeRepository.getTotalQuantityByBrand(shoeBrand.brandID)
+            // shoeBrand is null for non-shoe products; skip shoe-stock accounting in that case
+            val totalStockLevel: Long = shoeBrand?.let {
+                shoeSizeRepository.getTotalQuantityByBrand(it.brandID).toLong()
+            } ?: product.productQty
 
             // Check if there is enough stock to sell the desired quantity
             if (totalStockLevel < quantitySold) {
@@ -1469,13 +1459,13 @@ class InvoiceViewModel @Inject constructor(
             }
 
             // Deduct the quantity sold from the total stock level
-            val newStockLevel = totalStockLevel - quantitySold
+            val newStockLevel = totalStockLevel - quantitySold.toLong()
 
             // Update the stock level for the ShoeSize entity
 //            shoeSizeRepository.updateShoeSizeStockLevel(shoeSize.shoeSizeId, newStockLevel)
 
             // Optionally update the Product entity if it tracks overall stock separately
-            val updatedProduct = product.copy(newStockLevel.toLong())
+            val updatedProduct = product.copy(productQty = newStockLevel)
             productRepository.updateProduct(updatedProduct)
 
         } catch (e: Exception) {
@@ -1906,17 +1896,17 @@ class InvoiceViewModel @Inject constructor(
 
             if (product != null) {
                 // Fetch the related ShoeBrand and ShoeSize entities
-                val shoeBrand = shoeBrandRepository.getShoeBrandById(product.brandID)
-                val shoeSize = shoeSizeRepository.getShoeSizeById(product.shoeSizeId)
+                val shoeBrand = product.brandID?.let { shoeBrandRepository.getShoeBrandById(it) }
+                val shoeSize = product.shoeSizeId?.let { shoeSizeRepository.getShoeSizeById(it) }
 
                 if (shoeBrand != null && shoeSize != null) {
                     // Calculate the actual current stock level by summing the quantity of all ShoeSizes
                     val totalQuantity =
-                        shoeSizeRepository.getTotalQuantityByBrand(shoeBrand.brandID)
+                        shoeSizeRepository.getTotalQuantityByBrand(shoeBrand.brandID).toLong()
 
                     // Update the stock level by adding the incoming quantity
                     val updatedStockLevel = totalQuantity + quantity
-                    val updatedProduct = product.copy(updatedStockLevel)
+                    val updatedProduct = product.copy(productQty = updatedStockLevel)
 
                     // Save the updated product back to the repository
                     productRepository.updateProduct(updatedProduct)
@@ -2377,7 +2367,7 @@ class InvoiceViewModel @Inject constructor(
             .filter { it.brandID == brand.brandID }
 
         return products.mapNotNull { product ->
-            shoeSizeRepository.getShoeSizeById(product.shoeSizeId)?.size
+            product.shoeSizeId?.let { shoeSizeRepository.getShoeSizeById(it) }?.size
         }.distinct().sorted()
     }
 
@@ -2498,6 +2488,75 @@ class InvoiceViewModel @Inject constructor(
                 Log.e("InvoiceVM", "Failed to add brand with products", e)
                 withContext(kotlinx.coroutines.Dispatchers.Main) {
                     onComplete("Failed to add brand: ${e.message}", true)
+                }
+            }
+        }
+    }
+
+    /**
+     * Creates a single product (for non-shoe businesses like Grocery, Butcher, General).
+     * Used from ProductSelectionScreen when a search returns no results.
+     */
+    fun addNewSingleProduct(
+        productName: String,
+        category: String,
+        unit: String,
+        sellingPrice: Double,
+        unitCost: Double,
+        stockQty: Double,
+        onComplete: (message: String, isError: Boolean) -> Unit
+    ) {
+        viewModelScope.launch {
+            try {
+                val cleanName = productName.trim()
+                val code = "PROD_${System.currentTimeMillis() % 100000}"
+                val product = com.ipos.data.entities.Products(
+                    productDescription = cleanName,
+                    productQty = stockQty.toLong(),
+                    brandID = null,
+                    shoeSizeId = null,
+                    category = category.trim(),
+                    stockUnit = unit.trim(),
+                    saleable = true,
+                    purchasable = true,
+                    averageCost = unitCost,
+                    standardCost = unitCost,
+                    salesTaxCode = "VAT",
+                    productCode = code,
+                    inclusiveTaxed = true,
+                    lastUpdated = System.currentTimeMillis()
+                )
+                val productId = productRepository.insertProduct(product)
+
+                priceListRepository.insertPriceLists(
+                    listOf(
+                        com.ipos.data.entities.PriceList(
+                            productId = productId,
+                            productDescription = cleanName,
+                            unitCost = unitCost,
+                            sellingPrice = sellingPrice,
+                            markupPercentage = 0.0,
+                            grossProfitPercentage = 0.0
+                        )
+                    )
+                )
+
+                fetchProducts()
+                fetchBrandProducts()
+                fetchPriceList()
+
+                // Automatically select 1 of the new product into the cart
+                setProductQuantity(productId, 1)
+
+                val msg = "\"$cleanName\" added successfully!"
+                Log.d("InvoiceVM", msg)
+                withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    onComplete(msg, false)
+                }
+            } catch (e: Exception) {
+                Log.e("InvoiceVM", "Failed to add single product", e)
+                withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    onComplete("Failed to add product: ${e.message}", true)
                 }
             }
         }

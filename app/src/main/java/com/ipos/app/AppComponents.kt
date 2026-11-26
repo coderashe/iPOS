@@ -31,6 +31,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
@@ -595,6 +596,252 @@ fun AddBrandStepIndicator(currentStep: Int, totalSteps: Int) {
                     else
                         MaterialTheme.colorScheme.outlineVariant
                 )
+            }
+        }
+    }
+}
+
+/**
+ * Clean dialog for creating a single product for non-shoe businesses (Grocery, Butcher, General).
+ * Used from ProductSelectionScreen and StockTakingScreen when a product is not found in search.
+ */
+@Composable
+fun AddSingleProductDialog(
+    initialName: String = "",
+    businessType: com.ipos.app.core.BusinessType? = null,
+    onDismiss: () -> Unit,
+    onConfirm: (
+        productName: String,
+        category: String,
+        unit: String,
+        sellingPrice: Double,
+        unitCost: Double,
+        stockQty: Double
+    ) -> Unit
+) {
+    val categories = when (businessType) {
+        com.ipos.app.core.BusinessType.BUTCHER -> listOf("Beef", "Chicken", "Pork", "Lamb", "Fish", "Other")
+        else -> listOf("Beverages", "Dairy", "Bakery", "Produce", "Canned Goods", "Snacks", "Household", "General")
+    }
+    val units = when (businessType) {
+        com.ipos.app.core.BusinessType.BUTCHER -> listOf("kg", "weight", "count", "pack")
+        else -> listOf("item", "pack", "kg", "g", "litre", "bottle", "can", "box")
+    }
+
+    var productName by rememberSaveable { mutableStateOf(initialName) }
+    var selectedCategory by rememberSaveable { mutableStateOf(categories.first()) }
+    var categoryExpanded by remember { mutableStateOf(false) }
+    var selectedUnit by rememberSaveable { mutableStateOf(units.first()) }
+    var unitExpanded by remember { mutableStateOf(false) }
+    var sellingPriceText by rememberSaveable { mutableStateOf("") }
+    var unitCostText by rememberSaveable { mutableStateOf("") }
+    var stockQtyText by rememberSaveable { mutableStateOf("100") }
+
+    val isValid = productName.isNotBlank() &&
+            sellingPriceText.toDoubleOrNull() != null &&
+            unitCostText.toDoubleOrNull() != null &&
+            stockQtyText.toDoubleOrNull() != null
+
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(20.dp),
+            tonalElevation = 8.dp,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier
+                    .padding(20.dp)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                // Header
+                Text(
+                    text = "Add New Product",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(Modifier.height(4.dp))
+                val subtitle = when (businessType) {
+                    com.ipos.app.core.BusinessType.GROCERY -> "Add a grocery item to catalog"
+                    com.ipos.app.core.BusinessType.BUTCHER -> "Add a butcher item to catalog"
+                    else -> "Add product to catalog"
+                }
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Spacer(Modifier.height(16.dp))
+
+                // Product Name
+                OutlinedTextField(
+                    value = productName,
+                    onValueChange = { productName = it },
+                    label = { Text("Product Name *") },
+                    placeholder = { Text("e.g. Tea, Milk, Rice") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    shape = RoundedCornerShape(10.dp),
+                    keyboardOptions = KeyboardOptions(
+                        capitalization = KeyboardCapitalization.Words,
+                        imeAction = ImeAction.Next
+                    )
+                )
+
+                Spacer(Modifier.height(10.dp))
+
+                // Category & Unit Row
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    // Category
+                    Box(modifier = Modifier.weight(1f)) {
+                        OutlinedTextField(
+                            value = selectedCategory,
+                            onValueChange = {},
+                            label = { Text("Category") },
+                            readOnly = true,
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { categoryExpanded = true },
+                            trailingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.ArrowDropDown,
+                                    contentDescription = null,
+                                    modifier = Modifier.clickable { categoryExpanded = !categoryExpanded }
+                                )
+                            }
+                        )
+                        androidx.compose.material.DropdownMenu(
+                            expanded = categoryExpanded,
+                            onDismissRequest = { categoryExpanded = false }
+                        ) {
+                            categories.forEach { cat ->
+                                androidx.compose.material.DropdownMenuItem(onClick = {
+                                    selectedCategory = cat
+                                    categoryExpanded = false
+                                }) { Text(cat) }
+                            }
+                        }
+                    }
+
+                    // Unit
+                    Box(modifier = Modifier.weight(1f)) {
+                        OutlinedTextField(
+                            value = selectedUnit,
+                            onValueChange = {},
+                            label = { Text("Unit") },
+                            readOnly = true,
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { unitExpanded = true },
+                            trailingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.ArrowDropDown,
+                                    contentDescription = null,
+                                    modifier = Modifier.clickable { unitExpanded = !unitExpanded }
+                                )
+                            }
+                        )
+                        androidx.compose.material.DropdownMenu(
+                            expanded = unitExpanded,
+                            onDismissRequest = { unitExpanded = false }
+                        ) {
+                            units.forEach { u ->
+                                androidx.compose.material.DropdownMenuItem(onClick = {
+                                    selectedUnit = u
+                                    unitExpanded = false
+                                }) { Text(u) }
+                            }
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(10.dp))
+
+                // Selling Price & Cost Row
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedTextField(
+                        value = sellingPriceText,
+                        onValueChange = { sellingPriceText = it },
+                        label = { Text("Selling Price *") },
+                        placeholder = { Text("0.00") },
+                        modifier = Modifier.weight(1f),
+                        singleLine = true,
+                        shape = RoundedCornerShape(10.dp),
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Decimal,
+                            imeAction = ImeAction.Next
+                        )
+                    )
+
+                    OutlinedTextField(
+                        value = unitCostText,
+                        onValueChange = { unitCostText = it },
+                        label = { Text("Unit Cost *") },
+                        placeholder = { Text("0.00") },
+                        modifier = Modifier.weight(1f),
+                        singleLine = true,
+                        shape = RoundedCornerShape(10.dp),
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Decimal,
+                            imeAction = ImeAction.Next
+                        )
+                    )
+                }
+
+                Spacer(Modifier.height(10.dp))
+
+                // Initial Stock Qty
+                OutlinedTextField(
+                    value = stockQtyText,
+                    onValueChange = { stockQtyText = it },
+                    label = { Text("Initial Stock Qty *") },
+                    placeholder = { Text("100") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    shape = RoundedCornerShape(10.dp),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Number,
+                        imeAction = ImeAction.Done
+                    )
+                )
+
+                Spacer(Modifier.height(20.dp))
+
+                // Action buttons
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(10.dp)
+                    ) {
+                        Text("Cancel")
+                    }
+
+                    Button(
+                        onClick = {
+                            val sp = sellingPriceText.toDoubleOrNull() ?: 0.0
+                            val uc = unitCostText.toDoubleOrNull() ?: 0.0
+                            val qty = stockQtyText.toDoubleOrNull() ?: 100.0
+                            onConfirm(productName.trim(), selectedCategory, selectedUnit, sp, uc, qty)
+                        },
+                        enabled = isValid,
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(10.dp)
+                    ) {
+                        Text("Save & Add")
+                    }
+                }
             }
         }
     }

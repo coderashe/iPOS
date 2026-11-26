@@ -42,7 +42,8 @@ class AuthViewModel @Inject constructor(
     private val userApiService: UserApiService,
     private val workManager: WorkManager,
     private val backfillRepository: BackfillRepository,
-    private val deviceSession: DeviceSession
+    private val deviceSession: DeviceSession,
+    private val deviceManager: com.ipos.app.core.DeviceManager
 ) : ViewModel() {
 
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
@@ -123,7 +124,7 @@ class AuthViewModel @Inject constructor(
     }
 
     // Method to log in
-    fun login(email: String, password: String) {
+    fun login(email: String, password: String, storeId: String = "") {
         if (email.isEmpty() || password.isEmpty()) {
             _authState.value = AuthState.Error("Email or password can't be empty")
             return
@@ -137,8 +138,24 @@ class AuthViewModel @Inject constructor(
                     _userEmail.value = auth.currentUser?.email
                     auth.currentUser?.email?.let { fetchUserRoleByEmail(it) }
                     resetLogoutState()
-                    // Backfill deviceId/storeId on any legacy records missing them
+                    // Bind storeId: prefer the one the user typed, fall back to their DB record
                     viewModelScope.launch {
+                        val loggedInEmail = auth.currentUser?.email ?: return@launch
+                        val user = authRepository.getUserByEmail(loggedInEmail)
+                        val resolvedStoreId = when {
+                            storeId.isNotBlank() -> storeId
+                            user != null && user.storeID.isNotBlank() -> user.storeID
+                            else -> ""
+                        }
+                        if (resolvedStoreId.isNotBlank()) {
+                            deviceSession.storeId = resolvedStoreId
+                            deviceManager.setStoreId(resolvedStoreId)
+                            Log.d("AuthViewModel", "StoreId bound on login: $resolvedStoreId")
+                            // Also update the Room user record so the drawer shows correct storeID
+                            if (user != null && user.storeID.isBlank()) {
+                                authRepository.signUpUser(user.copy(storeID = resolvedStoreId))
+                            }
+                        }
                         if (deviceSession.deviceId.isNotBlank() && deviceSession.storeId.isNotBlank()) {
                             backfillRepository.backfillDeviceAndStore(
                                 deviceId = deviceSession.deviceId,
