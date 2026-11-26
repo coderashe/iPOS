@@ -66,7 +66,7 @@ import com.ipos.data.entities.User
         DeviceInfo::class,
         AppSettings::class
     ],
-    version = 14,
+    version = 15,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -324,5 +324,11 @@ val MIGRATION_13_14 = object : Migration(13, 14) {
             )
             """.trimIndent()
         )
+    }
+}
+
+val MIGRATION_14_15 = object : Migration(14, 15) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `user` ADD COLUMN `profileImageUri` TEXT")
     }
 }

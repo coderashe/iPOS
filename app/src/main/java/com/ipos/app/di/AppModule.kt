@@ -17,6 +17,7 @@ import com.ipos.data.MIGRATION_10_11
 import com.ipos.data.MIGRATION_11_12
 import com.ipos.data.MIGRATION_12_13
 import com.ipos.data.MIGRATION_13_14
+import com.ipos.data.MIGRATION_14_15
 import com.ipos.app.core.DeviceSession
 import com.ipos.data.data_source.DeviceInfoDao
 import com.ipos.data.data_source.AppSettingsDao
@@ -119,7 +120,8 @@ object AppModule {
                 MIGRATION_10_11,
                 MIGRATION_11_12,
                 MIGRATION_12_13,
-                MIGRATION_13_14
+                MIGRATION_13_14,
+                MIGRATION_14_15
             )
             .build()
     }

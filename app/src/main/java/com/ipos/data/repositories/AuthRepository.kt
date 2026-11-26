@@ -18,6 +18,7 @@ interface AuthRepository {
     suspend fun fetchAllUsers(): NetworkResult<List<UserDto>>
     suspend fun saveUserRemote(userDto: UserDto): NetworkResult<UserDto>
     suspend fun fetchAndSyncAllUsers()
+    suspend fun updateProfileImage(email: String, uri: String)
 }
 
 // Implement AuthRepository
@@ -123,7 +124,11 @@ class AuthRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getUserByEmail(email: String): User? {
-        return userDao.getUserByEmail(email) // Querying the user from the local DB
+        return userDao.getUserByEmail(email)
+    }
+
+    override suspend fun updateProfileImage(email: String, uri: String) {
+        userDao.updateProfileImage(email, uri)
     }
 }
 

@@ -7,7 +7,7 @@ import androidx.room.PrimaryKey
 @Entity(
     tableName = "user",
     indices = [
-        Index(value = ["userEmail"], unique = true), // Unique index for email
+        Index(value = ["userEmail"], unique = true),
     ]
 )
 data class User(
@@ -15,10 +15,11 @@ data class User(
     val userId: Long = 0,
     val userFullName: String,
     val userContact: String,
-    val userRole: String,  // e.g., cashier/businessman/admin
+    val userRole: String,
     val userPassword: String,
-    val storeID: String,   // Store ID (now has a unique constraint)
+    val storeID: String,
     val userEmail: String,
     val userAddress: String?,
-    val isSynced: Boolean = false
+    val isSynced: Boolean = false,
+    val profileImageUri: String? = null  // local URI to profile photo
 )

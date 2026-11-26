@@ -37,6 +37,12 @@ interface UserDao {
     @Query("UPDATE user SET isSynced = 0")
     suspend fun resetSyncStatus()
 
+    @Update
+    suspend fun updateUser(user: User)
+
+    @Query("UPDATE user SET profileImageUri = :uri WHERE userEmail = :email")
+    suspend fun updateProfileImage(email: String, uri: String)
+
     @Query("UPDATE user SET storeID = :storeId WHERE storeID != :storeId")
     suspend fun updateStoreId(storeId: String)
 

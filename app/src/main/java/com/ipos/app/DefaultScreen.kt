@@ -3,6 +3,7 @@
 import android.os.Build
 import android.util.Log
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -46,6 +47,8 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Sync
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.rememberScaffoldState
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -610,7 +613,7 @@ fun IndriveDrawerHeader(
     authViewModel: AuthViewModel = viewModel(),
     settingsViewModel: com.ipos.viewmodels.SettingsViewModel = androidx.hilt.navigation.compose.hiltViewModel()
 ) {
-    val userImage = painterResource(id = R.drawable.user)
+    val context = androidx.compose.ui.platform.LocalContext.current
     val currentUserEmail by authViewModel.userEmail.observeAsState()
     val businessType by settingsViewModel.businessType.collectAsState()
 
@@ -620,9 +623,64 @@ fun IndriveDrawerHeader(
 
     val currentUser by authViewModel.fetchedUser.observeAsState()
     var expanded by remember { mutableStateOf(false) }
+    var showImageSourceDialog by remember { mutableStateOf(false) }
+
+    // Gallery launcher
+    val galleryLauncher = rememberLauncherForActivityResult(
+        contract = androidx.activity.result.contract.ActivityResultContracts.GetContent()
+    ) { uri ->
+        uri?.let {
+            runCatching {
+                context.contentResolver.takePersistableUriPermission(
+                    it, android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
+            }
+            authViewModel.updateProfileImage(it.toString())
+        }
+    }
+
+    // Camera launcher
+    val cameraImageUri = remember { mutableStateOf<android.net.Uri?>(null) }
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = androidx.activity.result.contract.ActivityResultContracts.TakePicture()
+    ) { success ->
+        if (success) cameraImageUri.value?.let { authViewModel.updateProfileImage(it.toString()) }
+    }
+
+    if (showImageSourceDialog) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showImageSourceDialog = false },
+            title = { androidx.compose.material3.Text("Change Profile Photo") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    androidx.compose.material3.TextButton(
+                        onClick = { showImageSourceDialog = false; galleryLauncher.launch("image/*") },
+                        modifier = Modifier.fillMaxWidth()
+                    ) { androidx.compose.material3.Text("Choose from Gallery") }
+                    androidx.compose.material3.TextButton(
+                        onClick = {
+                            showImageSourceDialog = false
+                            val file = java.io.File(context.cacheDir, "profile_${System.currentTimeMillis()}.jpg")
+                            val uri = androidx.core.content.FileProvider.getUriForFile(
+                                context, "${context.packageName}.fileprovider", file
+                            )
+                            cameraImageUri.value = uri
+                            cameraLauncher.launch(uri)
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) { androidx.compose.material3.Text("Take a Photo") }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                androidx.compose.material3.TextButton(onClick = { showImageSourceDialog = false }) {
+                    androidx.compose.material3.Text("Cancel")
+                }
+            }
+        )
+    }
 
     Column(modifier = Modifier.background(MaterialTheme.colorScheme.surface)) {
-        // Tappable header row
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
@@ -632,19 +690,50 @@ fun IndriveDrawerHeader(
                 .background(MaterialTheme.colorScheme.surfaceVariant)
                 .clickable { expanded = !expanded }
         ) {
-            Image(
-                painter = userImage,
-                contentDescription = null,
+            // Clickable avatar with camera badge
+            Box(
                 modifier = Modifier
-                    .size(50.dp)
-                    .padding(8.dp)
+                    .size(54.dp)
+                    .padding(4.dp)
                     .clip(CircleShape)
-            )
-            Column(
-                modifier = Modifier
-                    .padding(8.dp)
-                    .weight(1f)
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
+                    .clickable { showImageSourceDialog = true },
+                contentAlignment = Alignment.Center
             ) {
+                val imageUri = currentUser?.profileImageUri
+                if (imageUri != null) {
+                    coil.compose.AsyncImage(
+                        model = android.net.Uri.parse(imageUri),
+                        contentDescription = "Profile photo",
+                        modifier = Modifier.fillMaxSize().clip(CircleShape),
+                        contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = "Profile photo",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .size(16.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primary),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.CameraAlt,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.size(10.dp)
+                    )
+                }
+            }
+
+            Column(modifier = Modifier.padding(8.dp).weight(1f)) {
                 Text(
                     text = currentUser?.userFullName ?: "—",
                     color = MaterialTheme.colorScheme.onSurface,
@@ -665,7 +754,6 @@ fun IndriveDrawerHeader(
             )
         }
 
-        // Expandable details section
         if (expanded) {
             Column(
                 modifier = Modifier

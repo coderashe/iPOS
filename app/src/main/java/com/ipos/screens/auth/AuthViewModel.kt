@@ -285,6 +285,21 @@ class AuthViewModel @Inject constructor(
         }
     }
 
+    /** Save profile image URI for the currently logged-in user */
+    fun updateProfileImage(uri: String) {
+        val email = auth.currentUser?.email ?: return
+        viewModelScope.launch {
+            try {
+                authRepository.updateProfileImage(email, uri)
+                // Refresh fetchedUser so the drawer updates immediately
+                val updated = authRepository.getUserByEmail(email)
+                _fetchedUser.value = updated
+            } catch (e: Exception) {
+                Log.e("AuthViewModel", "Error saving profile image: ${e.message}")
+            }
+        }
+    }
+
     // Manual Signout method
     fun signout() {
         isManuallyLoggedOut = true
