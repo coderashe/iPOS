@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Grant access to files saved in the app-specific "Documents" folder -->
+    <!-- App-specific Documents folder -->
     <external-files-path name="documents" path="Documents/" />
-
-    <!-- Access to files saved under the "images" folder in internal storage -->
+    <!-- Internal files/images folder -->
     <files-path name="my_images" path="images/" />
-
-    <!-- Access to cached images -->
+    <!-- Cache subfolder -->
     <cache-path name="my_images" path="images/" />
+    <!-- Cache root — covers temp files written directly to cacheDir (camera) -->
+    <cache-path name="cache_root" path="." />
 </paths>
